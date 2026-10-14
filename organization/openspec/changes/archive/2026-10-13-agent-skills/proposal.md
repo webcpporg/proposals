@@ -22,6 +22,8 @@ what OpenSpec itself generates.
 - The superproject gains `.agents/skills/`: `webcpp-library-conventions`, `webcpp-port-methodology`,
   `webcpp-build-and-lanes`, `webcpp-docs-site-release` and `webcpp-text-and-commits`, and its
   `AGENTS.md` names them in its introduction.
+- Both repositories validate skill YAML, names and descriptions in CI.
+- OpenSpec's full MIT notice is preserved in `THIRD_PARTY_NOTICES.md`.
 - A requirement is added to the organization's specification: where skills live, what they may
   hold, and that the rules win over them.
 
@@ -39,10 +41,9 @@ None.
 
 - **Kind:** the organization (the rules' entry points for agents, in two repositories).
 - **Implementation:** pull requests to https://github.com/webcpporg/proposals and
-  https://github.com/webcpporg/webcpp from the branch `agent-skills`. No build, lint rule or
-  workflow changes: the superproject's lint already reads every tracked file for the em dash and
+  https://github.com/webcpporg/webcpp from the branch `agent-skills`. No build or existing lint-rule changes; a dedicated metadata workflow is added: the superproject's lint already reads every tracked file for the em dash and
   the banned word, and `tools/proposals.py check` every file of this repository.
-- **Status:** draft.
-- **Other proposals:** independent of `contributor-identity`; the skill `webcpp-text-and-commits`
-  states the identity rule that change proposes (each contributor commits under their own
-  identity), so the two should be decided together or the skill adjusted to the decision.
+- **Status:** implemented in the 0.1.0 release in preparation; archived on 2026-10-13.
+  See `reference/STATUS.md` for merge and verification evidence. No release tag was created.
+- **Other proposals:** the identity rule used by `webcpp-text-and-commits` is already in the
+  superproject through webcpp PR #1; this change does not archive `contributor-identity`.

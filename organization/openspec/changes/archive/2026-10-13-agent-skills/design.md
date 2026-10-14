@@ -40,7 +40,7 @@ that copy the rules, which would drift from `AGENTS.md` at the first change of a
 `webcpp-text-and-commits` applies to both repositories and is a file in each, identical. Rejected:
 a single source fetched or linked from the other repository: a symbolic link across repositories
 does not exist in a clone, and an agent reads the files of the repository it is in. The duplicate
-is short; O1 asks whether a check should keep the two equal.
+is short; O1 below requires an explicit local comparison when either copy changes.
 
 ### D4. OpenSpec's skills, generated and adapted
 
@@ -63,7 +63,9 @@ the two changes.
 
 The licence notice of the superproject's `AGENTS.md`, chapter 11, applies to source files by
 suffix, and `.md` is none of them (the lint's rule `licence notice` reads the same list); a skill,
-like `AGENTS.md` and `README.md`, carries none. The repository's licence covers it.
+like `AGENTS.md` and `README.md`, carries no webcpp source-file notice. Chapter 11 now
+explicitly names this exemption. Webcpp-authored skills are BSL-1.0; generated OpenSpec
+skills retain MIT and the copyright and permission notice in `THIRD_PARTY_NOTICES.md`.
 
 ### D6. A pointer in each `AGENTS.md`
 
@@ -78,29 +80,57 @@ written for people proposing a library.
 holding forbidden text fails it; a test in `tools/proposals_test.py` pins that for
 `.agents/skills/`. The superproject's lint reads every tracked file (`git ls-files --cached
 --others --exclude-standard`) for the em dash and the banned word, so it covers `.agents/` without
-change.
+change. Both repositories also run `.github/workflows/skills.yml` on pull requests and main:
+PyYAML 6.0.3 reads actual YAML and rejects malformed front matter, a missing or blank description,
+and a name that differs from its kebab-case directory. The parser is installed in an isolated
+virtual environment. This catches the unquoted colon descriptions found during review.
 
 ## Risks / Trade-offs
 
 - [A skill goes stale when a chapter is renamed] -> skills cite chapters by number and title, and a
-  rule change that touches a chapter a skill cites updates the skill in the same commit (O2).
+  rule change that touches a chapter a skill cites updates the skill in the same commit (O2); prose references are checked in review.
 - [OpenSpec's generated text carries the MIT licence in a BSL-1.0 repository] -> it is generated
-  documentation, kept with its front matter naming its licence; O4 asks the owner to confirm.
+  documentation, kept with its front matter and full upstream notice; O4 records the exception.
 
 ## Migration Plan
 
 1. Merge both pull requests; nothing else moves.
 2. On archive, the requirement joins `specs/organization/spec.md`.
 
-## Open Questions
+## Resolved Questions
 
-- **O1.** Should a check (the superproject's lint or `tools/proposals.py`) refuse the two copies of
-  `webcpp-text-and-commits` when they differ?
-- **O2.** Should the lint check that every `SKILL.md` has front matter whose `name` equals its
-  directory, and that every `AGENTS.md` chapter a skill cites exists?
-- **O3.** Should each library's repository carry skills of its own (for instance xstate's oracle),
-  or do the superproject's suffice?
-- **O4.** Is OpenSpec's generated text under MIT acceptable in the repository, or should webcpp
-  write its own OpenSpec skills instead?
-- **O5.** Should `AGENTS.md`, chapter 11's licence notice list, name `SKILL.md` explicitly as a
-  file without a notice?
+Decided on 2026-10-13 under the owner's instruction to resolve O1 to O5, finish the implementation,
+merge webcpp PR #2 and archive this proposal. These are the decisions taken for that request.
+
+- **O1. Local comparison, no cross-repository network gate.** Keep the two
+  `webcpp-text-and-commits` files identical. When either changes, compare the two checked-out
+  files with `cmp` and update both in the same change. CI must not depend on the changing head
+  of another repository or on a particular checkout layout. This review compared both files.
+- **O2. Validate metadata in CI; review prose references.** Each repository runs the Agent skills
+  workflow with a real YAML parser, checking delimiters, a mapping, a matching kebab-case name
+  and a nonempty string description. Chapter references remain a review responsibility: they
+  appear in prose, not a machine-readable reference field. A rule change updates affected
+  skills in the same change. All references in the five superproject skills were reviewed.
+- **O3. Shared skills only.** The superproject and proposals skills suffice for this change.
+  A library keeps its specific rules in its own `AGENTS.md`. A future unique recurring workflow
+  may justify a library skill; do not copy these shared skills into each library.
+- **O4. Retain upstream MIT documentation.** Keep the six generated OpenSpec skills and their
+  upstream metadata unchanged. `THIRD_PARTY_NOTICES.md` preserves OpenSpec 1.10.0's complete
+  copyright and permission notice. The organization's specification explicitly exempts this
+  generated documentation from its otherwise BSL-1.0-only rule; webcpp-authored text stays BSL-1.0.
+- **O5. State the Markdown exemption.** Chapter 11 now explicitly says that Markdown files,
+  including `SKILL.md`, need no webcpp source-file notice. Upstream notices are still preserved.
+  The licence lint's suffix rules do not change.
+
+## Review fixes
+
+- Quote the descriptions of all custom skills as YAML strings. Four superproject descriptions
+  and two proposals descriptions originally failed to parse because they contained `: `.
+- Unset `CPATH`, `CPLUS_INCLUDE_PATH` and `C_INCLUDE_PATH` once before the build example block,
+  so every command runs in the required environment.
+- Add the metadata workflow in both repositories. Its exact script was tested against real
+  skills and fixtures for invalid YAML, wrong names, absent or blank descriptions, missing
+  delimiters and non-mapping front matter.
+
+The contributor identity rule is already in the superproject's main through webcpp PR #1;
+the text skill now follows the current rulebook without waiting on a separate implementation.
