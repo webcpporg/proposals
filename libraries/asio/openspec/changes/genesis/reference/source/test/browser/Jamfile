@@ -1,0 +1,25 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+# Each driver receives the JSPI artifact beside its manifest. The loader
+# test imports both actual variants under Node; Chrome joins this lane later.
+# The parent test project links asio. The driver only consumes finished
+# programs; put that dependency on page_program instead.
+project : requirements -<library>/webcpp/asio//asio ;
+
+import webcpp ;
+
+webcpp.targets emscripten ;
+webcpp.original node ;
+
+# tag::page-variants[]
+webcpp.variants page_program : page_program.cpp : <library>/webcpp/asio//asio ;
+# end::page-variants[]
+webcpp.drive loader_node : .//page_program
+  : <dependency>page_program.variants.json <webcpp-drive-timeout>60
+  : loader_test.mjs ;
+
+webcpp.lane browser : loader_node : emscripten ;

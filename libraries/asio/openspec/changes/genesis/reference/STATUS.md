@@ -1,5 +1,80 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Tasks 9 to 11 integrated locally; task 12 completed, 2026-10-14
+
+This update supersedes the earlier task statuses below. Tasks 13 to 23 remain unstarted.
+The owner authorized local integration of tasks 9, 10 and 11 and implementation of task 12.
+No CI workflow, push, remote repository or registered submodule was created.
+
+### Local integration
+
+- `webcpp/main` fast-forwarded from `9a268b7` to `eba8545`, carrying the ten prerequisite
+  superproject commits already validated in the isolated checkout.
+- `webcpp/libs/asio` was absent, so a local clone brought in the library's complete history.
+  Its `main` is `a179adc`, including tasks 9, 10 and 11. It has no remote and remains ignored
+  by the superproject until registration is authorized.
+- Fresh post-integration Asio suites passed: 15 native and 74 WebAssembly markers.
+  Local tool checks also passed: variants (5 cases), lint tests (57), build declarations (35),
+  matrix planning (34) and Emscripten integration (22). These are local test scripts, not CI.
+  Logs are in the primary checkout's `.local/asio-merge-validation/`.
+
+### Task 12
+
+The isolated checkout remains `asio-task9-review`. Its superproject branch
+`work/asio-task9-review` is now `35c8aa7`; its library branch `work/task12-loader` is `da3c790`.
+These task 12 commits are not integrated into the primary checkout.
+`source/` matches all 59 tracked files at library commit `da3c790` byte for byte.
+The new `0011` superproject patch records the build correction; patches `0001` to `0010`
+remain unchanged historical records.
+
+- Added the loader's `supportsJspi`, `pick` and `load` functions, using artifact names from
+  the generated manifest, explicit variant overrides and replaceable fetch/import functions.
+- Added the browser lane's Node driver and a real page program that posts three handlers,
+  runs its context and prints its completion. Both generated JSPI and Asyncify artifacts load.
+- The driver waits for observed output within its 60-second bound. It replaces the plan's
+  fixed 200 ms sleep, avoiding an assumption about machine speed.
+- Fixed `webcpp.variants` exporting consumed library source dependencies through its finished
+  executables. This caused duplicate symbols when the manifest and driver consumed both
+  variants. A real linked fixture failed before the fix and passed afterward; each executable
+  still consumes its dependencies for its own compilation and link.
+- Applied library requirements only to the page program. The driver uses `.//page_program`
+  and removes the inherited library requirement, avoiding another unintended link.
+- Independent read-only review identified one important issue: HTTP redirects changed the
+  manifest's directory, but the loader used the original URL. A real loopback HTTP 302
+  reproduced the wrong artifact path. The fix uses `response.url`, falling back to the
+  requested URL for custom fetch implementations. The regression and both real variants pass.
+- Documented the manifest, loader options, errors, redirects and the distinction between
+  factory readiness and completion of a suspended main. README reflects the Node lane.
+
+### Task 12 validation
+
+With Boost 1.92, Emscripten 6.0.11, Node 26.7.0 and native Clang 21:
+
+- Fresh full suites: 15 native and 75 WebAssembly passing markers. Following the review fix,
+  the affected browser lane was rebuilt from scratch and passed, including once after commit.
+- Full local lint: `lint: clean`, including 76 compilation commands for 27 C++ translation
+  units, Pyright, formatting, library boundaries and all text rules.
+- All 23 Emscripten tool integration cases passed with the new variant dependency regression.
+- Full documentation generation and rendered checks passed; the page lists 78 distinct tests,
+  15 native and 75 Emscripten, with overlap between targets. JavaScript syntax and diff checks
+  passed. The runtime browser test is Node-only here; Chrome measurements belong to task 13.
+
+Commands from the isolated superproject, using `.local/review-b2`:
+
+```sh
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task12-final-native libs/asio/test
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task12-final-wasm toolset=emscripten libs/asio/test libs/asio/test//asyncify libs/asio/test/browser//browser
+.local/review-b2 -a -j4 --verbose-test --build-dir=bin/task12-committed toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j4 --verbose-test --build-dir=bin/task12-final-doc libs/asio/doc
+```
+
+Suite logs and lint output are under `.local/task12-validation/`; the committed browser
+lane's complete output is `libs/asio/.superpowers/sdd/plan/task-12-tests.log`.
+The next task is 13. Preserve the isolated checkout and use its two task 12 commits as the
+base when authorized to continue. No task 13 code or CI configuration was added.
+Proposal validation passed: 22 proposals with zero problems and all 17 checker tests.
+The OpenSpec CLI is unavailable, so strict CLI validation remains unperformed.
+
 ## Task 11 completed, 2026-10-14
 
 This update supersedes task 11's status in the historical sections below. Tasks 12 to 23

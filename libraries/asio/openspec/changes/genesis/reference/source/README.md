@@ -36,11 +36,17 @@ second does the same on emscripten, run by node, with the toolset that
 variant, JSPI. The third, the lane `asyncify`, runs every browser test again
 under Asyncify, the other variant, and writes the size table of both. The
 fourth, the lane `browser`, runs the loader that picks a variant under node,
-and in headless Chrome checks that a page program never polls, that the
-page keeps rendering, and that the loader picks the variant. b2 compares timestamps, so a
+loading both built artifacts and checking their output. The headless Chrome
+driver for idle and rendering checks is not implemented yet. b2 compares timestamps, so a
 result that counts is built from scratch, with `b2 -a`, and the CI gives
 each lane a `--build-dir` of its own. A b2 project uses asio through
 `/webcpp/asio//asio`.
+
+A page imports `load` from `webcpp-asio-loader.mjs`, shipped in
+`include/webcpp/asio/`, and calls `load('page_program.variants.json')`.
+The loader detects JSPI support, selects JSPI or Asyncify from the build's
+manifest and returns `{variant, module}` after initialization. The manifest
+and its artifacts keep the relative layout produced by `webcpp.variants`.
 
 ## Documentation
 

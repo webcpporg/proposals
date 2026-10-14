@@ -183,6 +183,55 @@ and the suspension variant. The default variant adds no directory level:
 
 each beside its `.wasm`.
 
+[#asio-building-loader]
+=== Loading the variant a browser runs
+
+Build a page program and its two variants with `webcpp.variants`:
+
+[listing]
+----
+include::{library-root}/test/browser/Jamfile[tag=page-variants]
+----
+
+The build writes `page_program.variants.json` beside the JSPI artifact.
+Its `jspi` and `asyncify` objects each contain a `script` path relative to
+the manifest and the WebAssembly size in bytes. Serve the manifest, both
+scripts and their WebAssembly files with their relative layout intact.
+
+The loader is `include/webcpp/asio/webcpp-asio-loader.mjs`, shipped with
+the headers. A page imports its `load` function and calls
+`load('page_program.variants.json')`. It detects JSPI by checking whether
+`WebAssembly.Suspending` is a function, chooses `jspi` when it is and
+`asyncify` otherwise, and reads the artifact path from the manifest.
+It resolves that path relative to the final manifest URL after any HTTP
+redirects, imports the script and awaits its default factory. A custom
+`fetch` that supplies no response URL uses the requested manifest URL.
+The result is `{variant, module}`.
+
+`supportsJspi(scope)` permits detection in a supplied scope. `pick(manifest,
+jspi)` returns `{variant, script}` and rejects a missing script for the
+selected variant. `load(manifestUrl, options)` accepts an explicit `jspi`
+choice, `module` options passed to the factory, and replacements for
+`fetch` and `importModule`. Failed manifest requests report their URL and
+HTTP status; fetch, JSON, import and initialization failures propagate to
+the caller. A failed JSPI load does not silently retry Asyncify.
+
+A relative manifest URL is resolved against the page URL, or against the
+loader module URL where no page location exists. Factory readiness does
+not mean that a suspended `main` has finished: an application observes its
+own completion signal. The loader test waits for the program's output,
+within the driver's timeout, rather than sleeping for an assumed duration.
+
+The `browser` lane currently loads both variants under Node using a file
+reader for the manifest. It exercises this actual page program:
+
+[source]
+----
+include::{library-root}/test/browser/page_program.cpp[tag=page-program]
+----
+
+Chrome execution and rendering checks are a separate browser-driver step.
+
 [#asio-building-exit-status]
 === The exit status
 

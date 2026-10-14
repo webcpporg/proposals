@@ -123,12 +123,12 @@ All of them are of 2026-10-11, as `R`.
 
 ## 12. The loader (plan: Task 12)
 
-- [ ] 12.1 Write the page's part of `doc/building.adoc` (plan: Task 12, Step 1)
-- [ ] 12.2 Write the driven test's files in `test/browser/` (Step 2)
-- [ ] 12.3 Run the browser lane and see it fail (Step 3)
-- [ ] 12.4 Implement `include/webcpp/asio/webcpp-asio-loader.mjs` (Step 4)
-- [ ] 12.5 Run the browser lane and the lint (Step 5)
-- [ ] 12.6 Commit (Step 6)
+- [x] 12.1 Write the page's part of `doc/building.adoc` (plan: Task 12, Step 1)
+- [x] 12.2 Write the driven test's files in `test/browser/` (Step 2)
+- [x] 12.3 Run the browser lane and see it fail (Step 3)
+- [x] 12.4 Implement `include/webcpp/asio/webcpp-asio-loader.mjs` (Step 4)
+- [x] 12.5 Run the browser lane and the lint (Step 5)
+- [x] 12.6 Commit (Step 6)
 
 ## 13. The browser lane in headless Chrome (plan: Task 13)
 
