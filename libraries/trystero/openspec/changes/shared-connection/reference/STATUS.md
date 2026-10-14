@@ -1,5 +1,71 @@
 # webcpp::trystero, shared connection: where the implementation stands, and how to resume
 
+## Resumed execution, 2026-10-14
+
+The owner requested completion on 2026-10-14 and explicitly prohibited CI during this session.
+Work resumed in an isolated checkout of the current superproject. The library branch
+`resume-shared-connection` is based on published main `957eae5`, preserving the newer mesh and
+configuration fixes. The recorded patches were recovered, with the superseded interop patch
+`0022` dropped before the rebase. Recorded patches and the original plan remain unchanged.
+
+Binding by presence and kept frames, signaling reuse, farewell completion, rebinding and recent
+challenge history, per-room allocation, local regressions, interop scenarios and documentation
+have been implemented and committed locally through `c870c1c`. Ordinary validation is recorded
+below; the authentication decision blocks integration. No feature merge or proposal archive has occurred, and the proposal
+remains `implementing`.
+
+### Acceptance blocker: authentication contract
+
+A local executable regression, `a_protected_room_requires_proof_from_either_id`, fails the
+promised password isolation for a higher-id room over an existing connection. The responder
+answers the lower-id peer's challenge and accepts its ready message without receiving a proof
+that the challenger knows the password. This is stronger than the already acknowledged offline
+password-guess exposure. The pinned Trystero JS handshake has the same one-way structure.
+
+The unchanged-wire compatibility requirement and guarantee 11 cannot both be met for arbitrary
+passwords on rooms that share a connection. The owner has been asked to choose mutual
+authentication with a revised protocol, or JS 0.26.0 compatibility with sharing restricted by
+password. Do not merge, mark implemented, or archive this proposal before resolving the conflict.
+
+### Local evidence
+
+- Final native, GCC 15 and Emscripten builds completed. All ordinary tests passed, including
+  allocation and hardened variants; only the bilateral-authentication regression fails in each
+  shared variant. There are 44 shared cases: 43 pass and one exposes the unresolved contract.
+- Address and undefined sanitizers (`norecover`) passed for connection, app_impl and all 43
+  non-authentication shared cases after the review fixes.
+- The oracle remained byte-identical; no protocol constant or layout was changed.
+- Native loopback tests passed after enabling local loopback networking for the sandbox.
+- Strict MrDocs, doc-check and rendered documentation checks passed.
+- Final review reproduced log-callback reentrancy (an ASan heap-use-after-free), same-binding
+  drain waiter bugs and malformed challenge nonces. Fixes and regressions pass in `fff06e3`.
+- `fff06e3` adds backoff, challenge history and room allocation; `f0eb96b` separately preserves
+  the authentication regression; `fae4eef` and superproject `ea183f0` record the documentation.
+- The largest-frame regression retains 64 of 65 frames of 16,515 bytes and expires them at 10 s.
+- Final static analysis and global text/style rules are clean; Jamroot tests passed.
+- Text payload clarification: pmr strings copy once from byte storage; only binary vectors can
+  move their matching-resource buffer. The historical specification's vector-to-string move
+  wording is not implementable, so the public documentation states the actual guarantee.
+- Interop commit `c870c1c`: native full run passed 27/27. Browser full run passed 23/24;
+  its transient-handshake scenario exposed a concurrent-room setup race. After correcting that
+  precondition, the final transient scenario passed separately on both lanes (about 53 s each).
+  A unified final browser full-suite pass has not been claimed.
+- Corrected fixtures keep room1 established, wait out initial relay announcement warmup for
+  password pacing, correlate every flood ping with completion, measure idle closure from final
+  departure and capture connection baselines before delayed room3 joins. Original bounds remain.
+- No CI, push, pull request, merge, upstream report or proposal archive has occurred.
+
+### Resume from the current branch
+
+Resolve the authentication contract first, keep its negative regression, complete final local
+validation and whole-branch review, then integrate the library before updating the superproject's
+submodule. Update this execution record and the committed task checklist before archiving.
+
+## Historical handoff, 2026-10-13
+
+The following text records the original handoff and is historical. Its branch names, worktree
+paths and pending tasks describe that earlier state, not the resumed execution above.
+
 Written 2026-10-13, when this proposal took the work in. `spec.md` is the specification of
 2026-10-11 (approved by the owner that day); `plan.md` is the plan (22 tasks, its frontmatter still
 says `draft`, its checkboxes are all unchecked: the ledger, not the plan, recorded progress);
