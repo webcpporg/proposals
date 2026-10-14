@@ -1,5 +1,78 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 13 completed locally, 2026-10-14
+
+This update supersedes the task statuses below. Tasks 14 to 23 remain unstarted.
+The owner authorized task 13 without CI. No CI, push or integration of tasks 12 and 13 ran.
+The primary superproject remains `eba8545`, with its local Asio library at `a179adc`.
+
+The isolated superproject branch `work/asio-task9-review` is `3d069a1`; its library
+branch `work/task13-browser` is `3d22924`, based on task 12's `da3c790`.
+`source/` matches all 64 tracked library files byte for byte. The new `0012` patch
+records the superproject change; patches `0001` to `0011` remain unchanged.
+
+### Changes and decisions
+
+- Added real headless Chrome idle, render and loader drivers alongside the existing
+  Node loader driver, covering both JSPI and Asyncify.
+- Idle observation lasts three seconds: exactly one `setTimeout(300000)`, with no
+  other recorded timer or message polling. A work guard keeps the context pending.
+- Self-posting handlers run for one second. With the default 1,000-handler turn limit,
+  animation callbacks occur; both unbounded Boost controls produce zero callbacks.
+  Callback entry uses `performance.now()`, avoiding stale animation-frame timestamps.
+  This observes animation opportunities, not proof of specific pixels being painted.
+- Full turns end at the yield message post and start at message delivery. The final
+  partial turn is excluded; p95 uses the nearest-rank statistic. The driver rejects
+  p95 above 8 ms and missing animation callbacks. The default remains unchanged.
+- Loader checks execute three handlers in each actually imported variant, including
+  Asyncify selected after removing `WebAssembly.Suspending` before page execution.
+  The fixture identifies the imported artifact before awaiting its factory: the JSPI
+  factory awaits `main`, and the idle program intentionally never returns.
+- The driver rejects console errors, uncaught exceptions and reported loader errors.
+  Bounded waits, signal handling and cleanup remove its Chrome process and profile.
+- Added Asio to `CHROME_LANES`, preserving existing document and Trystero entries.
+  The matrix change was tested before implementation; no CI workflow was executed.
+- Used the existing bound-function-pointer handler pattern to satisfy static analysis
+  without suppressing its recursion diagnostic. No production Asio or loader code changed.
+
+### Validation
+
+On macOS arm64, local Playwright HeadlessChrome 153.0.8010.12, Emscripten 6.0.11,
+Boost 1.92 and Node 26.7.0, three fresh serial browser builds passed all four drivers.
+The final six measurements are recorded in `source/AGENTS.md`:
+
+- JSPI: p95 0.700 ms in every run; maximum up to 1.900 ms; 60 animation callbacks.
+- Asyncify: p95 1.600 ms in every run; maximum up to 9.200 ms; 61 animation callbacks.
+- Both unbounded controls: zero callbacks in all runs. Both idle and loader variants passed.
+
+A fourth fresh browser build passed after commit and recorded task completion.
+Fresh full suites passed 15 native and 78 WebAssembly markers before the final C++
+style corrections; all changed browser programs were then rebuilt and retested in
+all four final browser runs. Full lint after those corrections passed with 85 compilation
+commands and 30 translation units. Documentation generation and rendered checks,
+35 matrix tests, JavaScript syntax and diff checks passed.
+
+Scratch negative controls proved detection of console errors, uncaught exceptions,
+import failures, wrong variants and polling. A SIGTERM check returned 143 and left
+no owned Chrome process or profile. Independent read-only review found no Critical,
+Important or Minor issues.
+
+Commands from the isolated superproject:
+
+```sh
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-final-measure-1 toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-final-measure-2 toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-final-measure-3 toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-committed toolset=emscripten libs/asio/test/browser//browser
+```
+
+Logs are under `.local/task13-validation/`; committed verification output is at
+`libs/asio/.superpowers/sdd/plan/task-13-tests.log`. The local Chrome version differs
+from the CI pin; the pinned browser and other platforms were not executed here.
+The OpenSpec CLI is unavailable, so strict CLI validation remains unperformed.
+Proposal validation passed: 22 proposals with zero problems and all 17 checker tests.
+Keep the isolated checkout. The next task is 14 and has not started.
+
 ## Tasks 9 to 11 integrated locally; task 12 completed, 2026-10-14
 
 This update supersedes the earlier task statuses below. Tasks 13 to 23 remain unstarted.

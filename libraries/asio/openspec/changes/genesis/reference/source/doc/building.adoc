@@ -217,20 +217,25 @@ HTTP status; fetch, JSON, import and initialization failures propagate to
 the caller. A failed JSPI load does not silently retry Asyncify.
 
 A relative manifest URL is resolved against the page URL, or against the
-loader module URL where no page location exists. Factory readiness does
-not mean that a suspended `main` has finished: an application observes its
-own completion signal. The loader test waits for the program's output,
+loader module URL where no page location exists. Factory completion is
+variant-dependent: the current JSPI factory awaits `main`, while Asyncify
+can resolve before a suspended `main` finishes. An indefinitely running
+JSPI program therefore reports readiness through its module callbacks;
+an application observes its own completion signal. The loader test waits for the program's output,
 within the driver's timeout, rather than sleeping for an assumed duration.
 
-The `browser` lane currently loads both variants under Node using a file
-reader for the manifest. It exercises this actual page program:
+The `browser` lane loads both variants under Node using a file reader for
+the manifest, and in headless Chrome over loopback HTTP. It exercises this
+actual page program:
 
 [source]
 ----
 include::{library-root}/test/browser/page_program.cpp[tag=page-program]
 ----
 
-Chrome execution and rendering checks are a separate browser-driver step.
+The same lane checks idle waits and animation callbacks under continuous
+ready work in Chrome. See <<asio-testing-browser>> for its measurements
+and failure criteria.
 
 [#asio-building-exit-status]
 === The exit status

@@ -132,14 +132,14 @@ All of them are of 2026-10-11, as `R`.
 
 ## 13. The browser lane in headless Chrome (plan: Task 13)
 
-- [ ] 13.1 Superproject: `('asio', 'browser')` in `CHROME_LANES`, test first (plan: Task 13, Step 1)
-- [ ] 13.2 Write the idle, render and unlimited-render programs (Step 2)
-- [ ] 13.3 Write `page.html` (Step 3)
-- [ ] 13.4 Write the driver `run.mjs` with its three modes (Step 4)
-- [ ] 13.5 Declare the drives in the Jamfile (Step 5)
-- [ ] 13.6 Run the lane before and after the driver exists (Step 6)
-- [ ] 13.7 Record the turn measurement three times, under the stop rule (Step 7)
-- [ ] 13.8 Commit (Step 8)
+- [x] 13.1 Superproject: `('asio', 'browser')` in `CHROME_LANES`, test first (plan: Task 13, Step 1)
+- [x] 13.2 Write the idle, render and unlimited-render programs (Step 2)
+- [x] 13.3 Write `page.html` (Step 3)
+- [x] 13.4 Write the driver `run.mjs` with its three modes (Step 4)
+- [x] 13.5 Declare the drives in the Jamfile (Step 5)
+- [x] 13.6 Run the lane before and after the driver exists (Step 6)
+- [x] 13.7 Record the turn measurement three times, under the stop rule (Step 7)
+- [x] 13.8 Commit (Step 8)
 
 ## 14. The guide's examples and the size table (plan: Task 14)
 

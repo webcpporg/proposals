@@ -4,8 +4,8 @@
 # accompanying file LICENSE_1_0.txt or copy at
 # https://www.boost.org/LICENSE_1_0.txt)
 
-# Each driver receives the JSPI artifact beside its manifest. The loader
-# test imports both actual variants under Node; Chrome joins this lane later.
+# Each driver receives the JSPI artifact beside its manifest. Node and
+# headless Chrome load both actual variants.
 # The parent test project links asio. The driver only consumes finished
 # programs; put that dependency on page_program instead.
 project : requirements -<library>/webcpp/asio//asio ;
@@ -22,4 +22,21 @@ webcpp.drive loader_node : .//page_program
   : <dependency>page_program.variants.json <webcpp-drive-timeout>60
   : loader_test.mjs ;
 
-webcpp.lane browser : loader_node : emscripten ;
+webcpp.variants idle_program : idle_program.cpp : <library>/webcpp/asio//asio ;
+webcpp.variants render_program : render_program.cpp : <library>/webcpp/asio//asio ;
+webcpp.variants render_unlimited_program : render_unlimited_program.cpp
+  : <library>/webcpp/asio//asio ;
+
+# Chrome startup and the three-second idle observation fit within 120 s.
+webcpp.drive browser_idle : .//idle_program
+  : <dependency>idle_program.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --mode idle ;
+webcpp.drive browser_render : .//render_program
+  : <dependency>render_program.variants.json
+    <dependency>render_unlimited_program.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --mode render ;
+webcpp.drive browser_loader : .//page_program
+  : <dependency>page_program.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --mode loader ;
+
+webcpp.lane browser : loader_node browser_idle browser_render browser_loader : emscripten ;

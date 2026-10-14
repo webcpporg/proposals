@@ -66,6 +66,45 @@ b2 toolset=emscripten libs/asio/test/browser//browser
 `b2 libs/asio/test//config` builds and runs one test alone, while working on
 it.
 
+[#asio-testing-browser]
+=== Browser observations
+
+`browser_idle`, `browser_render` and `browser_loader` run real page programs
+in headless Chrome, on both JSPI and Asyncify. The driver serves only its
+page, loader and build artifacts on loopback HTTP. Set `CHROME` to the
+browser executable; on macOS it otherwise finds the newest installed
+Playwright headless shell. Each driver has a 120-second outer bound and
+removes its Chrome process and temporary profile on success, failure or a
+termination signal.
+
+An idle context with outstanding work must schedule exactly one positive
+`setTimeout`, at most 300 seconds, during a three-second observation.
+Calls to `setInterval` and `MessagePort.postMessage` are recorded too, so
+repeated polling cannot pass as a wait.
+
+A self-posting handler runs for one second. The bounded run must allow at
+least ten animation callbacks; Boost's unbounded control must allow none
+between the program's start and completion. Callback entry times use
+`performance.now()`, not the frame timestamp supplied by
+`requestAnimationFrame`. This observes animation opportunities, not
+individual painted pixels or a universal frame-rate guarantee.
+
+The yield's `MessageChannel` records each complete turn of 1,000 handlers,
+from resumption to the next post. The first starts at the program's
+`spinning` line; the final partial turn is not a full-lot sample. Three
+runs record callback and handler counts, turn counts, p95 and maximum
+turn duration in the library's `AGENTS.md`. A p95 above 8 ms in either
+variant stops the task for the owner to decide the default. A run with
+no animation callbacks also stops for a decision about the witness.
+The maximum is reported separately. Heavy individual handlers can still
+block the page regardless of the handler-count limit.
+
+The loader check runs the three-handler page normally and again after
+removing `WebAssembly.Suspending` before navigation. The page identifies
+the actual imported URL against the manifest before awaiting its factory,
+so a JSPI program whose `main` never returns can still report its variant.
+Any page exception, `console.error` or recorded loader error fails the run.
+
 [#asio-testing-report]
 === The test matrix
 

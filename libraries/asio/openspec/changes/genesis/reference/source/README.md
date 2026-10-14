@@ -36,8 +36,10 @@ second does the same on emscripten, run by node, with the toolset that
 variant, JSPI. The third, the lane `asyncify`, runs every browser test again
 under Asyncify, the other variant, and writes the size table of both. The
 fourth, the lane `browser`, runs the loader that picks a variant under node,
-loading both built artifacts and checking their output. The headless Chrome
-driver for idle and rendering checks is not implemented yet. b2 compares timestamps, so a
+loading both built artifacts and checking their output. It also runs idle,
+animation and loader checks in headless Chrome, on JSPI and Asyncify.
+`CHROME` names the executable; on macOS the driver can use the newest
+Playwright headless shell already installed in its cache. b2 compares timestamps, so a
 result that counts is built from scratch, with `b2 -a`, and the CI gives
 each lane a `--build-dir` of its own. A b2 project uses asio through
 `/webcpp/asio//asio`.
@@ -45,7 +47,9 @@ each lane a `--build-dir` of its own. A b2 project uses asio through
 A page imports `load` from `webcpp-asio-loader.mjs`, shipped in
 `include/webcpp/asio/`, and calls `load('page_program.variants.json')`.
 The loader detects JSPI support, selects JSPI or Asyncify from the build's
-manifest and returns `{variant, module}` after initialization. The manifest
+manifest and returns `{variant, module}` when its factory resolves. A JSPI
+factory can await `main`, so an indefinitely running program must expose
+its readiness through its module callbacks instead of awaiting `load`. The manifest
 and its artifacts keep the relative layout produced by `webcpp.variants`.
 
 ## Documentation
