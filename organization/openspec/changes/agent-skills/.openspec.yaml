@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-10-13
+webcpp:
+  library: organization
+  title: "organization: agent skills in .agents/skills, in the proposals and the superproject"
+  kind: organization
+  port_of: null
+  status: draft
+  release: null
+  implementation: https://github.com/webcpporg/webcpp
+  decided: null

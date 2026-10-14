@@ -157,6 +157,13 @@ class Text(Scratch):
         (change / 'reference/source/demo.hpp').write_text('// built in /' + 'Users/someone/dev\n')
         self.assertEqual(len(proposals.forbidden_text()), 1)
 
+    def test_forbidden_text_in_an_agent_skill_is_found(self) -> None:
+        skill = self.root / '.agents/skills/demo'
+        skill.mkdir(parents=True)
+        (skill / 'SKILL.md').write_text('---\nname: demo\n---\nOne ' + chr(0x2014) + ' two\n')
+        self.assertEqual(proposals.forbidden_text(),
+                         ['.agents/skills/demo/SKILL.md:4: text a proposal may not hold'])
+
     def test_a_placeholder_home_is_allowed(self) -> None:
         change = self.proposal('libraries/demo/openspec/changes/genesis', metadata(), code=True)
         (change / 'reference/source/demo.hpp').write_text('// /' + 'Users/you/emsdk\n')
