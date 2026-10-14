@@ -118,7 +118,7 @@ public:
      A JavaScript function that delivers its argument to the registration key.
 
      Called once key is removed, once the io_context is destroyed, or once the runtime aborted,
-     a trap or abort(), it does nothing.
+     with Emscripten's ABORT flag set, it does nothing.
 
      @param key A key add returned.
      @return The function, to install as a listener or a promise's reaction.

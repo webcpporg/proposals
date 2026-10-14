@@ -1,5 +1,63 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 9 re-review completed, 2026-10-14
+
+This update supersedes the open task 9 review recorded below. Tasks 10 to 23 remain unstarted.
+The historical sections below describe the imported 2026-10-13 baseline; `source/` now includes
+this review's corrections, matching local library commit `ad6367b` on top of import `a9a48f0`.
+
+The active superproject worktree is `asio-task9-review`, beside `webcpp` and `proposals` in the
+organization directory, on branch `work/asio-task9-review`, tip `eba8545`. It starts at
+`9a268b7` and carries the ten recorded superproject patches. Integration preserves both the
+current Boost.Cobalt support and the node test support. `libs/asio` is its own local repository,
+without a remote or a registered submodule. The historical patch files are unchanged.
+
+### Findings and corrections
+
+- An expired 1 ms timer still suspends in Emscripten's initial nonblocking poll, so the suspected
+  missing-suspension failure was not reproduced. The real gap was a shorter measurement path:
+  delaying entry by 25 ms changed `run_for` from 1104 to 1060 bytes and `run_until` from 1092 to
+  1048, while the old test passed.
+- The test now observes nonzero-timeout calls to `doPollAsync` and requires one for every
+  reactor-wait case. With the old timer and the 25 ms delay, all eight wait assertions failed.
+- Reactor cases now keep outstanding work until a JavaScript macrotask posts the completing
+  handler. They retain the 25 ms entry delay as a regression case. Pending callbacks are
+  cancelled at destruction, and the fixture cannot move or copy.
+- The yield of `run_until` is measured separately. The bridge comments now state the actual
+  guarantee, no entry after Emscripten sets `ABORT`, without claiming every raw Wasm trap sets it.
+- An independent review checked the corrected instrumentation, callback lifetime and test
+  evidence, and found no remaining blocking issue in this scoped task 9 review.
+
+### Validation performed locally
+
+With Emscripten 6.0.11, Node 26.7.0 and Boost 1.92:
+
+- Native Asio suite: 13 passing test markers, built from scratch with Apple Clang 21.
+- Asio JSPI and Asyncify suites: 66 passing test markers, built from scratch; expected compile
+  and runtime failures were accepted only by their corresponding negative tests.
+- After the final measurement correction, all six changed Asyncify stack builds were rebuilt
+  from scratch and passed: debug, release and release linked with `-O3`, each with and without
+  exceptions. There are eleven measured paths with exceptions and nine without.
+- Their maxima (exceptions on/off) were 1164/844 bytes in debug, 2896/1940 in release and 384/288
+  with the optimized link, below half of the configured 8192 bytes in every case.
+- The five variants-tool cases and three selected superproject integration cases passed:
+  suspension variants, node test support linkage and the variants manifest.
+- clang-tidy passed all four compile configurations of the changed test; clang-format,
+  changed-file text rules, source documentation checks and `git diff --check` passed.
+
+This was a scoped local review, not the release gate: CI, a full organization lint, rendered
+HTML generation, GCC and Chrome were not run. No remote repository, push, merge or CI run was
+created. The user's instruction is to stop here before task 10.
+
+### Resume task 10
+
+Use the existing worktree and `libs/asio` repository. `.local/review-b2` supplies its isolated
+Emscripten cache, Python 3.14 and `.local/user-config.jam`; it accepts ordinary b2 arguments.
+Read the original plan's task 10 before starting. The toolchains are reused from the older
+local superproject, and the build outputs remain isolated in this worktree's `bin/`.
+
+## Historical handoff, 2026-10-13
+
 Written 2026-10-13, when this proposal took the library in as a partly implemented genesis.
 `spec.md` (approved by the owner on 2026-10-11, marked active) and `plan.md` (24 tasks, 0 to 23,
 every task with its code) are the specification and the plan; `../tasks.md` is the checklist;

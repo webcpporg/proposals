@@ -105,7 +105,7 @@ All of them are of 2026-10-11, as `R`.
 - [x] 9.3 Measure the stack size (Step 3): 8192, twice 4096, measured as the bytes each unwind wrote
 - [x] 9.4 Run every lane (Step 4)
 - [x] 9.5 Commit (Step 5): `27aa662`; fix round 1 `7cfd449` (the stack measured in every link, `asyncify-stack-size`, the bridge enters nothing after an abort)
-- [ ] 9.6 The scoped re-review of fix round 1, stopped on 2026-10-11 when the owner asked to review every task one by one (open; not part of the plan's steps)
+- [x] 9.6 The scoped re-review of fix round 1, completed on 2026-10-14 with deterministic blocking-wait measurements, the run_until yield case and corrected ABORT comments (local library ad6367b; evidence in reference/STATUS.md)
 
 ## 10. Timers: Boost's, Beast's (plan: Task 10)
 

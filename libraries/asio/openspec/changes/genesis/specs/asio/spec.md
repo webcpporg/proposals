@@ -494,7 +494,7 @@ Every browser test (`reactor`, `run_family`, `turn_limit`, `bridge`, `bridge_abo
 `-sASYNCIFY_STACK_SIZE` SHALL be 8192 unless a program raises it, which is twice 4096, the smallest power of two with which every test passed in every build b2 links (measured 2026-10-11 with Emscripten 6.0.11: the deepest suspension, in a release build compiled with `-O3` and linked without optimization as b2's emscripten toolset links it, wrote 3,540 bytes, against 1,272 in a debug build; Emscripten's default of 4096 left it 556 bytes and 2048 trapped), so that half of the stack is left to the program's own frames.
 
 #### Scenario: Every suspension leaves half the stack
-- **WHEN** `asyncify_stack_test` measures `run`, `run_one`, `run_for`, `run_until`, `run_one_for` and `run_one_until` at the reactor's wait, `run` and `run_for` at the yield, and `run` inside a `try` and inside a `catch` block (with exceptions)
+- **WHEN** `asyncify_stack_test` measures `run`, `run_one`, `run_for`, `run_until`, `run_one_for` and `run_one_until` at the reactor's wait, `run`, `run_for` and `run_until` at the yield, and `run` inside a `try` and inside a `catch` block (with exceptions)
 - **THEN** each reading finds at least one unwind and more than 0 bytes, and twice the deepest is at most the stack size; hand-built at `-O0` with `-sASYNCIFY_STACK_SIZE=8192` on 2026-10-13 the deepest were 1,104 bytes (`run_for`, the reactor's wait) and 324 (`run`, the yield)
 
 ### Requirement: Stack: The measurement is exact and covers every build
@@ -503,6 +503,10 @@ The bytes each unwind wrote SHALL be read from Asyncify's own data when the unwi
 #### Scenario: Six builds are declared
 - **WHEN** `test/Jamfile` is read
 - **THEN** `asyncify_stack_debug_exceptions_on`, `_off`, `asyncify_stack_release_...` and `asyncify_stack_optimized_link_...` are declared, the last with `<variant>release <linkflags>-O3`, and they join the lane `asyncify`
+
+#### Scenario: A delayed entry still measures the blocking wait
+- **WHEN** a reactor-wait case schedules a JavaScript macrotask, keeps outstanding Asio work, and delays entry to the run family by 25 ms
+- **THEN** the macrotask posts the handler that releases the work, and the measurement observes a nonzero-timeout poll as well as an unwind; the initial nonblocking poll alone cannot satisfy the case
 
 ### Requirement: Stack: An overflow traps and a program may ask for more
 A suspension that does not fit SHALL trap with `RuntimeError: unreachable` when the unwind stops, and nothing of the program runs afterwards; a program that calls `run` deep in its code asks for more with `<asyncify-stack-size>` or `asyncify-stack-size=<n>` on b2's command line, a value being a power of two from 8192 to 1048576.

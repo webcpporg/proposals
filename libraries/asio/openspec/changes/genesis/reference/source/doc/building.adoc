@@ -98,8 +98,8 @@ enough". The trap is certain, at every suspension that deep, but only
 there. So asio does not keep Emscripten's default: it sets the size to at
 least twice the deepest suspension its tests reach, measured exactly, as
 the bytes each unwind wrote, read from Asyncify's own data when the unwind
-stops. The deepest build is one compiled with optimization and linked
-without it, which is how b2's `release` variant links on emscripten today:
+stops. In the measurements of 2026-10-11, the deepest build was one compiled
+with optimization and linked without it, as b2's `release` variant links on emscripten:
 its deepest suspension in the tests wrote 3,540 bytes, against 1,272 in a
 `debug` build. Linked with optimization, a suspension writes a sixth or
 less of what it writes linked without: 416 bytes at most in the tests, and 384
@@ -128,7 +128,8 @@ in release and in release linked with `-O3`, which measures every
 suspension of the run family, the reactor's wait and the yield under each
 member that makes one, inside a `try` and a `catch` block too, and fails
 when one of them leaves less than half of the stack, or when the reading
-finds no unwind or no byte written; by every test of the asyncify lane,
+finds no unwind, no byte written, or no blocking poll in a reactor-wait
+case; by every test of the asyncify lane,
 which links the same size and traps if a suspension of its own does not
 fit; by `asyncify_stack_size_default` and `asyncify_stack_size_raised`,
 which read the size the program was linked with, and
@@ -136,6 +137,29 @@ which read the size the program was linked with, and
 `asyncify_stack_size_control`, which does; and by `bridge_abort`, in each
 variant, where an event called from JavaScript after the runtime aborted
 reaches no registration.
+
+The reactor-wait cases keep outstanding work until a JavaScript macrotask
+posts the handler that releases it. Each delays entry by 25 ms, past the
+expiry of the former 1 ms {cpp} timer, and requires a poll with a nonzero
+timeout. A timer that already expired can finish in the initial
+nonblocking poll: that poll suspends too, but its shorter stack is not
+evidence for the waiting path. The yield cases cover `run`, `run_for` and
+`run_until` separately.
+
+On 2026-10-14, with Emscripten 6.0.11 and Node 26.7.0, the corrected
+`asyncify_stack` test measured these maxima from scratch, in bytes:
+
+[cols="2,1,1",options="header"]
+|===
+| Build | Exceptions on | Exceptions off
+| Debug | 1164 | 844
+| Release, unoptimized link | 2896 | 1940
+| Release, link with `-O3` | 384 | 288
+|===
+
+Each of the eleven paths with exceptions and nine without stayed below
+4096 bytes, half of the configured 8192. These are measurements of the
+run-family test, not a bound on a user's own call frames.
 
 The artifacts are named and placed as Boost's own build names and places
 them: one directory level per toolset, variant and property that is not

@@ -38,6 +38,15 @@ reach the `io_context`.
   and a test that overflows traps with `RuntimeError: unreachable`, every
   time. When b2's release link gets its `-O`, measure again: the deepest
   build becomes debug's.
+- **The stack test must reach the intended wait.** Its reactor cases hold
+  work until a JavaScript macrotask posts the completing handler, delay entry
+  by 25 ms and require a nonzero-timeout poll. An already-expired C++ timer
+  can suspend in the initial poll without reaching the deeper wait. The
+  test reads `doPollAsync` as well as Asyncify's private runtime; a runtime
+  change that removes either observation must fail rather than skip it.
+  The 2026-10-14 re-review measured maxima of 1164/844 bytes in debug,
+  2896/1940 in release and 384/288 in release linked with `-O3`, with/without
+  exceptions respectively. `run_until` has its own yield measurement too.
 - **The run family is called on `main`'s stack alone**, or on the stack of
   another export the program lists for suspension. Anywhere else its first
   suspension fails: under JSPI it throws a `SuspendError`, and under

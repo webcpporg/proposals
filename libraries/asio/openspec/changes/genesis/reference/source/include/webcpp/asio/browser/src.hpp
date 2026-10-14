@@ -63,8 +63,8 @@ EM_JS(emscripten::EM_VAL, webcpp_asio_function, (emscripten::EM_VAL token, void*
     const state = Emval.toValue(token);
     const address = bridge >>> 0;
     return Emval.toHandle(event => {
-        // After the runtime aborted, a trap or abort(), WebAssembly's heap may be what the trap
-        // left, so nothing enters it, as Emscripten's own callbacks do nothing then.
+        // Once Emscripten marks the runtime aborted, nothing enters WebAssembly, as its own
+        // callbacks do nothing then. A raw WebAssembly trap need not set ABORT.
         if (!state.alive || ABORT) {
             return;
         }
