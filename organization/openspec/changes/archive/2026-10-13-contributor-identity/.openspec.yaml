@@ -5,7 +5,7 @@ webcpp:
   title: "organization: every contributor commits under their own git identity"
   kind: organization
   port_of: null
-  status: draft
-  release: null
-  implementation: https://github.com/webcpporg/webcpp
-  decided: null
+  status: implemented
+  release: "0.1.0"
+  implementation: https://github.com/webcpporg/webcpp/tree/9a268b7efa8a9b7eab8810bc024486288c689fab
+  decided: 2026-10-13
