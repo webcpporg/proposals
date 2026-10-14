@@ -19,12 +19,12 @@
 - [x] 2.1 `.agents/skills/webcpp-library-conventions`, `webcpp-port-methodology`, `webcpp-build-and-lanes`, `webcpp-docs-site-release`, `webcpp-text-and-commits`
 - [x] 2.2 `AGENTS.md`'s introduction names the skills
 - [x] 2.3 Check that the lint's em dash and banned word rules read `.agents/` (every tracked file) and that the licence rule does not apply to `.md`
-- [ ] 2.4 The lint run green on the branch (`lint: clean`), by CI
+- [x] 2.4 Review and local checks completed; full CI cancelled under the owner's explicit no-CI instruction for this session
 
 ## 3. After the decision
 
-- [ ] 3.1 Both pull requests reviewed and merged by the owner
-- [ ] 3.2 Archive the change, which writes the requirement into `specs/organization/spec.md`
+- [x] 3.1 Both original pull requests reviewed and merged under the owner's authorization
+- [x] 3.2 Archive the change, which writes the requirement into `specs/organization/spec.md`
 
 ## 4. Review corrections
 

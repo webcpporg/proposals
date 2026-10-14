@@ -43,6 +43,7 @@ None.
 - **Implementation:** pull requests to https://github.com/webcpporg/proposals and
   https://github.com/webcpporg/webcpp from the branch `agent-skills`. No build or existing lint-rule changes; a dedicated metadata workflow is added: the superproject's lint already reads every tracked file for the em dash and
   the banned word, and `tools/proposals.py check` every file of this repository.
-- **Status:** implementing; O1 to O5 resolved on 2026-10-13. See `reference/STATUS.md`.
+- **Status:** implemented in the 0.1.0 release in preparation; archived on 2026-10-13.
+  See `reference/STATUS.md` for merge and verification evidence. No release tag was created.
 - **Other proposals:** the identity rule used by `webcpp-text-and-commits` is already in the
   superproject through webcpp PR #1; this change does not archive `contributor-identity`.

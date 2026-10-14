@@ -9,7 +9,10 @@ webcpp PR #2 and archival of this proposal. The decisions are in `../design.md`.
 
 - Proposals PR #2 merged as `101f6e132302c65cbbd4266d3a1dde8e7932a3f8`.
 - Webcpp PR #2 now contains the review fixes in
-  `a971191c4c9a6fe4c0722b307bca893f82294b3a`; its final CI and merge are pending.
+  `a971191c4c9a6fe4c0722b307bca893f82294b3a`, merged as `5a441c1e90c5b242cf55c351edf6c79c37ef1f8d`.
+  The full CI run https://github.com/webcpporg/webcpp/actions/runs/38507470157 was
+  cancelled at the explicit request of the owner to run no CI during this session. The Agent skills
+  workflow (run 38507470100) had already passed before that instruction.
 - This follow-up repairs the custom skills in proposals, adds metadata validation, preserves
   OpenSpec's MIT notice and records the final design decisions.
 
@@ -29,8 +32,18 @@ The shared text skills are byte-identical. Both new workflows pass actionlint. T
 changes pass whitespace, source-licence and release-note checks. Independent review checked the
 chapter and command references, then reviewed the corrections without remaining blockers.
 
-## Remaining
+## Completion
 
-Wait for the final webcpp CI, merge PR #2, record its immutable merge commit, synchronize the
-specification, mark this proposal implemented for the 0.1.0 release in preparation, regenerate
-the index, validate every OpenSpec root and merge this follow-up. No release tag is created.
+The owner-authorized review and implementation are complete. Both original PRs are merged.
+The owner explicitly requested no CI during this session. The running full CI was cancelled;
+subsequent commits and merges use `[skip ci]`. No passing full-CI result is claimed for the
+final head; acceptance rests on the local checks and the independent review documented above.
+The organization specification now contains the Agent skills requirement, the metadata validation
+scenario and the narrow MIT documentation exception, preserving the original collection scenarios.
+All tasks are checked, and the proposal is archived as `2026-10-13-agent-skills` with status
+`implemented`, release `0.1.0` and the immutable webcpp merge commit above. As in the existing
+index, 0.1.0 means the release in preparation, not a published tag.
+
+The index was regenerated with `python3 tools/proposals.py readme`. Every OpenSpec root passed
+strict validation and the proposal tool's 17 tests passed. The final archive and its validation
+are reviewed in https://github.com/webcpporg/proposals/pull/3.
