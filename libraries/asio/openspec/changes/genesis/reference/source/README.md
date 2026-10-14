@@ -107,12 +107,15 @@ and its artifacts keep the relative layout produced by `webcpp.variants`.
 The documented binary-size table uses optimized release builds only. Build
 both page variants and measure their uncompressed `.wasm` files with:
 
-    b2 -a toolset=emscripten variant=release linkflags=-O3 libs/asio/example//asyncify
+    b2 -a toolset=emscripten variant=release cxxflags=-O3 linkflags=-O3 libs/asio/example//asyncify
 
 The link flag is required because the current b2 Emscripten toolset does not
 forward the compilation optimization level to the link. The guide records
-the toolchain, settings and measured sizes; JavaScript glue and runtime
-memory are outside this table.
+the toolchain and six profiles: `-O2`, `-O3`, `-Os`, `-Oz`, `-O3 -flto`
+and `-Oz -flto`. It reports Wasm and JavaScript bytes separately for both
+suspension variants. Use the same flags for compilation and link, with a
+separate build directory per profile. Runtime memory and transfer
+compression are outside the tables.
 
 ## Documentation
 

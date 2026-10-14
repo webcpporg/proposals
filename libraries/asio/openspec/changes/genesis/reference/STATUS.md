@@ -1,5 +1,59 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 14 follow-up: six release profiles, 2026-10-14
+
+The owner authorized compiling all six proposed profiles before moving to the
+next task. The isolated library is `a4ecb6b` on `work/task14-guide`; `source/`
+matches all 72 tracked files. No production code or build rules changed in this
+follow-up. No CI, push, merge or task 15 work ran.
+
+Built all three examples in JSPI and Asyncify for -O2, -O3, -Os, -Oz,
+-O3 -flto and -Oz -flto: 36 page modules. Each profile used a fresh isolated
+build directory, release/NDEBUG, and the same flags at compile and link.
+Every effective optimization flag was checked in the verbose build log, and
+LTO object files were verified to contain LLVM bitcode. Every exact page
+module ran under Node 26.7.0 and matched its expected output, without stderr.
+Emscripten 6.0.11, Boost 1.92, C++20, macOS arm64; exception settings and
+Asyncify's 8192-byte suspension stack were unchanged across profiles.
+
+The guide now contains three matrices with Wasm and JavaScript bytes separately,
+plus commands that reproduce all profiles. All 72 recorded sizes were checked
+against the files and the rendered documentation. MrDocs, Asciidoctor and
+source/rendered checks passed. No full library suite or real-browser run was
+performed per profile; the matrix establishes the examples' behavior under Node.
+
+| Flags | Example | JSPI Wasm | Asyncify Wasm | JSPI JS | Asyncify JS |
+| --- | --- | ---: | ---: | ---: | ---: |
+| -O2 | asio_quick_start | 81,162 | 157,410 | 79,404 | 90,706 |
+| -O2 | asio_timers | 82,969 | 162,160 | 79,394 | 90,696 |
+| -O2 | asio_turn_limit | 78,205 | 149,904 | 79,402 | 90,704 |
+| -O3 | asio_quick_start | 80,979 | 153,459 | 78,899 | 89,248 |
+| -O3 | asio_timers | 82,724 | 157,831 | 78,889 | 89,238 |
+| -O3 | asio_turn_limit | 78,085 | 146,529 | 78,897 | 89,246 |
+| -Os | asio_quick_start | 74,490 | 147,893 | 78,899 | 88,867 |
+| -Os | asio_timers | 74,987 | 150,501 | 78,889 | 88,857 |
+| -Os | asio_turn_limit | 71,052 | 139,673 | 78,897 | 88,661 |
+| -Oz | asio_quick_start | 70,771 | 148,813 | 78,328 | 88,296 |
+| -Oz | asio_timers | 72,022 | 153,293 | 78,318 | 88,286 |
+| -Oz | asio_turn_limit | 67,838 | 141,185 | 78,326 | 88,090 |
+| -O3 -flto | asio_quick_start | 86,096 | 143,667 | 79,747 | 89,240 |
+| -O3 -flto | asio_timers | 87,840 | 148,668 | 79,737 | 89,496 |
+| -O3 -flto | asio_turn_limit | 83,189 | 136,877 | 79,745 | 89,238 |
+| -Oz -flto | asio_quick_start | 65,712 | 127,067 | 79,176 | 88,871 |
+| -Oz -flto | asio_timers | 67,968 | 132,768 | 79,166 | 89,386 |
+| -Oz -flto | asio_turn_limit | 62,824 | 120,140 | 79,174 | 89,104 |
+
+-Oz -flto produced the smallest Wasm and combined two-file payload in every
+example/variant. -Os beat -Oz for Asyncify Wasm without LTO; -O3 -flto increased
+JSPI Wasm size. These are size measurements, not performance benchmarks.
+
+Evidence in the isolated superproject: `.local/task14-release-matrix.json`,
+`.local/measure-asio-release-matrix.py`, `.local/task14-matrix-*.log`,
+`bin/task14-matrix-{o2,o3,os,oz,o3-lto,oz-lto}` and `bin/task14-matrix-doc`.
+The earlier release correction below remains the source of the full suite,
+lint and browser results. The primary checkout remains unchanged.
+Task 15 has not started.
+
 ## Task 14 follow-up: optimized release sizes, 2026-10-14
 
 The owner requested release-only binary-size documentation. The isolated library

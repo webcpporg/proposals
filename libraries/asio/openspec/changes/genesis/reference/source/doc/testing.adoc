@@ -142,39 +142,98 @@ https://webcpporg.github.io/webcpp/report/.
 [#asio-testing-sizes]
 === How to compare the WebAssembly sizes
 
-Build the page-ready variants of all three examples and their table in
-optimized release mode. Published binary sizes always use release builds:
+Published binary sizes always use release builds. Compare the same three
+page programs under six optimization profiles, with identical exception
+settings and suspension-stack size. Each command builds JSPI and Asyncify.
+Run from the superproject root:
 
 [source,bash]
 ----
-b2 -a toolset=emscripten variant=release linkflags=-O3 libs/asio/example//asyncify
+for profile in o2 o3 os oz o3-lto oz-lto; do
+    case "$profile" in
+        o2) flags="-O2" ;;
+        o3) flags="-O3" ;;
+        os) flags="-Os" ;;
+        oz) flags="-Oz" ;;
+        o3-lto) flags="-O3 -flto" ;;
+        oz-lto) flags="-Oz -flto" ;;
+    esac
+    b2 -a "--build-dir=bin/asio-size-$profile" toolset=emscripten \
+        variant=release "cxxflags=$flags" "linkflags=$flags" \
+        libs/asio/example//asyncify
+done
 ----
 
-`variant=release` compiles with `-O3` and `NDEBUG`. The explicit
-`linkflags=-O3` also optimizes the final WebAssembly and JavaScript; the
-current b2 Emscripten toolset does not forward the compilation optimization
-level to its link command automatically. Both steps must be optimized.
+`variant=release` supplies `NDEBUG` and disables debug symbols. The explicit
+`cxxflags` selects the optimization level instead of the release default
+`-O3`; the same level must be passed through `linkflags` for Emscripten's
+final WebAssembly and JavaScript optimization. The current b2 toolset does
+not forward it automatically. Keep one build directory per profile:
+free-form flags do not select separate output paths in b2.
 
-The build prints three rows and writes `asio.sizes.md` under its example
-output directory. Each row contains the `.wasm` byte count for JSPI and
-Asyncify and their ratio. These are page modules, built without the Node
-test harness. The table excludes JavaScript glue, transfer compression and
-runtime memory; it measures complete example modules, not asio's isolated
-contribution. Exceptions are enabled: WebAssembly exceptions for JSPI and
-JavaScript-based exceptions for Asyncify, with its 8192-byte suspension
-stack. No LTO or transfer compression was requested.
+`-O2` and `-O3` favor execution performance; `-Os` and `-Oz` favor smaller
+code. `-flto` enables link-time optimization across translation units and
+must be used when compiling their object files as well as when linking.
+Neither a size-oriented level nor LTO guarantees a smaller result in every
+program. These measurements do not benchmark execution speed.
+
+Each build prints its Wasm table and writes `asio.sizes.md` beside the
+variant manifests. The manifests record the Wasm byte counts; the JavaScript
+columns below measure the corresponding scripts themselves. These are
+complete page modules without the Node test harness, not asio's isolated
+contribution. Add the matching Wasm and JavaScript columns for the two-file
+uncompressed payload. Compression, loader/HTML assets, HTTP overhead and
+runtime memory are outside these measurements.
 
 Measured on 2026-10-14 with Emscripten 6.0.11, Boost 1.92 and {cpp}20, on
-macOS arm64, using the release command above:
+macOS arm64. Exceptions are enabled: WebAssembly exceptions for JSPI and
+JavaScript-based exceptions for Asyncify, with its 8192-byte suspension
+stack. All values below are bytes, without transfer compression. All 36
+page modules were rebuilt from scratch and executed under Node 26.7.0;
+each matched its example's `.expected` output. Compile and link commands
+were checked for the requested optimization level, and LTO object files
+were checked to contain LLVM bitcode. This validates these examples, not
+every library operation or browser under every optimization profile.
 
-[cols="3,2,2,2",options="header"]
+.asio_quick_start
+[cols="2,2,2,2,2",options="header"]
 |===
-| Example | JSPI (.wasm bytes) | Asyncify (.wasm bytes) | Asyncify / JSPI
-| `asio_quick_start` | 80,979 | 153,459 | 1.90
-| `asio_timers` | 82,724 | 157,831 | 1.91
-| `asio_turn_limit` | 78,085 | 146,529 | 1.88
+| Flags | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
+| `-O2` | 81,162 | 157,410 | 79,404 | 90,706
+| `-O3` | 80,979 | 153,459 | 78,899 | 89,248
+| `-Os` | 74,490 | 147,893 | 78,899 | 88,867
+| `-Oz` | 70,771 | 148,813 | 78,328 | 88,296
+| `-O3 -flto` | 86,096 | 143,667 | 79,747 | 89,240
+| `-Oz -flto` | 65,712 | 127,067 | 79,176 | 88,871
 |===
 
-Compiler versions and application code affect the result. Rebuild both
-variants with matching settings when comparing them. The three examples
-also passed their expected-output checks in release under both variants.
+.asio_timers
+[cols="2,2,2,2,2",options="header"]
+|===
+| Flags | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
+| `-O2` | 82,969 | 162,160 | 79,394 | 90,696
+| `-O3` | 82,724 | 157,831 | 78,889 | 89,238
+| `-Os` | 74,987 | 150,501 | 78,889 | 88,857
+| `-Oz` | 72,022 | 153,293 | 78,318 | 88,286
+| `-O3 -flto` | 87,840 | 148,668 | 79,737 | 89,496
+| `-Oz -flto` | 67,968 | 132,768 | 79,166 | 89,386
+|===
+
+.asio_turn_limit
+[cols="2,2,2,2,2",options="header"]
+|===
+| Flags | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
+| `-O2` | 78,205 | 149,904 | 79,402 | 90,704
+| `-O3` | 78,085 | 146,529 | 78,897 | 89,246
+| `-Os` | 71,052 | 139,673 | 78,897 | 88,661
+| `-Oz` | 67,838 | 141,185 | 78,326 | 88,090
+| `-O3 -flto` | 83,189 | 136,877 | 79,745 | 89,238
+| `-Oz -flto` | 62,824 | 120,140 | 79,174 | 89,104
+|===
+
+In these examples, `-Oz -flto` produced the smallest Wasm modules and the
+smallest combined Wasm-plus-JavaScript payloads. Without LTO, Asyncify's
+`-Os` Wasm modules were smaller than its `-Oz` modules. Adding LTO to `-O3`
+increased the JSPI Wasm size, while reducing Asyncify's. Treat the table as
+measured evidence for this toolchain and these programs; rebuild and test
+your application's own candidates before selecting its profile.
