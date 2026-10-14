@@ -8,8 +8,9 @@ decided on 2026-10-11 that trystero shares one connection between the rooms of a
 approved the specification (`reference/spec.md`) the same day, in advance of a clean review: the
 independent review approved it after its fourth re-review. The plan (`reference/plan.md`) cuts it
 into five increments and 22 tasks, executed task by task with a review of each. This document
-records the decisions the specification rules on (its rulings 1 to 14) and the sections it
-designs.
+records those original decisions and the owner's 2026-10-14 amendment in
+[reference/password-domains.md](reference/password-domains.md). The active specification in
+`specs/trystero/spec.md` supersedes mixed-password sharing in the preserved original references.
 
 The wire does not change. What does change is who owns a connection (the app, not the room), what
 a kick means (one room's binding, not the connection) and how a peer that misbehaves in one room
@@ -40,7 +41,7 @@ is kept from costing the others.
 
 ### D1. The public shape: `app`, and the standalone room removed (ruling 1)
 
-Rooms are joined through an `app`; `app::join` returns `boost::system::result<room>`. The standalone
+Rooms are joined through an `app` with one immutable password; `app::join` returns `boost::system::result<room>`. The standalone
 `room` constructor and `room_config` are removed in the increment that brings `app`, so no program
 can fall back into one id per room (two standalone rooms with one id meet a Trystero JS peer in one
 of them only). Alternative rejected: keeping the standalone form as an app of one room; it can come
@@ -98,9 +99,9 @@ larger of `handshake_timeout` and 10 s, plus 1 s (11 s by default), doubling per
 pair in the same room to 5 minutes, until a completed handshake or the connection's end. Meanwhile
 only the lower id (the handshake's initiator) refuses the peer, and keeps its frames; the higher id
 refuses nothing but drops the peer's frames of that room until it sends presence. So two honest peers
-cannot alternate kicks, a wrong password costs at most six reports in ten minutes on the lower id
+cannot alternate kicks, invalid room proofs from an already authenticated peer cost at most six reports in ten minutes on the lower id
 only, and no announcement is restarted while the connection stays live. Alternative rejected:
-Trystero's behaviour (bound again by the next signal), under which a wrong password in one room loops
+Trystero's behaviour (bound again by the next signal), under which repeated invalid proofs in one room loop
 reports and announcements without end.
 
 ### D8. The initiator accepts an answer to any of its last 8 challenges (ruling 9)
@@ -135,16 +136,30 @@ peer advertised 65 tokens would drop every connection.
 channels every room's negotiations make; `room_options::memory`, the app's when null, receives the
 rest of a room. A binding fails and frees its own drain waiters in the room's resource when it
 detaches (ruling 8), so no object of the app keeps an allocation of a room's resource after the room
-has ended. A binary payload received by a room with its own resource is copied into it once.
+has ended. The app copies its immutable password into its own resource, and rooms read it without a
+per-room password copy. A binary payload moves when its message buffer and room resources match,
+and copies once otherwise; chunked transfers assemble in the room resource. Text always copies.
 
-### D12. A passwordless room is not private from the app's other rooms (ruling 7), the password exposure is accepted (ruling 4)
+### D12. One immutable password domain per app (owner amendment, 2026-10-14)
 
-Presence gives every peer connected to the app the token of every room the app is in, the relays
-give anyone the topics, and the token alone binds a room over a shared connection, as in Trystero
-JS. A room that must be private takes a password or an `app` of its own. A room with a password
-bound by presence or reuse was not reached through its sealed signaling, so a peer of another room
-can collect material for an offline guess of its password, as with Trystero JS; closing it needs a
-wire change Trystero would share. The page states both plainly.
+`app_config::password`, immediately after `self_id`, is copied into the app's resource and
+remains immutable. `room_options` has no password and every room reads the app's. Different
+passwords require separate app objects with distinct self ids; their connections, registry,
+presence and token-advertisement state are never reused. A changed password requires a new app.
+Initial signaling sealed with this password authenticates the domain before connection adoption,
+so every peer that reaches another protected room through presence already knows its password.
+A passwordless app's connected peers can still enter its other rooms by token.
+
+The Trystero JS 0.26.0 wire remains unchanged, including its one-way room handshake. The responder
+answers and passes its side; the lower id verifies the response. An upstream JS page that mixes
+passwords still exposes its own higher-id rooms to admission without their password, and can
+provide offline-guess material. The C++ app-domain guarantee concerns admission to the C++ app,
+not repair of a remote mixed-password JS page. JS pages should also use one password per app,
+with separate page contexts for different domains. Known-password peers that send wrong room
+proofs are still kicked and paced under the existing rebinding rules.
+
+The historical mixed-password decision and its stronger handshake claim are superseded by this
+amendment. Adding reciprocal wire proofs was rejected because it would change JS compatibility.
 
 ### D13. Relays stay per room (ruling 5)
 
@@ -172,8 +187,9 @@ the pages follow. No state of the tree has both the standalone constructor and `
   return later as an app of one room.
 - [Programs relied on unlinked rooms by default] -> they are linked until they split their apps
   (ruling 10); documented.
-- [A peer with a corrected password waits for the step that runs] -> at most 5 minutes after many
-  failures.
+- [Changing one room's password now requires another app] -> passwords belong to immutable app
+  domains, with distinct self ids and connections. Correcting a faulty room proof within the same
+  authenticated domain retains the existing backoff.
 - [A lower-id peer can rebind a higher-id C++ room at its own pace] -> one `handshake_timed_out` per
   `handshake_timeout`, as a connection does today.
 - [Two residual cases with a Trystero JS lower id: a reuse binding inside the dropping window, and a
@@ -183,16 +199,17 @@ the pages follow. No state of the tree has both the standalone constructor and `
 - [The branch is based on `a7d04b8`, before the genesis commit `160f431`] -> it must be rebased onto
   the genesis commit before the gates; the interop flood fix `6b1e4ba` is superseded by `4aef1c0`
   and dropped then.
-- [The password exposure, and the passwordless room open to the app's other rooms] -> accepted as
-  Trystero JS has them; stated in the page's security section; an upstream report is pending.
+- [A remote JS page mixes room passwords] -> its upstream one-way handshake exposure remains;
+  C++ domain isolation protects the C++ app only. The docs state this boundary explicitly.
+- [Passwordless app peers enter its other rooms by token] -> documented; protected rooms use a
+  separate app with a password and distinct self id.
 
 ## Migration Plan
 
 Existing users replace `room r(ex, f, {.app_id = "a", .password = "p"}, "lobby");` by
-`app a(ex, f, {.app_id = "a"}); auto r = a.join("lobby", {.password = "p"});` and test the result:
-`room_config::{app_id, self_id, relay_urls, relay_redundancy, ice_servers}` become `app_config`,
-`room_config::log` becomes `app_config::log`, `room_config::{password, handshake_timeout,
-max_receive_bytes}` become `room_options`, `room_config::memory` becomes `app_config::memory` (and
+`app a(ex, f, {.app_id = "a", .password = "p"}); auto r = a.join("lobby");` and test the result:
+`room_config::{app_id, self_id, password, relay_urls, relay_redundancy, ice_servers}` become `app_config`,
+`room_config::log` becomes `app_config::log`, `room_config::{handshake_timeout, max_receive_bytes}` become `room_options`, `room_config::memory` becomes `app_config::memory` (and
 `room_options::memory` for a room's own), `room::on_error` reports only problems with peers while
 `app::on_error` reports an unusable configuration, two peers in one process become two `app`
 objects, and rooms that must not be linked to one program use one `app` each. The library is
@@ -200,6 +217,7 @@ unpublished at 0.1.0's successor, so the break reaches only users of 0.1.0.
 
 ## Open Questions
 
-None open in the specification (all fourteen rulings are made). Open in the execution: the
-rebase onto `160f431`, the gates G1 and G2 (push, merge, bump the superproject), and the owner's
-review of each task, which stopped the execution on 2026-10-11 after the review of task 5c.
+The authentication decision is resolved by the owner's 2026-10-14 password-domain amendment.
+Implementation, local validation and integration remain tracked in `tasks.md`. The original
+reference files, patch history and uncommitted diff remain immutable evidence. No CI is authorized
+for this execution.

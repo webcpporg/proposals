@@ -7,5 +7,5 @@ webcpp:
   port_of: "Trystero 0.26.0"
   status: implementing
   release: null
-  implementation: null
+  implementation: "https://github.com/webcpporg/trystero/tree/2e2dcd465fbc13b77ff6dc9939bdea29a0f86af1"
   decided: 2026-10-11

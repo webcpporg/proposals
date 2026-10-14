@@ -1,4 +1,75 @@
-# webcpp::trystero, shared connection: where the implementation stands, and how to resume
+# webcpp::trystero, shared connection: implementation and release status
+
+## Resumed execution, 2026-10-14
+
+The owner requested completion and prohibited CI during this session. Work resumed in an
+isolated checkout, recovering the recorded patches onto library main `957eae5` while preserving
+its newer mesh and configuration fixes. Superseded patch `0022` was dropped during recovery.
+The original reference specification, plan, patches and uncommitted diff remain unchanged.
+
+### Owner decision: immutable password domains
+
+The initial implementation exposed a conflict between bilateral room-password authentication
+and the one-way Trystero JS 0.26.0 handshake. The owner explicitly chose JS 0.26.0 compatibility
+with sharing restricted by password. The approved amendment is `password-domains.md`.
+
+`app_config::password`, after `self_id`, is copied into the app's memory resource and remains
+immutable. `room_options::password` is removed. Every room uses the app password for initial
+sealed signaling and its room handshake. Different passwords require separate apps and distinct
+peer ids. Initial signaling authenticates the domain before a connection can be reused. No
+protocol constant, frame layout or proof format changes. A remote JS page that mixes room
+passwords retains its own upstream one-way-handshake exposure; this C++ API does not repair it.
+
+The mixed-password-room regression was replaced by an executable app-domain boundary test in
+both id orders. A passwordless app's rooms share openly within that domain as a positive
+control; presence, handshake and application frames on its connection cannot reach a protected
+app. Incorrect room proofs after successful domain authentication still exercise failure,
+backoff and recovery within a single password domain.
+
+### Implementation and local evidence
+
+Binding by presence and kept frames, signaling reuse, room-scoped departure and kicks,
+farewell completion, bounded rebinding, the last eight challenges, flood fairness and per-room
+allocation are implemented. Review also reproduced and fixed synchronous log-callback
+reentrancy in adoption, activation, error reporting, queue drainage, joining and farewell,
+and same-binding drain waiter completion. The new tests exercise public app/room operations.
+
+- All 50 shared cases pass in their applicable variants. Local Clang and Emscripten complete
+  library suites and examples pass, including allocation,
+  exceptions-off and hardened variants; GCC 15 core suites pass.
+- Address and undefined sanitizers with `norecover` pass for shared, connection and app_impl.
+  Callback state in the new fixtures outlives all handles that can invoke it during destruction.
+- The protocol oracle is byte-identical to Trystero JS 0.26.0.
+- Final native interoperability passes 27/27 scenarios and browser interoperability 24/24.
+  They include both id orders, established-room reuse, protected
+  app isolation, wrong-proof pacing, flood ping completion and recovery from a held handshake.
+  The delayed second-room fixture explicitly verifies JS presence precedes the held frame.
+- Strict MrDocs, doc-check, rendered documentation and lint checks pass. Final static analysis
+  rechecks all Trystero units and aggregates; unchanged libraries reuse their completed full
+  analysis. Superproject Jamroot checks pass, and the compiler matrix plan was inspected.
+  Windows/Linux-only matrix lanes were not executed locally. Text payloads copy into pmr
+  strings; only binary vectors can move a matching-resource buffer.
+- An independent whole-branch review against the amended requirements found no remaining
+  important issues after the lifecycle fixes.
+
+### Integration and remaining release work
+
+G1 is complete in [trystero PR #1](https://github.com/webcpporg/trystero/pull/1), merged as
+`2e2dcd465fbc13b77ff6dc9939bdea29a0f86af1`. The owner amendment and final review fixes are
+`ea184f8`; earlier resumed commits through `c870c1c` remain in its ancestry. G2 is complete in
+[webcpp PR #3](https://github.com/webcpporg/webcpp/pull/3), which pins that library commit and
+updates allocation documentation in merge `d9e5fa635c85a6f2281db81b1bc25dcef5800e7c`.
+The merge has the same library tree as the locally validated head. GitHub reported no Actions executions for the published feature and merge commits.
+The proposal remains `implementing` until the merged superproject is released. No release is
+published by this implementation task. CONTRIBUTING requires a release before changing the
+status to `implemented` and archiving the proposal.
+
+CI has not been executed. No upstream issue or other external report was sent.
+
+## Historical handoff, 2026-10-13
+
+The following text records the original handoff and is historical. Its branch names, worktree
+paths and pending tasks describe that earlier state, not the resumed execution above.
 
 Written 2026-10-13, when this proposal took the work in. `spec.md` is the specification of
 2026-10-11 (approved by the owner that day); `plan.md` is the plan (22 tasks, its frontmatter still

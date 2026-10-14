@@ -14,14 +14,18 @@ between the rooms of an app, as Trystero does, and that the difference goes away
 
 - **A new public `app`** (`<webcpp/trystero/app.hpp>`): one peer id per app, one connection per
   remote peer, shared by every room of the app that both peers are in. `app_config` holds what the
-  rooms share (app id, self id, relays, ICE servers, `idle_timeout`, log, memory) and
-  `room_options` what a room adds (password, handshake timeout, receive bound, and later its own
+  rooms share (app id, self id, immutable password, relays, ICE servers, `idle_timeout`, log, memory) and
+  `room_options` what a room adds (handshake timeout, receive bound and its own
   memory). Rooms are joined through `app::join`, which returns a `boost::system::result<room>`.
 - **BREAKING:** the standalone `room(executor, factory, room_config, room_id)` and `room_config`
   are removed. The migration is mechanical and the page states it.
 - **BREAKING:** the default peer id is now one per app, not one per room: the rooms of a program
   are linked on the relays and to peers by default, and rooms that must stay unlinkable are joined
   through separate `app` objects.
+- **BREAKING:** one immutable `app_config::password` for all rooms of an app, with no per-room
+  override. Different passwords require separate app objects and distinct self ids. Initial
+  sealed signaling authenticates the domain before room reuse. The JS one-way handshake wire is
+  preserved; a remote JS page that mixes room passwords retains its own upstream exposure.
 - **New errors** `already_joined = 14` and `too_many_rooms = 15`; the message of
   `invalid_configuration` becomes "the configuration is unusable".
 - A connection layer (`detail::app_impl`, `detail::connection`, `detail::binding`) replaces
@@ -52,12 +56,15 @@ None.
 
 - **Kind:** a port: it gives the port Trystero 0.26.0's model of one connection per remote peer
   per app (`"port-of"`: Trystero 0.26.0).
-- **Implementation:** a local branch, unpublished: the library's branch `shared-connection`
-  (25 commits from 2026-10-11, based on `a7d04b8`, an ancestor of the genesis commit `160f431`);
-  `reference/patches/` holds its 25 commits as patches and `reference/uncommitted.diff` the
-  branch's uncommitted work on task 6. Nothing was pushed.
+- **Implementation:** integrated in [trystero PR #1](https://github.com/webcpporg/trystero/pull/1),
+  library commit `2e2dcd4`, then pinned by [webcpp PR #3](https://github.com/webcpporg/webcpp/pull/3).
+  The recovered original branch remains recorded in `reference/patches/` and
+  `reference/uncommitted.diff`.
 - **Dependencies:** none new.
-- **Status:** implementing: tasks 0 to 5c of `reference/plan.md` are done and the tasks after them
-  are not (`reference/STATUS.md`); release none.
+- **Status:** resumed implementation on 2026-10-14, with the owner-approved password-domain
+  amendment in `reference/password-domains.md` and the live task checklist in `tasks.md`.
+  `reference/plan.md`, `reference/spec.md`, patches and `reference/uncommitted.diff` remain
+  historical evidence. Code is integrated and locally validated; the status remains `implementing` pending a release.
+  No CI was executed and no release was published.
 - **Other proposals:** modifies the capability the `genesis` creates; the move of trystero onto
   webcpp::asio, webcpp::webrtc and webcpp::crypto is a change of its own that comes after this one.
