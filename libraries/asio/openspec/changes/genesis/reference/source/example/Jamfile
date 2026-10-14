@@ -9,3 +9,18 @@ project : requirements <library>/webcpp/asio//asio ;
 import webcpp ;
 
 webcpp.targets native emscripten ;
+
+webcpp.example asio_quick_start.cpp ;
+webcpp.example asio_turn_limit.cpp ;
+webcpp.example asio_timers.cpp ;
+
+# A page needs the completion helper header, but not the Node harness.
+webcpp.variants page-asio_quick_start : asio_quick_start.cpp
+  : <include>../../../tools/node-test/include ;
+webcpp.variants page-asio_turn_limit : asio_turn_limit.cpp
+  : <include>../../../tools/node-test/include ;
+webcpp.variants page-asio_timers : asio_timers.cpp
+  : <include>../../../tools/node-test/include ;
+webcpp.size-table asio
+  : page-asio_quick_start page-asio_turn_limit page-asio_timers ;
+webcpp.lane asyncify : asio.sizes.md : emscripten ;

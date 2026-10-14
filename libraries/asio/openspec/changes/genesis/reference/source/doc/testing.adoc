@@ -7,6 +7,26 @@
 [#asio-testing]
 == Testing
 
+[#asio-testing-application]
+=== How to test your application
+
+For a small program with deterministic text output, follow the compiled
+examples: keep an `.expected` file beside its source and declare the program
+with `webcpp.example` in its example Jamfile. Run the native target first,
+then Emscripten with JSPI and Asyncify. Compare observable completions and
+error values; avoid exact elapsed-time assertions, since the host can
+resume a ready operation later than its deadline.
+
+Keep the context and objects captured by handlers alive until their work
+finishes. A cancelled operation must still complete with its cancellation
+error; merely requesting cancellation does not prove that it was delivered.
+Use <<asio-quick-start>> and <<asio-timers-example>> as executable starting
+points. Native and Node runs do not establish browser rendering behaviour;
+use a real browser when your contract depends on page events or animation.
+
+[#asio-testing-library]
+=== What the library checks
+
 asio's tests are under `test/`, each declared in `test/Jamfile` with
 webcpp's rules, for two targets, native and emscripten:
 {n-tests} tests in all, {n-tests-native} natively and {n-tests-emscripten}
@@ -46,11 +66,13 @@ b2 toolset=emscripten libs/asio/test libs/asio/example
 
 asyncify::
 A lane of asio's own, on emscripten: every browser test again under
-Asyncify, the other suspension variant, and the size table of both:
+Asyncify, the other suspension variant, and the size table of both. To
+execute the guide examples under Asyncify too, run the second command:
 +
 [source,bash]
 ----
 b2 toolset=emscripten libs/asio/test//asyncify libs/asio/example//asyncify
+b2 toolset=emscripten webcpp-suspend=asyncify libs/asio/example
 ----
 
 browser::
@@ -115,3 +137,20 @@ examples by lanes, where each cell says whether that program passed in that
 lane, or how it failed, at compile time, at link time or when it ran. The
 matrix is published with the documentation, at
 https://webcpporg.github.io/webcpp/report/.
+
+[#asio-testing-sizes]
+=== How to compare the WebAssembly sizes
+
+Build the page-ready variants of all three examples and their table:
+
+[source,bash]
+----
+b2 toolset=emscripten libs/asio/example//asyncify
+----
+
+The build prints three rows and writes `asio.sizes.md` under its example
+output directory. Each row contains the `.wasm` byte count for JSPI and
+Asyncify and their ratio. These are page modules, built without the Node
+test harness. The table excludes JavaScript glue, transfer compression and
+runtime memory. Compare matching compiler settings and build variants;
+debug artifact sizes do not predict release download sizes.

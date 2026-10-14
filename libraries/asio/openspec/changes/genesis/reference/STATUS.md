@@ -1,5 +1,93 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 14 completed locally, 2026-10-14
+
+This update supersedes the task statuses below. Tasks 15 to 23 remain unstarted.
+The owner authorized task 14 and requested Diataxis writing while retaining the
+superproject's AsciiDoc and MrDocs documentation pipeline. No CI, push or merge ran.
+The primary superproject remains `eba8545`, with its Asio library at `a179adc`.
+Tasks 12 to 14 remain in the isolated checkout.
+
+The isolated superproject branch `work/asio-task9-review` is `771a247`; the library
+branch `work/task14-guide` is `f6ce577`, based on task 13's `3d22924`.
+`source/` matches all 72 tracked library files byte for byte. The new `0013` patch
+records the build correction; historical patches `0001` to `0012` are unchanged.
+
+### Guide, examples and contracts
+
+- Added a guided first-program tutorial, task-focused timer and turn-limit sections,
+  application-testing instructions and navigation by learning, doing, understanding
+  and reference needs. The existing single-page layout, AsciiDoc, generated MrDocs
+  reference and stable section titles remain in use.
+- Added three compiled examples with exact `.expected` files. The quick start arms
+  its 50 ms timer inside the posted handler. The timers example shares one clock
+  origin for 60/20/40 ms deadlines and demonstrates cancellation after restarting
+  the drained context. Their output order does not rely on setup speed.
+- Added nine numbered guarantees, moving existing anchors into one chapter and
+  preserving their identifiers. The text qualifies polling-turn bounds, timed-call
+  scheduling, supported callers, assertion behaviour and allocator exclusions.
+  Corrected the run-family test's reference to its general semantics section.
+- README code and output are checked copies of the compiled quick start. Every
+  shown guide listing includes its real source or expected output.
+- The examples use the existing completion helper when main finishes after suspension.
+  Page variants receive its header directory without the Node test harness.
+
+### Reproduced defects and review
+
+The actual WebAssembly example runner selected `browser-src.o` as expected output,
+while the size-table action attempted to parse it as JSON. Inherited library source
+usage appended that object to each make action's sources. Two scratch integration
+regressions reproduced those failures before the fix. The actions now select the
+expected file and JSON manifests by suffix, preserving their build dependencies.
+The example regression also proves that deliberately wrong output still fails.
+
+Independent read-only review found two Important issues: executable-only tutorial
+targets did not run their programs, and suspended Asyncify examples did not report
+completion to the test harness. Both were reproduced and fixed. The five individual
+guide commands now name `.output` targets, actually run and capture the documented
+text. The tutorial explains that output is captured, not automatically printed.
+There were no Critical or Minor findings. The later tool fix was validated by the
+parent with regression and integration tests; it was not independently re-reviewed.
+
+### Validation
+
+After commit, fresh builds passed 15 native and 78 WebAssembly test markers, plus
+all three examples natively, under JSPI and under Asyncify. The real browser lane
+passed too. Every example output matched its fixture. Each missing fixture had
+first been observed failing on native and Emscripten builds.
+
+All 25 Emscripten tool integration cases, the example-runner tests and five variant
+tests passed. Full lint was clean: 91 compilation commands, 33 translation units,
+Pyright and the remaining text and boundary checks. MrDocs, Asciidoctor, source and
+rendered documentation checks passed. Navigation and all nine guarantee anchors
+occur exactly once in the generated HTML.
+
+The integrated browser rejected a direct local-file URL, so visual inspection was
+not completed and no workaround was attempted. Automated rendered-HTML checks passed.
+The OpenSpec CLI is unavailable; strict CLI validation remains unperformed.
+
+### Measured page-module sizes
+
+Emscripten 6.0.11 debug builds, Boost 1.92, macOS arm64. Values are `.wasm` bytes,
+excluding JavaScript glue, compressed transfer size and runtime memory:
+
+| program | jspi | asyncify | asyncify / jspi |
+| --- | ---: | ---: | ---: |
+| page-asio_quick_start | 3,481,322 | 4,224,803 | 1.21 |
+| page-asio_timers | 3,489,499 | 4,246,508 | 1.22 |
+| page-asio_turn_limit | 3,368,317 | 4,060,449 | 1.21 |
+
+These measurements are not release download-size estimates. The build generates
+this table; the guide explains its scope and the command to regenerate it.
+
+The complete post-commit log is `libs/asio/.superpowers/sdd/plan/task-14-tests.log`
+in the isolated checkout. Other task 14 logs and the verification script are beside
+it. The script builds native tests/examples, WebAssembly tests and the browser lane,
+JSPI examples and the size table, Asyncify examples, and the documentation in fresh
+`bin/task14-committed-*` directories, using `.local/review-b2 -a -j4 --verbose-test`.
+Proposal validation passed: 22 proposals with zero problems and all 17 checker tests.
+Keep the isolated checkout. The next task is 15 and has not started.
+
 ## Task 13 completed locally, 2026-10-14
 
 This update supersedes the task statuses below. Tasks 14 to 23 remain unstarted.

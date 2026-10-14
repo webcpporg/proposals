@@ -31,7 +31,7 @@ keeps a pointer to each, by key, in a map allocated with the context's
 allocator. Natively there is no bridge: `browser/` builds on emscripten
 alone.
 
-[[asio-invariant-4]]*A browser event delivered through the bridge only
+*A browser event delivered through the bridge only
 posts; a listener is no outstanding work.* A registration's `deliver` posts
 what the event completes or notifies to the io_context, and does nothing
 else: it never polls, runs or dispatches. The post wakes a suspended `run`
@@ -61,7 +61,7 @@ nor change it, `delivering()` taking no value; the export those functions
 call is the JavaScript boundary's, declared in a `detail` header, and
 calling it from {cpp} is outside the contract.
 
-[[asio-invariant-5]]*A registration's key is never reused; an event of a
+*A registration's key is never reused; an event of a
 removed key, or of a destroyed io_context, finds nothing.* Keys are
 `std::uint64_t` values counted from 1, which JavaScript holds as a
 `BigInt`, so that no count of registrations a program reaches wraps around.

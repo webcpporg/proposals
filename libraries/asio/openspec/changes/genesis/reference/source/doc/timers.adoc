@@ -59,12 +59,9 @@ This checks Beast's timeout integration. It does not open a network
 connection or provide a browser WebSocket transport.
 
 [#asio-timers-guarantees]
-=== Guarantees
+=== What the timer tests establish
 
-[start=8]
-. [[asio-invariant-8]]Boost's timers and Beast's timeouts complete through
-  the reactor on both targets. The timers keep Boost's cancellation
-  semantics, including cancellation of an individual wait through its slot.
+<<asio-invariant-8,Guarantee 8>> records the timer contract.
 
 The `timers_native` test runs natively. The `timers` browser tests run
 WebAssembly under Node with JSPI and Asyncify, each with and without
@@ -73,3 +70,35 @@ and 40 milliseconds against completion order 20, 40, 60; a system timer;
 whole-timer and per-operation cancellation; and Beast's handshake timeout.
 The three steady deadlines share one starting instant. The tests check
 completion order and error values, without requiring exact elapsed times.
+
+[#asio-timers-example]
+=== How to schedule deadlines and cancel a wait
+
+Use a common clock origin when several waits belong to the same schedule.
+This program registers 60, 20 and 40 ms deadlines, then runs their handlers.
+After that run finishes, it restarts the context and cancels a separate
+pending wait:
+
+[source]
+----
+include::{examples}/asio_timers.cpp[tag=program,indent=0]
+----
+
+[source,bash]
+----
+b2 toolset=emscripten libs/asio/example//asio_timers.output
+----
+
+[listing]
+----
+include::{examples}/asio_timers.expected[]
+----
+
+The labels identify the requested deadlines, not measured completion times.
+`restart` allows another run after the first exhausted its work. The final
+timer uses the clock's maximum deadline so it remains pending until
+`cancel`. Cancelling schedules the aborted completion; the second `run`
+delivers it. Keeping these two phases separate makes the displayed order
+independent of when the host schedules cancellation against ready timers.
+For cancellation of one wait while another remains pending, use the slot
+example in <<asio-timers-waiting>>.

@@ -143,11 +143,11 @@ All of them are of 2026-10-11, as `R`.
 
 ## 14. The guide's examples and the size table (plan: Task 14)
 
-- [ ] 14.1 Write `doc/guarantees.adoc`, nine numbered guarantees (plan: Task 14, Step 1)
-- [ ] 14.2 Write the three examples with their `.expected` and the size table (Step 2)
-- [ ] 14.3 Run the native and emscripten lanes before and after the `.expected` files (Step 3)
-- [ ] 14.4 Write the quick start and include the examples (Step 4)
-- [ ] 14.5 Commit (Step 5)
+- [x] 14.1 Write `doc/guarantees.adoc`, nine numbered guarantees (plan: Task 14, Step 1)
+- [x] 14.2 Write the three examples with their `.expected` and the size table (Step 2)
+- [x] 14.3 Run the native and emscripten lanes before and after the `.expected` files (Step 3)
+- [x] 14.4 Write the quick start and include the examples (Step 4)
+- [x] 14.5 Commit (Step 5)
 
 ## 15. Boost.Cobalt's sources (superproject; plan: Task 15)
 

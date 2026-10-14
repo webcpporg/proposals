@@ -1,0 +1,154 @@
+From 771a247c6210c4684867c686e2ba6a1e74b631c5 Mon Sep 17 00:00:00 2001
+From: R <github.overboard312@passmail.net>
+Date: Wed, 14 Oct 2026 13:48:10 -0400
+Subject: [PATCH] tools: select example and size-table inputs independently of
+ linked objects
+
+---
+ tools/test/emscripten_test.py | 50 +++++++++++++++++++++++++++++++++++
+ tools/webcpp.jam              | 33 +++++++++++++++++------
+ 2 files changed, 75 insertions(+), 8 deletions(-)
+
+diff --git a/tools/test/emscripten_test.py b/tools/test/emscripten_test.py
+index 4e6b582..db4cfdc 100644
+--- a/tools/test/emscripten_test.py
++++ b/tools/test/emscripten_test.py
+@@ -108,6 +108,54 @@ def test_emscripten_lane_runs_under_node(root):
+     assert any(harness.emscripten_cache().iterdir()), harness.emscripten_cache()
+ 
+ 
++def add_source_dependency(root):
++    """Give the fixture a linked object like Asio's browser bridge support."""
++    library = root / 'libs/browser_demo/build.jam'
++    library.write_text(library.read_text() + "\nobj support : support.cpp ;\n"
++                       "alias supported : : : : <source>support ;\n")
++    (library.parent / 'support.cpp').write_text('int support() { return 7; }\n')
++
++
++def test_example_expected_survives_source_dependencies(root):
++    # The expected file must not be confused with an appended library object.
++    add_source_dependency(root)
++    folder = root / 'libs/browser_demo/example'
++    jam = folder / 'Jamfile'
++    jam.write_text(jam.read_text().replace(
++        '<library>/webcpp/browser_demo//browser_demo',
++        '<library>/webcpp/browser_demo//browser_demo <library>/webcpp/browser_demo//supported'))
++    (folder / 'hello.cpp').write_text('#include <cstdio>\nint support();\n'
++                                     'int main() { std::printf("support=%d\\n", support()); }\n')
++    (folder / 'hello.expected').write_text('support=7\n')
++    for request in ((), ('webcpp-suspend=asyncify',)):
++        result = harness.run_b2(root, '-a', *EMSCRIPTEN, *request,
++                               'libs/browser_demo/example//hello.output')
++        harness.expect(result, True)
++    outputs = built(root, 'hello.output')
++    assert len(outputs) == 2, outputs
++    assert all(path.read_text() == 'support=7\n' for path in outputs), outputs
++    (folder / 'hello.expected').write_text('wrong output\n')
++    result = harness.run_b2(root, *EMSCRIPTEN, 'libs/browser_demo/example//hello.output')
++    harness.expect(result, False, 'wrong output')
++
++
++def test_size_table_ignores_linked_source_dependencies(root):
++    # A table consumes manifests, not the source objects inherited by its make target.
++    add_source_dependency(root)
++    folder = root / 'libs/browser_demo/test/variants'
++    jam = folder / 'Jamfile'
++    jam.write_text('project : requirements <library>/webcpp/browser_demo//supported ;\n'
++                   + jam.read_text())
++    result = harness.run_b2(root, '-a', *EMSCRIPTEN,
++                           'libs/browser_demo/test/variants//shell.sizes.md')
++    harness.expect(result, True)
++    tables = built(root, 'shell.sizes.md')
++    assert len(tables) == 1, tables
++    manifest = json.loads(built(root, 'shell.variants.json')[0].read_text())
++    assert f"{manifest['jspi']['bytes']:,}" in tables[0].read_text()
++    assert f"{manifest['asyncify']['bytes']:,}" in tables[0].read_text()
++
++
+ def test_a_launcher_is_refused_on_emscripten(root):
+     # b2's emscripten toolset runs a program with node itself: a launcher would make the command
+     # `node "node" x.js`, which fails, so it is refused by name before anything is built.
+@@ -553,6 +601,8 @@ def prepared(case):
+ 
+ CASES = [prepared(case) for case in (
+     test_emscripten_lane_runs_under_node,
++    test_example_expected_survives_source_dependencies,
++    test_size_table_ignores_linked_source_dependencies,
+     test_a_launcher_is_refused_on_emscripten,
+     test_input_file_is_read_from_the_host,
+     test_programs_are_wasm32,
+diff --git a/tools/webcpp.jam b/tools/webcpp.jam
+index c59d58b..13d1350 100644
+--- a/tools/webcpp.jam
++++ b/tools/webcpp.jam
+@@ -558,11 +558,22 @@ rule write-size-table ( targets * : sources * : properties * )
+ {
+     PYTHON on $(targets) = $(.python) ;
+     SCRIPT on $(targets) = $(.variants-script) ;
++    # A project's libraries can append source objects to this make target.
++    # Only variant manifests are table inputs.
++    local manifests ;
++    for local source in $(sources)
++    {
++        if $(source:S) = .json
++        {
++            manifests += $(source) ;
++        }
++    }
++    MANIFESTS on $(targets) = $(manifests) ;
+ }
+ 
+-actions write-size-table
++actions write-size-table bind MANIFESTS
+ {
+-    "$(PYTHON)" "$(SCRIPT)" table --out "$(<)" "$(>)"
++    "$(PYTHON)" "$(SCRIPT)" table --out "$(<)" "$(MANIFESTS)"
+ }
+ 
+ # A test that passes when sources compile, which builds no program.
+@@ -632,10 +643,10 @@ rule example ( source : requirements * : targets * )
+     }
+     # The program's main target can generate more than the executable, which
+     # it lists first: MSVC's debug link adds the .pdb after the .exe. So the
+-    # action reads the program as the first source and the expected output
+-    # as the last, never as the second, and run-and-compare finds the input
+-    # by its suffix. The input is a source of the output, so that editing it
+-    # runs the example again.
++    # action reads the program as the first source. Library source usage
++    # can also append objects, so run-and-compare finds both the expected
++    # output and the optional input by suffix, not by position. The input
++    # is a source of the output, so editing it runs the example again.
+     make $(name).output : $(name) $(input) $(source:S=.expected) : @webcpp%run-and-compare
+         : $(requirements) $(only) ;
+     # testing.launcher is a free feature: it plays no part in the target's
+@@ -675,19 +686,25 @@ rule run-and-compare ( targets * : sources * : properties * )
+     # The action binds it to its path, and its word `--input="$(INPUT)"`,
+     # which holds a reference to it, disappears whole when it is empty.
+     local input ;
++    local expected ;
+     for local source in $(sources)
+     {
+         if $(source:S) = .input
+         {
+             input = $(source) ;
+         }
++        if $(source:S) = .expected
++        {
++            expected = $(source) ;
++        }
+     }
+     INPUT on $(targets) = $(input) ;
++    EXPECTED on $(targets) = $(expected) ;
+ }
+ 
+-actions run-and-compare bind INPUT
++actions run-and-compare bind INPUT EXPECTED
+ {
+-    "$(PYTHON)" "$(RUNNER)" $(LAUNCHER_ARGS) --input="$(INPUT)" --expected "$(>[-1])" --output "$(<)" -- "$(>[1])"
++    "$(PYTHON)" "$(RUNNER)" $(LAUNCHER_ARGS) --input="$(INPUT)" --expected "$(EXPECTED)" --output "$(<)" -- "$(>[1])"
+ }
+ 
+ # A test per public header of library, each a translation unit that only
+-- 
+2.55.0
+

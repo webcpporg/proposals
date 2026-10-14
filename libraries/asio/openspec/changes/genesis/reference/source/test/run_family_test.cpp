@@ -4,7 +4,7 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 
-// The run family keeps Boost.Asio's meaning on every target (doc: #asio-invariant-3): run
+// The run family keeps Boost.Asio's meaning on every target (doc: #asio-run): run
 // returns out of work with the count of the handlers it ran, run_one runs one, run waits for a
 // timer, the four timed forms return at their deadline, and stop and restart are Boost's. At
 // the inputs' edges: a deadline ends a run whose handlers are always ready, though every turn
