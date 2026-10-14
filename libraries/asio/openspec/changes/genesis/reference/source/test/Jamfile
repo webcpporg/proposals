@@ -30,7 +30,7 @@ webcpp.run names : names_test.cpp ;
 # them: jspi, the default, in the emscripten lane; asyncify in the own lane
 # asyncify. A test joins by its name. em_js loads every EM_JS of asio and of
 # browser_values.hpp: a function that does not parse fails it before main.
-local browser-tests = reactor run_family turn_limit bridge bridge_abort em_js ;
+local browser-tests = reactor run_family turn_limit bridge bridge_abort em_js timers ;
 for local test in $(browser-tests)
 {
     webcpp.run $(test) : $(test)_test.cpp : : emscripten ;
@@ -80,6 +80,7 @@ for local suspend in jspi asyncify
 
 # The run family keeps Boost's meaning natively too, where it is Boost's own.
 webcpp.run run_family_native : run_family_test.cpp : : native ;
+webcpp.run timers_native : timers_test.cpp : : native ;
 
 # Throws and catches across a suspension need exceptions, whatever the build
 # asks: WebAssembly's under jspi, JavaScript's under asyncify (the feature's

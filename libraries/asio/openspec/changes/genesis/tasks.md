@@ -109,10 +109,10 @@ All of them are of 2026-10-11, as `R`.
 
 ## 10. Timers: Boost's, Beast's (plan: Task 10)
 
-- [ ] 10.1 Write the page's section `doc/timers.adoc` (plan: Task 10, Step 1)
-- [ ] 10.2 Write the failing `test/timers_test.cpp`: order 20, 40, 60 ms, a `system_timer`, cancellation, per-operation cancellation, Beast's WebSocket handshake timeout (Step 2)
-- [ ] 10.3 Run `timers` on each lane and see it can fail (Step 3)
-- [ ] 10.4 Commit (Step 4)
+- [x] 10.1 Write the page's section `doc/timers.adoc` (plan: Task 10, Step 1)
+- [x] 10.2 Write the failing `test/timers_test.cpp`: order 20, 40, 60 ms, a `system_timer`, cancellation, per-operation cancellation, Beast's WebSocket handshake timeout (Step 2)
+- [x] 10.3 Run `timers` on each lane and see it can fail (Step 3)
+- [x] 10.4 Commit (Step 4): local library `ded30cb`; native 14 and WebAssembly 70 passing markers, wrong-order negative controls on JSPI and Asyncify, six clang-tidy configurations and rendered documentation validated locally (reference/STATUS.md)
 
 ## 11. Allocation (plan: Task 11)
 

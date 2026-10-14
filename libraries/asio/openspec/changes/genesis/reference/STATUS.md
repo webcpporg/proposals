@@ -1,5 +1,62 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 10 completed, 2026-10-14
+
+This update supersedes the task 10 status in the historical sections below. Tasks 11 to 23
+remain unstarted. `source/` now matches local library commit `ded30cb` on top of `ad6367b`.
+The isolated superproject worktree and its tip remain as described in the task 9 update.
+
+### Changes
+
+- Added `test/timers_test.cpp` with five cases: steady timers registered at 60, 20 and 40 ms
+  complete in deadline order; a 30 ms system timer; cancellation of a timer; cancellation of
+  one wait through its slot, signalled by a 10 ms timer; and Beast's 100 ms WebSocket handshake
+  timeout over its in-memory test stream.
+- Ordered steady deadlines share a clock origin. Completion counts and error values are
+  asserted. The cancellation-slot case keeps a second wait on the same timer and verifies
+  that explicit cleanup still cancels one operation, proving isolation of the signalled wait.
+- Registered `timers_native` and the four WebAssembly configurations: JSPI and Asyncify, each
+  with and without exceptions. Every test reports its cases and ends through `exit_status`.
+- Added `doc/timers.adoc`, included by the page, with compiled test listings and guarantee 8.
+  An independent read-only review found no blocking issue. Its numbering observation was
+  corrected with `[start=8]`, and the generated HTML was checked for that numbering.
+- No production implementation change was needed.
+
+### Local validation
+
+With Boost 1.92, Emscripten 6.0.11, Node 26.7.0 and Apple Clang 21:
+
+- Fresh native suite: 14 passing markers.
+- Fresh WebAssembly suite, including the Asyncify lane: 70 passing markers. Expected failures
+  are counted only through their corresponding negative-test declarations.
+- All five new cases passed natively and in each of the four WebAssembly configurations.
+- A scratch copy expected the deliberately wrong order 60, 20, 40. JSPI and Asyncify both
+  reported the three order mismatches and exited 1. The temporary Jamfile declarations were
+  restored, and the final correct suite then passed from scratch.
+- clang-tidy passed on the new test in six configurations: native with and without exceptions,
+  plus the four WebAssembly configurations, using the actual build options. Dependency
+  diagnostics were suppressed according to the existing lint configuration; no project
+  findings remained. clang-format, changed-file text rules and diff checks passed.
+- The full local library documentation build passed, including MrDocs, source checks,
+  Asciidoctor conversion and rendered HTML checks. Its counts are 72 distinct tests, 14 native
+  and 70 Emscripten; these overlap because some tests run on both targets.
+
+Commands from `asio-task9-review`, using its existing `.local/review-b2` toolchain wrapper:
+
+```sh
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task10-suite-native libs/asio/test libs/asio/example
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task10-suite-wasm toolset=emscripten libs/asio/test libs/asio/example libs/asio/test//asyncify
+.local/review-b2 -a -j2 -d+2 --build-dir=bin/task10-doc libs/asio/doc
+```
+
+Full suite logs are in `.local/task10-validation/native.log` and `wasm.log`; the six analysis
+commands and their logs are under `.local/task10-validation/lint/`. Negative-control output is
+in `.local/task10-negative/build.log`. The local HTML is `libs/asio/doc/html/index.html`.
+
+These are local task checks, not a release or merge gate: no CI, push, merge, real-browser test
+or whole-organization lint was run. The OpenSpec CLI is not installed in this environment.
+The next authorized implementation task would be task 11; it has not been started.
+
 ## Task 9 re-review completed, 2026-10-14
 
 This update supersedes the open task 9 review recorded below. Tasks 10 to 23 remain unstarted.

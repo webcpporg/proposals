@@ -31,6 +31,8 @@ include::run.adoc[]
 
 include::browser.adoc[]
 
+include::timers.adoc[]
+
 include::testing.adoc[]
 
 [#reference]

@@ -1,0 +1,75 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-timers]
+== Timers
+
+`steady_timer`, `system_timer` and `basic_waitable_timer` are aliases of
+Boost.Asio's timers on both targets. Their executors, completion tokens,
+associated allocators and per-operation cancellation slots keep Boost's
+interfaces and behaviour.
+
+Use `steady_timer` for an interval measured by a monotonic clock, and
+`system_timer` for a deadline on the system clock. Adjusting the system
+clock can affect a system timer; it does not change a steady timer's clock.
+A deadline makes a handler eligible to run, not a promise that the host
+will execute it at that exact instant.
+
+[#asio-timers-waiting]
+=== Waiting and cancellation
+
+On Emscripten the timers sit in Boost.Asio's reactor queue. The run family
+waits through the selected suspension variant, JSPI or Asyncify
+(<<asio-building>>), allowing JavaScript to run while it waits. The reactor
+caps each wait at five minutes; an idle wait therefore holds one
+JavaScript `setTimeout` of at most 300 seconds. This bounds one reactor
+wait, not the duration a program may give a timer.
+
+Cancelling a timer completes its pending waits with
+`boost::asio::error::operation_aborted`. An operation already ready for
+completion cannot be cancelled retroactively. To cancel a particular wait,
+bind a cancellation slot to its completion handler. A terminal signal on
+that slot cancels that wait without cancelling another wait on the same
+timer. This test cancels the other wait explicitly only after checking
+that it remains pending:
+
+[source]
+----
+include::{library-root}/test/timers_test.cpp[tag=slot-cancellation,indent=0]
+----
+
+[#asio-timers-beast]
+=== Beast's timeouts
+
+Boost.Beast's `basic_stream` and WebSocket stream use Boost.Asio timers
+internally. Their timeout handling therefore uses the same reactor queue
+and works with both suspension variants. The test below starts a WebSocket
+handshake over Beast's in-memory test stream. Its peer sends no handshake,
+so the completion reports `boost::beast::error::timeout`:
+
+[source]
+----
+include::{library-root}/test/timers_test.cpp[tag=beast-timeout,indent=0]
+----
+
+This checks Beast's timeout integration. It does not open a network
+connection or provide a browser WebSocket transport.
+
+[#asio-timers-guarantees]
+=== Guarantees
+
+[start=8]
+. [[asio-invariant-8]]Boost's timers and Beast's timeouts complete through
+  the reactor on both targets. The timers keep Boost's cancellation
+  semantics, including cancellation of an individual wait through its slot.
+
+The `timers_native` test runs natively. The `timers` browser tests run
+WebAssembly under Node with JSPI and Asyncify, each with and without
+exceptions. They check steady timers registered with deadlines of 60, 20
+and 40 milliseconds against completion order 20, 40, 60; a system timer;
+whole-timer and per-operation cancellation; and Beast's handshake timeout.
+The three steady deadlines share one starting instant. The tests check
+completion order and error values, without requiring exact elapsed times.
