@@ -39,9 +39,10 @@ None.
   https://github.com/webcpporg/webcpp from the branch `contributor-identity`. No tool, lint rule
   or workflow checks the author's address, so none changes; the lint's check of the banned word
   in every commit's author, committer and message stays.
-- **Status:** draft.
-- **Other proposals:** the plans of open proposals (`site-increments-4-5`, `asio`, `crypto`,
-  `json_schema`, `document`) still spell the old command in their reference material; they are
-  left as written (design D3) and follow the specification once this change is accepted.
-  `meta/libraries.json`'s `authors` and `maintainers` are not commit identity and are left to
-  open question O2.
+- **Status:** implemented in the 0.1.0 release in preparation; archived on 2026-10-13.
+  The implementation is merge commit `9a268b7efa8a9b7eab8810bc024486288c689fab`
+  from https://github.com/webcpporg/webcpp/pull/1; see `reference/STATUS.md`.
+- **Other proposals:** older proposal reference material may still spell a fixed identity.
+  It follows the current specification under design D3. Update commands when an open proposal
+  is next revised; preserve archived material and recorded patches. `meta/libraries.json`'s
+  `authors` and `maintainers` are not commit identity and remain outside this change (design O2).

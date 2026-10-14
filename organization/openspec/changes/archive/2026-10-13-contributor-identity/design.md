@@ -19,8 +19,8 @@ form of a commit, are what the lint and the reviews rely on.
 
 - Rewriting history: no commit is amended, rebased or re-signed, and no archived proposal or
   recorded patch is edited.
-- Changing `meta/libraries.json`'s `authors` and `maintainers` (open question O2).
-- Requiring signed commits (open question O3).
+- Changing `meta/libraries.json`'s `authors` and `maintainers` (O2 below).
+- Requiring signed commits (O3 below).
 
 ## Decisions
 
@@ -77,16 +77,28 @@ identities), so the change is to the rules alone.
 2. From then on, every new commit follows the new rule; nothing else is migrated.
 3. On archive, the requirement's new text replaces the old one in `specs/organization/spec.md`.
 
-## Open Questions
+## Archival decisions
 
-- **O1.** Should the old address stay mentioned anywhere in the current rules, for instance as the
-  identity of the existing history? This proposal says no: the history shows it, the rules need
-  not.
-- **O2.** `meta/libraries.json` names `authors` `["R"]` and a maintainer address in every library,
-  and the specification requires it. Should the maintainer field keep a personal address, take a
-  noreply or organization address, or name a GitHub login? A separate change, since it touches
-  every library.
-- **O3.** Should commits to webcpporg repositories be signed (`git commit -S`, or GitHub's
-  vigilant mode)? Not required by this change.
-- **O4.** Should the CI check that a pull request's commits carry no trailer, which today only the
-  reviewer checks?
+Recorded on 2026-10-13 when the owner requested verification and archival if implemented,
+without running CI. These decisions preserve the scope already merged in webcpp PR #1;
+they do not introduce new implementation requirements.
+
+- **O1. No fixed address in the current commit rule.** The merged chapter 11 uses placeholders
+  and each contributor's own identity. History, archived material and recorded patches retain
+  their original identity as D3 requires. A maintainer contact in library metadata is a different
+  concern, addressed by O2.
+- **O2. Library metadata remains outside this change.** Keep `authors` and `maintainers` as they
+  are. Changing contact fields across libraries would need a separate proposal; this archive
+  makes no new choice of personal, noreply or organization contact.
+- **O3. No signing requirement is introduced.** The merged rule does not require signed commits.
+  No GitHub settings are changed by this proposal.
+- **O4. No new CI check.** Commit form remains a review responsibility. Adding enforcement of
+  the no-trailer rule is outside this documentation change. Existing lint behavior is unchanged,
+  and no CI is executed for this archive, as the owner requested.
+
+## Migration completion
+
+D3 is the ongoing policy, not a bulk migration gate: an open proposal's old command is read
+under the current rulebook and is updated when that proposal is next revised. This policy is
+now also recorded in `CONTRIBUTING.md` so it remains visible after archival. No unrelated plan,
+archived proposal, recorded patch or existing commit was rewritten.

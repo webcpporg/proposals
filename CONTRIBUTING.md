@@ -66,6 +66,14 @@ identity they publish under, and holds no private data.
    the release it entered, when it is merged into the superproject and released. The maintainers
    then archive it, which writes the library's specification under `specs/`.
 
+## Commit identity in older plans
+
+Every contributor follows the current superproject `AGENTS.md`, chapter 11, using the identity
+of the account they act for or their own account. An older plan's fixed identity is historical
+context, not an instruction to impersonate its author. Update that command when the open proposal
+is next revised. Existing commits, archived proposals and recorded patches keep their original
+identity; no bulk rewrite is required.
+
 ## Grants and the DAO
 
 webcpp funds work through grants governed by its members. The governance, its rules and the
