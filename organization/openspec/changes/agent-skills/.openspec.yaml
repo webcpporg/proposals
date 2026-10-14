@@ -5,7 +5,7 @@ webcpp:
   title: "organization: agent skills in .agents/skills, in the proposals and the superproject"
   kind: organization
   port_of: null
-  status: draft
+  status: implementing
   release: null
   implementation: https://github.com/webcpporg/webcpp
-  decided: null
+  decided: 2026-10-13

@@ -1,6 +1,6 @@
 ---
 name: webcpp-openspec-proposal
-description: Write or review a webcpp proposal: a library genesis, a change to a library, or an organization change, with its metadata, statuses and checks.
+description: "Write or review a webcpp proposal: a library genesis, a change to a library, or an organization change, with its metadata, statuses and checks."
 ---
 
 # Writing a webcpp proposal

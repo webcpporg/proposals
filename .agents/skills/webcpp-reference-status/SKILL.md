@@ -1,6 +1,6 @@
 ---
 name: webcpp-reference-status
-description: Prepare or read a proposal's reference/ directory (plan, source, STATUS.md), report task progress, or resume an interrupted implementation.
+description: "Prepare or read a proposal's reference/ directory (plan, source, STATUS.md), report task progress, or resume an interrupted implementation."
 ---
 
 # reference/ and STATUS.md

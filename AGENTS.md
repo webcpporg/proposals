@@ -15,3 +15,7 @@ Read the superproject's `AGENTS.md` first
   (`webcpp-openspec-proposal`, `webcpp-reference-status`, `webcpp-text-and-commits`). They point
   to the rules and never replace them; where one disagrees, `CONTRIBUTING.md` and the
   organization's specification win.
+
+- **Skill metadata.** `.github/workflows/skills.yml` parses each skill's YAML front matter,
+  requires a matching kebab-case name and a nonempty description. Chapter references are
+  reviewed when the rules change. OpenSpec's MIT notice is in `THIRD_PARTY_NOTICES.md`.
