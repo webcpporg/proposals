@@ -1,5 +1,63 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 14 follow-up: exception support, sizes and timings, 2026-10-14
+
+The owner requested comparisons with exceptions on and off, including both
+build duration and runtime. The isolated library is `ee64779` on
+`work/task14-guide`; `source/` matches all 72 tracked files. Only README.md,
+doc/building.adoc and doc/testing.adoc changed. The superproject remains
+771a247. No CI, push, merge or task 15 work ran.
+
+Measured all six profiles (-O2, -O3, -Os, -Oz, -O3 -flto, -Oz -flto), both
+suspension variants, both exception settings and all three page examples:
+72 modules. Each configuration had one cache-preparation build and three
+measured builds in fresh directories, with -a -j4 and compile/link flags
+checked. All four builds produced identical file sizes. The build median
+covers the complete six-module batch, including manifests and size tables.
+No measured build generated an Emscripten system library.
+
+| Profile | Build median, exceptions on | Build median, exceptions off |
+| --- | ---: | ---: |
+| -O2 | 3.33 s | 3.16 s |
+| -O3 | 4.08 s | 3.61 s |
+| -Os | 3.93 s | 3.58 s |
+| -Oz | 3.94 s | 3.51 s |
+| -O3 -flto | 4.72 s | 4.17 s |
+| -Oz -flto | 4.46 s | 4.01 s |
+
+Runtime: one discarded round followed by eleven measured rounds in fresh
+Node processes, alternating order. All 864 runs matched expected output,
+reported exactly one successful completion and produced no stderr. Module
+initialization starts after JavaScript import and Wasm file reading;
+execution starts at onRuntimeInitialized and ends at webcppTestFinished(0),
+before local-object cleanup. Asyncify factory resolution alone is not used
+as completion. Timings include timer waits and scheduling, are not CPU-only
+or warmed-JIT measurements, and do not measure throw/catch latency.
+
+Environment: Emscripten 6.0.11, Boost 1.92, C++20, Node 26.7.0, macOS 27
+arm64, Apple M5 Max, 128 GiB RAM, Asyncify suspension stack 8192 bytes.
+With exceptions on, JSPI uses Wasm exceptions and Asyncify JavaScript-based
+exceptions. With exceptions off, all objects use -fno-exceptions.
+
+-Oz -flto produced the smallest Wasm and combined payload in every
+example/variant/exception setting. Disabling exceptions reduced Wasm and
+total payload throughout. JSPI -O2 JavaScript alone grew by 38 bytes;
+other JavaScript files shrank. Full size, build-time and runtime tables,
+including variability, are in source/doc/testing.adoc.
+
+Validation: 72 artifact sizes and hashes, 792 measured samples and their
+statistics, 48 build logs, and all 78 measurement rows in source and rendered
+HTML checked. MrDocs, Asciidoctor, source/rendered checks and shell syntax
+passed. An independent read-only review approved the measurement method,
+final tables and conclusions with no blocking findings. No full library
+suite or real-browser matrix was rerun for this documentation follow-up.
+
+Evidence in the isolated superproject: .local/measure-asio-exceptions.py,
+.local/asio-runtime-measure.mjs,
+.local/task14-exceptions-20261014-142622/results.json and its 48 build logs,
+bin/task14-eh-20261014-142622-* and bin/task14-exceptions-doc.
+The primary checkout remains unchanged. Task 15 has not started.
+
 ## Task 14 follow-up: six release profiles, 2026-10-14
 
 The owner authorized compiling all six proposed profiles before moving to the

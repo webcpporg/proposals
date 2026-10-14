@@ -90,10 +90,11 @@ Emscripten finds the suspending imports itself, so no list of them is
 given. `ASYNCIFY_IGNORE_INDIRECT` is not set, since the path from `main` to
 the reactor's `select` passes a virtual call, Asio's
 `scheduler_task::run`. Asyncify adds instrumentation and increases the
-program size. With `-O3`, the release examples measured 1.88 to 1.91 times
-the JSPI WebAssembly size. The ratio depends on the optimization profile;
-see <<asio-testing-sizes>> for the six-profile matrix, separate JavaScript
-byte counts and reproduction commands.
+program size. With `-O3` and exceptions enabled, the release examples
+measured 1.88 to 1.91 times the JSPI WebAssembly size. The ratio depends on
+the optimization profile and exception setting; see <<asio-testing-sizes>>
+for the six-profile matrix with exceptions on and off, separate JavaScript
+byte counts, build and execution timings, and reproduction commands.
 
 [#asio-building-asyncify-stack]
 ==== Asyncify's stack

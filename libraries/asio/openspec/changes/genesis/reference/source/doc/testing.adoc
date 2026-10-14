@@ -140,12 +140,12 @@ matrix is published with the documentation, at
 https://webcpporg.github.io/webcpp/report/.
 
 [#asio-testing-sizes]
-=== How to compare the WebAssembly sizes
+=== How to compare release sizes and timings
 
-Published binary sizes always use release builds. Compare the same three
-page programs under six optimization profiles, with identical exception
-settings and suspension-stack size. Each command builds JSPI and Asyncify.
-Run from the superproject root:
+Published binary sizes always use release builds. Compare the same page
+programs under six optimization profiles, with exceptions both enabled and
+disabled. Each command builds JSPI and Asyncify. Run from the superproject
+root, keeping the suspension-stack size and toolchain fixed:
 
 [source,bash]
 ----
@@ -158,9 +158,13 @@ for profile in o2 o3 os oz o3-lto oz-lto; do
         o3-lto) flags="-O3 -flto" ;;
         oz-lto) flags="-Oz -flto" ;;
     esac
-    b2 -a "--build-dir=bin/asio-size-$profile" toolset=emscripten \
-        variant=release "cxxflags=$flags" "linkflags=$flags" \
-        libs/asio/example//asyncify
+    for exceptions in on off; do
+        b2 -a -j4 "--build-dir=bin/asio-size-$profile-$exceptions" \
+            toolset=emscripten variant=release \
+            "exception-handling=$exceptions" \
+            "cxxflags=$flags" "linkflags=$flags" \
+            libs/asio/example//asyncify
+    done
 done
 ----
 
@@ -168,14 +172,25 @@ done
 `cxxflags` selects the optimization level instead of the release default
 `-O3`; the same level must be passed through `linkflags` for Emscripten's
 final WebAssembly and JavaScript optimization. The current b2 toolset does
-not forward it automatically. Keep one build directory per profile:
-free-form flags do not select separate output paths in b2.
+not forward it automatically. Keep separate build directories: free-form
+flags do not select separate output paths in b2.
 
 `-O2` and `-O3` favor execution performance; `-Os` and `-Oz` favor smaller
 code. `-flto` enables link-time optimization across translation units and
 must be used when compiling their object files as well as when linking.
 Neither a size-oriented level nor LTO guarantees a smaller result in every
-program. These measurements do not benchmark execution speed.
+program.
+
+With `exception-handling=on`, JSPI uses WebAssembly exceptions
+(`-fwasm-exceptions`) and Asyncify uses JavaScript-based exceptions
+(`-fexceptions`). With `off`, objects use `-fno-exceptions`, neither
+exception mechanism is enabled at link, and Boost's no-exception handler
+is linked. The programs do not throw: this compares the cost of enabling
+exception support on their normal path, not throw/catch latency. Disabling
+exceptions changes error behavior; select it only when that contract fits
+the application.
+
+==== Binary sizes
 
 Each build prints its Wasm table and writes `asio.sizes.md` beside the
 variant manifests. The manifests record the Wasm byte counts; the JavaScript
@@ -185,55 +200,182 @@ contribution. Add the matching Wasm and JavaScript columns for the two-file
 uncompressed payload. Compression, loader/HTML assets, HTTP overhead and
 runtime memory are outside these measurements.
 
-Measured on 2026-10-14 with Emscripten 6.0.11, Boost 1.92 and {cpp}20, on
-macOS arm64. Exceptions are enabled: WebAssembly exceptions for JSPI and
-JavaScript-based exceptions for Asyncify, with its 8192-byte suspension
-stack. All values below are bytes, without transfer compression. All 36
-page modules were rebuilt from scratch and executed under Node 26.7.0;
-each matched its example's `.expected` output. Compile and link commands
-were checked for the requested optimization level, and LTO object files
-were checked to contain LLVM bitcode. This validates these examples, not
-every library operation or browser under every optimization profile.
+Measured on 2026-10-14 with Emscripten 6.0.11, Boost 1.92 and {cpp}20,
+Node 26.7.0, macOS 27 arm64, Apple M5 Max, 128 GiB RAM. Asyncify uses an
+8192-byte suspension stack. All values below are bytes. Every configuration
+was rebuilt in four fresh directories: one preparation build and three
+measured builds. File sizes were identical across the four builds. Compile
+and link commands were checked for optimization and exception settings;
+LTO object files were checked to contain LLVM bitcode. All 72 page modules
+matched their expected output and signalled successful completion in each
+runtime round. This validates these examples under Node, not the full
+library suite or real browsers under every profile.
 
-.asio_quick_start
-[cols="2,2,2,2,2",options="header"]
+.asio_quick_start: uncompressed bytes
+[cols="2,1,2,2,2,2",options="header"]
 |===
-| Flags | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
-| `-O2` | 81,162 | 157,410 | 79,404 | 90,706
-| `-O3` | 80,979 | 153,459 | 78,899 | 89,248
-| `-Os` | 74,490 | 147,893 | 78,899 | 88,867
-| `-Oz` | 70,771 | 148,813 | 78,328 | 88,296
-| `-O3 -flto` | 86,096 | 143,667 | 79,747 | 89,240
-| `-Oz -flto` | 65,712 | 127,067 | 79,176 | 88,871
-|===
-
-.asio_timers
-[cols="2,2,2,2,2",options="header"]
-|===
-| Flags | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
-| `-O2` | 82,969 | 162,160 | 79,394 | 90,696
-| `-O3` | 82,724 | 157,831 | 78,889 | 89,238
-| `-Os` | 74,987 | 150,501 | 78,889 | 88,857
-| `-Oz` | 72,022 | 153,293 | 78,318 | 88,286
-| `-O3 -flto` | 87,840 | 148,668 | 79,737 | 89,496
-| `-Oz -flto` | 67,968 | 132,768 | 79,166 | 89,386
+| Flags | Exceptions | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
+| `-O2` | on | 81,162 | 157,410 | 79,404 | 90,706
+| `-O2` | off | 64,051 | 101,265 | 79,442 | 83,865
+| `-O3` | on | 80,979 | 153,459 | 78,899 | 89,248
+| `-O3` | off | 62,446 | 97,040 | 78,493 | 82,499
+| `-Os` | on | 74,490 | 147,893 | 78,899 | 88,867
+| `-Os` | off | 57,213 | 94,893 | 78,493 | 82,499
+| `-Oz` | on | 70,771 | 148,813 | 78,328 | 88,296
+| `-Oz` | off | 55,822 | 97,682 | 77,922 | 81,928
+| `-O3 -flto` | on | 86,096 | 143,667 | 79,747 | 89,240
+| `-O3 -flto` | off | 62,925 | 92,583 | 79,341 | 83,036
+| `-Oz -flto` | on | 65,712 | 127,067 | 79,176 | 88,871
+| `-Oz -flto` | off | 52,861 | 90,073 | 78,770 | 82,465
 |===
 
-.asio_turn_limit
-[cols="2,2,2,2,2",options="header"]
+.asio_timers: uncompressed bytes
+[cols="2,1,2,2,2,2",options="header"]
 |===
-| Flags | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
-| `-O2` | 78,205 | 149,904 | 79,402 | 90,704
-| `-O3` | 78,085 | 146,529 | 78,897 | 89,246
-| `-Os` | 71,052 | 139,673 | 78,897 | 88,661
-| `-Oz` | 67,838 | 141,185 | 78,326 | 88,090
-| `-O3 -flto` | 83,189 | 136,877 | 79,745 | 89,238
-| `-Oz -flto` | 62,824 | 120,140 | 79,174 | 89,104
+| Flags | Exceptions | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
+| `-O2` | on | 82,969 | 162,160 | 79,394 | 90,696
+| `-O2` | off | 66,110 | 106,196 | 79,432 | 83,855
+| `-O3` | on | 82,724 | 157,831 | 78,889 | 89,238
+| `-O3` | off | 64,738 | 102,226 | 78,483 | 82,489
+| `-Os` | on | 74,987 | 150,501 | 78,889 | 88,857
+| `-Os` | off | 57,592 | 97,281 | 78,483 | 82,489
+| `-Oz` | on | 72,022 | 153,293 | 78,318 | 88,286
+| `-Oz` | off | 57,047 | 101,572 | 77,912 | 81,918
+| `-O3 -flto` | on | 87,840 | 148,668 | 79,737 | 89,496
+| `-O3 -flto` | off | 65,222 | 97,809 | 79,331 | 83,026
+| `-Oz -flto` | on | 67,968 | 132,768 | 79,166 | 89,386
+| `-Oz -flto` | off | 54,966 | 94,870 | 78,760 | 82,455
 |===
 
-In these examples, `-Oz -flto` produced the smallest Wasm modules and the
-smallest combined Wasm-plus-JavaScript payloads. Without LTO, Asyncify's
-`-Os` Wasm modules were smaller than its `-Oz` modules. Adding LTO to `-O3`
-increased the JSPI Wasm size, while reducing Asyncify's. Treat the table as
-measured evidence for this toolchain and these programs; rebuild and test
-your application's own candidates before selecting its profile.
+.asio_turn_limit: uncompressed bytes
+[cols="2,1,2,2,2,2",options="header"]
+|===
+| Flags | Exceptions | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
+| `-O2` | on | 78,205 | 149,904 | 79,402 | 90,704
+| `-O2` | off | 61,386 | 95,829 | 79,440 | 83,863
+| `-O3` | on | 78,085 | 146,529 | 78,897 | 89,246
+| `-O3` | off | 59,860 | 91,775 | 78,491 | 82,497
+| `-Os` | on | 71,052 | 139,673 | 78,897 | 88,661
+| `-Os` | off | 54,219 | 88,489 | 78,491 | 82,497
+| `-Oz` | on | 67,838 | 141,185 | 78,326 | 88,090
+| `-Oz` | off | 53,031 | 91,253 | 77,920 | 81,926
+| `-O3 -flto` | on | 83,189 | 136,877 | 79,745 | 89,238
+| `-O3 -flto` | off | 60,291 | 87,248 | 79,339 | 83,034
+| `-Oz -flto` | on | 62,824 | 120,140 | 79,174 | 89,104
+| `-Oz -flto` | off | 50,151 | 83,722 | 78,768 | 82,463
+|===
+
+In this matrix, `-Oz -flto` produced the smallest Wasm modules and combined
+Wasm-plus-JavaScript payloads, with exceptions on or off. Removing exception
+support reduced Wasm and the combined payload in every matched configuration.
+For JSPI at `-O2`, JavaScript alone grew by 38 bytes without exceptions;
+it shrank in the other matched configurations. Without LTO,
+Asyncify's `-Os` Wasm modules with exceptions were smaller than its `-Oz`
+modules. LTO with `-O3` increased the JSPI Wasm size with exceptions.
+Rebuild and test an application's own candidates before selecting a profile.
+
+==== Build duration
+
+Each sample is elapsed wall time for the complete b2 command above, with
+`-a -j4`: compilation, linking all six page modules, and writing their
+manifests and size table. It is not a time per example or per suspension
+variant. One complete preparation pass populated Emscripten's system-library
+cache for all profiles and exception settings. The next three passes used
+new output directories, alternated configuration order, and ran one b2
+process at a time. The table gives the median and observed minimum to
+maximum, in seconds. Downloads and the preparation pass are excluded.
+No runtime measurements ran concurrently with compilation. These are local
+observations; the host was not reserved against other system activity.
+
+[cols="2,2,2",options="header"]
+|===
+| Flags | Exceptions on: median (min to max), s | Exceptions off: median (min to max), s
+| `-O2` | 3.33 (3.29 to 3.37) | 3.16 (3.13 to 3.18)
+| `-O3` | 4.08 (4.04 to 4.09) | 3.60 (3.57 to 3.69)
+| `-Os` | 3.93 (3.92 to 3.99) | 3.58 (3.52 to 3.58)
+| `-Oz` | 3.93 (3.92 to 3.94) | 3.51 (3.48 to 3.59)
+| `-O3 -flto` | 4.71 (4.71 to 4.75) | 4.17 (4.14 to 4.18)
+| `-Oz -flto` | 4.46 (4.45 to 4.46) | 4.01 (4.00 to 4.04)
+|===
+
+==== Module initialization and example execution
+
+Each sample used a fresh Node process and the exact page artifacts measured
+above. The runner imported the generated JavaScript and read the Wasm file
+before starting its clock. Initialization is measured from calling the module
+factory to `onRuntimeInitialized`; it excludes Node startup, JavaScript
+import/parsing, disk reads and network transfer. Execution is measured from
+that callback to the example's explicit `webcppTestFinished(0)` signal. That
+signal occurs just before returning from `main`, before local-object cleanup.
+The runner waits for both the factory and the completion signal, so an
+Asyncify suspension cannot end a sample prematurely. It checks status zero,
+a single completion, exact `.expected` output and no stderr.
+
+One runtime round was discarded, followed by eleven measured rounds per
+module, reversing configuration order between rounds. Each sample still
+starts a fresh process: this is not a warmed-JIT or steady-state benchmark.
+The tables report the median in milliseconds. Parentheses contain the
+25th to 75th percentiles, calculated by linear interpolation of sorted
+samples. This spread describes observed variability, not a confidence
+interval.
+
+The quick-start example deliberately waits 50 ms. The timers example waits
+until its 60 ms deadline, then tests cancellation. The turn-limit example
+runs 5,000 handlers with a budget of 250 per turn and yields to the event
+loop. Execution includes these waits, scheduling and compilation performed
+lazily by the runtime. None of these values is CPU-only throughput, and
+small differences are not evidence that a flag makes application code faster.
+
+.asio_quick_start: median (25th to 75th percentiles), ms
+[cols="2,1,3,3,3,3",options="header"]
+|===
+| Flags | Exceptions | JSPI init | JSPI execution | Asyncify init | Asyncify execution
+| `-O2` | on | 3.48 (3.42 to 3.52) | 53.33 (52.83 to 53.80) | 3.16 (3.13 to 3.20) | 54.66 (54.63 to 54.76)
+| `-O2` | off | 3.39 (3.33 to 3.44) | 53.53 (53.32 to 53.64) | 2.91 (2.77 to 3.05) | 53.97 (53.53 to 54.08)
+| `-O3` | on | 3.40 (3.33 to 3.49) | 53.68 (53.11 to 53.83) | 3.07 (2.93 to 3.18) | 54.59 (54.47 to 54.66)
+| `-O3` | off | 3.40 (3.31 to 3.47) | 52.79 (52.64 to 53.47) | 2.90 (2.86 to 2.91) | 54.01 (53.45 to 54.16)
+| `-Os` | on | 3.38 (3.29 to 3.43) | 53.47 (52.79 to 53.81) | 3.10 (2.95 to 3.17) | 54.64 (54.40 to 54.73)
+| `-Os` | off | 3.37 (3.27 to 3.44) | 53.48 (53.12 to 53.64) | 2.86 (2.77 to 2.89) | 53.82 (53.12 to 54.10)
+| `-Oz` | on | 3.44 (3.31 to 3.47) | 53.64 (52.80 to 53.73) | 3.09 (3.02 to 3.17) | 54.53 (54.45 to 54.82)
+| `-Oz` | off | 3.36 (3.33 to 3.43) | 53.61 (53.47 to 53.67) | 2.89 (2.76 to 2.97) | 54.07 (53.79 to 54.26)
+| `-O3 -flto` | on | 3.51 (3.41 to 3.56) | 53.75 (53.60 to 53.87) | 3.06 (2.94 to 3.14) | 53.64 (53.46 to 54.46)
+| `-O3 -flto` | off | 3.37 (3.33 to 3.40) | 53.48 (52.78 to 53.58) | 2.85 (2.76 to 2.99) | 53.90 (52.95 to 53.99)
+| `-Oz -flto` | on | 3.43 (3.31 to 3.46) | 53.61 (53.13 to 53.69) | 3.04 (2.90 to 3.11) | 54.39 (54.33 to 54.47)
+| `-Oz -flto` | off | 3.35 (3.24 to 3.40) | 53.39 (52.95 to 53.50) | 2.87 (2.75 to 2.92) | 54.07 (53.87 to 54.13)
+|===
+
+.asio_timers: median (25th to 75th percentiles), ms
+[cols="2,1,3,3,3,3",options="header"]
+|===
+| Flags | Exceptions | JSPI init | JSPI execution | Asyncify init | Asyncify execution
+| `-O2` | on | 3.35 (3.18 to 3.43) | 63.09 (62.99 to 63.13) | 3.13 (3.11 to 3.18) | 64.20 (64.15 to 64.27)
+| `-O2` | off | 3.22 (3.19 to 3.47) | 62.93 (62.86 to 62.98) | 2.96 (2.94 to 3.07) | 63.61 (63.41 to 63.66)
+| `-O3` | on | 3.28 (3.22 to 3.40) | 63.09 (63.02 to 63.21) | 3.15 (3.11 to 3.16) | 64.10 (64.05 to 64.16)
+| `-O3` | off | 3.27 (3.21 to 3.39) | 62.94 (62.86 to 63.05) | 2.98 (2.97 to 3.02) | 63.65 (63.35 to 63.74)
+| `-Os` | on | 3.39 (3.17 to 3.45) | 62.95 (62.78 to 63.13) | 3.14 (3.09 to 3.17) | 64.12 (64.01 to 64.19)
+| `-Os` | off | 3.19 (3.17 to 3.38) | 62.85 (62.78 to 63.08) | 2.93 (2.91 to 2.97) | 63.53 (63.43 to 63.67)
+| `-Oz` | on | 3.34 (3.26 to 3.40) | 63.11 (63.05 to 63.13) | 3.16 (3.08 to 3.18) | 64.18 (63.99 to 64.30)
+| `-Oz` | off | 3.21 (3.19 to 3.46) | 62.84 (62.40 to 63.05) | 2.98 (2.90 to 2.99) | 63.66 (63.58 to 63.68)
+| `-O3 -flto` | on | 3.29 (3.28 to 3.49) | 63.02 (62.95 to 63.12) | 3.13 (3.11 to 3.19) | 63.94 (63.78 to 64.01)
+| `-O3 -flto` | off | 3.29 (3.23 to 3.40) | 62.98 (62.79 to 63.22) | 2.94 (2.92 to 2.98) | 63.44 (63.36 to 63.56)
+| `-Oz -flto` | on | 3.27 (3.21 to 3.41) | 63.09 (62.96 to 63.19) | 3.15 (3.08 to 3.16) | 63.90 (63.56 to 64.04)
+| `-Oz -flto` | off | 3.33 (3.22 to 3.37) | 63.00 (62.89 to 63.04) | 2.92 (2.89 to 2.96) | 63.56 (63.50 to 63.61)
+|===
+
+.asio_turn_limit: median (25th to 75th percentiles), ms
+[cols="2,1,3,3,3,3",options="header"]
+|===
+| Flags | Exceptions | JSPI init | JSPI execution | Asyncify init | Asyncify execution
+| `-O2` | on | 3.33 (3.28 to 3.45) | 10.15 (10.06 to 10.48) | 3.04 (2.94 to 3.18) | 13.19 (12.78 to 13.67)
+| `-O2` | off | 3.36 (3.20 to 3.41) | 10.00 (9.77 to 10.25) | 2.88 (2.80 to 3.00) | 10.61 (10.33 to 11.04)
+| `-O3` | on | 3.34 (3.17 to 3.43) | 10.48 (9.95 to 10.55) | 2.98 (2.95 to 3.21) | 12.93 (12.83 to 13.56)
+| `-O3` | off | 3.38 (3.16 to 3.42) | 10.14 (9.75 to 10.33) | 2.83 (2.76 to 3.04) | 10.52 (10.21 to 11.06)
+| `-Os` | on | 3.35 (3.20 to 3.44) | 10.44 (10.00 to 10.51) | 3.06 (2.96 to 3.09) | 13.92 (13.14 to 14.07)
+| `-Os` | off | 3.33 (3.16 to 3.41) | 10.21 (9.86 to 10.41) | 2.83 (2.78 to 2.98) | 10.50 (10.32 to 11.05)
+| `-Oz` | on | 3.39 (3.24 to 3.43) | 10.94 (10.57 to 11.23) | 2.97 (2.92 to 3.12) | 14.33 (14.15 to 14.78)
+| `-Oz` | off | 3.32 (3.18 to 3.41) | 10.85 (10.51 to 11.05) | 2.84 (2.77 to 2.98) | 11.63 (11.52 to 12.40)
+| `-O3 -flto` | on | 3.39 (3.21 to 3.45) | 10.25 (9.85 to 10.43) | 3.02 (2.94 to 3.13) | 12.49 (12.23 to 13.04)
+| `-O3 -flto` | off | 3.33 (3.19 to 3.37) | 9.99 (9.73 to 10.22) | 2.81 (2.73 to 2.94) | 10.44 (10.19 to 11.00)
+| `-Oz -flto` | on | 3.34 (3.21 to 3.39) | 10.93 (10.46 to 11.06) | 2.94 (2.90 to 3.11) | 14.75 (14.21 to 14.96)
+| `-Oz -flto` | off | 3.17 (3.09 to 3.19) | 10.27 (10.10 to 10.34) | 2.80 (2.74 to 2.99) | 11.25 (11.07 to 11.86)
+|===

@@ -113,8 +113,12 @@ The link flag is required because the current b2 Emscripten toolset does not
 forward the compilation optimization level to the link. The guide records
 the toolchain and six profiles: `-O2`, `-O3`, `-Os`, `-Oz`, `-O3 -flto`
 and `-Oz -flto`. It reports Wasm and JavaScript bytes separately for both
-suspension variants. Use the same flags for compilation and link, with a
-separate build directory per profile. Runtime memory and transfer
+suspension variants, with exceptions on and off. It also records complete
+build durations and separate module-initialization and example-execution
+times, including sample counts and variability. Timer waits are included
+in execution time; these examples do not measure throw/catch latency or
+CPU-only throughput. Use the same flags for compilation and link, with a
+separate build directory per profile and exception setting. Runtime memory and transfer
 compression are outside the tables.
 
 ## Documentation
