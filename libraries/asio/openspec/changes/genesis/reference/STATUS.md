@@ -1,5 +1,87 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 11 completed, 2026-10-14
+
+This update supersedes task 11's status in the historical sections below. Tasks 12 to 23
+remain unstarted. `source/` matches local library commit `a179adc` on top of `ded30cb`.
+The isolated superproject worktree remains at `eba8545`, with no production changes here.
+
+### Changes
+
+- Added `test/allocation_test.cpp`, registered natively and in all four WebAssembly
+  configurations: JSPI and Asyncify, each with and without exceptions.
+- Counted all eight global `operator new` forms and the platform's C and aligned allocation
+  entry points. The supplied allocator obtains its storage through the uncounted backend,
+  avoiding double counting. Direct controls exercise the intercepted allocation functions.
+- Measured context construction and destruction, a 5 ms timer, ten bound posts and, on
+  Emscripten, two bridge deliveries that post bound handlers. All operations must finish;
+  the supplied allocator must be used, with zero unexpected allocations.
+- Kept the named runtime allocations separate: a stack-backed test replacement for
+  Emscripten's `select` poll array, and a flag around Asyncify's unwind-data allocation.
+  A separate explicit suspension proves that the latter counter works, independently of
+  whether the timer is already ready when `run` begins.
+- Added the unbound-handler control: default handler storage is visible through the C or
+  aligned counters even though it does not call global `operator new`.
+- Added `doc/allocation.adoc`, including the compiled scenario, platform limitations and
+  the distinction between context and handler allocators. No production implementation
+  change was necessary. Independent read-only review found no Critical or Important issues;
+  its minor documentation correction about MSVC counting all threads was applied.
+
+### Local validation
+
+With Boost 1.92, Emscripten 6.0.11, Node 26.7.0 and the configured native Clang 21 toolset:
+
+- Fresh native suite: 15 passing markers. The scenario reported `given=18 new=0 c=0
+  aligned=0 runtime=0`; the unbound handler reported `c=1`.
+- Fresh WebAssembly suite, including Asyncify: 74 passing markers. The allocation scenario
+  passed in all four configurations with `given=22 new=0 c=0 aligned=0`; runtime allocations
+  depend on suspension. The explicit suspension reported runtime 1 on Asyncify and 0 on
+  JSPI. Each unbound handler reported `aligned=1`.
+- Removing only the context allocator in a scratch copy failed on native and all four
+  WebAssembly configurations, with `operator_new_calls > 0` and exit status 1. The native
+  count was 7. The temporary Jamfile declarations were restored. The correct source then
+  passed the fresh full suites after the instrumentation cleanup.
+- clang-tidy passed in six configurations: native with and without exceptions and all four
+  WebAssembly configurations. Dependency diagnostics use the existing suppression policy;
+  no project findings remain. clang-format, changed-file text rules and diff checks passed.
+- Full local documentation passed: MrDocs, source checks, Asciidoctor conversion and rendered
+  HTML checks. It lists 77 distinct tests, 15 native and 74 Emscripten, with overlap between
+  targets. The allocation section and compiled listing are present.
+
+Commands from `asio-task9-review`, through its existing toolchain wrapper:
+
+```sh
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task11-suite-native libs/asio/test
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task11-suite-wasm toolset=emscripten libs/asio/test libs/asio/test//asyncify
+.local/review-b2 -a -j2 -d+2 --build-dir=bin/task11-doc libs/asio/doc
+```
+
+Full logs are `.local/task11-validation/native.log`, `wasm.log` and `doc.log`. Six compile
+command databases and analysis logs are under `.local/task11-validation/lint/`. Scratch
+negative-control logs are `.local/task11-negative/native.log` and `wasm.log`.
+
+### Measurement decisions and limits
+
+LLDB traced an initial native `calloc` to dyld instantiating Asio's thread-call-stack TLS.
+The test initializes that thread runtime by querying `running_in_this_thread` on a temporary
+context before measurement. The measured context and all operations are still fresh. The
+assertion therefore covers routing after thread runtime initialization, not cold-start
+memory usage. This scope is explicitly documented. A thread-local bookkeeping flag was
+also replaced with main-thread-only access after LLDB reproduced recursion through the
+macOS allocation logger while dyld initialized the flag itself.
+
+An assertion that the timer must suspend was removed after it failed when the timer was
+already ready. Its replacement deliberately suspends in a separate control; no elapsed-time
+tolerance or allowance for unexpected allocations was introduced.
+
+JavaScript heap allocations, leak detection and later resolver/socket/coroutine scenarios
+are outside this task. Linux/glibc, MSVC and AddressSanitizer hooks were not executed on this
+Mac. No CI, push, merge, real-browser execution or whole-organization lint was run. The
+OpenSpec CLI remains unavailable, so strict OpenSpec CLI validation was not performed.
+Proposal validation also passed: 22 proposals with zero problems and all 17 checker tests.
+The reference snapshot matches all 53 tracked library files byte for byte.
+The next implementation task is task 12; it has not been started.
+
 ## Task 10 completed, 2026-10-14
 
 This update supersedes the task 10 status in the historical sections below. Tasks 11 to 23

@@ -33,6 +33,8 @@ include::browser.adoc[]
 
 include::timers.adoc[]
 
+include::allocation.adoc[]
+
 include::testing.adoc[]
 
 [#reference]

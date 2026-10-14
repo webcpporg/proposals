@@ -116,10 +116,10 @@ All of them are of 2026-10-11, as `R`.
 
 ## 11. Allocation (plan: Task 11)
 
-- [ ] 11.1 Write the page's section `doc/allocation.adoc` (plan: Task 11, Step 1)
-- [ ] 11.2 Write the failing `test/allocation_test.cpp`: `operator new`, the C library and the aligned allocations counted, the runtime's own allocations kept out by name (Step 2)
-- [ ] 11.3 Run it with the allocator removed and see it fail, restore, run every lane (Step 3)
-- [ ] 11.4 Commit (Step 4)
+- [x] 11.1 Write the page's section `doc/allocation.adoc` (plan: Task 11, Step 1)
+- [x] 11.2 Write the failing `test/allocation_test.cpp`: `operator new`, the C library and the aligned allocations counted, the runtime's own allocations kept out by name (Step 2)
+- [x] 11.3 Run it with the allocator removed and see it fail, restore, run every lane (Step 3)
+- [x] 11.4 Commit (Step 4): local library `a179adc`; native 15 and WebAssembly 74 passing markers, five scratch negative controls, six clang-tidy configurations and rendered documentation validated locally (reference/STATUS.md)
 
 ## 12. The loader (plan: Task 12)
 
