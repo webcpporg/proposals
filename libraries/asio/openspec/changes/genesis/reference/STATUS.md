@@ -1,5 +1,49 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Cobalt exception-policy correction before task 15, 2026-10-14
+
+The owner explicitly requested removing the blanket rejection of Cobalt builds
+with exception-handling=off. Superproject commit `d507a93` removes that conditional
+from tools/boost/Jamfile, corrects AGENTS.md, and adds a real compiled-library
+regression to tools/test/boost_libraries_test.py. It preserves the consumer's
+exception setting; it does not force exceptions on. Patch 0014 records this
+commit without changing any earlier patch. The library remains `ee64779`.
+
+The old command `/webcpp//boost_cobalt exception-handling=off` was reproduced
+failing before compilation. The final regression consumer was also rejected by
+the old rule in a separate scratch checkout. With the correction, eager promises,
+as_result on a completed promise, and timer cancellation through as_tuple compile,
+link and execute on native Clang, JSPI and Asyncify, with exceptions both off and
+on. All six archives are built from Boost's sources; the test checks that
+-fno-exceptions reaches the library and consumer only when off. The Emscripten
+requests explicitly provide BOOST_ASIO_DISABLE_THREADS; automatic configuration
+and the remaining task 15 integration are still pending.
+
+Validation: the full 17-case boost_libraries_test.py suite passed, including the
+six Cobalt configurations and existing URL, Charconv and Locale cases. Pyright
+reported zero errors and warnings. Licence, Python line length and blank-line,
+Jam comment and git whitespace checks passed. Independent static review found no
+blocking issue; its stale native-only comment finding was corrected.
+No CI, push or merge ran. The primary checkout remains unchanged.
+
+### Upstream limitations found during validation
+
+Removing the configuration refusal does not establish universal Cobalt support
+without exceptions. A first consumer using a pending task with as_result and
+spawn compiled and linked but aborted under native libc++ with
+`make_exception_ptr was called in -fno-exceptions mode`. Boost 1.92's
+`task_receiver` move constructor calls moved_from_exception(), which constructs
+an exception_ptr. The reproduction is retained locally as
+`.local/cobalt-moved-task-noexceptions.cpp`. The build comments and AGENTS.md
+record this limitation. No Boost sources were patched or exception settings
+silently enabled.
+
+A further exploratory probe retaining a lazy task in place and awaiting it via
+as_result did not complete; the eager-promise regression does not claim to cover
+that path. Investigate lazy-task adapters and movement before claiming full
+no-exceptions support in the Cobalt integration. The remaining task 15 and task 16
+work has not been marked complete.
+
 ## Task 14 follow-up: exception support, sizes and timings, 2026-10-14
 
 The owner requested comparisons with exceptions on and off, including both
