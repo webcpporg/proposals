@@ -1,5 +1,68 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 14 follow-up: optimized release sizes, 2026-10-14
+
+The owner requested release-only binary-size documentation. The isolated library
+is now `c87731f` on `work/task14-guide`; `source/` matches its 72 tracked files.
+The superproject remains `771a247`. No CI, push, merge or task 15 work ran.
+
+### Release build and measurements
+
+Both compilation and link use `-O3`, with `variant=release` and `NDEBUG`.
+The explicit link flag is necessary with the current b2 Emscripten toolset.
+Emscripten 6.0.11, Boost 1.92, C++20, macOS arm64; exceptions enabled for both
+variants, Asyncify stack 8192, no LTO or compression requested. These are complete
+page modules without the Node harness, excluding JavaScript glue and runtime memory.
+
+| program | jspi bytes | asyncify bytes | asyncify / jspi |
+| --- | ---: | ---: | ---: |
+| page-asio_quick_start | 80,979 | 153,459 | 1.90 |
+| page-asio_timers | 82,724 | 157,831 | 1.91 |
+| page-asio_turn_limit | 78,085 | 146,529 | 1.88 |
+
+Reproduce from the superproject root:
+
+```sh
+b2 -a toolset=emscripten variant=release linkflags=-O3 libs/asio/example//asyncify
+```
+
+The measured artifacts and generated table are in
+`bin/task14-release-sizes-final/` in the isolated checkout. All six exact page
+modules were also loaded under Node 26.7.0 and matched their expected output.
+The guide and README require release for binary-size publication; the former
+unqualified three-times Asyncify estimate now points to the measured table.
+
+### Defects found by release validation
+
+- Optimized JSPI with WebAssembly exceptions failed to link the native dependencies
+  of JavaScript's stackSave/stackRestore. Emscripten reads EM_JS_DEPS after native
+  linking. Asio's target now explicitly exports emscripten_stack_get_current and
+  _emscripten_stack_restore. The optimized bridge regression failed before this
+  correction and passes afterward, alongside a no-exceptions control.
+- Native optimized allocation instrumentation failed 11 checks because compiler
+  allocation builtins elided or reordered calls relative to measurement flags.
+  Only the native allocation tests use -fno-builtin on Clang/GCC. A permanent
+  allocation_native_release target covers this configuration. Application builds
+  and size measurements keep their normal optimizations.
+
+### Validation
+
+Fresh builds passed 16 native release test markers, 76 WebAssembly test markers,
+three examples natively and under each optimized WebAssembly variant, and all four
+browser drivers in optimized release. HeadlessChrome 153.0.8010.12 passed loader,
+idle and rendering checks for both variants. The native allocation controls retain
+correct attribution and still detect an unbound handler's C allocation.
+
+MrDocs, Asciidoctor and source/rendered documentation checks passed. Full lint was
+clean with 97 compilation commands and 33 translation units. Read-only review found
+no Critical or Important issues; its README placement finding was fixed. A scoped
+review of the later native instrumentation correction found no issues.
+
+Build directories are `bin/task14-release-native-final`,
+`bin/task14-release-fix-suite`, `bin/task14-release-browser`,
+`bin/task14-release-asyncify-examples`, and `bin/task14-release-doc-complete`.
+The primary checkout remains unchanged. Task 15 has not started.
+
 ## Task 14 completed locally, 2026-10-14
 
 This update supersedes the task statuses below. Tasks 15 to 23 remain unstarted.
@@ -68,17 +131,8 @@ The OpenSpec CLI is unavailable; strict CLI validation remains unperformed.
 
 ### Measured page-module sizes
 
-Emscripten 6.0.11 debug builds, Boost 1.92, macOS arm64. Values are `.wasm` bytes,
-excluding JavaScript glue, compressed transfer size and runtime memory:
-
-| program | jspi | asyncify | asyncify / jspi |
-| --- | ---: | ---: | ---: |
-| page-asio_quick_start | 3,481,322 | 4,224,803 | 1.21 |
-| page-asio_timers | 3,489,499 | 4,246,508 | 1.22 |
-| page-asio_turn_limit | 3,368,317 | 4,060,449 | 1.21 |
-
-These measurements are not release download-size estimates. The build generates
-this table; the guide explains its scope and the command to regenerate it.
+The optimized release measurements in the follow-up above supersede the
+initial debug measurements. Published binary-size documentation uses release only.
 
 The complete post-commit log is `libs/asio/.superpowers/sdd/plan/task-14-tests.log`
 in the isolated checkout. Other task 14 logs and the verification script are beside

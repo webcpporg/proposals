@@ -43,6 +43,15 @@ for local test in $(browser-tests)
     .asyncify += $(test)_asyncify $(test)_asyncify_no_exceptions ;
 }
 
+# An optimized JSPI link must retain the native stack helpers used by the
+# bridge's JavaScript. Debug runtime dependencies can hide missing exports.
+for local handling in on off
+{
+    webcpp.run bridge_optimized_link_exceptions_$(handling) : bridge_test.cpp
+      : <variant>release <linkflags>-O3 <exception-handling>$(handling)
+      : emscripten ;
+}
+
 # Through the bridge, a program can neither deliver an event outside the
 # count its JavaScript functions keep, deliver being private, nor set what
 # delivering() reads. The control compiles; each refusal must not.
@@ -81,7 +90,15 @@ for local suspend in jspi asyncify
 # The run family keeps Boost's meaning natively too, where it is Boost's own.
 webcpp.run run_family_native : run_family_test.cpp : : native ;
 webcpp.run timers_native : timers_test.cpp : : native ;
-webcpp.run allocation_native : allocation_test.cpp : : native ;
+# Allocation instrumentation observes calls that compiler builtins may elide
+# or reorder across its measurement flags. Keep the calls observable in this
+# test alone, including release; application and size builds stay unchanged.
+local allocation-native-requirements = <toolset>clang:<cxxflags>-fno-builtin
+  <toolset>gcc:<cxxflags>-fno-builtin ;
+webcpp.run allocation_native : allocation_test.cpp
+  : $(allocation-native-requirements) : native ;
+webcpp.run allocation_native_release : allocation_test.cpp
+  : <variant>release $(allocation-native-requirements) : native ;
 
 # Throws and catches across a suspension need exceptions, whatever the build
 # asks: WebAssembly's under jspi, JavaScript's under asyncify (the feature's

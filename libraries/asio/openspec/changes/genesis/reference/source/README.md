@@ -76,7 +76,7 @@ asio's tests and examples:
 
     b2 libs/asio/test libs/asio/example
     b2 toolset=emscripten libs/asio/test libs/asio/example
-    b2 toolset=emscripten libs/asio/test//asyncify libs/asio/example//asyncify
+    b2 toolset=emscripten libs/asio/test//asyncify
     b2 toolset=emscripten webcpp-suspend=asyncify libs/asio/example
     b2 toolset=emscripten libs/asio/test/browser//browser
 
@@ -85,7 +85,7 @@ compares each example's output with the `.expected` file beside it. The
 second does the same on emscripten, run by node, with the toolset that
 `user-config.jam` registers against emsdk, in the default suspension
 variant, JSPI. The third, the lane `asyncify`, runs every browser test again
-under Asyncify, the other variant, and writes the size table of both.
+under Asyncify, the other variant.
 The extra `webcpp-suspend=asyncify` command also executes all guide examples
 under Asyncify. The lane `browser` runs the loader that picks a variant under node,
 loading both built artifacts and checking their output. It also runs idle,
@@ -103,6 +103,16 @@ manifest and returns `{variant, module}` when its factory resolves. A JSPI
 factory can await `main`, so an indefinitely running program must expose
 its readiness through its module callbacks instead of awaiting `load`. The manifest
 and its artifacts keep the relative layout produced by `webcpp.variants`.
+
+The documented binary-size table uses optimized release builds only. Build
+both page variants and measure their uncompressed `.wasm` files with:
+
+    b2 -a toolset=emscripten variant=release linkflags=-O3 libs/asio/example//asyncify
+
+The link flag is required because the current b2 Emscripten toolset does not
+forward the compilation optimization level to the link. The guide records
+the toolchain, settings and measured sizes; JavaScript glue and runtime
+memory are outside this table.
 
 ## Documentation
 

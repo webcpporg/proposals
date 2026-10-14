@@ -66,12 +66,13 @@ b2 toolset=emscripten libs/asio/test libs/asio/example
 
 asyncify::
 A lane of asio's own, on emscripten: every browser test again under
-Asyncify, the other suspension variant, and the size table of both. To
-execute the guide examples under Asyncify too, run the second command:
+Asyncify, the other suspension variant. Generate the size table separately
+in optimized release mode, then execute the guide examples under Asyncify:
 +
 [source,bash]
 ----
-b2 toolset=emscripten libs/asio/test//asyncify libs/asio/example//asyncify
+b2 toolset=emscripten libs/asio/test//asyncify
+b2 -a toolset=emscripten variant=release linkflags=-O3 libs/asio/example//asyncify
 b2 toolset=emscripten webcpp-suspend=asyncify libs/asio/example
 ----
 
@@ -141,16 +142,39 @@ https://webcpporg.github.io/webcpp/report/.
 [#asio-testing-sizes]
 === How to compare the WebAssembly sizes
 
-Build the page-ready variants of all three examples and their table:
+Build the page-ready variants of all three examples and their table in
+optimized release mode. Published binary sizes always use release builds:
 
 [source,bash]
 ----
-b2 toolset=emscripten libs/asio/example//asyncify
+b2 -a toolset=emscripten variant=release linkflags=-O3 libs/asio/example//asyncify
 ----
+
+`variant=release` compiles with `-O3` and `NDEBUG`. The explicit
+`linkflags=-O3` also optimizes the final WebAssembly and JavaScript; the
+current b2 Emscripten toolset does not forward the compilation optimization
+level to its link command automatically. Both steps must be optimized.
 
 The build prints three rows and writes `asio.sizes.md` under its example
 output directory. Each row contains the `.wasm` byte count for JSPI and
 Asyncify and their ratio. These are page modules, built without the Node
 test harness. The table excludes JavaScript glue, transfer compression and
-runtime memory. Compare matching compiler settings and build variants;
-debug artifact sizes do not predict release download sizes.
+runtime memory; it measures complete example modules, not asio's isolated
+contribution. Exceptions are enabled: WebAssembly exceptions for JSPI and
+JavaScript-based exceptions for Asyncify, with its 8192-byte suspension
+stack. No LTO or transfer compression was requested.
+
+Measured on 2026-10-14 with Emscripten 6.0.11, Boost 1.92 and {cpp}20, on
+macOS arm64, using the release command above:
+
+[cols="3,2,2,2",options="header"]
+|===
+| Example | JSPI (.wasm bytes) | Asyncify (.wasm bytes) | Asyncify / JSPI
+| `asio_quick_start` | 80,979 | 153,459 | 1.90
+| `asio_timers` | 82,724 | 157,831 | 1.91
+| `asio_turn_limit` | 78,085 | 146,529 | 1.88
+|===
+
+Compiler versions and application code affect the result. Rebuild both
+variants with matching settings when comparing them. The three examples
+also passed their expected-output checks in release under both variants.

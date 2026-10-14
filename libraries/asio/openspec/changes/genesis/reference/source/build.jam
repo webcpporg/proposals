@@ -74,10 +74,15 @@ explicit browser-src ;
 # scheduler_task::run. ASYNCIFY_STACK_SIZE is asyncify-stack-size's, above.
 # The tag names every program on asio Boost's way, with its variant:
 # reactor-60-d-jspi.js.
+# EM_JS_DEPS is read after the native link in Emscripten 6.0.11. Keep the
+# bridge's stack helpers exported even when an optimized JSPI runtime does
+# not otherwise need them; JavaScript calls both through stackSave/Restore.
 # tag::asio[]
 alias asio : : : : <include>include <library>/boost//headers
   <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS
   <toolset>emscripten:<linkflags>-lembind
+  <toolset>emscripten:<linkflags>-Wl,--export=emscripten_stack_get_current
+  <toolset>emscripten:<linkflags>-Wl,--export=_emscripten_stack_restore
   <toolset>emscripten:<source>browser-src
   <toolset>emscripten,<webcpp-suspend>jspi:<linkflags>-sJSPI
   <toolset>emscripten,<webcpp-suspend>asyncify:<linkflags>-sASYNCIFY

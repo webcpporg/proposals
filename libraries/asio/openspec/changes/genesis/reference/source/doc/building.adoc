@@ -35,6 +35,13 @@ target defines it for every program that uses it on emscripten. Asio's
 inline namespace differs with and without threads, so a translation unit
 that missed the define fails at link, never silently.
 
+The bridge's JavaScript uses `stackSave` and `stackRestore`. On Emscripten
+6.0.11, their native dependencies must survive the native link before
+`EM_JS_DEPS` is processed. The target therefore exports
+`emscripten_stack_get_current` and `_emscripten_stack_restore` explicitly,
+including in optimized JSPI builds. A build outside b2 must keep the same
+link flags shown above.
+
 [#asio-building-variants]
 === The two suspension variants
 
@@ -82,8 +89,10 @@ include::{webcpp-root}/tools/webcpp.jam[tag=suspend]
 Emscripten finds the suspending imports itself, so no list of them is
 given. `ASYNCIFY_IGNORE_INDIRECT` is not set, since the path from `main` to
 the reactor's `select` passes a virtual call, Asio's
-`scheduler_task::run`. Asyncify's cost is size: about three times the JSPI
-program's, in a release build.
+`scheduler_task::run`. Asyncify adds instrumentation and increases the
+program size. The optimized release examples measured 1.88 to 1.91 times
+the JSPI WebAssembly size; see <<asio-testing-sizes>> for the settings,
+byte counts and reproduction command.
 
 [#asio-building-asyncify-stack]
 ==== Asyncify's stack
