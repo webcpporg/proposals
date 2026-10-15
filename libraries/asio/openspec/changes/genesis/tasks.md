@@ -151,11 +151,11 @@ All of them are of 2026-10-11, as `R`.
 
 ## 15. Boost.Cobalt's sources (superproject; plan: Task 15)
 
-- [ ] 15.1 Failing tests in `tools/test/jamroot_test.py` and `tools/ci/actions_test.py` (plan: Task 15, Step 1)
-- [ ] 15.2 Implement `/webcpp//boost_cobalt` and the Boost action (Step 2)
-- [ ] 15.3 Run the tests and build the target for native, JSPI and Asyncify (Step 3)
-- [ ] 15.4 Document it in AGENTS.md (Step 4)
-- [ ] 15.5 Commit (Step 5)
+- [x] 15.1 Failing tests in `tools/test/boost_libraries_test.py` and installer coverage in `tools/ci/actions_test.py` (plan: Task 15, Step 1)
+- [x] 15.2 Implement `/webcpp//boost_cobalt` and the Boost action (Step 2)
+- [x] 15.3 Run the tests and build the target for native, JSPI and Asyncify (Step 3)
+- [x] 15.4 Document it in AGENTS.md (Step 4)
+- [x] 15.5 Commit (Step 5)
 
 ## 16. Boost.Cobalt's `co_main` with the turn limit (plan: Task 16)
 

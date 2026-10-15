@@ -1,5 +1,73 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 15 completed: compiled Cobalt source target, 2026-10-14
+
+Superproject commit `8829e99` completes task 15 on the isolated
+`work/asio-task9-review` branch. Patch 0015 records that commit, preserving the
+previous patches. The library remains `ee64779`; `source/` is unchanged.
+Tasks 0-15 are complete. Task 16 is next and has not started; tasks 16-23 remain.
+No CI, push or merge ran, and the primary checkout was not changed.
+
+`/webcpp//boost_cobalt` builds 24 of Boost 1.92's 26 sources, excluding
+`src/main.cpp` and `src/io/ssl.cpp`. Its implementation defines
+`BOOST_COBALT_SOURCE=1` and `BOOST_COBALT_IO_SOURCE=1`. Consumers receive
+`BOOST_COBALT_NO_LIB=1`; Emscripten sources and consumers receive
+`BOOST_ASIO_DISABLE_THREADS`, with native thread support unchanged.
+Ordinary `main` consumers work. The replacement `co_main` runner belongs to
+task 16 and is not supplied by this archive.
+
+The consumer's exception setting is preserved. With exceptions disabled, b2
+prints a non-fatal configuration warning linking
+https://github.com/boostorg/cobalt/issues/287 and recommending exceptions.
+This warning is not a compiler diagnostic, does not become fatal under
+warnings-as-errors, and does not detect moves or establish runtime safety.
+It is cached per base configuration within a b2 invocation. No warning is
+printed for an exceptions-enabled configuration or an unrelated target.
+
+Validation: all 20 compiled-Boost-library cases, 11 Jamroot cases and 45 local
+installer cases passed. The source-composition test first failed on the missing
+I/O source macro and deliberately invalid main.cpp, then passed after the fix.
+The real Cobalt consumer compiles, links and executes on native Clang, JSPI and
+Asyncify with exceptions off and on. Each configuration rebuilds exactly 24
+sources and verifies macro and exception propagation. It exercises eager
+promises, a completed result, Cobalt's I/O timer and timer cancellation handled
+as a value. Missing or mismatched sources and nested installer preservation
+also pass. Pyright reports zero errors and warnings; licence, line length,
+blank lines, Jam comments, shell syntax and git whitespace checks pass.
+These are local tests, not a CI run or a full browser/API validation.
+
+### Decisions against the older plan
+
+- Keep the existing shared BOOST_SOURCE discovery, version check and installer,
+  rather than add a second Cobalt source tree. The existing installer already
+  preserves nested Cobalt sources. If a separate layout becomes necessary,
+  source discovery must be adapted without changing the public target.
+- Keep compiled-library regressions in boost_libraries_test.py, their current
+  home; also run the plan's Jamroot and installer suites. Moving their location
+  later does not change the covered behavior.
+- Replace three archive-only builds with six real archive-and-consumer builds;
+  they additionally execute the result. Direct archive builds can be repeated
+  if a target-only distinction is discovered.
+- Exclude main.cpp as required, deferring its replacement to task 16. Until
+  then co_main consumers must supply run_main separately.
+- Preserve the owner-approved non-fatal warning instead of forbidding builds
+  without exceptions. The known upstream runtime risk remains unresolved.
+
+Independent read-only review found no Critical or Important issue. One minor
+wording correction is deferred: AGENTS.md says distinct configuration, whereas
+the warning cache uses distinct base configurations and ignores free flags.
+The reviewer deliberately left co_main to task 16 and did not claim real-browser
+or exhaustive I/O coverage. Broader guarantees need their own tests. The
+reviewer did not rerun the suites; execution evidence comes from the executor.
+The final verification log is retained in the isolated worktree at
+`.superpowers/sdd/plan/task-15-tests.log`.
+
+To resume, keep the existing isolated checkout at `8829e99` and library at
+`ee64779`, read task 16 in plan.md and the rulings above, and implement the
+replacement main_promise::run_main with webcpp::asio's turn limit. Do not restore
+the old blanket exception restriction or silently enable exceptions.
+
+
 ## Cobalt exception-policy correction before task 15, 2026-10-14
 
 The owner explicitly requested removing the blanket rejection of Cobalt builds
