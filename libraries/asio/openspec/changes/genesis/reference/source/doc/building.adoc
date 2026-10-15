@@ -259,3 +259,45 @@ fails
 chapter 9). asio's tests pin both cases where node would read a failure as
 a pass, in each variant: a `main` that never finishes, and a `main` that
 suspended and then returns 1 without the helper.
+
+[#asio-tls]
+=== TLS: name OpenSSL for native builds alone
+
+For a native program including `<webcpp/asio/ssl.hpp>`, add
+`/webcpp/asio//openssl` beside `/webcpp/asio//asio` in its target sources:
+`exe app : app.cpp /webcpp/asio//asio /webcpp/asio//openssl ;`.
+OpenSSL 3 supplies libssl and libcrypto. Use `-sOPENSSL_ROOT=<dir>` when
+its include and lib directories are outside the configured search locations.
+
+For a program built both natively and for the browser, put this condition in
+its project requirements. Every program in that project then shares it:
+
+[listing]
+----
+include::{library-root}/example/tls/Jamfile[tag=project,indent=0]
+----
+
+Declare the program normally with
+`exe app : app.cpp /webcpp/asio//asio ;`. The `tls` example builds these
+project requirements on both targets. Do not use
+`<toolset>!emscripten:<library>/webcpp/asio//openssl`: that spelling silently
+fails to link OpenSSL natively in the tested b2 configuration.
+
+The three refusal messages identify a different correction:
+
+* If `ssl.hpp` says OpenSSL is not linked natively, name the `openssl` target.
+  Outside b2, define `WEBCPP_ASIO_HAS_OPENSSL=1` and link libssl and libcrypto.
+* If the build says OpenSSL was not found, install OpenSSL 3 or supply its
+  root with `-sOPENSSL_ROOT=<dir>`. An explicitly requested missing library
+  stops the build. The library's own tests may omit it unless
+  `webcpp-require-external=on` is set.
+* If the build says OpenSSL was named for WebAssembly, use the native-only
+  condition above. The browser settings record does not link OpenSSL and
+  does not provide TLS inside the Wasm module.
+
+The library's targets implement that distinction:
+
+[listing]
+----
+include::{library-root}/build.jam[tag=openssl,indent=0]
+----

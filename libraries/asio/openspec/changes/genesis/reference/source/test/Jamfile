@@ -11,7 +11,9 @@ import webcpp ;
 webcpp.targets native emscripten ;
 webcpp.original node : browser ;
 
-webcpp.headers-alone asio : ../include : asio.hpp asio/*.hpp ;
+webcpp.headers-alone asio : ../include : asio.hpp asio/basic_datagram_socket.hpp asio/basic_socket_acceptor.hpp
+  asio/basic_stream_socket.hpp asio/basic_waitable_timer.hpp asio/config.hpp
+  asio/io_context.hpp asio/steady_timer.hpp asio/system_timer.hpp asio/ip/*.hpp ;
 # The browser's headers name Emscripten's own, and compile on emscripten
 # alone.
 webcpp.headers-alone asio : ../include : asio/browser/*.hpp asio/detail/*.hpp : : emscripten ;
@@ -29,8 +31,8 @@ webcpp.run names : names_test.cpp ;
 # Compiler configuration selects the default. Explicit context options
 # still win.
 webcpp.run names_custom_default : names_test.cpp
-  : <define>WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=100
-    <define>WEBCPP_TEST_TURN_LIMIT=100 ;
+  : <define>WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=1000
+    <define>WEBCPP_TEST_TURN_LIMIT=1000 ;
 webcpp.run names_zero_default : names_test.cpp
   : <define>WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=0
     <define>WEBCPP_TEST_TURN_LIMIT=1 ;
@@ -41,7 +43,7 @@ webcpp.compile-fail negative_default_refused : config_test.cpp
 # them: jspi, the default, in the emscripten lane; asyncify in the own lane
 # asyncify. A test joins by its name. em_js loads every EM_JS of asio and of
 # browser_values.hpp: a function that does not parse fails it before main.
-local browser-tests = reactor run_family turn_limit bridge bridge_abort em_js timers allocation ;
+local browser-tests = reactor run_family turn_limit bridge bridge_abort em_js timers allocation promise event sockets transport resolver ;
 for local test in $(browser-tests)
 {
     webcpp.run $(test) : $(test)_test.cpp : : emscripten ;
@@ -217,4 +219,35 @@ for local handling in on off
 webcpp.lane cobalt : $(.cobalt) : native emscripten ;
 webcpp.lane cobalt_asyncify : $(.cobalt-emscripten) : emscripten ;
 
+for local handling in on off
+{
+    local name = promise_cobalt_exceptions_$(handling) ;
+    local requirements = <library>/webcpp/asio//cobalt <exception-handling>$(handling) ;
+    webcpp.run $(name) : promise_cobalt_test.cpp : $(requirements) : emscripten ;
+    webcpp.run $(name)_asyncify : promise_cobalt_test.cpp
+      : $(requirements) <webcpp-suspend>asyncify : emscripten ;
+    .asyncify += $(name)_asyncify ;
+}
+
+.asyncify += ssl_asyncify ssl_asyncify_no_exceptions ;
 webcpp.lane asyncify : $(.asyncify) : emscripten ;
+
+webcpp.run ssl : ssl_test.cpp : <library>/webcpp/asio//openssl-tests ;
+webcpp.run ssl_no_exceptions : ssl_test.cpp
+  : <library>/webcpp/asio//openssl-tests <exception-handling>off ;
+webcpp.run ssl_asyncify : ssl_test.cpp
+  : <library>/webcpp/asio//openssl-tests <webcpp-suspend>asyncify : emscripten ;
+webcpp.run ssl_asyncify_no_exceptions : ssl_test.cpp
+  : <library>/webcpp/asio//openssl-tests <webcpp-suspend>asyncify <exception-handling>off : emscripten ;
+webcpp.compile-diagnostic ssl_without_openssl : ssl_without_openssl_test.cpp : : native ;
+
+webcpp.compile-diagnostic openssl_on_webassembly : openssl_on_webassembly_test.cpp
+  : <define>WEBCPP_TEST_ASIO_AS_WEBASSEMBLY : native ;
+webcpp.compile-fail openssl_named_on_emscripten : openssl_named_test.cpp
+  : <library>/webcpp/asio//openssl : emscripten ;
+
+webcpp.headers-alone asio : ../include : asio/ssl.hpp
+  : <library>/webcpp/asio//openssl-tests ;
+
+webcpp.compile-fail openssl_named_c_on_emscripten : openssl_named_c_test.c
+  : <library>/webcpp/asio//openssl : emscripten ;

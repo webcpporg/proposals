@@ -102,3 +102,59 @@ alias cobalt : : : : <library>asio <library>cobalt-main <library>/webcpp//boost_
   <toolset>clang,<exception-handling>off:<cxxflags>-Wno-coroutine-missing-unhandled-exception
   <toolset>emscripten,<exception-handling>off:<cxxflags>-Wno-coroutine-missing-unhandled-exception ;
 # end::cobalt[]
+
+import webcpp ;
+
+# tag::openssl[]
+local openssl-root = [ webcpp.external asio : OpenSSL : OPENSSL_ROOT : openssl
+    : openssl/ssl.h : native ] ;
+lib openssl-ssl : : <name>libssl <toolset>msvc <search>$(openssl-root)/lib
+    <search>$(openssl-root)/lib/VC/x64/MD : : <include>$(openssl-root)/include ;
+lib openssl-ssl : : <name>ssl <search>$(openssl-root)/lib
+  : : <include>$(openssl-root)/include ;
+lib openssl-crypto : : <name>libcrypto <toolset>msvc <search>$(openssl-root)/lib
+    <search>$(openssl-root)/lib/VC/x64/MD : : <include>$(openssl-root)/include ;
+lib openssl-crypto : : <name>crypto <search>$(openssl-root)/lib
+  : : <include>$(openssl-root)/include ;
+explicit openssl-ssl openssl-crypto ;
+
+rule openssl-required ( properties * )
+{
+    if ! <toolset>emscripten in $(properties)
+    {
+        return [ webcpp.external-found asio : OpenSSL
+            : $(properties) <webcpp-require-external>on ] ;
+    }
+}
+
+rule openssl-linked ( properties * )
+{
+    if ! <toolset>emscripten in $(properties)
+    {
+        return <library>openssl-ssl <library>openssl-crypto
+            <define>WEBCPP_ASIO_HAS_OPENSSL=1 ;
+    }
+}
+
+# Refused on WebAssembly: every source of a program built for emscripten
+# that names it stops at the forced include, whose message says what to
+# write. Quoted, as the Jamroot quotes Boost's directory, for a path that
+# holds a space.
+path-constant WEBCPP_ASIO_ROOT : . ;
+alias openssl : : <conditional>@openssl-required
+  : : <conditional>@openssl-linked
+    <toolset>emscripten:<cflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\""
+    <toolset>emscripten:<cxxflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\"" ;
+# end::openssl[]
+
+rule openssl-for-tests ( properties * )
+{
+    if ! <toolset>emscripten in $(properties)
+    {
+        return [ webcpp.external-found asio : OpenSSL : $(properties) ] ;
+    }
+}
+
+alias openssl-tests : : <conditional>@openssl-for-tests
+  : : <conditional>@openssl-linked ;
+explicit openssl-tests ;

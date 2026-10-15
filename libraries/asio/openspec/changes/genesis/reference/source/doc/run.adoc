@@ -59,8 +59,8 @@ Step 4's one handler belongs to no turn: when it follows a short turn of
 `k` handlers and its wait ends at once, a timer having fallen due
 meanwhile, no macrotask comes between them, so that up to
 `k + 1 + max_handlers_per_turn` handlers, at most twice the limit,
-can run between two yields. The option is 1000 by default:
-measured with Emscripten 6.0.11, the `setTimeout(0)` above then ran after
+can run between two yields. The option is 100 by default.
+Historically, with a limit of 1000 and Emscripten 6.0.11, the `setTimeout(0)` above ran after
 1,000 handlers under JSPI and 999 under Asyncify, against 300,000 without
 the limit, and `run` still ran every handler. It is given at construction,
 `+io_context io(io_context_options{.max_handlers_per_turn = 250})+`, or
@@ -77,19 +77,19 @@ handler of a turn. And by `run_family`, in each variant.
 
 `WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN` in `config.hpp` supplies the
 initial value of `io_context_options::max_handlers_per_turn`. It defaults
-to 1000 and can be replaced by a compiler definition:
+to 100 and can be replaced by a compiler definition, for example to use 1000:
 
 [source,bash]
 ----
--DWEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=100
+-DWEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=1000
 ----
 
 For b2, pass the definition on the command line for the complete build:
 
 [source,bash]
 ----
-b2 -a --build-dir=bin/asio-limit-100 toolset=emscripten \
-    define=WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=100 \
+b2 -a --build-dir=bin/asio-limit-1000 toolset=emscripten \
+    define=WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=1000 \
     libs/asio/example//asio_cobalt.output
 ----
 
@@ -103,7 +103,7 @@ An explicit option at construction or a later `max_handlers_per_turn(n)` call
 overrides this build default for that context. Zero is normalized to one;
 negative build defaults are rejected. Native scheduling is unchanged.
 
-The value 1000 is a configurable scheduling policy, not a measured optimum or
+The value 100 is a configurable scheduling policy, not a measured optimum or
 a time budget. Smaller values offer more frequent yields under continuous
 ready work, with more suspension and scheduling overhead. A single expensive
 handler can still block the thread. The original browser measurements used

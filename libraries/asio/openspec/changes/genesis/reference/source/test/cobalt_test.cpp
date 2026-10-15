@@ -25,7 +25,7 @@
 
 // The build supplies an independent expectation for configuration regressions.
 #ifndef WEBCPP_TEST_TURN_LIMIT
-#define WEBCPP_TEST_TURN_LIMIT 1000
+#define WEBCPP_TEST_TURN_LIMIT 100
 #endif
 
 using namespace std::chrono_literals;

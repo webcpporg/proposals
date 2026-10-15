@@ -1,0 +1,22 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+# tag::project[]
+project : requirements <conditional>@native-openssl ;
+
+rule native-openssl ( properties * )
+{
+    if ! <toolset>emscripten in $(properties)
+    {
+        return <library>/webcpp/asio//openssl ;
+    }
+}
+# end::project[]
+
+import webcpp ;
+webcpp.targets native emscripten ;
+webcpp.example asio_tls.cpp ;
+webcpp.lane tls : asio_tls asio_tls.output : native emscripten ;

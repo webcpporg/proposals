@@ -1,5 +1,67 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Tasks 17 through 21 and default 100, 2026-10-15
+
+The library is at `f5fd7a8` on `work/task14-guide` in
+`asio-task9-review/libs/asio` in the local organization checkout. The superproject
+is at `063343d` on `work/asio-task9-review`. `source/` is exported from the
+committed library tree; patch 0016 records the superproject change. No CI,
+push, merge or publication ran. Tasks 22 and 23 remain pending.
+
+| Work | Commit | Result |
+| --- | --- | --- |
+| Configurable default 100 | `24c1e2c` | Compiler and per-context overrides remain supported |
+| 17: promises | `7aea14a` | Resolution, rejection, cancellation, Cobalt, shutdown and allocator tests |
+| 18: event waits | `68213bb` | One-shot events, cancellation, listener removal and deferred type ownership |
+| 19: sockets and transport point | `9b37306` | Native aliases, browser unsupported results and custom transport forwarding |
+| 20: resolver | `557d452` | Retained names, service parsing, posted results and deferred input ownership |
+| 21: TLS settings and explicit OpenSSL | `d438a61` | Native linking, browser settings, PMR storage and actionable refusal tests |
+
+Validation completed locally with Apple Clang, Boost 1.92, Emscripten 6.0.11,
+Node 26 and HeadlessChrome 153.0.8010.12. Native and WebAssembly suites were
+rebuilt from scratch, including JSPI and Asyncify with exceptions on/off,
+Cobalt, examples and native/browser TLS. The final native build updated 199
+targets and the WebAssembly build 778; these are build-target counts, not
+assertion counts. Full lint, MrDocs/AsciiDoc generation and rendered checks
+passed. The local matrix tool's unit suite passed; no CI job was dispatched.
+
+The Chrome lane passed loader, idle and responsiveness checks. With the new
+default 100, JSPI observed 60 animation callbacks in one second and processed 1,550,817
+handlers, turn p95 0.100 ms and maximum 0.600 ms; Asyncify observed 61 callbacks
+and processed 606,601 handlers, p95 0.300 ms and maximum 2.100 ms. Each unbounded
+control observed zero animation callbacks. Both idle cases observed one
+setTimeout(300000) and no polling over three seconds. These are local
+observations of trivial handlers, not scheduling guarantees.
+
+TLS host recording used exactly one allocation from the supplied resource,
+with zero counted global new/C/aligned allocations in all four WebAssembly
+configurations. The independently owning verification request is constructed
+before that measurement and moved into the context. Explicit missing OpenSSL
+and an invalid root stopped with guidance; the optional native suite without
+OpenSSL reported omission and passed. The checkout-local OpenSSL link was
+restored. C and C++ negative tests confirmed the actual WebAssembly refusal,
+not an unrelated missing-header failure.
+
+One independent final review found four important issues. Commit `f5fd7a8`
+fixes all four with permanent regressions observed failing before the fixes:
+promise/event operations retain their handler's associated executor work;
+moved-from default transports remain usable; socket close forwards to the
+custom transport's close hook; and the native umbrella header exposes all
+three socket templates. Success, cancellation, shutdown, move construction
+and assignment are exercised. The full suites, followed by focused tests after
+style-only test changes, passed. Final lint and rendered documentation are clean.
+Custom transports must supply close() to cancel pending work and release resources,
+and preserve a usable executor in a moved-from source.
+
+One minor documentation finding remains: the TLS example is compiled and run
+but lacks page variants and a row in the page size table. Carry this into task
+22's documentation work; no binary-size claim is made for that example here.
+
+The next implementation task is 22 (rulebook,
+index and full page), followed by 23 (broader release checks and gates). The
+owner's no-CI instruction still applies to those later gates.
+
+
 ## Yield benchmark charts and complete tables, 2026-10-15
 
 Library commit `3b5d1f5` adds four scientific figures in PNG and SVG, a

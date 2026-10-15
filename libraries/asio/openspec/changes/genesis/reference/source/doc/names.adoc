@@ -67,7 +67,7 @@ of each of Boost's constructors: with none, with an allocator, which it
 allocates its services and its objects' state with, and with Boost's hint of
 the concurrency it will see, with or without an allocator, so that Boost's
 idiom `+io_context io{1}+` compiles unchanged. Its one option,
-`max_handlers_per_turn`, 1000 by default, bounds the handlers one turn of
+`max_handlers_per_turn`, 100 by default, bounds the handlers one turn of
 its run family runs on emscripten before it yields to the browser; 0 is
 taken as 1. Natively the options are accepted and change nothing, since no
 page waits on a native loop.

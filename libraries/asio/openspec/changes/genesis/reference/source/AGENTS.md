@@ -94,7 +94,7 @@ Playwright cache, Emscripten 6.0.11, Boost 1.92 and b2 debug builds:
 
 Each run rebuilt the browser lane from scratch with `-a -j1`, using a
 separate build directory. The programs self-post trivial handlers for one
-second, with the default 1,000 handlers per turn. Callback entry times
+second, with the then-default 1,000 handlers per turn. Callback entry times
 come from `performance.now()`. Full turns end at the yield's message post;
 the last partial turn is excluded. Both unbounded Boost controls had zero
 animation callbacks in every run. These observations show animation
@@ -106,12 +106,18 @@ handlers from the artifact actually selected by the loader. The JSPI
 factory awaits `main`, so the test identifies the imported URL before
 awaiting that factory; an intentionally idle main never returns.
 
-The p95 stayed below the task's 8 ms stop threshold, so the default remains
-1,000. The maximum is recorded without hiding outliers. These are local
+The p95 stayed below the task's 8 ms stop threshold, so that task retained
+1,000 at the time. The maximum is recorded without hiding outliers. These are local
 measurements, not a guarantee for heavy user handlers or other hardware.
 The CI-pinned Chrome version was not executed in this session; no CI ran.
 The driver fails when p95 exceeds 8 ms or no animation callbacks occur;
 changing the default or replacing that witness requires the owner's decision.
+
+On 2026-10-15, the owner selected 100 as the new default after reviewing the
+Release yield benchmark in doc/yield-cost.adoc. This favors more frequent
+browser scheduling opportunities over throughput for trivial handlers; it is
+not a measured optimum or a time bound. Keep the historical results above
+unchanged. The compiler definition and per-context overrides remain supported.
 
 ## Cobalt entry point and suspension stack
 

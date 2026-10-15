@@ -88,6 +88,28 @@ EM_JS(void, test_count_reports, (), {
     globalThis.webcppTestReported = 0;
     globalThis.reportError = () => { ++globalThis.webcppTestReported; };
 });
+EM_JS(emscripten::EM_VAL, test_never_settles, (), {
+    return Emval.toHandle(new Promise(() => {}));
+});
+// Tracks the exact listener functions registered on this test target.
+EM_JS(int, test_listener_count, (emscripten::EM_VAL handle), {
+    const target = Emval.toValue(handle);
+    if (!target.webcppListeners) {
+        const listeners = new Set();
+        target.webcppListeners = listeners;
+        const add = target.addEventListener.bind(target);
+        const remove = target.removeEventListener.bind(target);
+        target.addEventListener = (type, listener, options) => {
+            listeners.add(listener);
+            add(type, listener, options);
+        };
+        target.removeEventListener = (type, listener, options) => {
+            listeners.delete(listener);
+            remove(type, listener, options);
+        };
+    }
+    return target.webcppListeners.size;
+});
 // clang-format on
 
 #endif  // WEBCPP_TEST_ASIO_BROWSER_VALUES_HPP

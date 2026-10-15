@@ -36,7 +36,10 @@ operation's associated allocator:
 * Emscripten's `select` allocates its poll array with `calloc` on each call.
 * Asyncify allocates its unwind data when a call suspends.
 * Boost.Asio's `basic_resolver_results` allocates its result entries with
-  `new`. The timer-and-bridge scenario above does not resolve a name.
+  `new`. The measured operation scenario above does not resolve a name.
+  Forward asynchronous resolution also owns copies of the input names so a
+  deferred operation does not borrow temporary string storage. These result
+  and input strings use the standard allocator, not the handler allocator.
 
 The allocation test replaces Emscripten's `select` in the test executable
 with a version whose poll array is on the stack. It marks only the call to
@@ -91,3 +94,14 @@ handler. Asio's default handler storage goes through an aligned allocation,
 which counting only `operator new` would miss. A separate negative run
 constructs the context without its allocator and must fail. There is no
 allowance for an arbitrary number of extra allocations.
+
+Promise operations allocate their state through the handler's allocator.
+The allocation test covers resolution and rejection with a concrete context
+executor and a bound allocator, including the completion post. Explicitly
+erasing an executor into `any_io_executor` can introduce Boost-owned dispatch
+allocations that its handler allocator does not control; see <<asio-promises>>.
+
+The default browser socket transport preserves an ordinary context executor's
+associated allocation policy even when stored as `any_io_executor`. The same
+measurement includes an unsupported asynchronous connection with a bound
+allocator. Custom executors, including strands, keep their own dispatch policy.

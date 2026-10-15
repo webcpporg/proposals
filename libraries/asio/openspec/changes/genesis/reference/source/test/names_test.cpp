@@ -23,7 +23,7 @@
 
 // The build supplies an independent expectation for configuration regressions.
 #ifndef WEBCPP_TEST_TURN_LIMIT
-#define WEBCPP_TEST_TURN_LIMIT 1000
+#define WEBCPP_TEST_TURN_LIMIT 100
 #endif
 
 static_assert(std::is_base_of_v<boost::asio::io_context, webcpp::asio::io_context>);
@@ -34,6 +34,21 @@ static_assert(std::is_same_v<webcpp::asio::steady_timer, boost::asio::steady_tim
 static_assert(std::is_same_v<webcpp::asio::system_timer, boost::asio::system_timer>);
 static_assert(std::is_same_v<webcpp::asio::basic_waitable_timer<std::chrono::steady_clock>,
                              boost::asio::basic_waitable_timer<std::chrono::steady_clock>>);
+
+#ifndef __EMSCRIPTEN__
+static_assert(std::is_same_v<webcpp::asio::basic_stream_socket<webcpp::asio::ip::tcp>,
+                             boost::asio::basic_stream_socket<boost::asio::ip::tcp>>);
+static_assert(std::is_same_v<webcpp::asio::basic_datagram_socket<webcpp::asio::ip::udp>,
+                             boost::asio::basic_datagram_socket<boost::asio::ip::udp>>);
+static_assert(std::is_same_v<webcpp::asio::basic_socket_acceptor<webcpp::asio::ip::tcp>,
+                             boost::asio::basic_socket_acceptor<boost::asio::ip::tcp>>);
+static_assert(std::is_same_v<webcpp::asio::ip::tcp::resolver, boost::asio::ip::tcp::resolver>);
+static_assert(std::is_same_v<webcpp::asio::ip::tcp, boost::asio::ip::tcp>);
+static_assert(std::is_same_v<webcpp::asio::ip::udp, boost::asio::ip::udp>);
+static_assert(std::is_same_v<webcpp::asio::ip::tcp::socket, boost::asio::ip::tcp::socket>);
+static_assert(std::is_same_v<webcpp::asio::ip::udp::socket, boost::asio::ip::udp::socket>);
+static_assert(std::is_same_v<webcpp::asio::ip::tcp::acceptor, boost::asio::ip::tcp::acceptor>);
+#endif
 
 namespace {
 

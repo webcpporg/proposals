@@ -10,7 +10,7 @@
 Boost.Cobalt's `co_main` remains the application's entry coroutine. Link
 `/webcpp/asio//cobalt` to run it with asio's context: natively this keeps
 Boost.Asio's behavior; on Emscripten it yields between bounded turns.
-The default turn contains at most 1,000 handlers, configurable with
+The default turn contains at most 100 handlers, configurable with
 `WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN` as described in <<asio-run-default>>. A long handler is never
 interrupted, and a yield offers the browser an opportunity to run rather
 than promising a timer deadline or a rendered frame.
@@ -108,7 +108,7 @@ future webcpp SSL integration.
 === Reference: checks and suspension storage
 
 `cobalt_test.cpp` runs 5,000 posts, checks the yield counter against the
-1,000-handler limit, observes a separate page timer, and awaits both timer
+configured default (100 handlers), observes a separate page timer, and awaits both timer
 APIs. It does not assume that a JavaScript timer runs at a fixed callback index.
 The exact-exit drivers check both 7 and 0, with no completion helper in the
 program being checked. Run them locally with:

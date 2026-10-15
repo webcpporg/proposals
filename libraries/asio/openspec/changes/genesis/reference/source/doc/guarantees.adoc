@@ -52,3 +52,23 @@ these guarantees describe their behaviour together.
   implicitly supply the other. The named runtime allocations and measurement
   limits in <<asio-allocation-runtime>> remain outside that routing claim.
   See <<asio-allocation>>; checked by `allocation`.
+. [[asio-invariant-10]]A Promise completes its operation through the bridge
+  with its value, or with `promise_rejected` and its reason. Cancellation
+  posts `operation_aborted`; a later settlement cannot complete it again.
+  See <<asio-promises>>; checked by `promise` and `promise_cobalt`.
+. [[asio-invariant-11]]A pending Promise or event operation owns outstanding work.
+  Destroying the context destroys its pending handler without invoking it.
+  An event wait also removes its listener. See <<asio-promises>>;
+  checked by `promise` and `event`.
+. [[asio-invariant-12]]On Emscripten, network operations on a socket or acceptor
+  fail with `operation_not_supported` unless a transport supplies them. Open
+  and close manage local state; synchronous failures never block and asynchronous
+  failures are posted. See <<asio-sockets>>; checked by `sockets` and `transport`.
+
+[[asio-invariant-13]]
+=== 13. Resolver entries preserve host and service
+
+On Emscripten, forward resolution returns one entry containing the original
+host and service, an unspecified address and the service port. A plain socket
+cannot connect to it. `resolver_test.cpp` checks service parsing and posted
+completion, including failures.

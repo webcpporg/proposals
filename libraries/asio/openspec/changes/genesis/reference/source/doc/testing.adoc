@@ -132,11 +132,11 @@ between the program's start and completion. Callback entry times use
 `requestAnimationFrame`. This observes animation opportunities, not
 individual painted pixels or a universal frame-rate guarantee.
 
-The yield's `MessageChannel` records each complete turn of 1,000 handlers,
+The yield's `MessageChannel` records each complete turn at the configured limit,
 from resumption to the next post. The first starts at the program's
 `spinning` line; the final partial turn is not a full-lot sample. Three
-runs record callback and handler counts, turn counts, p95 and maximum
-turn duration in the library's `AGENTS.md`. A p95 above 8 ms in either
+historical runs at limit 1000 record callback and handler counts, turn counts,
+p95 and maximum turn duration in the library's `AGENTS.md`. A p95 above 8 ms in either
 variant stops the task for the owner to decide the default. A run with
 no animation callbacks also stops for a decision about the witness.
 The maximum is reported separately. Heavy individual handlers can still

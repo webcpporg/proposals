@@ -13,6 +13,10 @@ webcpp.targets native emscripten ;
 webcpp.example asio_quick_start.cpp ;
 webcpp.example asio_turn_limit.cpp ;
 webcpp.example asio_timers.cpp ;
+webcpp.example asio_promise.cpp : : emscripten ;
+webcpp.example asio_event.cpp : : emscripten ;
+webcpp.example asio_sockets.cpp : : emscripten ;
+webcpp.example asio_resolver.cpp : : emscripten ;
 webcpp.example asio_cobalt.cpp : <library>/webcpp/asio//cobalt ;
 
 # A page needs the completion helper header, but not the Node harness.
@@ -24,6 +28,14 @@ webcpp.variants page-asio_timers : asio_timers.cpp
   : <include>../../../tools/node-test/include ;
 webcpp.variants page-asio_cobalt : asio_cobalt.cpp
   : <library>/webcpp/asio//cobalt <include>../../../tools/node-test/include ;
+webcpp.variants page-asio_promise : asio_promise.cpp
+  : <include>../../../tools/node-test/include ;
+webcpp.variants page-asio_event : asio_event.cpp
+  : <include>../../../tools/node-test/include ;
+webcpp.variants page-asio_sockets : asio_sockets.cpp
+  : <include>../../../tools/node-test/include ;
+webcpp.variants page-asio_resolver : asio_resolver.cpp
+  : <include>../../../tools/node-test/include ;
 webcpp.size-table asio
-  : page-asio_quick_start page-asio_turn_limit page-asio_timers page-asio_cobalt ;
+  : page-asio_quick_start page-asio_turn_limit page-asio_timers page-asio_cobalt page-asio_promise page-asio_event page-asio_sockets page-asio_resolver ;
 webcpp.lane asyncify : asio.sizes.md : emscripten ;

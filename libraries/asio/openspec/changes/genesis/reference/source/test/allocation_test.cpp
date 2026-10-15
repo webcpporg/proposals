@@ -41,7 +41,11 @@
 #include <emscripten/heap.h>
 #include <poll.h>
 #include <sys/select.h>
+#include <webcpp/asio/browser/async_await.hpp>
+#include <webcpp/asio/browser/async_wait_event.hpp>
 #include <webcpp/asio/browser/bridge.hpp>
+#include <webcpp/asio/ip/tcp.hpp>
+#include <webcpp/asio/ssl.hpp>
 #elif defined(__APPLE__)
 #include <malloc/malloc.h>
 #endif
@@ -446,6 +450,57 @@ void report(const char* name, std::size_t given = 0) {
 }
 
 #ifdef __EMSCRIPTEN__
+/** A host-storage resource using the same uncounted backing as counted<T>. */
+class counted_resource final : public std::pmr::memory_resource {
+public:
+    explicit counted_resource(std::size_t& allocations) : allocations_(allocations) {}
+
+private:
+    void* do_allocate(std::size_t bytes, std::size_t alignment) override {
+        void* result = allocate_storage(bytes, alignment);
+        if (result == nullptr) {
+            boost::throw_exception(std::bad_alloc());
+        }
+        ++allocations_;
+        return result;
+    }
+
+    void do_deallocate(void* pointer, std::size_t /*bytes*/, std::size_t /*alignment*/) override {
+        release(pointer);
+    }
+
+    bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override {
+        return this == &other;
+    }
+
+    std::size_t& allocations_;
+};
+
+void tls_host_storage_uses_the_resource() {
+    namespace ssl = webcpp::asio::ssl;
+    // The request object owns its input independently of the context's recorded copy.
+    // Construct it before measuring the context, then transfer it without another copy.
+    ssl::host_name_verification verification(
+        "a-long-host-name-that-exceeds-small-string-storage.example.com");
+    std::size_t given = 0;
+    counted_resource resource(given);
+    bool recorded = false;
+    {
+        const allocation_window window;
+        ssl::context context(ssl::context::tlsv12_client, &resource);
+        boost::system::error_code ec;
+        context.set_verify_callback(std::move(verification), ec);
+        recorded = !ec && context.verification_host() ==
+                              "a-long-host-name-that-exceeds-small-string-storage.example.com";
+    }
+    report("TLS host allocator", given);
+    BOOST_TEST(recorded);
+    BOOST_TEST_EQ(given, 1U);
+    BOOST_TEST_EQ(operator_new_calls, 0U);
+    BOOST_TEST_EQ(c_allocations, 0U);
+    BOOST_TEST_EQ(aligned_allocations, 0U);
+}
+
 /** Each delivered event posts through its associated allocator, never runs inline. */
 class counted_registration final : public webcpp::asio::browser::registration {
 public:
@@ -475,6 +530,10 @@ void the_user_s_allocator_takes_everything() {
     bool timer_succeeded = false;
 #ifdef __EMSCRIPTEN__
     std::size_t received = 0;
+    std::size_t promised = 0;
+    std::size_t events = 0;
+    std::size_t connected = 0;
+    bool values_correct = true;
 #endif
     {
         const allocation_window window;
@@ -490,12 +549,44 @@ void the_user_s_allocator_takes_everything() {
                 io, boost::asio::bind_allocator(counted<void>(&given), [&posted] { ++posted; }));
         }
 #ifdef __EMSCRIPTEN__
+        webcpp::asio::ip::tcp::socket socket(io);
+        socket.async_connect(
+            {boost::asio::ip::address_v4::loopback(), 80},
+            boost::asio::bind_allocator(counted<void>(&given), [&](boost::system::error_code ec) {
+                ++connected;
+                values_correct =
+                    values_correct && ec == boost::asio::error::operation_not_supported;
+            }));
         counted_registration listener(io, &given, &received);
         auto& bridge = boost::asio::use_service<webcpp::asio::browser::bridge>(io);
         const std::uint64_t key = bridge.add(listener);
         const emscripten::val deliver = bridge.function(key);
         deliver(1);
         deliver(2);
+        const auto target = emscripten::val::global("EventTarget").new_();
+        webcpp::asio::browser::async_wait_event(
+            io.get_executor(), target, "message",
+            boost::asio::bind_allocator(counted<void>(&given),
+                                        [&](boost::system::error_code ec, const emscripten::val&) {
+                                            values_correct = values_correct && !ec;
+                                            ++events;
+                                        }));
+        target.call<bool>("dispatchEvent",
+                          emscripten::val::global("Event").new_(emscripten::val("message")));
+        for (bool rejected : {false, true}) {
+            auto promise = emscripten::val::global("Promise").call<emscripten::val>(
+                rejected ? "reject" : "resolve", 42);
+            webcpp::asio::browser::async_await(
+                io.get_executor(), promise,
+                boost::asio::bind_allocator(
+                    counted<void>(&given),
+                    [&, rejected](boost::system::error_code ec, emscripten::val value) {
+                        ++promised;
+                        values_correct =
+                            values_correct && value.as<int>() == 42 &&
+                            (rejected ? ec == webcpp::asio::browser::error::promise_rejected : !ec);
+                    }));
+        }
 #endif
         io.run();  // lint-run: the test's event loop
 #ifdef __EMSCRIPTEN__
@@ -508,6 +599,10 @@ void the_user_s_allocator_takes_everything() {
     BOOST_TEST(timer_succeeded);
 #ifdef __EMSCRIPTEN__
     BOOST_TEST_EQ(received, 2U);
+    BOOST_TEST_EQ(promised, 2U);
+    BOOST_TEST_EQ(events, 1U);
+    BOOST_TEST_EQ(connected, 1U);
+    BOOST_TEST(values_correct);
 #endif
     BOOST_TEST_GT(given, 0U);
     BOOST_TEST_EQ(operator_new_calls, 0U);
@@ -763,6 +858,9 @@ int main() {
     the_counters_see_c_and_aligned_allocations();
     the_counters_separate_runtime_allocations(asyncify);
     the_user_s_allocator_takes_everything();
+#ifdef __EMSCRIPTEN__
+    tls_host_storage_uses_the_resource();
+#endif
     the_counters_see_an_unbound_handler();
 #if defined(WEBCPP_TEST_ASIO_COUNTS_C_ALLOCATIONS) && defined(__APPLE__) && !defined(__EMSCRIPTEN__)
     malloc_logger = previous_logger;

@@ -1,0 +1,110 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+
+[#asio-promises]
+== Promises and events
+
+=== Tutorial: receive a value and a rejection
+
+On Emscripten, `browser::async_await` connects a JavaScript Promise to an
+Asio executor. Build this example with `b2 toolset=emscripten
+libs/asio/example//asio_promise.output`.
+
+[source]
+----
+include::{examples}/asio_promise.cpp[tag=program]
+----
+
+Expected output:
+
+[listing]
+----
+include::{examples}/asio_promise.expected[]
+----
+
+A callback receives an error code and an `emscripten::val`:
+success supplies the resolved value, and `promise_rejected` supplies the
+rejection reason. Embind is linked by the library's build requirements.
+
+=== How-to: choose a completion token or cancel a wait
+
+Callbacks, `boost::asio::deferred`, `boost::asio::use_awaitable` and
+`boost::cobalt::use_op` use the same initiation. Coroutine tokens that turn
+errors into exceptions require exception support for that error path.
+Use an error-preserving completion token adapter for errors as values.
+
+Bind a cancellation slot to the handler and emit `terminal`, `partial` or
+`total` to complete the wait with `operation_aborted` and `undefined`.
+`none` does nothing. Completion is posted, never invoked inside initiation
+or the cancellation signal. The Promise itself continues running; any late
+settlement finds no registration and cannot complete the operation again.
+
+=== Reference: values, ownership and allocation
+
+The completion signature is `+void(boost::system::error_code, emscripten::val)+`.
+The rejection category is `webcpp.asio`, with value 1 and message
+`the promise was rejected`. JavaScript `Promise.resolve` normalizes inputs:
+an ordinary value is accepted, and already-settled Promises still complete
+asynchronously. An `undefined` rejection reason is preserved.
+
+A pending operation owns outstanding work. A Promise that never settles
+keeps `run` waiting until cancellation. Destroying the context destroys its
+pending handler without invoking it; later settlements are ignored.
+Operation storage uses the handler's associated allocator, while the
+bridge service and its map use the context's allocator. The operation preserves
+the executor's concrete type when passed directly, including its scheduling
+properties. An explicitly type-erased `any_io_executor` remains accepted, but
+Boost's erased executor can allocate its dispatch wrappers independently of
+the handler allocator. Custom executors likewise control their own storage.
+For the measured allocation guarantee, pass `io.get_executor()` directly.
+See <<asio-allocation>>.
+
+=== Explanation: why the bridge posts the result
+
+JavaScript delivers the settlement through <<asio-browser>>. The bridge
+posts completion so application code runs on the event-loop stack, where
+suspension is supported. It never calls the handler inline from a Promise
+reaction. See guarantees <<asio-invariant-10>> and <<asio-invariant-11>>.
+
+[#asio-events]
+=== Await one browser event
+
+`browser::async_wait_event(executor, target, type, token)` completes with the
+next event of the requested type. It uses a one-shot listener and posts the
+event to the executor. The event type is copied into a JavaScript string,
+including when initiation is deferred; the view needs no terminating null.
+A pending wait owns work. Terminal, partial or total cancellation removes
+the listener and posts `operation_aborted` with `undefined`; `none` does nothing.
+Context destruction removes the listener and destroys the handler silently.
+Storage follows the same allocator and executor rules as Promise waits.
+
+==== Tutorial: receive a message
+
+This example creates an EventTarget, waits for its next message, and schedules
+a JavaScript timer to send it. Build with `b2 toolset=emscripten
+libs/asio/example//asio_event.output`.
+
+[source]
+----
+include::{examples}/asio_event.cpp[tag=program,indent=0]
+----
+
+Expected output:
+
+[listing]
+----
+include::{examples}/asio_event.expected[]
+----
+
+The operation removes its listener before posting completion. To receive another
+event, initiate another wait. Cancelling the wait does not cancel a JavaScript
+timer that might later dispatch an event.
+
+Pending promise and event waits keep both the owning executor and the handler's
+associated executor active. Binding a completion to another context does not
+require restarting that context after settlement. Cancellation transfers the
+completion to it; destroying the owning context releases both work guards.

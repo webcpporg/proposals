@@ -18,10 +18,11 @@ The benchmark ran locally on an Apple M5 Max, 128 GiB RAM, macOS 27.0
 Both compilation and linking used Release `-O3`; `NDEBUG` was enabled.
 The primary matrix enabled exceptions and cross-origin isolation. Additional
 cases disabled exceptions or isolation and exercised an arithmetic workload.
-No CI ran, and the configured default of 1,000 was not changed.
+No CI ran. The benchmark used explicit limits; the configured default was
+1,000 at measurement time. The subsequent policy decision below changes it to 100.
 
 [#asio-yield-default-origin]
-=== Where the default of 1,000 came from
+=== From the original 1,000 default to 100
 
 The value 1,000 predates the isolated yield-cost benchmark. It was specified
 as the initial scheduling policy in design decision D3 and the implementation
@@ -54,6 +55,22 @@ retained after a workload-specific responsiveness check, with its scheduling
 cost now measured independently*. Choosing an optimal default would require
 an explicit responsiveness/overhead objective and representative workloads
 across the supported browsers and hardware.
+
+On 2026-10-15, after reviewing these results, the owner selected *100* as the
+new default to favor browser responsiveness. In a continuously ready chain,
+it offers roughly ten times as many yields as 1,000. The measured boundary
+gaps imply about 44.0/54.5 ms of accumulated scheduling time per million
+handlers at 100 (JSPI/Asyncify), versus 4.64/5.73 ms at 1,000. The additional
+39/49 ms is an extrapolation from this machine, not one uninterrupted pause.
+
+For illustration, 100 callbacks that each take 50 us occupy about 5 ms,
+whereas 1,000 occupy about 50 ms, excluding scheduling overhead. These are
+calculated examples, not measured application response times. Browser work
+gets an opportunity at a yield, not a guarantee that an input or frame runs
+before Wasm resumes. A long handler is never preempted; short-drain/wait paths
+can also run up to twice the configured count between yields, as described
+in <<asio-run>>. The choice of 100 is a responsiveness-oriented policy, not
+proof of an optimum. Applications can still select 1,000 or another value.
 
 === What was timed
 
@@ -242,7 +259,7 @@ handler can make a 4-5 us yield negligible. Choosing a limit balances accumulate
 scheduling cost against time spent away from the browser. Counting handlers
 cannot bound that time when their costs vary, and no limit interrupts a handler
 in the middle. Configure the limit as described in <<asio-run-configure>>;
-the current default remains 1,000.
+the current default is 100.
 
 [#asio-yield-select-limit]
 === Relating the limit to an application's cost budget

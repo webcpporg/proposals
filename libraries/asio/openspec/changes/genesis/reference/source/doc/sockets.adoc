@@ -1,0 +1,127 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+
+[#asio-sockets]
+== Sockets and transports
+
+=== Explanation: native sockets and browser capabilities
+
+Native builds use Boost.Asio's socket types directly. Emscripten builds use
+webcpp protocol and socket templates with the supported Boost signatures.
+They do not call SOCKFS or invent IP addresses through getaddrinfo. Browser
+TCP and UDP are unavailable unless a transport supplies the operations.
+
+With the default transport, opening and closing an object succeeds without
+acquiring a network resource.
+Opening an already open object reports `already_open`. With the default
+transport, network operations return `operation_not_supported`: synchronous
+calls return immediately, and asynchronous calls post their completion.
+The `error_code&` overloads do not throw; throwing overloads are present only
+with exceptions enabled. Queries such as `is_open` describe the local object.
+
+=== How-to: provide a transport
+
+Specialize `browser::transport<Protocol>` for a protocol to provide its network
+operations. The specialization must be visible before first use in every
+translation unit using that protocol. A relay is a separate transport, not a
+change to an individual socket's error policy. Its `close()` must cancel pending
+operations, release connection resources and return an `error_code`; the socket
+forwards closure and marks itself closed on success. Destruction must release
+resources as well. Move operations must transfer resources while preserving a
+usable executor in the source, so a moved-from socket can be reopened.
+Boost.Beast's `tcp_stream`
+contains a Boost socket; a relay reaches Beast as an explicitly named next layer.
+
+=== Reference: supported operations
+
+Stream sockets support connect, read/write_some, send/receive, shutdown,
+options, endpoint queries and non-blocking settings. Datagram sockets add
+bind, send_to and receive_from. Acceptors support bind, listen and accept,
+including asynchronous acceptance into an existing or returned socket.
+Callbacks and deferred tokens use the same asynchronous initiation.
+See <<asio-invariant-12>> and the generated API reference for overloads.
+
+=== Tutorial: observe an unsupported connection
+
+Build and run `asio_sockets` on Emscripten. The object opens locally; connecting
+reports a value without attempting a network connection. Closing succeeds.
+
+[source,cpp]
+----
+include::{examples}/asio_sockets.cpp[tag=program,indent=0]
+----
+
+Expected output:
+
+[listing]
+----
+include::{examples}/asio_sockets.expected[]
+----
+
+=== Explanation: the resolver preserves names
+
+On Emscripten, forward resolution constructs one entry with the original host
+and service, an unspecified IPv4 address and the service port. This is not a
+DNS lookup. A browser stream can retain the name without rewriting a client's
+resolve step. A plain socket still refuses connecting to this entry.
+
+An empty service means port 0. Decimal services accept 0 through 65535;
+`http` and `ws` select 80, and `https` and `wss` select 443. Named services
+are refused with `numeric_service`. Other services report `service_not_found`.
+Reverse resolution reports `operation_not_supported`. Async completion is
+posted; cancel does not retract a result already computed at initiation.
+See <<asio-invariant-13>>.
+
+=== Tutorial: retain a WebSocket service name
+
+Build and run `asio_resolver` on Emscripten. The callback receives the retained
+name and service, port 443, and an unspecified address.
+
+[source,cpp]
+----
+include::{examples}/asio_resolver.cpp[tag=program,indent=0]
+----
+
+Expected output:
+
+[listing]
+----
+include::{examples}/asio_resolver.expected[]
+----
+
+=== Explanation: TLS settings
+
+Native `ssl` names are Boost's, with OpenSSL explicitly linked as described
+in <<asio-tls>>. In the browser, `ssl::context` records method, verification,
+options, additional roots and client-credential requests. It does not read
+files, parse certificates, implement TLS or execute verification callbacks.
+A browser stream adapter must check this record against its capabilities
+before use; recording a request successfully does not mean the browser honors it.
+The future webcpp::beast integration consumes these settings.
+
+A `host_name_verification` request owns its input string. The context copies
+that name into its own `std::pmr::string`, using the resource given to its
+constructor. The allocation test verifies that recorded copy separately from
+the request object's standard string allocation. Other callbacks record the
+`other` kind and clear a previously recorded host.
+
+=== Tutorial: configure peer verification on both targets
+
+Build and run the `tls` example. Natively this configures an OpenSSL context;
+on Emscripten it records the same request for a browser adapter.
+
+[source,cpp]
+----
+include::{examples}/tls/asio_tls.cpp[tag=program,indent=0]
+----
+
+Expected output on either target:
+
+[listing]
+----
+include::{examples}/tls/asio_tls.expected[]
+----

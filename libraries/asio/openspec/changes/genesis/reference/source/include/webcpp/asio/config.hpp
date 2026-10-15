@@ -19,7 +19,7 @@
 /**
  The default number of ready handlers processed in one turn on Emscripten.
 
- Define this nonnegative integer on the compiler command line to replace 1000.
+ Define this nonnegative integer on the compiler command line to replace 100.
  0 is taken as 1 by io_context. Explicit context options override this default.
  Use the same definition in every translation unit, including Cobalt's compiled
  runner, and rebuild when changing it. Natively it does not change scheduling.
@@ -27,7 +27,7 @@
 
  @see "The run family", in the guide.
 */
-#define WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN 1000
+#define WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN 100
 #endif
 
 #if WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN < 0

@@ -53,9 +53,13 @@ include::yield-cost.adoc[]
 
 include::browser.adoc[]
 
+include::promises.adoc[]
+
 include::timers.adoc[]
 
 include::cobalt.adoc[]
+
+include::sockets.adoc[]
 
 include::allocation.adoc[]
 

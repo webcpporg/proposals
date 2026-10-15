@@ -9,6 +9,12 @@ created: 2026-10-11
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Execution update, 2026-10-15:** The owner selected 100 as the configurable
+default turn limit. Tasks 17 through 21 are implemented and committed locally;
+tasks 22 and 23 remain pending. No CI, push or merge was run for this work.
+See STATUS.md for the current commits and validation record. Historical plan
+examples and measurements retain the values they originally specified.
+
 **Goal:** a new library, webcpp::asio, at `libs/asio`: Boost.Asio itself natively, and on
 emscripten Boost.Asio's own `io_context` suspended into the browser's event loop, with what
 Boost lacks there (the threads configuration, a reactor made at construction, a run family
@@ -4027,14 +4033,14 @@ auto async_await(const boost::asio::any_io_executor& executor, emscripten::val p
 }
 ```
 
-- [ ] **Step 1: Write the page's section** `doc/promises.adoc` (`[#asio-promises]`): spec
+- [x] **Step 1: Write the page's section** `doc/promises.adoc` (`[#asio-promises]`): spec
   section 4.7 for promises: every token works; the error; cancellation; lifetime;
   allocation; embind. Guarantees: `[[asio-invariant-10]]` "A promise completes its operation
   through the bridge with its value, or with `promise_rejected` and its reason; a cancellation
   completes it at once with `operation_aborted`, and a later settlement finds nothing.";
   `[[asio-invariant-11]]` "A pending operation is outstanding work; destroying the io_context
   destroys its handler without calling it."
-- [ ] **Step 2: Write the failing test** `test/promise_test.cpp` (cases, each a function;
+- [x] **Step 2: Write the failing test** `test/promise_test.cpp` (cases, each a function;
   `browser_values.hpp` gives the promises):
   - `a_resolved_promise_completes_with_its_value`: `test_promise_after(20, 42, false)`, a
     callback; `ec` is success, the value 42;
@@ -4071,8 +4077,8 @@ auto async_await(const boost::asio::any_io_executor& executor, emscripten::val p
   `promise` joins `browser-tests`; `allocation_test.cpp` gains, on emscripten, a resolved and
   a rejected promise awaited with handlers bound to `counted<void>`, still with no
   `operator new`.
-- [ ] **Step 3: Run** the emscripten lane. Expected: FAIL, `async_await.hpp` not found.
-- [ ] **Step 4: Implement** `browser/error.hpp` (a category whose `name()` is `"webcpp.asio"`
+- [x] **Step 3: Run** the emscripten lane. Expected: FAIL, `async_await.hpp` not found.
+- [x] **Step 4: Implement** `browser/error.hpp` (a category whose `name()` is `"webcpp.asio"`
   and whose `message(1)` is `"the promise was rejected"`, any other value
   `"unknown webcpp.asio error"`; `make_error_code`; `is_error_code_enum`), and
   `browser/async_await.hpp`:
@@ -4172,8 +4178,8 @@ auto async_await(const boost::asio::any_io_executor& executor, emscripten::val p
   (The allocator is taken from the handler before the handler moves and the operation ends;
   the completion's own allocation, the post, is the handler's.) Each member gets its Doc
   Comment; every `boost/asio/` include says why after `lint-world:`.
-- [ ] **Step 5: Run** every lane, then the lint. Expected: PASS, `lint: clean`.
-- [ ] **Step 6: Write the example** `asio_promise.cpp` (emscripten only:
+- [x] **Step 5: Run** every lane, then the lint. Expected: PASS, `lint: clean`.
+- [x] **Step 6: Write the example** `asio_promise.cpp` (emscripten only:
   `webcpp.example asio_promise.cpp : : emscripten ;`): awaits a resolved and a rejected
   promise with callbacks, prints `resolved: 42` and `rejected: promise_rejected 9`; its
   `.expected`; include it in `promises.adoc`.
@@ -4181,7 +4187,7 @@ auto async_await(const boost::asio::any_io_executor& executor, emscripten::val p
   name `page-asio_promise` in `webcpp.size-table asio` (spec sections 4.4 and 9: every
   example, both variants); the asyncify lane then prints one more row.
   Run the emscripten lane, the asyncify lane and the doc build. Expected: PASS.
-- [ ] **Step 7: Commit** (library): `"asio: a JavaScript promise as an Asio operation"`.
+- [x] **Step 7: Commit** (library): `"asio: a JavaScript promise as an Asio operation"`.
 
 ## Task 18: Events as operations
 
@@ -4204,7 +4210,7 @@ auto async_wait_event(const boost::asio::any_io_executor& executor, emscripten::
 }
 ```
 
-- [ ] **Step 1: Write the failing test** `test/event_test.cpp`:
+- [x] **Step 1: Write the failing test** `test/event_test.cpp`:
   - `an_event_completes_with_itself`: `test_event_target()`, `test_dispatch_after(target, 20,
     5)`, awaited for `"message"`; success, and `event["detail"].as<int>() == 5`;
   - `only_the_next_event`: two dispatches 20 ms apart, one wait; the second event is not
@@ -4222,8 +4228,8 @@ auto async_wait_event(const boost::asio::any_io_executor& executor, emscripten::
   target's own `addEventListener` and `removeEventListener` that keep a count, and returns it.)
   `event` joins `browser-tests`; `allocation_test.cpp` gains an event awaited with a handler
   bound to `counted<void>`, still with no `operator new`.
-- [ ] **Step 2: Run.** Expected: FAIL, `async_wait_event.hpp` not found.
-- [ ] **Step 3: Implement** `async_wait_event.hpp` in the shape of `async_await.hpp`: its
+- [x] **Step 2: Run.** Expected: FAIL, `async_wait_event.hpp` not found.
+- [x] **Step 3: Implement** `async_wait_event.hpp` in the shape of `async_await.hpp`: its
   operation keeps `target`, the type as a JavaScript string made by `webcpp_asio_string(type.data(),
   type.size())` (no `std::string`: the view needs no null and nothing is allocated), and the
   bridge's function; `start` calls
@@ -4232,15 +4238,15 @@ auto async_wait_event(const boost::asio::any_io_executor& executor, emscripten::
   `cancel` calls `removeEventListener(type, function)`, removes the id and completes with
   `operation_aborted`; `shutdown` (the io_context's destruction) clears the slot, calls
   `removeEventListener(type, function)` too, and destroys the handler without calling it.
-- [ ] **Step 4: Run** every lane and the lint. Expected: PASS.
-- [ ] **Step 5: Write the example** `asio_event.cpp` (emscripten): waits for a `message` on an
+- [x] **Step 4: Run** every lane and the lint. Expected: PASS.
+- [x] **Step 5: Write the example** `asio_event.cpp` (emscripten): waits for a `message` on an
   `EventTarget` that a `setTimeout` dispatches, prints `event: message 5`; its `.expected`;
   in the page.
   `example/Jamfile` also gains `webcpp.variants page-asio_event : asio_event.cpp ;` and the
   name `page-asio_event` in `webcpp.size-table asio` (spec sections 4.4 and 9: every
   example, both variants); the asyncify lane then prints one more row.
   Run the emscripten lane, the asyncify lane and the doc build. Expected: PASS.
-- [ ] **Step 6: Commit** (library): `"asio: a browser event as an Asio operation"`.
+- [x] **Step 6: Commit** (library): `"asio: a browser event as an Asio operation"`.
 
 ## Task 19: Sockets and the transport point
 
@@ -4300,7 +4306,7 @@ class transport;  // primary: every operation fails with operation_not_supported
   Each asynchronous one goes through `boost::asio::async_initiate` and completes through a
   post.
 
-- [ ] **Step 1: Write the page's section** `doc/sockets.adoc` (`[#asio-sockets]`): spec
+- [x] **Step 1: Write the page's section** `doc/sockets.adoc` (`[#asio-sockets]`): spec
   section 7: why webcpp's own templates on emscripten (SOCKFS opens a WebSocket, getaddrinfo
   invents 172.29.x.x addresses), the subset, the failures as values, the transport point and
   its one-definition rule, and that Beast's `tcp_stream` wraps Boost's socket, so a relay
@@ -4308,7 +4314,7 @@ class transport;  // primary: every operation fails with operation_not_supported
   each socket and acceptor operation but `open` and `close` fails with
   `operation_not_supported` unless a transport provides it; a synchronous one never blocks, an
   asynchronous one completes through a post."
-- [ ] **Step 2: Write the failing tests.** `test/sockets_test.cpp` (emscripten): for
+- [x] **Step 2: Write the failing tests.** `test/sockets_test.cpp` (emscripten): for
   `ip::tcp::socket`, `ip::udp::socket` and `ip::tcp::acceptor`, every operation of the list
   above in its `error_code&` form gives `operation_not_supported` and returns at once; every
   asynchronous one completes with it through a post (a flag set after the call returns is seen
@@ -4324,8 +4330,8 @@ class transport;  // primary: every operation fails with operation_not_supported
   `boost::asio::ip::tcp` and `webcpp::asio::ip::tcp::socket` is Boost's socket. `sockets` and
   `transport` join `browser-tests`; `allocation_test.cpp` gains an `async_connect` bound to
   `counted<void>`, with no `operator new`.
-- [ ] **Step 3: Run.** Expected: FAIL, `ip/tcp.hpp` not found.
-- [ ] **Step 4: Implement** the headers. The transport's primary:
+- [x] **Step 3: Run.** Expected: FAIL, `ip/tcp.hpp` not found.
+- [x] **Step 4: Implement** the headers. The transport's primary:
 
 ```cpp
 namespace webcpp::asio::browser {
@@ -4531,8 +4537,8 @@ private:
   kin from `<boost/asio/detail/socket_types.hpp>` (each `lint-world:`).
   `headers-alone`'s first call takes `asio/ip/*.hpp` with the rest; the emscripten-only
   `browser/transport.hpp` is in the second call's glob.
-- [ ] **Step 5: Run** every lane and the lint. Expected: PASS.
-- [ ] **Step 6: Write the example** `asio_sockets.cpp` (emscripten): a `tcp::socket` opened
+- [x] **Step 5: Run** every lane and the lint. Expected: PASS.
+- [x] **Step 6: Write the example** `asio_sockets.cpp` (emscripten): a `tcp::socket` opened
   and connected to `127.0.0.1:80`; prints `open: true`,
   `connect: operation_not_supported` (comparing the code, never its message), `close: ok`;
   its `.expected`; in `sockets.adoc`.
@@ -4540,7 +4546,7 @@ private:
   name `page-asio_sockets` in `webcpp.size-table asio` (spec sections 4.4 and 9: every
   example, both variants); the asyncify lane then prints one more row.
   Run the emscripten lane, the asyncify lane and the doc build. Expected: PASS.
-- [ ] **Step 7: Commit** (library): `"asio: sockets that fail as values, behind the transport
+- [x] **Step 7: Commit** (library): `"asio: sockets that fail as values, behind the transport
   point"`.
 
 ## Task 20: The resolver (option A)
@@ -4593,13 +4599,13 @@ public:
   `operation_not_supported`. `cancel` does nothing: every resolution has completed when it
   starts (as an operation Boost had completed).
 
-- [ ] **Step 1: Write the page's part** in `doc/sockets.adoc`: spec section 7, "The resolver"
+- [x] **Step 1: Write the page's part** in `doc/sockets.adoc`: spec section 7, "The resolver"
   (decision 5): the entry, the port of each service, why not a failing resolver (every Beast
   client would change a line), reverse resolution. Guarantee `[[asio-invariant-13]]`: "On
   emscripten, `resolve(host, service)` completes with one entry whose `host_name()` and
   `service_name()` are the arguments and whose endpoint is the unspecified address and the
   service's port; a plain socket's `connect` on it fails with `operation_not_supported`."
-- [ ] **Step 2: Write the failing test** `test/resolver_test.cpp` (emscripten):
+- [x] **Step 2: Write the failing test** `test/resolver_test.cpp` (emscripten):
   - `resolve_makes_one_entry`: `tcp::resolver r(io); r.resolve("example.com", "https", ec)`:
     no error, one entry, `host_name() == "example.com"`, `service_name() == "https"`,
     `endpoint().address().is_unspecified()`, port 443;
@@ -4631,22 +4637,22 @@ constexpr std::array<expected_port, 11> services{{
   `names_test.cpp` gains, natively, `static_assert` that
   `webcpp::asio::ip::tcp::resolver` is `boost::asio::ip::tcp::resolver`. `resolver` joins
   `browser-tests`.
-- [ ] **Step 3: Run.** Expected: FAIL, `ip/basic_resolver.hpp` not found.
-- [ ] **Step 4: Implement** the header; `tcp::resolver` and `udp::resolver` become
+- [x] **Step 3: Run.** Expected: FAIL, `ip/basic_resolver.hpp` not found.
+- [x] **Step 4: Implement** the header; `tcp::resolver` and `udp::resolver` become
   `basic_resolver<tcp>` and `basic_resolver<udp>`. The port is parsed with `std::from_chars`
   into a `std::uint32_t` after the all-digits check, a guard at the top of a function of its
   own, `std::optional<std::uint16_t> port_of(std::string_view service, flags f) noexcept`.
-- [ ] **Step 5: Run** every lane and the lint. Expected: PASS. `allocation.adoc` names the
+- [x] **Step 5: Run** every lane and the lint. Expected: PASS. `allocation.adoc` names the
   resolver's results as the third of the runtime's allocations (`new`, in Boost's
   `basic_resolver_results::create`).
-- [ ] **Step 6: Write the example** `asio_resolver.cpp` (emscripten): resolves
+- [x] **Step 6: Write the example** `asio_resolver.cpp` (emscripten): resolves
   `("example.com", "wss")` asynchronously and prints `example.com wss 443 unspecified: true`;
   its `.expected`; in `sockets.adoc`.
   `example/Jamfile` also gains `webcpp.variants page-asio_resolver : asio_resolver.cpp ;` and the
   name `page-asio_resolver` in `webcpp.size-table asio` (spec sections 4.4 and 9: every
   example, both variants); the asyncify lane then prints one more row.
   Run the emscripten lane, the asyncify lane and the doc build. Expected: PASS.
-- [ ] **Step 7: Commit** (library): `"asio: the resolver of option A, whose entry the
+- [x] **Step 7: Commit** (library): `"asio: the resolver of option A, whose entry the
   browser's streams accept"`.
 
 ## Task 21: The `ssl` names, and OpenSSL named by the program
@@ -4768,7 +4774,7 @@ public:
   Each setting is recorded and succeeds; whether the browser honours it is webcpp::beast's
   judgement. The verification host is held in a `std::pmr::string` of the given resource.
 
-- [ ] **Step 1: Write the failing tests.** `test/ssl_test.cpp`: natively, `static_assert`s
+- [x] **Step 1: Write the failing tests.** `test/ssl_test.cpp`: natively, `static_assert`s
   that `webcpp::asio::ssl::context` is `boost::asio::ssl::context` and
   `webcpp::asio::ssl::stream_base` Boost's, and a `context(tlsv12_client)` made; on
   emscripten: a context of `tlsv12_client` records its method; `set_verify_mode(verify_peer)`,
@@ -4815,7 +4821,7 @@ webcpp.compile-fail openssl_named_on_emscripten : openssl_named_test.cpp
   FAIL: `ssl.hpp` and `src/openssl_on_webassembly.hpp` do not exist, `openssl_named_on_emscripten`
   compiles (nothing refuses it yet, so the compile-fail test fails), and
   `needs_external('asio')` is false.
-- [ ] **Step 2: Implement.** `build.jam` (with `import webcpp ;` at its top):
+- [x] **Step 2: Implement.** `build.jam` (with `import webcpp ;` at its top):
 
 ```jam
 # OpenSSL 3, natively, for <webcpp/asio/ssl.hpp>, found by webcpp.external
@@ -4894,7 +4900,7 @@ explicit openssl-tests ;
   unless `WEBCPP_ASIO_HAS_OPENSSL`, then `#include <boost/asio/ssl.hpp>  // lint-world: TLS
   over Asio's sockets` and the namespace alias; on emscripten the record. `tools/ci/matrix.py`'s
   `EXTERNAL_DEPENDENCIES` gains `'asio': ('openssl',)`, with its comment naming asio's `ssl`.
-- [ ] **Step 3: Run** every lane, `python3 tools/ci/matrix_test.py` and the lint. Expected:
+- [x] **Step 3: Run** every lane, `python3 tools/ci/matrix_test.py` and the lint. Expected:
   PASS, `ssl_without_openssl` among them. Then the two ways OpenSSL can be missing:
   - `$B2 -sOPENSSL_ROOT=/nonexistent libs/asio/test//ssl`. Expected: the build stops, naming
     `/nonexistent` (webcpp.external's refusal of a wrong `-s`).
@@ -4911,7 +4917,7 @@ explicit openssl-tests ;
     a "file not found" (broken quoting, a wrong `WEBCPP_ASIO_ROOT`) is a failure of this step
     (re-review 2, R2-2). The refusal is a `<compileflags>`, so a C source of the program is
     refused as a C++ one is (R2-1).
-- [ ] **Step 4: The form a program built for both targets writes, built by an example in
+- [x] **Step 4: The form a program built for both targets writes, built by an example in
   the CI.** `example/tls/Jamfile`, a project of its own whose requirements are the user's
   lines, verbatim:
 
@@ -4960,7 +4966,7 @@ webcpp.lane tls : asio_tls asio_tls.output : native emscripten ;
   neither (`-d+2`). Then `$B2 -d0 declared-lanes`: lines `asio tls libs/asio/example/tls
   native programs` and `... emscripten programs`; and `python3 tools/ci/matrix.py own-lanes
   --library asio` gives the native entry `external` true, so the CI's job installs OpenSSL.
-- [ ] **Step 5: Write the page's parts**, for a reader who may be an AI agent writing a
+- [x] **Step 5: Write the page's parts**, for a reader who may be an AI agent writing a
   Jamfile at once:
   - in `building.adoc`, a section `[#asio-tls]` "TLS: name OpenSSL for native builds alone":
     a program that includes `<webcpp/asio/ssl.hpp>` and is built only natively writes
@@ -4974,7 +4980,7 @@ webcpp.lane tls : asio_tls asio_tls.output : native emscripten ;
     WebAssembly), and the region `openssl` of `{library-root}/build.jam`;
   - in `sockets.adoc`, "TLS settings": natively Boost's `ssl`; in the browser a record that
     webcpp::beast's streams judge; and the example's listing and output.
-- [ ] **Step 6: Commit** (library): `"asio: the ssl names, Boost's natively with OpenSSL named
+- [x] **Step 6: Commit** (library): `"asio: the ssl names, Boost's natively with OpenSSL named
   by the program and refused on WebAssembly, and a record of the settings in the browser"`; (superproject):
   `"tools/ci: asio's ssl needs OpenSSL natively"` with `tools/ci/matrix.py tools/ci/matrix_test.py`.
 
