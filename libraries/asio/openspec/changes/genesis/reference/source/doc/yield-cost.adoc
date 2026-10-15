@@ -20,12 +20,45 @@ The primary matrix enabled exceptions and cross-origin isolation. Additional
 cases disabled exceptions or isolation and exercised an arithmetic workload.
 No CI ran, and the configured default of 1,000 was not changed.
 
+[#asio-yield-default-origin]
+=== Where the default of 1,000 came from
+
+The value 1,000 predates the isolated yield-cost benchmark. It was specified
+as the initial scheduling policy in design decision D3 and the implementation
+plan. The design recorded a timer witness: with that limit, `setTimeout(0)`
+ran after about 1,000 handlers instead of waiting for the entire ready chain.
+That establishes that yielding happens; it does not derive an optimal limit.
+No calculation selecting 1,000 over all other limits was recorded there.
+
+Task 13 subsequently checked whether keeping that value was acceptable for
+its trivial-handler workload. Its local Chrome experiment measured full
+1,000-handler turns in three debug runs on 2026-10-14. The p95 was 0.7 ms for
+JSPI and 1.6 ms for Asyncify in every run. Animation callbacks occurred about
+60 times per second; the unbounded controls had none during the observed work.
+The measured maxima were 1.8-1.9 ms and 8.9-9.2 ms, respectively. These are
+historical *batch durations*, distinct from the Release yield latencies below.
+The complete historical table remains in the library's `AGENTS.md`.
+
+The predeclared stop criterion was a turn p95 above 8 ms in either variant.
+Its motivation was to leave roughly half of a 60 Hz frame's 16.7 ms interval
+for browser work. This is a screening heuristic, not a guarantee of frame
+rate: p95 does not bound every turn, browser work varies, and an animation
+callback does not prove that particular pixels were painted. The observations
+passed that criterion, so the existing default was retained.
+
+The 2026-10-15 Release benchmark then measured the missing part: the actual
+cost of yielding. It supports amortizing that cost across cheap callbacks;
+it does not retrospectively turn 1,000 into a mathematically derived optimum.
+The documented rationale is therefore: *an initial configurable policy,
+retained after a workload-specific responsiveness check, with its scheduling
+cost now measured independently*. Choosing an optimal default would require
+an explicit responsiveness/overhead objective and representative workloads
+across the supported browsers and hardware.
+
 === What was timed
 
-The direct measurement surrounds the production function, without changing
-its implementation:
-
-The {cpp} steady-clock timestamp is read immediately before the call and
+The direct measurement surrounds the production function without changing
+its implementation. The {cpp} steady-clock timestamp is read immediately before the call and
 immediately after it resumes. Their difference in milliseconds is multiplied
 by 1,000 to report microseconds. The compiled implementation is in
 `bench/yield/yield_program.cpp`.
@@ -210,6 +243,41 @@ scheduling cost against time spent away from the browser. Counting handlers
 cannot bound that time when their costs vary, and no limit interrupts a handler
 in the middle. Configure the limit as described in <<asio-run-configure>>;
 the current default remains 1,000.
+
+[#asio-yield-select-limit]
+=== Relating the limit to an application's cost budget
+
+For a continuously ready chain with roughly uniform callbacks, let `Y` be
+mean yield latency, `C` the mean cost of handling one callback without a forced
+yield, and `N` the number of callbacks per turn. The scheduling cost per
+callback is approximately `Y / N`. Relative to the callback work, the added
+cost is approximately `Y / (N * C)`. These are workload estimates, not latency
+bounds; they omit variability and other browser work.
+
+For an allowed additional cost ratio `r`, the estimate asks for
+`N >= Y / (r * C)`, rounded up to a positive integer. This must be balanced
+against time away from the browser, approximately `N * C` for this continuous
+chain. The general run-family paths described in <<asio-run-turn>> can have
+more than one turn's handlers between yields, and no handler is preempted.
+
+For illustration only, assume `Y = 5 us` and allow 10% added scheduling cost:
+
+[cols="1,1,1",options="header"]
+|===
+|Assumed callback cost C |Estimated minimum N |Callback work per full turn
+
+|0.05 us |1,000 |50 us
+|1 us |50 |50 us
+|100 us |1 |100 us
+|===
+
+These assumed callback costs and the 10% objective did *not* produce the
+original default. They show why a count cannot be selected from yield latency
+alone. A limit of 1 can be inexpensive for substantial callbacks; 1,000 can
+amortize scheduling for extremely cheap callbacks. Conversely, 1,000 callbacks
+that each take 100 us can occupy the thread for about 100 ms before a periodic
+yield in this chain. Measure the actual application and choose its limit using
+<<asio-run-default,the build definition>> or the per-context option.
 
 === Reproduce and inspect
 

@@ -1,5 +1,18 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Default turn-limit rationale documented, 2026-10-15
+
+Library commit `0aed494` explains that 1000 was the initial design policy,
+then retained after task 13's workload-specific turn-duration check. The later
+Release benchmark measures yield cost independently; it does not derive an
+optimal default. The guide now links this provenance, the historical 8 ms p95
+screening criterion and an illustrative application cost model. Assumed callback
+costs and overhead targets are explicitly not the historical selection rule.
+Documentation generation and rendered checks passed. Only documentation changed;
+no benchmark observations, scheduling behavior or defaults changed. The raw-data
+archive remains the original measurement snapshot. No CI, push or merge ran.
+Task 17 remains pending, and source/ matches the committed library.
+
 ## Yield latency benchmark after task 16, 2026-10-15
 
 Library commits `543e764` and `793c4c2` add a manual benchmark and its report;

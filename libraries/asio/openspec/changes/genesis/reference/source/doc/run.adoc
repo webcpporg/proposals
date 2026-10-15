@@ -106,9 +106,11 @@ negative build defaults are rejected. Native scheduling is unchanged.
 The value 1000 is a configurable scheduling policy, not a measured optimum or
 a time budget. Smaller values offer more frequent yields under continuous
 ready work, with more suspension and scheduling overhead. A single expensive
-handler can still block the thread. The recorded browser measurements used
-small self-posting handlers; they do not determine an appropriate limit for
-all applications or measure the isolated cost of a yield.
+handler can still block the thread. The original browser measurements used
+small self-posting handlers and checked turn duration, not isolated yield cost.
+The later <<asio-yield-cost,Release benchmark>> measures yield latency separately.
+See <<asio-yield-default-origin>> for the default's origin and validation,
+and <<asio-yield-select-limit>> for the cost model and its limits.
 
 [#asio-run-callers]
 === Who may call it
