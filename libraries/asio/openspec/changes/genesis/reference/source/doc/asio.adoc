@@ -31,7 +31,8 @@ reference on this page.
 * *Learn by doing:* start with <<asio-quick-start>>.
 * *Complete a task:* <<asio-building,build and load a program>>,
   <<asio-run-configure,configure a turn limit>>,
-  <<asio-timers-example,schedule and cancel timers>>, or
+  <<asio-timers-example,schedule and cancel timers>>,
+  <<asio-cobalt-build,link a Cobalt program>>, or
   <<asio-testing-application,test your application>>.
 * *Understand the design:* read <<asio-overview>>, <<asio-run-turn>>,
   <<asio-browser>> and <<asio-allocation-runtime>>.
@@ -51,6 +52,8 @@ include::run.adoc[]
 include::browser.adoc[]
 
 include::timers.adoc[]
+
+include::cobalt.adoc[]
 
 include::allocation.adoc[]
 

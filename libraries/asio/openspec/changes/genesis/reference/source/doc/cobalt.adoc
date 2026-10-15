@@ -1,0 +1,182 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-cobalt]
+== Run a Cobalt program
+
+Boost.Cobalt's `co_main` remains the application's entry coroutine. Link
+`/webcpp/asio//cobalt` to run it with asio's context: natively this keeps
+Boost.Asio's behavior; on Emscripten it yields between bounded turns.
+The default turn contains at most 1,000 handlers. A long handler is never
+interrupted, and a yield offers the browser an opportunity to run rather
+than promising a timer deadline or a rendered frame.
+
+[#asio-cobalt-example]
+=== Tutorial: wait for a timer in co_main
+
+Start with the native build setup in <<asio-building>>. Open
+`libs/asio/example/asio_cobalt.cpp`; this is the complete example:
+
+[source,cpp]
+----
+include::{examples}/asio_cobalt.cpp[tag=program,indent=0]
+----
+
+`this_coro::executor` obtains the executor installed by the runner. The timer
+belongs to that executor, and `co_await` suspends the coroutine until its wait
+completes. `as_tuple` exposes an error as a value, so this example also builds
+without exception handling. It does not move a pending Cobalt task.
+The final `exit_status` call reports completion to webcpp's example harness;
+an application outside that harness can simply `co_return 0`.
+
+Run these commands from the superproject root:
+
+[source,bash]
+----
+b2 libs/asio/example//asio_cobalt.output
+b2 toolset=emscripten libs/asio/example//asio_cobalt.output
+b2 toolset=emscripten webcpp-suspend=asyncify libs/asio/example//asio_cobalt.output
+----
+
+Each run must produce the same standard output:
+
+[listing]
+----
+include::{examples}/asio_cobalt.expected[]
+----
+
+The build compares this output against the checked-in expected file. The
+50 ms is a requested timer delay, not a precise wall-clock duration.
+To try the result-based path, append `exception-handling=off`; read the
+upstream limitation and configuration warning below first.
+
+[#asio-cobalt-build]
+=== How to link the integration
+
+Add `<library>/webcpp/asio//cobalt` to the program's requirements. Keep the
+Cobalt headers and `co_main` signature. The target supplies both the compiled
+Cobalt sources and webcpp's replacement runner; do not also link a system
+Cobalt library or compile Boost's `src/main.cpp`.
+
+Exception handling follows the application. A build without exceptions
+prints the warning linked to https://github.com/boostorg/cobalt/issues/287[Cobalt issue 287].
+Clang's diagnostic about a missing `unhandled_exception` is suppressed only
+for this exception-free target: Boost removes that member in this mode.
+Other compiler warnings and their warnings-as-errors policy are unchanged.
+Result adapters do not repair upstream operations that construct exception
+objects internally. This integration does not establish universal support
+for Cobalt without exceptions.
+
+[#asio-cobalt-runner]
+=== Why the runner changes
+
+Cobalt's header supplies `main`, which calls
+`boost::cobalt::detail::main_promise::run_main` to execute the application's
+`co_main`. Its compiled runner owns a Boost.Asio context. webcpp replaces
+that definition with one using `webcpp::asio::io_context`, preserving the
+executor setup, initial post, signal cancellation and final suspension.
+A differently named entry coroutine would require application changes;
+a second `co_main` would conflict with the application's definition.
+
+The replacement reads Boost 1.92's internal promise members: `result`,
+`exec`, `exec_`, `signal_set` and `signal`. Compiling and running the
+integration against the pinned Boost is its compatibility check. A future
+Boost change may require updating this adapter. Linking Cobalt's original
+runner instead is a fallback with its original behavior, without webcpp's
+turn limit; the two runners must not be linked together.
+
+[#asio-cobalt-status]
+=== Completion and limitations
+
+The runner preserves `co_return` as the process exit status. Under Asyncify,
+a suspended `main` cannot simply return that status: the replacement exits
+explicitly after the context and signal set have been destroyed. Tests check
+that a timer followed by `co_return 7` exits with exactly 7. With Emscripten's
+default `EXIT_RUNTIME=0`, a debug Asyncify build may print its runtime-retained
+notice after `std::exit`; the integration does not force runtime shutdown.
+
+The Cobalt source target omits `io/ssl.cpp`, which requires OpenSSL.
+`boost::cobalt::io::ssl_stream` is therefore not supplied by this target.
+This is a deliberate restriction of the source target, separate from the
+future webcpp SSL integration.
+
+[#asio-cobalt-verify]
+=== Reference: checks and suspension storage
+
+`cobalt_test.cpp` runs 5,000 posts, checks the yield counter against the
+1,000-handler limit, observes a separate page timer, and awaits both timer
+APIs. It does not assume that a JavaScript timer runs at a fixed callback index.
+The exact-exit drivers check both 7 and 0, with no completion helper in the
+program being checked. Run them locally with:
+
+[source,bash]
+----
+b2 libs/asio/test//cobalt
+b2 toolset=emscripten libs/asio/test//cobalt
+b2 toolset=emscripten libs/asio/test//cobalt_asyncify
+----
+
+The Asyncify stack probe covers the yield and forced blocking waits through
+both timer APIs. Its largest Cobalt observation was 1,088 bytes in a release
+build with the toolset's default link, with exceptions; release linked with
+`-O3` used at most 384 bytes. Debug used at most 1,032 bytes. The configured
+8,192 bytes therefore remains unchanged. These are suspension-stack readings,
+not binary sizes or a guarantee about arbitrary application call depth.
+
+[#asio-cobalt-sizes]
+=== Reference: release binary sizes
+
+The timer example above was measured with Emscripten 6.0.11, Boost 1.92,
+{cpp}20 and Node 26.7.0 on macOS arm64, on 2026-10-15. Each of the twelve
+configurations used its own build directory, with `variant=release`,
+`NDEBUG`, matching compile and link optimization flags, and an 8192-byte
+Asyncify suspension stack. Compile commands were checked for the requested
+optimization and exception mode; LTO objects were checked for LLVM bitcode.
+
+All 24 page modules completed once under Node, reporting status zero and
+exactly `cobalt slept`. The `-O2` modules also passed in local HeadlessChrome
+153.0.8010.12 under both suspension variants and both exception modes.
+The other optimization profiles were not individually tested in Chrome.
+These are complete modules, including the Cobalt runner and the selected
+library code, without the Node test harness. Sizes are uncompressed bytes;
+JavaScript excludes the shared loader and HTML. Add the matching Wasm and
+JavaScript columns for the two-file payload. These measurements do not
+isolate the size added by Cobalt and are not runtime-memory measurements.
+
+.asio_cobalt: uncompressed release bytes
+[cols="2,1,2,2,2,2",options="header"]
+|===
+| Flags | Exceptions | JSPI Wasm | Asyncify Wasm | JSPI JavaScript | Asyncify JavaScript
+| `-O2` | on | 106,576 | 217,448 | 79,879 | 91,502
+| `-O2` | off | 89,343 | 144,979 | 79,917 | 84,340
+| `-O3` | on | 107,528 | 212,837 | 79,480 | 90,057
+| `-O3` | off | 88,619 | 141,357 | 79,074 | 83,007
+| `-Os` | on | 95,141 | 199,988 | 79,480 | 89,676
+| `-Os` | off | 78,139 | 133,278 | 79,074 | 83,007
+| `-Oz` | on | 87,956 | 196,771 | 78,909 | 89,103
+| `-Oz` | off | 73,602 | 134,390 | 78,503 | 82,436
+| `-O3 -flto` | on | 113,033 | 193,297 | 80,690 | 90,115
+| `-O3 -flto` | off | 88,243 | 132,345 | 80,684 | 83,628
+| `-Oz -flto` | on | 82,107 | 163,883 | 80,119 | 89,544
+| `-Oz -flto` | off | 70,016 | 123,353 | 80,113 | 83,057
+|===
+
+To reproduce one pair, run from the superproject root:
+
+[source,bash]
+----
+b2 -a -j4 --build-dir=bin/cobalt-size-oz-lto-on \
+    toolset=emscripten variant=release exception-handling=on \
+    "cxxflags=-Oz -flto" "linkflags=-Oz -flto" \
+    libs/asio/example//page-asio_cobalt.variants.json
+----
+
+Use the profiles in <<asio-testing-sizes>> and a separate build directory for
+each profile and exception mode. The `asio.sizes.md` table generated by the
+example's `asyncify` lane now includes this example. These single builds
+establish file sizes and successful execution; they do not supply repeated
+build-time or execution-time benchmarks. Task 14's timing tables remain
+measurements of its original three examples, without Cobalt.

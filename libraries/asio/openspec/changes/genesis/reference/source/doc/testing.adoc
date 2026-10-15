@@ -43,7 +43,7 @@ that has them, as Boost.Asio's `BOOST_ASIO_NO_EXCEPTIONS` does. The tests
 [#asio-testing-lanes]
 === The lanes
 
-The continuous integration runs asio in four lanes, each built from scratch
+asio declares six lanes for the build and test matrix, each built from scratch
 with `b2 -a` and a `--build-dir` of its own. From the root of a webcpp
 checkout:
 
@@ -84,6 +84,26 @@ keeps rendering, and the variant the loader picks:
 [source,bash]
 ----
 b2 toolset=emscripten libs/asio/test/browser//browser
+----
+
+cobalt::
+An exact-exit driver runs the Cobalt entry point with statuses 7 and 0, with
+exceptions on and off, natively and under JSPI. A trap cannot count as the
+expected nonzero status:
++
+[source,bash]
+----
+b2 libs/asio/test//cobalt
+b2 toolset=emscripten libs/asio/test//cobalt
+----
+
+cobalt_asyncify::
+The same exact-exit driver under Asyncify. It is also included in the
+`asyncify` test lane:
++
+[source,bash]
+----
+b2 toolset=emscripten libs/asio/test//cobalt_asyncify
 ----
 
 `b2 libs/asio/test//config` builds and runs one test alone, while working on
@@ -200,6 +220,10 @@ contribution. Add the matching Wasm and JavaScript columns for the two-file
 uncompressed payload. Compression, loader/HTML assets, HTTP overhead and
 runtime memory are outside these measurements.
 
+The following task 14 tables cover the three examples listed below. The
+current command also builds the later Cobalt example; its separate measurements
+are in <<asio-cobalt-sizes>>.
+
 Measured on 2026-10-14 with Emscripten 6.0.11, Boost 1.92 and {cpp}20,
 Node 26.7.0, macOS 27 arm64, Apple M5 Max, 128 GiB RAM. Asyncify uses an
 8192-byte suspension stack. All values below are bytes. Every configuration
@@ -276,10 +300,11 @@ Rebuild and test an application's own candidates before selecting a profile.
 
 ==== Build duration
 
-Each sample is elapsed wall time for the complete b2 command above, with
-`-a -j4`: compilation, linking all six page modules, and writing their
-manifests and size table. It is not a time per example or per suspension
-variant. One complete preparation pass populated Emscripten's system-library
+Each sample is elapsed wall time for the task 14 b2 invocation with
+`-a -j4`: compilation, linking the six page modules of the three examples
+above, and writing their manifests and size table. Cobalt was not registered
+then and is excluded from these timings; the current command builds it too.
+It is not a time per example or per suspension variant. One complete preparation pass populated Emscripten's system-library
 cache for all profiles and exception settings. The next three passes used
 new output directories, alternated configuration order, and ran one b2
 process at a time. The table gives the median and observed minimum to

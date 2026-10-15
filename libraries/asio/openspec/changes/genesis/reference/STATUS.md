@@ -1,5 +1,80 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Task 16 completed: Cobalt co_main with bounded turns, 2026-10-15
+
+Library commit `c74f511` completes task 16 on the existing `work/task14-guide`
+branch in the isolated checkout. `source/` matches that committed library.
+The superproject remains `8829e99`; no new superproject patch is needed.
+Tasks 0-16 are complete. Task 17 is next and has not started; tasks 17-23 remain.
+No CI, push or merge ran, and the primary checkout was not changed.
+
+`/webcpp/asio//cobalt` links Boost's sources and webcpp's replacement
+`main_promise::run_main` and `final_suspend`. The application keeps its ordinary
+co_main. Its executor uses the bounded webcpp context, with the existing
+1,000-handler default on Emscripten and native Boost behavior. Context and signal
+objects are destroyed before Asyncify's explicit exit preserves co_return.
+The adapter preserves the original Boost author's copyright notice.
+
+Validation: native Clang, JSPI and Asyncify passed with exceptions on and off.
+The 5,000-post test checks bounded turns and both Cobalt and Asio timers. The
+external drivers verify exact statuses 7 and 0, output, absence of signals and
+restricted stderr; raw run-fail is not the sole exit-status oracle. Negative
+scratch controls reproduced the lost status without std::exit and the unbounded
+turn with Boost's original context; restored code passed. The ordinary library
+suites and existing real-browser lane passed. The new example also passed in
+HeadlessChrome 153.0.8010.12 under both variants and both exception modes at -O2.
+This session did not execute the CI-pinned browser version.
+
+Six Cobalt suspension-stack configurations passed: debug, default-link release
+and release linked with -O3, with exceptions on/off. The deepest observed Cobalt
+path was 1,088 bytes. The existing 8,192-byte allocation remains unchanged. The
+probe forces actual blocking polls by posting cancellation from a JavaScript
+macrotask. The run-family probe remains covered through the shared observer.
+
+All 24 Release page modules completed once with the expected output. The six
+profiles are -O2, -O3, -Os, -Oz, -O3 -flto and -Oz -flto, crossed with exception
+mode and suspension variant. Compile/link flags and LTO bitcode were checked.
+The full Wasm/JavaScript size matrix is in doc/cobalt.adoc, and the generated
+release size table includes the fourth example. The documentation build and
+rendered-content checks passed. The final full lint passed. There are no new
+public headers requiring additional MrDocs declarations.
+
+Independent read-only review found one important attribution omission, fixed
+and checked against Boost's original main.cpp. No functional defect or deferred
+minor was reported for this task. The final verification command passed after
+commit; its log remains under the library's .superpowers/sdd/plan/task-16-tests.log.
+
+### Task 16 decisions and their limits
+
+- Use yield_counter for the handler bound and observe page_timeout separately.
+  Host timers do not run at a fixed callback index. If the witness proves
+  insufficient, strengthen it without imposing a false timing guarantee.
+- Test both exception modes with result adapters and retain issue 287's warning.
+  This does not repair pending-task moves or prove universal no-exception safety;
+  applications that use the affected upstream operation can still abort.
+- Require exact status 7 and 0 with external drivers in their own local lanes.
+  A trap or unfinished main must not satisfy a run-fail test. The driver accepts
+  only Emscripten's exact debug runtime-retained notice in addition to empty stderr.
+- Preserve EXIT_RUNTIME=0 instead of forcing shutdown. External runtime callbacks
+  may remain active after std::exit; full runtime teardown is not promised.
+- Suppress only Clang's coroutine-missing-unhandled-exception diagnostic for
+  explicitly exception-free Cobalt consumers. Boost omits that promise member.
+  This one diagnostic is unavailable for other coroutines in those translation
+  units until upstream provides a compatible declaration; other warnings remain.
+- Preserve upstream executor/resource and signal lifetimes. Review found no new
+  regression; existing upstream limitations remain outside this adapter's scope.
+- Keep task 14 timings scoped to its three original examples. Cobalt's separate
+  size matrix is not a timing benchmark; repeated isolated timing runs would
+  be required for such claims. Profiles other than -O2 were checked under Node,
+  not individually in Chrome.
+- Keep task 17 and later pending and preserve the local branch/checkout. The
+  next task's promise integration is not supplied by this completion.
+
+To resume, use library `c74f511` with superproject `8829e99`, read task 17 and
+these decisions, and implement browser promises as operations. Preserve the
+owner's no-CI instruction and exception policy unless explicitly changed.
+
+
 ## Task 15 completed: compiled Cobalt source target, 2026-10-14
 
 Superproject commit `8829e99` completes task 15 on the isolated

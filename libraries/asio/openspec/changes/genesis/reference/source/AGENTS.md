@@ -112,3 +112,38 @@ measurements, not a guarantee for heavy user handlers or other hardware.
 The CI-pinned Chrome version was not executed in this session; no CI ran.
 The driver fails when p95 exceeds 8 ms or no animation callbacks occur;
 changing the default or replacing that witness requires the owner's decision.
+
+## Cobalt entry point and suspension stack
+
+Task 16 supplies `/webcpp/asio//cobalt`: Cobalt's ordinary `co_main` runs on
+webcpp's context. The adapter replaces both `main_promise::run_main` and
+`final_suspend` from Boost 1.92's main.cpp. Do not link the original runner
+beside it. The source target's issue 287 warning still applies without exceptions.
+Clang additionally diagnoses Boost's missing unhandled_exception member in that
+mode; the integration suppresses only that diagnostic for exception-free
+Clang/Emscripten consumers, without changing exception handling.
+
+The Cobalt stack probe measures real Asyncify unwinds from the runner through
+the yield, a Cobalt timer wait and an Asio timer wait. The timer waits cannot
+expire: only a JavaScript macrotask posts their cancellation, so the test must
+reach a blocking reactor poll. Measurements on 2026-10-14, Emscripten 6.0.11:
+
+| Build | Exceptions | Yield bytes | Cobalt wait bytes | Asio wait bytes |
+| --- | --- | ---: | ---: | ---: |
+| Debug | on | 1016 | 1032 | 1032 |
+| Debug | off | 684 | 700 | 700 |
+| Release, default link | on | 968 | 1088 | 1088 |
+| Release, default link | off | 748 | 956 | 956 |
+| Release, link -O3 | on | 376 | 384 | 384 |
+| Release, link -O3 | off | 228 | 228 | 228 |
+
+The existing 8192-byte stack remains sufficient for these paths with more than
+half free. These measurements are suspension storage, not binary sizes or a
+bound on arbitrary application frames. The ordinary run-family probe remains
+in the suite and shares the observation helper in test/asyncify_watch.hpp.
+
+The cobalt and cobalt_asyncify local lanes check exact process statuses 7 and 0
+with a driver; run-fail alone would also accept a trap. Debug Asyncify's explicit
+std::exit can emit Emscripten's runtime-retained notice under EXIT_RUNTIME=0.
+The driver permits exactly that notice, not arbitrary stderr. This adapter
+preserves the configured runtime lifetime instead of forcing shutdown.

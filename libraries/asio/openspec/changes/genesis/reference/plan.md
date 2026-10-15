@@ -3846,7 +3846,7 @@ lib boost_cobalt
 - Produces: `int boost::cobalt::detail::main_promise::run_main(::boost::cobalt::main mn)`,
   defined by webcpp; `/webcpp/asio//cobalt`.
 
-- [ ] **Step 1: Write the page's section** `doc/cobalt.adoc` (`[#asio-cobalt]`): spec
+- [x] **Step 1: Write the page's section** `doc/cobalt.adoc` (`[#asio-cobalt]`): spec
   section 5.2 whole: a Cobalt program changes nothing and links `/webcpp/asio//cobalt`; why
   not a `co_main` of webcpp's own; the members it reads and the probe; the fallback; and
   that under Asyncify webcpp's `run_main` ends the program with `std::exit` so its
@@ -3854,7 +3854,7 @@ lib boost_cobalt
   `io/ssl.cpp`, which needs OpenSSL, so a program that uses `boost::cobalt::io::ssl_stream`
   does not link with it (a difference from spec section 5.2's "every source but `main.cpp`",
   under "Departures from the spec").
-- [ ] **Step 2: Write the failing tests.** `test/cobalt_test.cpp`: an unchanged `co_main` of
+- [x] **Step 2: Write the failing tests.** `test/cobalt_test.cpp`: an unchanged `co_main` of
   5,000 `co_await boost::asio::post(exec, cobalt::use_op)`, a 50 ms
   `boost::cobalt::io::steady_timer` wait and a 20 ms `boost::asio::steady_timer` wait with
   `cobalt::use_op`, a `webcpp::test::page_timeout` (`"page_timeout.hpp"`, Task 6) armed first
@@ -3883,7 +3883,7 @@ for local test in cobalt cobalt_status
 ```
 
   Run the emscripten lane. Expected: FAIL, `/webcpp/asio//cobalt` not found.
-- [ ] **Step 3: Implement** `src/cobalt_main.cpp`:
+- [x] **Step 3: Implement** `src/cobalt_main.cpp`:
 
 ```cpp
 // Copyright (c) 2026 WebCpp.org
@@ -3979,22 +3979,22 @@ alias cobalt : : : : <library>asio <library>cobalt-main <library>/webcpp//boost_
 # end::cobalt[]
 ```
 
-- [ ] **Step 4: Run** every lane. Expected: PASS: `cobalt` natively and on both variants;
+- [x] **Step 4: Run** every lane. Expected: PASS: `cobalt` natively and on both variants;
   `cobalt_status` fails as a `run-fail` on all three, and its `.output` says
   `EXIT STATUS: 7` on each, the asyncify one included. Then run `cobalt_status_asyncify`
   with the `std::exit` removed from a scratch copy. Expected: `EXIT STATUS: 1` and the test
   support's line `webcpp: main did not finish`: the 7 was lost, and only the explicit exit
   keeps it. Restore.
-- [ ] **Step 5: Measure Asyncify's stack again** with the Cobalt tests in the lane, as Task
+- [x] **Step 5: Measure Asyncify's stack again** with the Cobalt tests in the lane, as Task
   9's Step 3 does; raise the value if S grew, and record it.
-- [ ] **Step 6: Write the twin example** `asio_cobalt.cpp` (a `co_main` that sleeps 50 ms on
+- [x] **Step 6: Write the twin example** `asio_cobalt.cpp` (a `co_main` that sleeps 50 ms on
   a `steady_timer` with `cobalt::use_op`, prints `cobalt slept` and `co_return 0;`) with its
   `.expected`, in `example/Jamfile` as
   `webcpp.example asio_cobalt.cpp : <library>/webcpp/asio//cobalt ;`, a
   `webcpp.variants page-asio_cobalt : asio_cobalt.cpp : <library>/webcpp/asio//cobalt ;` and
   its name in the size table. Include it in `cobalt.adoc`. Run both lanes and the doc build.
   Expected: PASS, the same output natively and in the browser.
-- [ ] **Step 7: Commit** (library): `"asio: Boost.Cobalt's co_main, unchanged, with the turn
+- [x] **Step 7: Commit** (library): `"asio: Boost.Cobalt's co_main, unchanged, with the turn
   limit"`.
 
 ## Task 17: Promises as operations

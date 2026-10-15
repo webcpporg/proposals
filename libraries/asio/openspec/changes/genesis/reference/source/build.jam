@@ -89,3 +89,16 @@ alias asio : : : : <include>include <library>/boost//headers
   <conditional>@asyncify-stack
   <toolset>emscripten:<tag>@webcpp%suspend-tag ;
 # end::asio[]
+
+# Cobalt's entry point, with webcpp's bounded application event loop.
+# tag::cobalt[]
+lib cobalt-main : src/cobalt_main.cpp
+  : <link>static <library>asio <library>/webcpp//boost_cobalt ;
+explicit cobalt-main ;
+# Boost omits main_promise::unhandled_exception without exceptions. Clang
+# diagnoses the entry coroutine anyway; suppress only that diagnostic, and
+# only in the explicitly exception-free Cobalt consumer configuration.
+alias cobalt : : : : <library>asio <library>cobalt-main <library>/webcpp//boost_cobalt
+  <toolset>clang,<exception-handling>off:<cxxflags>-Wno-coroutine-missing-unhandled-exception
+  <toolset>emscripten,<exception-handling>off:<cxxflags>-Wno-coroutine-missing-unhandled-exception ;
+# end::cobalt[]

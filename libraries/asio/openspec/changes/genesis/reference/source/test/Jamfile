@@ -9,6 +9,7 @@ project : requirements <library>/webcpp/asio//asio ;
 import webcpp ;
 
 webcpp.targets native emscripten ;
+webcpp.original node : browser ;
 
 webcpp.headers-alone asio : ../include : asio.hpp asio/*.hpp ;
 # The browser's headers name Emscripten's own, and compile on emscripten
@@ -128,6 +129,12 @@ for local build in $(.asyncify-stack-builds)
             <exception-handling>$(handling)
           : emscripten ;
         .asyncify += $(name) ;
+        local cobalt-name = cobalt_stack_$(build)_exceptions_$(handling) ;
+        webcpp.run $(cobalt-name) : cobalt_stack_test.cpp
+          : <library>/webcpp/asio//cobalt <webcpp-suspend>asyncify
+            $(.asyncify-stack-$(build)) <exception-handling>$(handling)
+          : emscripten ;
+        .asyncify += $(cobalt-name) ;
     }
 }
 
@@ -166,5 +173,38 @@ webcpp.run-fail return_after_suspension : return_after_suspension_test.cpp : : e
 webcpp.run-fail return_after_suspension_asyncify : return_after_suspension_test.cpp
   : <webcpp-suspend>asyncify : emscripten ;
 .asyncify += never_finishes_asyncify return_after_suspension_asyncify ;
+
+# Cobalt's entry point uses the same program in all three environments.
+for local test in cobalt cobalt_status
+{
+    local runner = run ;
+    if $(test) = cobalt_status { runner = run-fail ; }
+    for local handling in on off
+    {
+        local requirements = <library>/webcpp/asio//cobalt <exception-handling>$(handling) ;
+        local name = $(test)_exceptions_$(handling) ;
+        webcpp.$(runner) $(name)_native : $(test)_test.cpp : $(requirements) : native ;
+        webcpp.$(runner) $(name) : $(test)_test.cpp : $(requirements) : emscripten ;
+        webcpp.$(runner) $(name)_asyncify : $(test)_test.cpp
+          : $(requirements) <webcpp-suspend>asyncify : emscripten ;
+        .asyncify += $(name)_asyncify ;
+    }
+}
+
+# A driver checks the actual status, so a trap cannot satisfy run-fail.
+for local handling in on off
+{
+    local name = cobalt_exit_exceptions_$(handling) ;
+    local requirements = <library>/webcpp/asio//cobalt <exception-handling>$(handling) ;
+    webcpp.drive $(name) : cobalt_status_test.cpp : $(requirements)
+      : cobalt_status_driver.mjs ;
+    webcpp.drive $(name)_asyncify : cobalt_status_test.cpp
+      : $(requirements) <webcpp-suspend>asyncify : cobalt_status_driver.mjs : : emscripten ;
+    .cobalt += $(name) ;
+    .cobalt-emscripten += $(name)_asyncify ;
+    .asyncify += $(name)_asyncify ;
+}
+webcpp.lane cobalt : $(.cobalt) : native emscripten ;
+webcpp.lane cobalt_asyncify : $(.cobalt-emscripten) : emscripten ;
 
 webcpp.lane asyncify : $(.asyncify) : emscripten ;

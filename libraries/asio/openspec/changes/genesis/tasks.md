@@ -159,13 +159,13 @@ All of them are of 2026-10-11, as `R`.
 
 ## 16. Boost.Cobalt's `co_main` with the turn limit (plan: Task 16)
 
-- [ ] 16.1 Write the page's section `doc/cobalt.adoc` (plan: Task 16, Step 1)
-- [ ] 16.2 Write the failing `cobalt_test.cpp` and `cobalt_status_test.cpp` (Step 2)
-- [ ] 16.3 Implement `src/cobalt_main.cpp` and the targets `cobalt-main` and `cobalt` (Step 3)
-- [ ] 16.4 Run every lane (Step 4)
-- [ ] 16.5 Measure Asyncify's stack again with the Cobalt tests (Step 5)
-- [ ] 16.6 Write the twin example `asio_cobalt.cpp` (Step 6)
-- [ ] 16.7 Commit (Step 7)
+- [x] 16.1 Write the page's section `doc/cobalt.adoc` (plan: Task 16, Step 1)
+- [x] 16.2 Write the failing `cobalt_test.cpp` and `cobalt_status_test.cpp` (Step 2)
+- [x] 16.3 Implement `src/cobalt_main.cpp` and the targets `cobalt-main` and `cobalt` (Step 3)
+- [x] 16.4 Run every lane (Step 4)
+- [x] 16.5 Measure Asyncify's stack again with the Cobalt tests (Step 5)
+- [x] 16.6 Write the twin example `asio_cobalt.cpp` (Step 6)
+- [x] 16.7 Commit (Step 7)
 
 ## 17. Promises as operations (plan: Task 17)
 
