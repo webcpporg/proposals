@@ -31,9 +31,9 @@ struct io_context_options {
      At most this many handlers run in one turn of the run family, which yields to the browser
      after a turn that reaches it.
 
-     0 is taken as 1.
+     Defaults to WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN. 0 is taken as 1.
     */
-    std::size_t max_handlers_per_turn = 1000;
+    std::size_t max_handlers_per_turn = WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN;
 };
 
 /**

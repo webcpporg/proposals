@@ -1,5 +1,39 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Configurable default turn limit after task 16, 2026-10-15
+
+Library commit `3817dc9` adds the owner-requested compiler configuration;
+`source/` matches it. The superproject remains `8829e99`. Task 17 has not
+started. No CI, push or merge ran.
+
+`WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN` is declared and documented in
+config.hpp, defaulting to 1000. It initializes io_context_options; explicit
+context options and the setter keep precedence. Zero is normalized to one,
+negative build defaults are rejected, and native scheduling stays unchanged.
+Apply the same definition to every relevant translation unit and rebuild all
+of them, including Cobalt's separately compiled runner. The documented b2
+command passes the definition globally and uses a separate build directory.
+Do not configure an existing runner archive by defining the macro only in an
+application source file, or mix differently configured objects.
+
+Validation first reproduced the ignored value 100 in both context constructors
+and Cobalt's real JSPI run. The corrected implementation passed the custom
+and zero-default cases, the negative compile-fail case, the full native and
+WebAssembly suites, documentation/rendered checks and full lint. Cobalt's
+5,000-post regression passed with limit 100 under JSPI and Asyncify, with
+exceptions on and off. Compiler command logs confirm the define reaches all
+four separately compiled runner variants. An independent review found a test
+expectation that incorrectly required a full 10,000-handler lot from only
+5,000 samples; it failed with 5000 versus 10000, then passed after bounding
+the expected observation by the sample size. No review finding remains.
+
+The MrDocs reference and guide include the macro and rebuilding requirements.
+The guide now describes browser work as an opportunity, not a guarantee that
+a particular timer or frame happens before resumption. Existing turn-duration
+measurements are not measurements of the isolated yield overhead. No new
+latency benchmark or claim of an optimal default is introduced here.
+
+
 ## Task 16 completed: Cobalt co_main with bounded turns, 2026-10-15
 
 Library commit `c74f511` completes task 16 on the existing `work/task14-guide`

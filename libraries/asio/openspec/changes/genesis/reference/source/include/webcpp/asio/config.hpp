@@ -6,7 +6,7 @@
 
 /**
  The configuration of asio, which each of its headers includes first: whether
- asio is built without exceptions.
+ asio is built without exceptions, and the default number of handlers per turn.
 
  @see "Testing", in the guide.
 */
@@ -14,6 +14,25 @@
 #define WEBCPP_ASIO_CONFIG_HPP
 
 #include <boost/config.hpp>
+
+#ifndef WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN
+/**
+ The default number of ready handlers processed in one turn on Emscripten.
+
+ Define this nonnegative integer on the compiler command line to replace 1000.
+ 0 is taken as 1 by io_context. Explicit context options override this default.
+ Use the same definition in every translation unit, including Cobalt's compiled
+ runner, and rebuild when changing it. Natively it does not change scheduling.
+ This is a handler count, not a time budget or a browser responsiveness guarantee.
+
+ @see "The run family", in the guide.
+*/
+#define WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN 1000
+#endif
+
+#if WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN < 0
+#error "WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN must be a nonnegative integer"
+#endif
 
 // MrDocs parses asio as a build with exceptions does, where the macro is not
 // defined: this definition, undone at once, is the one the reference lists, and

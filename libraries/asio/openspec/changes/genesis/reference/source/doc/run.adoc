@@ -49,9 +49,9 @@ before a JavaScript `setTimeout(0)` ran, in either suspension variant. Boost's
 `run` is not virtual and cannot be told to yield, hence the composition.
 
 The yield is a suspension, an `EM_ASYNC_JS` import whose promise a
-`MessageChannel` message resolves: a macrotask, never a microtask, so that
-the browser renders, runs its timers and delivers its events before the
-next turn. `MessageChannel` exists in every browser and in node.
+`MessageChannel` message resolves: a macrotask rather than only a microtask, giving
+the browser an opportunity to render, run timers and deliver events. It does
+not guarantee that any particular work happens before the next turn. `MessageChannel` exists in every browser and in node.
 
 *A turn runs at most `max_handlers_per_turn` handlers,
 and the run family yields to the browser after each turn that reaches it.*
@@ -71,6 +71,44 @@ itself: one after every `max_handlers_per_turn` handlers under `run` and
 `run_for`, never more handlers between two, and none under Boost's own
 `run`; and a JavaScript `setTimeout(0)` runs at a yield, seen by the first
 handler of a turn. And by `run_family`, in each variant.
+
+[#asio-run-default]
+=== Configure the build's default turn limit
+
+`WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN` in `config.hpp` supplies the
+initial value of `io_context_options::max_handlers_per_turn`. It defaults
+to 1000 and can be replaced by a compiler definition:
+
+[source,bash]
+----
+-DWEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=100
+----
+
+For b2, pass the definition on the command line for the complete build:
+
+[source,bash]
+----
+b2 -a --build-dir=bin/asio-limit-100 toolset=emscripten \
+    define=WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=100 \
+    libs/asio/example//asio_cobalt.output
+----
+
+Use the same value in every translation unit that uses asio and rebuild all
+of them when changing it. In particular, Cobalt's runner is compiled separately:
+a definition in an application source file alone cannot configure an existing
+runner archive. A separate build directory avoids reusing outputs built with
+another definition. Do not mix differently configured objects in one program.
+
+An explicit option at construction or a later `max_handlers_per_turn(n)` call
+overrides this build default for that context. Zero is normalized to one;
+negative build defaults are rejected. Native scheduling is unchanged.
+
+The value 1000 is a configurable scheduling policy, not a measured optimum or
+a time budget. Smaller values offer more frequent yields under continuous
+ready work, with more suspension and scheduling overhead. A single expensive
+handler can still block the thread. The recorded browser measurements used
+small self-posting handlers; they do not determine an appropriate limit for
+all applications or measure the isolated cost of a yield.
 
 [#asio-run-callers]
 === Who may call it

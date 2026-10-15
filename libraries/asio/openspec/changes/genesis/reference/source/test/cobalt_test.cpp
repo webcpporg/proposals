@@ -23,6 +23,11 @@
 #include <cstddef>
 #include <cstdio>
 
+// The build supplies an independent expectation for configuration regressions.
+#ifndef WEBCPP_TEST_TURN_LIMIT
+#define WEBCPP_TEST_TURN_LIMIT 1000
+#endif
+
 using namespace std::chrono_literals;
 namespace cobalt = boost::cobalt;
 
@@ -44,8 +49,8 @@ cobalt::main co_main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
         longest = std::max(longest, ++since);
     }
 #ifdef __EMSCRIPTEN__
-    BOOST_TEST_GE(yields.count(), 4);
-    BOOST_TEST_LE(longest, 1000U);
+    BOOST_TEST_GE(yields.count(), 4999 / WEBCPP_TEST_TURN_LIMIT);
+    BOOST_TEST_EQ(longest, std::min<std::size_t>(5000, WEBCPP_TEST_TURN_LIMIT));
     BOOST_TEST_GT(longest, 0U);
     // Observe the host timer separately: its scheduling delay does not define the turn limit.
     webcpp::test::page_timeout timeout;
