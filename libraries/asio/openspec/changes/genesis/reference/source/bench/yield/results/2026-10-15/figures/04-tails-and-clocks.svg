@@ -1,0 +1,1577 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1152pt" height="864pt" viewBox="0 0 1152 864" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-15T03:06:31.817794</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="04-tails-and-clocks-figure_1">
+  <g id="04-tails-and-clocks-patch_1">
+   <path d="M 0 864 
+L 1152 864 
+L 1152 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="04-tails-and-clocks-axes_1">
+   <g id="04-tails-and-clocks-patch_2">
+    <path d="M 115.2 367.607547 
+L 529.34876 367.607547 
+L 529.34876 129.6 
+L 115.2 129.6 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_1">
+    <g id="04-tails-and-clocks-xtick_1">
+     <g id="04-tails-and-clocks-line2d_1">
+      <defs>
+       <path id="04-tails-and-clocks-m80c402e2b1" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="134.024944" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_1">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="134.024944" y="382.964969" transform="rotate(-0 134.024944 382.964969)">1</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_2">
+     <g id="04-tails-and-clocks-line2d_2">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="209.324718" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_2">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="209.324718" y="382.964969" transform="rotate(-0 209.324718 382.964969)">10</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_3">
+     <g id="04-tails-and-clocks-line2d_3">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="284.624493" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_3">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="284.624493" y="382.964969" transform="rotate(-0 284.624493 382.964969)">100</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_4">
+     <g id="04-tails-and-clocks-line2d_4">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="359.924267" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_4">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="359.924267" y="382.964969" transform="rotate(-0 359.924267 382.964969)">1,000</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_5">
+     <g id="04-tails-and-clocks-line2d_5">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="435.224042" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_5">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="435.224042" y="382.964969" transform="rotate(-0 435.224042 382.964969)">5,000</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_6">
+     <g id="04-tails-and-clocks-line2d_6">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="510.523817" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_6">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="510.523817" y="382.964969" transform="rotate(-0 510.523817 382.964969)">10,000</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_7">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="322.27438" y="397.965828" transform="rotate(-0 322.27438 397.965828)">Handlers per turn (tested settings)</text>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_2">
+    <g id="04-tails-and-clocks-ytick_1">
+     <g id="04-tails-and-clocks-line2d_7">
+      <path d="M 115.2 356.789022 
+L 529.34876 356.789022 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_8">
+      <defs>
+       <path id="04-tails-and-clocks-m1406eb3b4b" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="356.789022" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_8">
+      <!-- $\mathdefault{10^{1}}$ -->
+      <g transform="translate(88.84 361.904022)">
+       <text>
+        <tspan x="0" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.389063" style="font-size: 7.7px; font-family: 'DejaVu Sans'">1</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_2">
+     <g id="04-tails-and-clocks-line2d_9">
+      <path d="M 115.2 296.669561 
+L 529.34876 296.669561 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_10">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="296.669561" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_9">
+      <!-- $\mathdefault{10^{2}}$ -->
+      <g transform="translate(88.84 301.839561)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">2</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_3">
+     <g id="04-tails-and-clocks-line2d_11">
+      <path d="M 115.2 236.550099 
+L 529.34876 236.550099 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_12">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="236.550099" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_10">
+      <!-- $\mathdefault{10^{3}}$ -->
+      <g transform="translate(88.84 241.720099)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">3</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_4">
+     <g id="04-tails-and-clocks-line2d_13">
+      <path d="M 115.2 176.430638 
+L 529.34876 176.430638 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_14">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="176.430638" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_11">
+      <!-- $\mathdefault{10^{4}}$ -->
+      <g transform="translate(88.84 181.545638)">
+       <text>
+        <tspan x="0" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.389063" style="font-size: 7.7px; font-family: 'DejaVu Sans'">4</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_5">
+     <g id="04-tails-and-clocks-line2d_15">
+      <defs>
+       <path id="04-tails-and-clocks-md566914bc2" d="M 0 0 
+L -2 0 
+" style="stroke: #000000; stroke-width: 0.6"/>
+      </defs>
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="366.101645" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_6">
+     <g id="04-tails-and-clocks-line2d_16">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="362.6152" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_7">
+     <g id="04-tails-and-clocks-line2d_17">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="359.539938" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_8">
+     <g id="04-tails-and-clocks-line2d_18">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="338.691261" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_9">
+     <g id="04-tails-and-clocks-line2d_19">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="328.104749" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_10">
+     <g id="04-tails-and-clocks-line2d_20">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="320.5935" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_11">
+     <g id="04-tails-and-clocks-line2d_21">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="314.767322" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_12">
+     <g id="04-tails-and-clocks-line2d_22">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="310.006988" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_13">
+     <g id="04-tails-and-clocks-line2d_23">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="305.982183" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_14">
+     <g id="04-tails-and-clocks-line2d_24">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="302.495739" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_15">
+     <g id="04-tails-and-clocks-line2d_25">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="299.420476" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_16">
+     <g id="04-tails-and-clocks-line2d_26">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="278.5718" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_17">
+     <g id="04-tails-and-clocks-line2d_27">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="267.985288" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_18">
+     <g id="04-tails-and-clocks-line2d_28">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="260.474038" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_19">
+     <g id="04-tails-and-clocks-line2d_29">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="254.647861" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_20">
+     <g id="04-tails-and-clocks-line2d_30">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="249.887527" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_21">
+     <g id="04-tails-and-clocks-line2d_31">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="245.862722" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_22">
+     <g id="04-tails-and-clocks-line2d_32">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="242.376277" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_23">
+     <g id="04-tails-and-clocks-line2d_33">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="239.301015" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_24">
+     <g id="04-tails-and-clocks-line2d_34">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="218.452338" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_25">
+     <g id="04-tails-and-clocks-line2d_35">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="207.865826" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_26">
+     <g id="04-tails-and-clocks-line2d_36">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="200.354577" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_27">
+     <g id="04-tails-and-clocks-line2d_37">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="194.528399" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_28">
+     <g id="04-tails-and-clocks-line2d_38">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="189.768065" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_29">
+     <g id="04-tails-and-clocks-line2d_39">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="185.74326" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_30">
+     <g id="04-tails-and-clocks-line2d_40">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="182.256816" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_31">
+     <g id="04-tails-and-clocks-line2d_41">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="179.181553" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_32">
+     <g id="04-tails-and-clocks-line2d_42">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="158.332877" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_33">
+     <g id="04-tails-and-clocks-line2d_43">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="147.746365" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_34">
+     <g id="04-tails-and-clocks-line2d_44">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="140.235115" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_35">
+     <g id="04-tails-and-clocks-line2d_45">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="134.408938" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_36">
+     <g id="04-tails-and-clocks-line2d_46">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="129.648604" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_12">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="82.197422" y="248.603774" transform="rotate(-90 82.197422 248.603774)">Microseconds (log scale)</text>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-line2d_47">
+    <path d="M 134.024944 194.476232 
+L 209.324718 267.553715 
+L 284.624493 277.29791 
+L 359.924267 277.29791 
+L 435.224042 271.721587 
+L 510.523817 273.273105 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke: #2266a5; stroke-width: 1.5; stroke-linecap: square"/>
+    <defs>
+     <path id="04-tails-and-clocks-mbd8c499c8a" d="M 0 3 
+C 0.795609 3 1.55874 2.683901 2.12132 2.12132 
+C 2.683901 1.55874 3 0.795609 3 0 
+C 3 -0.795609 2.683901 -1.55874 2.12132 -2.12132 
+C 1.55874 -2.683901 0.795609 -3 0 -3 
+C -0.795609 -3 -1.55874 -2.683901 -2.12132 -2.12132 
+C -2.683901 -1.55874 -3 -0.795609 -3 0 
+C -3 0.795609 -2.683901 1.55874 -2.12132 2.12132 
+C -1.55874 2.683901 -0.795609 3 0 3 
+z
+" style="stroke: #2266a5"/>
+    </defs>
+    <g clip-path="url(#04-tails-and-clocks-pf2dde3f717)">
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="134.024944" y="194.476232" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="209.324718" y="267.553715" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="284.624493" y="277.29791" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="359.924267" y="277.29791" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="435.224042" y="271.721587" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="510.523817" y="273.273105" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-line2d_48">
+    <path d="M 134.024944 356.789022 
+L 209.324718 356.789022 
+L 284.624493 356.789022 
+L 359.924267 346.202511 
+L 435.224042 346.202511 
+L 510.523817 346.202511 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #2266a5; stroke-width: 1.5"/>
+    <g clip-path="url(#04-tails-and-clocks-pf2dde3f717)">
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="134.024944" y="356.789022" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="209.324718" y="356.789022" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="284.624493" y="356.789022" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="359.924267" y="346.202511" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="435.224042" y="346.202511" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="510.523817" y="346.202511" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-line2d_49">
+    <path d="M 134.024944 140.418525 
+L 209.324718 270.257116 
+L 284.624493 281.322715 
+L 359.924267 279.232836 
+L 435.224042 279.232836 
+L 510.523817 267.985288 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke: #c25c16; stroke-width: 1.5; stroke-linecap: square"/>
+    <defs>
+     <path id="04-tails-and-clocks-mf243ba5e84" d="M -3 3 
+L 3 3 
+L 3 -3 
+L -3 -3 
+z
+" style="stroke: #c25c16; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#04-tails-and-clocks-pf2dde3f717)">
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="134.024944" y="140.418525" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="209.324718" y="270.257116" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="284.624493" y="281.322715" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="359.924267" y="279.232836" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="435.224042" y="279.232836" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="510.523817" y="267.985288" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-line2d_50">
+    <path d="M 134.024944 356.789022 
+L 209.324718 356.789022 
+L 284.624493 346.202511 
+L 359.924267 346.202511 
+L 435.224042 338.691261 
+L 510.523817 338.691261 
+" clip-path="url(#04-tails-and-clocks-pf2dde3f717)" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #c25c16; stroke-width: 1.5"/>
+    <g clip-path="url(#04-tails-and-clocks-pf2dde3f717)">
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="134.024944" y="356.789022" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="209.324718" y="356.789022" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="284.624493" y="346.202511" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="359.924267" y="346.202511" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="435.224042" y="338.691261" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="510.523817" y="338.691261" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-patch_3">
+    <path d="M 115.2 367.607547 
+L 115.2 129.6 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_4">
+    <path d="M 115.2 367.607547 
+L 529.34876 367.607547 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-text_13">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="115.2" y="116.6" transform="rotate(-0 115.2 116.6)">Chain tails: p99 and largest observed gap</text>
+   </g>
+   <g id="04-tails-and-clocks-legend_1">
+    <g id="04-tails-and-clocks-line2d_51">
+     <path d="M 404.129229 141.388594 
+L 413.129229 141.388594 
+L 422.129229 141.388594 
+" style="fill: none; stroke: #2266a5; stroke-width: 1.5; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="413.129229" y="141.388594" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_14">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="429.329229" y="144.538594" transform="rotate(-0 429.329229 144.538594)">JSPI maximum</text>
+    </g>
+    <g id="04-tails-and-clocks-line2d_52">
+     <path d="M 404.129229 154.889297 
+L 413.129229 154.889297 
+L 422.129229 154.889297 
+" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #2266a5; stroke-width: 1.5"/>
+     <g>
+      <use xlink:href="#04-tails-and-clocks-mbd8c499c8a" x="413.129229" y="154.889297" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_15">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="429.329229" y="158.039297" transform="rotate(-0 429.329229 158.039297)">JSPI p99</text>
+    </g>
+    <g id="04-tails-and-clocks-line2d_53">
+     <path d="M 404.129229 168.39 
+L 413.129229 168.39 
+L 422.129229 168.39 
+" style="fill: none; stroke: #c25c16; stroke-width: 1.5; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="413.129229" y="168.39" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_16">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="429.329229" y="171.54" transform="rotate(-0 429.329229 171.54)">ASYNCIFY maximum</text>
+    </g>
+    <g id="04-tails-and-clocks-line2d_54">
+     <path d="M 404.129229 181.890703 
+L 413.129229 181.890703 
+L 422.129229 181.890703 
+" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #c25c16; stroke-width: 1.5"/>
+     <g>
+      <use xlink:href="#04-tails-and-clocks-mf243ba5e84" x="413.129229" y="181.890703" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_17">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="429.329229" y="185.040703" transform="rotate(-0 429.329229 185.040703)">ASYNCIFY p99</text>
+    </g>
+   </g>
+  </g>
+  <g id="04-tails-and-clocks-axes_2">
+   <g id="04-tails-and-clocks-patch_5">
+    <path d="M 703.29124 367.607547 
+L 1117.44 367.607547 
+L 1117.44 129.6 
+L 703.29124 129.6 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_3">
+    <g id="04-tails-and-clocks-xtick_7">
+     <g id="04-tails-and-clocks-line2d_55">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="855.618123" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_18">
+      <!-- $\mathdefault{10^{1}}$ -->
+      <g transform="translate(845.938123 384.837547)">
+       <text>
+        <tspan x="0" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.389063" style="font-size: 7.7px; font-family: 'DejaVu Sans'">1</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_8">
+     <g id="04-tails-and-clocks-line2d_56">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="1066.640325" y="367.607547" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_19">
+      <!-- $\mathdefault{10^{2}}$ -->
+      <g transform="translate(1056.960325 384.947547)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">2</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_9">
+     <g id="04-tails-and-clocks-line2d_57">
+      <defs>
+       <path id="04-tails-and-clocks-ma110449fe9" d="M 0 0 
+L 0 2 
+" style="stroke: #000000; stroke-width: 0.6"/>
+      </defs>
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="708.119934" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_10">
+     <g id="04-tails-and-clocks-line2d_58">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="745.279099" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_11">
+     <g id="04-tails-and-clocks-line2d_59">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="771.643947" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_12">
+     <g id="04-tails-and-clocks-line2d_60">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="792.094111" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_13">
+     <g id="04-tails-and-clocks-line2d_61">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="808.803112" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_14">
+     <g id="04-tails-and-clocks-line2d_62">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="822.930371" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_15">
+     <g id="04-tails-and-clocks-line2d_63">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="835.167959" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_16">
+     <g id="04-tails-and-clocks-line2d_64">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="845.962277" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_17">
+     <g id="04-tails-and-clocks-line2d_65">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="919.142136" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_18">
+     <g id="04-tails-and-clocks-line2d_66">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="956.301301" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_19">
+     <g id="04-tails-and-clocks-line2d_67">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="982.666148" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_20">
+     <g id="04-tails-and-clocks-line2d_68">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="1003.116313" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_21">
+     <g id="04-tails-and-clocks-line2d_69">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="1019.825314" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_22">
+     <g id="04-tails-and-clocks-line2d_70">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="1033.952573" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_23">
+     <g id="04-tails-and-clocks-line2d_71">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="1046.190161" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_24">
+     <g id="04-tails-and-clocks-line2d_72">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-ma110449fe9" x="1056.984479" y="367.607547" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_20">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="910.36562" y="399.948407" transform="rotate(-0 910.36562 399.948407)">Nanoseconds per iteration (log scale)</text>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_4">
+    <g id="04-tails-and-clocks-ytick_37">
+     <g id="04-tails-and-clocks-line2d_73">
+      <path d="M 703.29124 153.37028 
+L 1117.44 153.37028 
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_74">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="153.37028" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_21">
+      <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="156.789577" transform="rotate(-0 696.29124 156.789577)">JS to Wasm increment loop</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_38">
+     <g id="04-tails-and-clocks-line2d_75">
+      <path d="M 703.29124 191.463677 
+L 1117.44 191.463677 
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_76">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="191.463677" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_22">
+      <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="194.882974" transform="rotate(-0 696.29124 194.882974)">JS monotonic clock study</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_39">
+     <g id="04-tails-and-clocks-line2d_77">
+      <path d="M 703.29124 229.557075 
+L 1117.44 229.557075 
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_78">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="229.557075" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_23">
+      <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="232.976372" transform="rotate(-0 696.29124 232.976372)">Wasm clock via JS study</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_40">
+     <g id="04-tails-and-clocks-line2d_79">
+      <path d="M 703.29124 267.650472 
+L 1117.44 267.650472 
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_80">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="267.650472" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_24">
+      <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="271.069769" transform="rotate(-0 696.29124 271.069769)">JS wall-clock study</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_41">
+     <g id="04-tails-and-clocks-line2d_81">
+      <path d="M 703.29124 305.74387 
+L 1117.44 305.74387 
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_82">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="305.74387" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_25">
+      <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="309.163167" transform="rotate(-0 696.29124 309.163167)">Adjacent Wasm timestamps</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_42">
+     <g id="04-tails-and-clocks-line2d_83">
+      <path d="M 703.29124 343.837267 
+L 1117.44 343.837267 
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_84">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="343.837267" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_26">
+      <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="347.256564" transform="rotate(-0 696.29124 347.256564)">Wasm to JS + timestamps</text>
+     </g>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-patch_6">
+    <path d="M -210377.605918 140.418525 
+L 722.116183 140.418525 
+L 722.116183 152.608412 
+L -210377.605918 152.608412 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_7">
+    <path d="M -210377.605918 178.511922 
+L 1033.493193 178.511922 
+L 1033.493193 190.701809 
+L -210377.605918 190.701809 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_8">
+    <path d="M -210377.605918 216.60532 
+L 1082.273839 216.60532 
+L 1082.273839 228.795207 
+L -210377.605918 228.795207 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_9">
+    <path d="M -210377.605918 254.698717 
+L 949.978394 254.698717 
+L 949.978394 266.888604 
+L -210377.605918 266.888604 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_10">
+    <path d="M -210377.605918 292.792115 
+L 1074.622187 292.792115 
+L 1074.622187 304.982002 
+L -210377.605918 304.982002 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_11">
+    <path d="M -210377.605918 330.885512 
+L 1076.328242 330.885512 
+L 1076.328242 343.075399 
+L -210377.605918 343.075399 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_12">
+    <path d="M -210377.605918 154.132148 
+L 774.352889 154.132148 
+L 774.352889 166.322035 
+L -210377.605918 166.322035 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_13">
+    <path d="M -210377.605918 192.225545 
+L 1035.895667 192.225545 
+L 1035.895667 204.415433 
+L -210377.605918 204.415433 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_14">
+    <path d="M -210377.605918 230.318943 
+L 1098.615056 230.318943 
+L 1098.615056 242.50883 
+L -210377.605918 242.50883 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_15">
+    <path d="M -210377.605918 268.41234 
+L 950.63068 268.41234 
+L 950.63068 280.602227 
+L -210377.605918 280.602227 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_16">
+    <path d="M -210377.605918 306.505738 
+L 1078.608308 306.505738 
+L 1078.608308 318.695625 
+L -210377.605918 318.695625 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_17">
+    <path d="M -210377.605918 344.599135 
+L 1094.414786 344.599135 
+L 1094.414786 356.789022 
+L -210377.605918 356.789022 
+z
+" clip-path="url(#04-tails-and-clocks-p9085bc0985)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_18">
+    <path d="M 703.29124 367.607547 
+L 703.29124 129.6 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_19">
+    <path d="M 703.29124 367.607547 
+L 1117.44 367.607547 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-text_27">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="703.29124" y="116.6" transform="rotate(-0 703.29124 116.6)">Synchronous and clock-read controls</text>
+   </g>
+   <g id="04-tails-and-clocks-legend_2">
+    <g id="04-tails-and-clocks-patch_20">
+     <path d="M 1040.426719 144.538594 
+L 1058.426719 144.538594 
+L 1058.426719 138.238594 
+L 1040.426719 138.238594 
+z
+" style="fill: #2266a5"/>
+    </g>
+    <g id="04-tails-and-clocks-text_28">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="1065.626719" y="144.538594" transform="rotate(-0 1065.626719 144.538594)">JSPI</text>
+    </g>
+    <g id="04-tails-and-clocks-patch_21">
+     <path d="M 1040.426719 158.039297 
+L 1058.426719 158.039297 
+L 1058.426719 151.739297 
+L 1040.426719 151.739297 
+z
+" style="fill: #c25c16"/>
+    </g>
+    <g id="04-tails-and-clocks-text_29">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="1065.626719" y="158.039297" transform="rotate(-0 1065.626719 158.039297)">ASYNCIFY</text>
+    </g>
+   </g>
+  </g>
+  <g id="04-tails-and-clocks-axes_3">
+   <g id="04-tails-and-clocks-patch_22">
+    <path d="M 115.2 760.32 
+L 529.34876 760.32 
+L 529.34876 522.312453 
+L 115.2 522.312453 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_5">
+    <g id="04-tails-and-clocks-xtick_25">
+     <g id="04-tails-and-clocks-line2d_85">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="174.627763" y="760.32" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_30">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="174.627763" y="775.678281" transform="rotate(-0 174.627763 775.678281)">Isolated monotonic</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_26">
+     <g id="04-tails-and-clocks-line2d_86">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="322.27438" y="760.32" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_31">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="322.27438" y="775.678281" transform="rotate(-0 322.27438 775.678281)">Ordinary monotonic</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_27">
+     <g id="04-tails-and-clocks-line2d_87">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="469.920997" y="760.32" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_32">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="469.920997" y="775.678281" transform="rotate(-0 469.920997 775.678281)">Wall clock</text>
+     </g>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_6">
+    <g id="04-tails-and-clocks-ytick_43">
+     <g id="04-tails-and-clocks-line2d_88">
+      <path d="M 115.2 760.32 
+L 529.34876 760.32 
+" clip-path="url(#04-tails-and-clocks-pdca2557edb)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_89">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="760.32" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_33">
+      <!-- $\mathdefault{10^{0}}$ -->
+      <g transform="translate(88.84 765.49)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">0</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_44">
+     <g id="04-tails-and-clocks-line2d_90">
+      <path d="M 115.2 691.870403 
+L 529.34876 691.870403 
+" clip-path="url(#04-tails-and-clocks-pdca2557edb)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_91">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="691.870403" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_34">
+      <!-- $\mathdefault{10^{1}}$ -->
+      <g transform="translate(88.84 696.985403)">
+       <text>
+        <tspan x="0" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.389063" style="font-size: 7.7px; font-family: 'DejaVu Sans'">1</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_45">
+     <g id="04-tails-and-clocks-line2d_92">
+      <path d="M 115.2 623.420807 
+L 529.34876 623.420807 
+" clip-path="url(#04-tails-and-clocks-pdca2557edb)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_93">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="623.420807" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_35">
+      <!-- $\mathdefault{10^{2}}$ -->
+      <g transform="translate(88.84 628.590807)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">2</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_46">
+     <g id="04-tails-and-clocks-line2d_94">
+      <path d="M 115.2 554.97121 
+L 529.34876 554.97121 
+" clip-path="url(#04-tails-and-clocks-pdca2557edb)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_95">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="115.2" y="554.97121" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_36">
+      <!-- $\mathdefault{10^{3}}$ -->
+      <g transform="translate(88.84 560.14121)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">3</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_47">
+     <g id="04-tails-and-clocks-line2d_96">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="739.714618" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_48">
+     <g id="04-tails-and-clocks-line2d_97">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="727.661243" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_49">
+     <g id="04-tails-and-clocks-line2d_98">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="719.109236" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_50">
+     <g id="04-tails-and-clocks-line2d_99">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="712.475785" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_51">
+     <g id="04-tails-and-clocks-line2d_100">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="707.055861" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_52">
+     <g id="04-tails-and-clocks-line2d_101">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="702.47338" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_53">
+     <g id="04-tails-and-clocks-line2d_102">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="698.503855" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_54">
+     <g id="04-tails-and-clocks-line2d_103">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="695.002485" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_55">
+     <g id="04-tails-and-clocks-line2d_104">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="671.265022" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_56">
+     <g id="04-tails-and-clocks-line2d_105">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="659.211646" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_57">
+     <g id="04-tails-and-clocks-line2d_106">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="650.65964" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_58">
+     <g id="04-tails-and-clocks-line2d_107">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="644.026189" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_59">
+     <g id="04-tails-and-clocks-line2d_108">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="638.606264" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_60">
+     <g id="04-tails-and-clocks-line2d_109">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="634.023783" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_61">
+     <g id="04-tails-and-clocks-line2d_110">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="630.054258" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_62">
+     <g id="04-tails-and-clocks-line2d_111">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="626.552889" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_63">
+     <g id="04-tails-and-clocks-line2d_112">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="602.815425" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_64">
+     <g id="04-tails-and-clocks-line2d_113">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="590.762049" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_65">
+     <g id="04-tails-and-clocks-line2d_114">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="582.210043" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_66">
+     <g id="04-tails-and-clocks-line2d_115">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="575.576592" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_67">
+     <g id="04-tails-and-clocks-line2d_116">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="570.156668" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_68">
+     <g id="04-tails-and-clocks-line2d_117">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="565.574187" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_69">
+     <g id="04-tails-and-clocks-line2d_118">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="561.604662" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_70">
+     <g id="04-tails-and-clocks-line2d_119">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="558.103292" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_71">
+     <g id="04-tails-and-clocks-line2d_120">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="534.365828" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_72">
+     <g id="04-tails-and-clocks-line2d_121">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-md566914bc2" x="115.2" y="522.312453" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_37">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="82.197422" y="641.316226" transform="rotate(-90 82.197422 641.316226)">Microseconds (log scale)</text>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-patch_23">
+    <path d="M 134.024944 69209.916587 
+L 215.230583 69209.916587 
+L 215.230583 712.475785 
+L 134.024944 712.475785 
+z
+" clip-path="url(#04-tails-and-clocks-pdca2557edb)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_24">
+    <path d="M 281.671561 69209.916587 
+L 362.8772 69209.916587 
+L 362.8772 623.420807 
+L 281.671561 623.420807 
+z
+" clip-path="url(#04-tails-and-clocks-pdca2557edb)" style="fill: #8960a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_25">
+    <path d="M 429.318177 69209.916587 
+L 510.523817 69209.916587 
+L 510.523817 554.97121 
+L 429.318177 554.97121 
+z
+" clip-path="url(#04-tails-and-clocks-pdca2557edb)" style="fill: #687483"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_26">
+    <path d="M 115.2 760.32 
+L 115.2 522.312453 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_27">
+    <path d="M 115.2 760.32 
+L 529.34876 760.32 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-text_38">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="174.627763" y="708.321042" transform="rotate(-0 174.627763 708.321042)">5 us</text>
+   </g>
+   <g id="04-tails-and-clocks-text_39">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="322.27438" y="619.266064" transform="rotate(-0 322.27438 619.266064)">100 us</text>
+   </g>
+   <g id="04-tails-and-clocks-text_40">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="469.920997" y="550.816468" transform="rotate(-0 469.920997 550.816468)">1,000 us</text>
+   </g>
+   <g id="04-tails-and-clocks-text_41">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="115.2" y="509.312453" transform="rotate(-0 115.2 509.312453)">Observed positive clock steps</text>
+   </g>
+  </g>
+  <g id="04-tails-and-clocks-axes_4">
+   <g id="04-tails-and-clocks-patch_28">
+    <path d="M 703.29124 760.32 
+L 1117.44 760.32 
+L 1117.44 522.312453 
+L 703.29124 522.312453 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_7">
+    <g id="04-tails-and-clocks-xtick_28">
+     <g id="04-tails-and-clocks-line2d_122">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="798.312384" y="760.32" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_42">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="798.312384" y="775.678281" transform="rotate(-0 798.312384 775.678281)">Isolated page</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-xtick_29">
+     <g id="04-tails-and-clocks-line2d_123">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m80c402e2b1" x="1022.418856" y="760.32" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_43">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1022.418856" y="775.678281" transform="rotate(-0 1022.418856 775.678281)">Ordinary page</text>
+     </g>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-matplotlib.axis_8">
+    <g id="04-tails-and-clocks-ytick_73">
+     <g id="04-tails-and-clocks-line2d_124">
+      <path d="M 703.29124 760.32 
+L 1117.44 760.32 
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_125">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="760.32" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_44">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="764.498711" transform="rotate(-0 696.29124 764.498711)">0</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_74">
+     <g id="04-tails-and-clocks-line2d_126">
+      <path d="M 703.29124 716.244528 
+L 1117.44 716.244528 
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_127">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="716.244528" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_45">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="720.423239" transform="rotate(-0 696.29124 720.423239)">20</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_75">
+     <g id="04-tails-and-clocks-line2d_128">
+      <path d="M 703.29124 672.169057 
+L 1117.44 672.169057 
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_129">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="672.169057" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_46">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="676.347768" transform="rotate(-0 696.29124 676.347768)">40</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_76">
+     <g id="04-tails-and-clocks-line2d_130">
+      <path d="M 703.29124 628.093585 
+L 1117.44 628.093585 
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_131">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="628.093585" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_47">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="632.272296" transform="rotate(-0 696.29124 632.272296)">60</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_77">
+     <g id="04-tails-and-clocks-line2d_132">
+      <path d="M 703.29124 584.018113 
+L 1117.44 584.018113 
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_133">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="584.018113" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_48">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="588.196824" transform="rotate(-0 696.29124 588.196824)">80</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-ytick_78">
+     <g id="04-tails-and-clocks-line2d_134">
+      <path d="M 703.29124 539.942642 
+L 1117.44 539.942642 
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="04-tails-and-clocks-line2d_135">
+      <g>
+       <use xlink:href="#04-tails-and-clocks-m1406eb3b4b" x="703.29124" y="539.942642" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="04-tails-and-clocks-text_49">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="696.29124" y="544.121352" transform="rotate(-0 696.29124 544.121352)">100</text>
+     </g>
+    </g>
+    <g id="04-tails-and-clocks-text_50">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="668.652412" y="641.316226" transform="rotate(-90 668.652412 641.316226)">Percent of samples</text>
+    </g>
+   </g>
+   <g id="04-tails-and-clocks-patch_29">
+    <path d="M 722.116183 760.32 
+L 793.830254 760.32 
+L 793.830254 691.20966 
+L 722.116183 691.20966 
+z
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_30">
+    <path d="M 946.222655 760.32 
+L 1017.936726 760.32 
+L 1017.936726 548.669585 
+L 946.222655 548.669585 
+z
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: #2266a5"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_31">
+    <path d="M 802.794513 760.32 
+L 874.508584 760.32 
+L 874.508584 709.346717 
+L 802.794513 709.346717 
+z
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_32">
+    <path d="M 1026.900985 760.32 
+L 1098.615056 760.32 
+L 1098.615056 550.212226 
+L 1026.900985 550.212226 
+z
+" clip-path="url(#04-tails-and-clocks-pc004d7672e)" style="fill: #c25c16"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_33">
+    <path d="M 703.29124 760.32 
+L 703.29124 522.312453 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-patch_34">
+    <path d="M 703.29124 760.32 
+L 1117.44 760.32 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="04-tails-and-clocks-text_51">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="757.973219" y="686.802113" transform="rotate(-0 757.973219 686.802113)">31.4%</text>
+   </g>
+   <g id="04-tails-and-clocks-text_52">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="982.079691" y="544.262038" transform="rotate(-0 982.079691 544.262038)">96.0%</text>
+   </g>
+   <g id="04-tails-and-clocks-text_53">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="838.651549" y="704.93917" transform="rotate(-0 838.651549 704.93917)">23.1%</text>
+   </g>
+   <g id="04-tails-and-clocks-text_54">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1062.758021" y="545.804679" transform="rotate(-0 1062.758021 545.804679)">95.3%</text>
+   </g>
+   <g id="04-tails-and-clocks-text_55">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="703.29124" y="509.312453" transform="rotate(-0 703.29124 509.312453)">Direct samples recorded as zero</text>
+   </g>
+   <g id="04-tails-and-clocks-legend_3">
+    <g id="04-tails-and-clocks-patch_35">
+     <path d="M 713.19124 635.923648 
+L 735.19124 635.923648 
+L 735.19124 628.223648 
+L 713.19124 628.223648 
+z
+" style="fill: #2266a5"/>
+    </g>
+    <g id="04-tails-and-clocks-text_56">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start" x="743.99124" y="635.923648" transform="rotate(-0 743.99124 635.923648)">JSPI</text>
+    </g>
+    <g id="04-tails-and-clocks-patch_36">
+     <path d="M 713.19124 652.424508 
+L 735.19124 652.424508 
+L 735.19124 644.724508 
+L 713.19124 644.724508 
+z
+" style="fill: #c25c16"/>
+    </g>
+    <g id="04-tails-and-clocks-text_57">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start" x="743.99124" y="652.424508" transform="rotate(-0 743.99124 652.424508)">ASYNCIFY</text>
+    </g>
+   </g>
+  </g>
+  <g id="04-tails-and-clocks-text_58">
+   <text style="font-weight: 700; font-size: 21px; font-family: 'DejaVu Sans'; text-anchor: start" x="69.12" y="37.556719" transform="rotate(-0 69.12 37.556719)">Tails, clocks and measurement resolution</text>
+  </g>
+  <g id="04-tails-and-clocks-text_59">
+   <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #475569" x="69.12" y="64.8" transform="rotate(-0 69.12 64.8)">Extreme observations are retained | A quantized zero is not proof of a zero-cost operation</text>
+  </g>
+  <g id="04-tails-and-clocks-text_60">
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(69.12 828.534551)">Clock studies include loop overhead; the trivial synchronous export may be inlined. Wall-clock step: where observed.</text>
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(69.12 839.337012)">Wasm and JS monotonic clocks share performance.now(). Maximums are observations, not guaranteed latency bounds.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="04-tails-and-clocks-pf2dde3f717">
+   <rect x="115.2" y="129.6" width="414.14876" height="238.007547"/>
+  </clipPath>
+  <clipPath id="04-tails-and-clocks-p9085bc0985">
+   <rect x="703.29124" y="129.6" width="414.14876" height="238.007547"/>
+  </clipPath>
+  <clipPath id="04-tails-and-clocks-pdca2557edb">
+   <rect x="115.2" y="522.312453" width="414.14876" height="238.007547"/>
+  </clipPath>
+  <clipPath id="04-tails-and-clocks-pc004d7672e">
+   <rect x="703.29124" y="522.312453" width="414.14876" height="238.007547"/>
+  </clipPath>
+ </defs>
+</svg>

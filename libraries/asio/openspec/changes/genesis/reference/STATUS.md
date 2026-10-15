@@ -1,5 +1,16 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Yield benchmark charts and complete tables, 2026-10-15
+
+Library commit `3b5d1f5` adds four scientific figures in PNG and SVG, a
+four-page PDF and a flattened table of all 102 configurations from 442 runs.
+The reproducible plotting script reads the committed summary; no measurements
+were rerun or changed. The guide includes all four figures inline. Full local
+lint, documentation generation and rendered checks passed. CSV values match
+the source summary; inline SVG identifiers are unique. The original raw-data
+archive and its checksum remain unchanged. No CI, push or merge ran. The
+default remains 1000 and task 17 remains pending. source/ matches library HEAD.
+
 ## Default turn-limit rationale documented, 2026-10-15
 
 Library commit `0aed494` explains that 1000 was the initial design policy,

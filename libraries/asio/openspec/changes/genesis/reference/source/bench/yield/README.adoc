@@ -91,3 +91,22 @@ All 442 cases passed, totaling 970,139,132 operations and 9,429,856 pairs.
 Measurements are for this warmup protocol and browser/hardware combination.
 There is no assumption that 512 warmup yields establish universal steady state.
 The default turn limit remains 1,000; running this benchmark does not change it.
+
+== Plot the recorded observations
+
+The optional plotting tool needs Matplotlib and NumPy in a separate local
+Python environment. The recorded figures used Matplotlib 3.11.2 and NumPy 2.5.4.
+It does not rebuild or execute the benchmark:
+
+[source,shell]
+----
+python3 -B libs/asio/bench/yield/plot_results.py \
+  libs/asio/bench/yield/results/2026-10-15 \
+  libs/asio/bench/yield/results/2026-10-15/figures
+----
+
+The output contains four figures as PNG and SVG, a combined PDF, a flattened
+CSV preserving all 102 configuration summaries, and the renderer version.
+`runs.csv` retains the original 442 independent run summaries. Source observations
+are never modified. Labels in the figures distinguish measured gaps, derived
+amortization, observer overhead, whole-program controls and clock quantization.

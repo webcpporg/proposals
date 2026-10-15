@@ -279,6 +279,30 @@ that each take 100 us can occupy the thread for about 100 ms before a periodic
 yield in this chain. Measure the actual application and choose its limit using
 <<asio-run-default,the build definition>> or the per-context option.
 
+[#asio-yield-charts]
+=== Charts and complete tables
+
+These charts use the recorded observations. Marked error bars show ranges
+between independent runs, not confidence intervals. Logarithmic axes are labeled.
+The per-callback scheduling cost is derived by dividing a yield gap by the limit.
+The complete aggregate table is `bench/yield/results/2026-10-15/figures/all-configurations.csv`
+(102 configurations); `runs.csv` in its parent directory retains all 442 runs.
+All summary fields, including ranges, percentiles, clocks and phase components,
+are preserved in the aggregate CSV. The figures directory also contains a
+four-page PDF and separate PNG/SVG images.
+
+.Yield latency and amortization
+image::{library-root}/bench/yield/results/2026-10-15/figures/01-yield-latency.svg[Yield latency and amortization,opts=inline]
+
+.Direct controls and instrumented phases
+image::{library-root}/bench/yield/results/2026-10-15/figures/02-direct-and-phases.svg[Direct controls and instrumented phases,opts=inline]
+
+.Chain controls and whole-program comparisons
+image::{library-root}/bench/yield/results/2026-10-15/figures/03-chain-controls.svg[Chain controls and whole-program comparisons,opts=inline]
+
+.Tails and clock resolution
+image::{library-root}/bench/yield/results/2026-10-15/figures/04-tails-and-clocks.svg[Tails and clock resolution,opts=inline]
+
 === Reproduce and inspect
 
 The manual benchmark is in `bench/yield/`; its README documents exact build,
