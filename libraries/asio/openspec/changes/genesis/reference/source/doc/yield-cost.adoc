@@ -1,0 +1,230 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-yield-cost]
+== Measured cost of yielding to the browser
+
+On 2026-10-15, a direct round trip through the library's actual
+`webcpp_asio_yield()` took about *4.06 microseconds with JSPI* and
+*4.74 microseconds with Asyncify*. These are medians of seven per-run means,
+not the duration of a batch of callbacks and not a real-time guarantee.
+One microsecond is 0.001 milliseconds.
+
+The benchmark ran locally on an Apple M5 Max, 128 GiB RAM, macOS 27.0
+(26A428), HeadlessChrome 153.0.8010.12, Emscripten 6.0.11 and Boost 1.92.
+Both compilation and linking used Release `-O3`; `NDEBUG` was enabled.
+The primary matrix enabled exceptions and cross-origin isolation. Additional
+cases disabled exceptions or isolation and exercised an arithmetic workload.
+No CI ran, and the configured default of 1,000 was not changed.
+
+=== What was timed
+
+The direct measurement surrounds the production function, without changing
+its implementation:
+
+The {cpp} steady-clock timestamp is read immediately before the call and
+immediately after it resumes. Their difference in milliseconds is multiplied
+by 1,000 to report microseconds. The compiled implementation is in
+`bench/yield/yield_program.cpp`.
+
+That function awaits a Promise, creates a MessageChannel, posts a message,
+closes port1 in its message handler and resolves the Promise. The suspended
+Wasm execution then resumes. This is a cooperative browser event-loop yield,
+not a measurement of an operating-system thread context switch.
+
+The chain measurement uses `boost::asio::post` to schedule its next handler.
+It records the end of the last callback before a yield, after posting its
+successor, and the entry of the first callback after the yield. This excludes
+batch execution, but includes the small dispatcher return/reentry around the
+yield. A matched control records the same boundaries with periodic yielding
+disabled. It uses exactly the same number of handlers and clock reads.
+
+=== Direct round-trip latency
+
+Each primary row contains seven fresh-page runs of 10,000 yields each.
+Percentiles are nearest-rank quantiles per run, then medians across runs.
+The maximum is the largest individual observation across all repetitions.
+The mean range exposes variation between independent runs.
+
+[cols="1,1,1,1,1,1,1",options="header"]
+|===
+|Path |Mean, us |Run means, us |p50, us |p95, us |p99, us |Maximum, us
+
+|jspi |4.06 |3.98-4.15 |5 |10 |10 |310
+|asyncify |4.74 |4.59-4.94 |5 |10 |10 |805
+|js |3.93 |3.85-4.01 |5 |10 |10 |285
+|===
+
+The JavaScript control implements the same Promise/MessageChannel sequence
+without entering Wasm. Its similar cost suggests that browser scheduling and
+channel/Promise management account for much of the round trip in this setup.
+Subtracting its mean from the Wasm mean does not isolate an ABI transition:
+these are separate runs, with different optimized code and runtime work.
+
+=== Actual yield gaps with different turn limits
+
+Each cell below is a yield gap, *not time spent running the callbacks*.
+Each limit has seven repetitions per variant. Runs contain at least 100,000
+handlers and at least 1,024 yield samples. Limit 1 uses 100,000 samples;
+limit 10 uses 10,000; the other limits use 1,024.
+
+[cols="1,1,1,1,1,1,1",options="header"]
+|===
+|Handlers per turn |JSPI gap, us |Asyncify gap, us |JSPI p95, us |Asyncify p95, us |JSPI amortized, ns/handler |Asyncify amortized, ns/handler
+
+|1 |4.18 |4.85 |10 |10 |4183.95 |4850.00
+|10 |4.15 |4.98 |10 |10 |414.95 |498.05
+|100 |4.40 |5.45 |10 |10 |44.04 |54.54
+|1000 |4.64 |5.73 |10 |10 |4.64 |5.73
+|5000 |4.82 |6.40 |10 |10 |0.96 |1.28
+|10000 |4.86 |6.93 |10 |10 |0.49 |0.69
+|===
+
+The amortized columns divide the measured gap by the turn limit. They are an
+estimate of scheduling cost per handler, not the handler's execution time.
+For example, one million handlers with a limit of 1 imply roughly four to
+five seconds of accumulated yield gaps at these means. A limit of 100 implies
+roughly 44-55 milliseconds; a limit of 1,000 roughly 5-6 milliseconds.
+These extrapolations describe this workload and machine, not all applications.
+
+The largest chain gaps were 5.01 ms with JSPI and 39.72 ms with Asyncify,
+both at limit 1. No samples were removed. The benchmark does not identify
+whether these outliers came from collection, scheduling or another cause.
+A browser yield gives an opportunity to service the page; it does not guarantee
+that rendering or a particular queued task executes before resumption.
+
+=== Where the instrumented interval was spent
+
+A separate run observes six JavaScript timestamps inside the MessageChannel
+path. The observer is warmed before collection. These observations perturb
+the operation: the median mean rises from 4.06 to 4.85 us for JSPI and from
+4.74 to 5.57 us for Asyncify. Consequently the following decomposition is of
+the *instrumented* path, not a claim that the observer is free.
+
+All entries below are arithmetic means across seven runs of 10,000 samples;
+they add to the arithmetic mean of the traced round trip. Sub-resolution
+values are aggregate estimates, not individually resolved durations.
+
+[cols="1,1,1",options="header"]
+|===
+|Observed segment |JSPI mean, us |Asyncify mean, us
+
+|{cpp} start to channel observer entry |0.21 |0.26
+|Native MessageChannel construction |1.06 |1.12
+|Handler/observer setup before post |0.67 |0.70
+|Synchronous postMessage call |0.47 |0.50
+|Post return to message-handler entry |1.20 |1.52
+|Message handler: close port and resolve |1.01 |1.02
+|Handler return to {cpp} resumption |0.21 |0.47
+|Instrumented total |4.83 |5.59
+|===
+
+Post-return-to-delivery includes suspension/unwinding and browser scheduling;
+it is not a pure queue-residence measurement. The last segment includes
+Promise/microtask continuation, runtime resumption and the {cpp} timestamp.
+The entry segment includes Promise setup before the first observed channel
+operation. Handler setup includes observer allocations and timestamp reads.
+These measurements cannot isolate pure engine suspension and restoration
+instructions from all surrounding work.
+
+A validation-only 2 ms busy wait inserted into the JavaScript message handler
+was detected in that segment, about 2.001 ms on both variants. It was absent
+from all 442 production-mechanism measurement cases.
+
+=== Clock resolution and synchronous controls
+
+In this Emscripten build, {cpp} `steady_clock` reaches `clock_gettime`, WASI's
+monotonic clock and then `emscripten_get_now`, which uses `performance.now()`.
+{cpp} `system_clock` reaches the same wall-clock source as `Date.now()`.
+These are not independent hardware clocks. Two thousand bracketed reads
+before and after each Wasm case verified their correspondence.
+
+Observed positive clock steps were about 5 us in an isolated page and 100 us
+in an ordinary page. `Date.now()` advanced in 1 ms steps where a positive
+step was observed. Isolated-page direct yield samples therefore include many
+zeros despite a nonzero aggregate mean. In an ordinary page, about 96% of
+JSPI and 95% of Asyncify direct samples were zero; the median p95 was also
+zero. Those individual percentiles cannot resolve a 4-5 us operation.
+The ordinary-page mean still agreed: 4.03 us JSPI and 4.73 us Asyncify.
+
+[cols="1,1,1",options="header"]
+|===
+|Control |JSPI, ns/iteration |Asyncify, ns/iteration
+
+|Adjacent {cpp} timestamps |109.1 |114.0
+|{cpp} -> JS counter call, including timestamps |111.1 |135.4
+|Optimized JS -> {cpp} increment loop |2.3 |4.1
+|JS performance clock study loop |69.6 |71.5
+|JS -> {cpp} monotonic clock study loop |118.6 |141.7
+|JS wall-clock study loop |28.0 |28.2
+|===
+
+Clock-study values include loop and comparison overhead. The JS-to-{cpp} control
+uses one million synchronous calls, with observable results; an optimizing
+engine may inline this trivial export. The {cpp}-to-JS control increments an
+observable counter between the same two {cpp} timestamps as the clock-only
+control. Neither performs an asynchronous yield. Small differences between
+these controls are not a precise standalone ABI-cost estimate. No per-sample
+clock-floor subtraction was performed on the reported yield latencies.
+
+=== Exceptions and arithmetic controls
+
+[cols="1,1,1",options="header"]
+|===
+|Variant |Exceptions on, us |Exceptions off, us
+
+|jspi |4.06 |4.03
+|asyncify |4.74 |4.43
+|===
+
+Exception-free controls used three repetitions, including all six turn limits.
+The additional arithmetic control used 64 source-level LCG updates per handler,
+with an independently verified checksum. This is not a claim of 64 machine
+instructions: optimization can combine arithmetic. All its raw run statistics,
+plus the traced chain runs, are retained with the benchmark results.
+
+=== What the measurements justify
+
+For the instrumented trivial chain, limit 1 took 17.29 times the matched
+no-periodic-yield control with JSPI and 14.49 times with Asyncify. At limit 100
+the ratios were 2.09 and 1.43; at limit 1,000 they were 1.15 and 1.05.
+These are measured whole-program ratios, including the clocks in both cases,
+not universal application overhead factors.
+
+Subtracting whole-run durations is unreliable for small differences. Some
+large-limit pairs produced negative differences. Exception-free Asyncify's
+large-limit controls were consistently slower than the yielding runs. This
+experiment does not identify the cause; execution/tiering, allocation and
+other runtime effects can confound such controls. The retained CSV and JSON
+include these results. They must not be described as negative yield latency.
+The direct interval and callback-boundary observations remain the primary
+latency measurements.
+
+The evidence supports amortizing yields when handlers are very cheap. It does
+*not* prove that 1,000 is optimal, or that 1 is always inappropriate. A heavy
+handler can make a 4-5 us yield negligible. Choosing a limit balances accumulated
+scheduling cost against time spent away from the browser. Counting handlers
+cannot bound that time when their costs vary, and no limit interrupts a handler
+in the middle. Configure the limit as described in <<asio-run-configure>>;
+the current default remains 1,000.
+
+=== Reproduce and inspect
+
+The manual benchmark is in `bench/yield/`; its README documents exact build,
+run and analysis commands. It is not connected to a CI lane. The recorded
+`results/2026-10-15/runs.csv` retains statistics for every case,
+`summary.json` groups repetitions, and `build.json` identifies the hardware,
+toolchain and source/binary hashes. Full timestamp arrays are also preserved
+in the local raw-data archive identified in the README.
+
+The run used 442 sequential fresh-page cases in deterministic shuffled order
+(seed 20261015), totaling 970,139,132 operations and 9,429,856 timing pairs.
+Primary cases had seven repetitions; secondary controls had three. Direct and chain
+Wasm cases first warmed 512 actual yields, and chain cases additionally warmed
+10,001 posted handlers. Builds completed before measurement started. There
+was no polling timer in the measured page. The machine was not isolated from
+all other OS activity, and this headless, otherwise idle-page experiment does
+not represent a loaded application's rendering or input workload.

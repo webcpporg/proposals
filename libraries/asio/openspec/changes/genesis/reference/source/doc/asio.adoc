@@ -49,6 +49,8 @@ include::building.adoc[]
 
 include::run.adoc[]
 
+include::yield-cost.adoc[]
+
 include::browser.adoc[]
 
 include::timers.adoc[]

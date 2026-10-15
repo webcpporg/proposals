@@ -1,5 +1,35 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Yield latency benchmark after task 16, 2026-10-15
+
+Library commits `543e764` and `793c4c2` add a manual benchmark and its report;
+`source/` matches library HEAD `793c4c2`. The superproject stays `8829e99`.
+The default remains 1000; task 17 has not started. No CI, push or merge ran.
+
+The real production yield was measured locally in Release with compile/link
+-O3, under JSPI and Asyncify, exceptions on/off, on Apple M5 Max and
+HeadlessChrome 153.0.8010.12. All 442 fresh-page cases completed and validated:
+970,139,132 operations and 9,429,856 timing pairs, including limits 1, 10, 100,
+1000, 5000 and 10000. Seven primary repetitions gave median per-run direct
+means of 4.062 us for JSPI and 4.7365 us for Asyncify; a matching JavaScript
+control gave 3.9255 us. The observed isolated clock step was 5 us, ordinary
+page step 100 us. C++ and JS monotonic reads share the same underlying clock.
+
+The report distinguishes direct round trips, callback-boundary gaps,
+instrumented phase means and confounded whole-program control differences.
+A deliberate 2 ms message-handler delay validated the phase attribution.
+No outliers were removed: chain maxima were 5.01 ms and 39.72 ms. These data
+support amortization for trivial handlers, not a claim that 1000 is optimal.
+Observer overhead, clock quantization, warmup and baseline limitations are
+explicit. Independent review found no remaining blocker. Five analyzer tests,
+full local lint, documentation generation and rendered checks passed.
+
+Reproduction code is in `bench/yield/`, the guide report in
+`doc/yield-cost.adoc`, and per-run CSV, summary and build hashes in
+`bench/yield/results/2026-10-15/`. Raw timestamp arrays and logs are preserved
+locally at `asio-task9-review/.local/yield-benchmark-2026-10-15.tar.gz`,
+SHA-256 `2fbe2f23e6df9155ebc397da12bd12e94946a6bbbc4417f624fdc841a3baa341`.
+
 ## Configurable default turn limit after task 16, 2026-10-15
 
 Library commit `3817dc9` adds the owner-requested compiler configuration;

@@ -1,0 +1,31 @@
+{
+  "cpu": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "os": "macOS 27.0 (26A428)",
+  "emscripten": "6.0.11",
+  "boost": "1.92.0",
+  "node": "26.7.0",
+  "optimization": "Release: compile -O3, link -O3",
+  "library_base": "3817dc9",
+  "superproject_base": "8829e99",
+  "sha256": {
+    "libs/asio/bench/yield/yield_program.cpp": "29702bad54ebc3208abfa8e055fef4a219ed175fbed08ec2e7d1564c1ded39c4",
+    "libs/asio/bench/yield/run.mjs": "27caf006698a43b20bba3340b57b1ce5a1358dbc0e045ad30ab69460768e0aca",
+    "libs/asio/bench/yield/page.mjs": "41b38c8e242ec19cee4df6510c4b6dcb5fc3c9b2824c712db77305211c211405",
+    "libs/asio/bench/yield/Jamfile": "8f2c04e621c12f1fb8d345a870d3492a28bd133cd93e247da0ce85e056214132",
+    "bin/yield-benchmark-on/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/link-static/target-os-none/yield_program-60-jspi.js": "4c2c6e319be6e8b964d3e80b5b0ca32ad1156309dc1ba9fc38d72c3289a58d31",
+    "bin/yield-benchmark-on/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/link-static/target-os-none/webcpp-suspend-asyncify/yield_program-60-asyncify.js": "183fed06598de0a4a4e6b034ab2d1a3d517957e2dbf2f59ec09dfa442cb80240",
+    "bin/yield-benchmark-on/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/link-static/target-os-none/yield_program-60-jspi.wasm": "e7c92c2ca5e767a9bbbea148e735e67e24aa8f6728971785be42f9918bf4c0b0",
+    "bin/yield-benchmark-on/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/link-static/target-os-none/webcpp-suspend-asyncify/yield_program-60-asyncify.wasm": "6440a6257a19afd5cd85f660e9cb7f6a4798fe4a5362e6d198bb15eabe66a060",
+    "bin/yield-benchmark-off/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/exception-handling-off/link-static/target-os-none/yield_program-60-jspi.js": "aa036a958e78419a48282c8ce67d8ed645ec5b5e0b6bd5484bfd6c70125233fc",
+    "bin/yield-benchmark-off/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/exception-handling-off/link-static/target-os-none/webcpp-suspend-asyncify/yield_program-60-asyncify.js": "8bcbde6e1c55cce3c7c4a46eac066b3f7860a1033aa92af079d36d993caad805",
+    "bin/yield-benchmark-off/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/exception-handling-off/link-static/target-os-none/yield_program-60-jspi.wasm": "c2f7edfa9ef1403f9e589fd724fb498a66887c4bf4151d39a5e59caf7bf7ba37",
+    "bin/yield-benchmark-off/webcpp/bin/libs/asio/bench/yield/emscripten-6.0.11/release/address-model-32/cxxstd-20-iso/exception-handling-off/link-static/target-os-none/webcpp-suspend-asyncify/yield_program-60-asyncify.wasm": "76184f37ad6c1bd5528e83ba46f9a5ecd845e4f3005d3ee245754f8de860054b"
+  },
+  "notes": [
+    "No CI was run.",
+    "Headless Chrome, fresh foreground page per case.",
+    "Builds finished before timing began; cases ran sequentially.",
+    "Machine was not isolated from all other OS activity."
+  ]
+}
