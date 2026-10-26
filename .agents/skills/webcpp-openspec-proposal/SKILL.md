@@ -6,7 +6,8 @@ description: "Write or review a webcpp proposal: a library genesis, a change to 
 # Writing a webcpp proposal
 
 Read first: `CONTRIBUTING.md` (what a proposal holds, how it is decided), `AGENTS.md`, the
-organization's specification `organization/openspec/specs/`, and the superproject's `AGENTS.md`.
+organization's specification `organization/openspec/specs/`, and the superproject's
+`CODING-GUIDELINES.md` and `AGENTS.md`.
 The generic OpenSpec skills (`openspec-propose`, `openspec-explore`, ...) apply, with the note at
 their top: one OpenSpec root per library and one for the organization.
 
