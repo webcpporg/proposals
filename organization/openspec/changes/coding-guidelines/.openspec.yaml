@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-10-26
+webcpp:
+  library: organization
+  title: "organization: CODING-GUIDELINES.md, the single source of the rules and the design decisions"
+  kind: organization
+  port_of: null
+  status: accepted
+  release: null
+  implementation: null
+  decided: 2026-10-26
