@@ -18,6 +18,53 @@ and asked for tasks 1 to 4 without a push. The proposal is committed on the bran
 | The split of the rulebook | `split_rulebook.py`, run on `AGENTS.md` at `ddb6cb2` |
 | Every citation the split rewrote | `citations.txt`: the old line, the old citation, the line's new home and the new citation |
 
+## Implementation (2026-10-26)
+
+Tasks 1 to 4 are done and committed locally, each repository on its branch `coding-guidelines`;
+nothing is pushed, by the owner's instruction, and no CI ran.
+
+| Repository | Commits on `coding-guidelines` |
+| --- | --- |
+| webcpp | `0166320` the two files; `04872bb` `CONTRIBUTING.md`, `README.md`, `doc/index.adoc` and the five skills; `72076aa` the comments and messages of the Jamroot and the tools |
+| config | `279eed7` `AGENTS.md` and `doc/version.adoc` |
+| xactor, xstate, pratt, wasi, idna, lexical, document, trystero | `3062eb0`, `eb96163`, `0c243d6`, `b702fef`, `19bf135`, `7b1032a`, `951e4e1`, `b28ccc9`: each `AGENTS.md` |
+| webcpporg.github.io (the site) | `b7e2fe8` `AGENTS.md`, the community page and its test |
+| proposals | the commit that records this section: `CONTRIBUTING.md`, `AGENTS.md`, three skills and every root's `openspec/config.yaml` |
+
+The superproject's branch does not move its submodules: each library's and the site's new commit
+is recorded by the superproject once it is merged in that repository (task 2.10).
+
+**Design D7, as implemented.** The specifications of config, xactor, pratt and wasi require
+their `AGENTS.md` to state the library's own rules, and D9 leaves them unchanged, so no
+library's `AGENTS.md` loses content: each links both files and says that chapter 15 gives its
+design decisions, and chapter 15 says a library's `AGENTS.md` keeps the rules its specification
+asks of it (`../design.md`, D7).
+
+**Verified, locally, on macOS arm64.**
+
+- `tools/lint/lint.sh` with wasi-sdk 34's clang-format and clang-tidy, over the superproject and
+  every library on its branch: `lint: clean`, clang-tidy over 342 translation units.
+- Every `tools/**/*_test.py`, each as `python3 <path>`: 32 of 32 pass, among them
+  `tools/ci/matrix_test.py`, which reads `AGENTS.md`.
+- `b2 -a doc`: 97 targets, the index linking `CODING-GUIDELINES.md`.
+- `b2 -a /webcpp/site//test`: the new test failed first (96 of 97), then 97 of 97 with the
+  page changed; the target runs the site's typecheck too.
+- In this repository: `openspec validate --all --strict --no-interactive` in all fifteen roots,
+  `tools/proposals.py readme`, `tools/proposals.py check` and `tools/proposals_test.py`.
+- No test pinned the citations the tools' messages and comments carry, so none was written
+  first for them; the lint and the tools' tests pass with them changed.
+
+**The checkout, for the record.** `libs/asio` in the superproject's main checkout is an older
+local copy of the library, not a submodule and ignored by git, whose `build.jam` names a feature
+only the asio branch defines: with it there, every b2 command of that checkout fails. It was
+moved to `.local/` for the runs above and moved back after them, unchanged. The external
+libraries trystero needs were linked into that checkout's `.local/` from the earlier checkout's,
+as its other toolchains already were.
+
+**Left:** 1.7's and 2.10's CI, the owner's pushes and merges in the migration plan's order
+(each library and the site, then the superproject with its submodules moved, then this
+repository), and the archive (task 5).
+
 ## How the two files were made
 
 1. **The split (design D2, D3).** `python3 split_rulebook.py <AGENTS.md at ddb6cb2> <dir>` cuts

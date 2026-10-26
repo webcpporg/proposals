@@ -1690,9 +1690,11 @@ repository: `libs/<name>` is the library's repository at the commit the
 superproject pins, `webcpp` the superproject at `ddb6cb2`, and `proposals`
 [webcpporg/proposals](https://github.com/webcpporg/proposals), under
 `libraries/<name>/openspec/` unless the path says otherwise. A library's own
-`AGENTS.md` holds what an agent needs to work on it; its decisions are here.
-Where a design document disagrees with the tree, the section says what the
-tree does, and chapter 19 records the disagreement.
+`AGENTS.md` holds what an agent needs to work on it, with the rules of its own
+that its specification asks of it; the decisions behind them, with their
+reasons, are here. Where a design document, or the library's `AGENTS.md`,
+disagrees with the tree, the section says what the tree does, and chapter 19
+records the disagreement.
 
 ### config (the collection's configuration macros; own; implemented in 0.1.0)
 

@@ -155,6 +155,15 @@ guidelines' chapter: a summary line that names its chapter is a pointer, and `CO
 still says the guidelines rule where the two seem to differ. Each skill cites the chapter of the
 file that now holds its rules.
 
+**As implemented (2026-10-26).** The specifications of config, xactor, pratt and wasi, which D9
+leaves unchanged, require their `AGENTS.md` to state the library's own rules (config's four
+bullets; xactor's, pratt's and wasi's lists of what binds a change). Moving those rules out
+would break the specifications, so each library's `AGENTS.md` keeps its content: it links both
+files, its introduction says that chapter 15 gives the library's design decisions with their
+reasons, and chapter 15 says that a library's `AGENTS.md` keeps the rules its specification
+asks of it. A rule and the decision behind it may then be stated in both; where they disagree,
+the tree is checked and chapter 19 records it.
+
 ### D8. What is updated, and what is history
 
 Updated: every live file of the superproject, the libraries, the site and this repository that
