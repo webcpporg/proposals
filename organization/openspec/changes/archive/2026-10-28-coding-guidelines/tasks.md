@@ -14,7 +14,7 @@
 - [x] 1.4 The five skills under `.agents/skills/`: each cites the chapter of the file that now holds its rules
 - [x] 1.5 Comments of `Jamroot`, `tools/webcpp.jam`, `tools/ci/matrix.py`, `tools/test/harness.py`, `tools/test/boost_libraries_test.py` and `tools/release/release.py` that cite a moved chapter
 - [x] 1.6 Tests first: the lint's changelog message and `tools/release/changelog.py`'s docstring cite `AGENTS.md` chapter 5; see `tools/lint/lint_test.py` and `tools/release/changelog_test.py` fail on the old citation where they pin it, then change `tools/lint/lint.sh`, `tools/lint/rules.py`, `tools/release/changelog.py`, `tools/release/scratch.py` and `tools/release/release.py`
-- [ ] 1.7 Green: `lint: clean`; every `tools/**/*_test.py`; `b2 -a doc`; the superproject's CI
+- [x] 1.7 Green: `lint: clean`; every `tools/**/*_test.py`; `b2 -a doc`; the superproject's CI
 
 ## 2. The libraries (one branch `coding-guidelines` in each repository)
 
@@ -27,7 +27,7 @@
 - [x] 2.7 lexical: likewise
 - [x] 2.8 document: likewise
 - [x] 2.9 trystero: likewise
-- [ ] 2.10 Each library's CI green, and the superproject's `main` pointing to each
+- [x] 2.10 Each library's CI green, and the superproject's `main` pointing to each
 
 ## 3. The site
 
@@ -43,5 +43,5 @@
 
 ## 5. After the decision
 
-- [ ] 5.1 The owner's pushes and merges, in the order of the migration plan
-- [ ] 5.2 Archive the change, which writes the requirements into `specs/organization/spec.md` and `specs/site/spec.md`; update the organization's `## Purpose` by hand (design D9)
+- [x] 5.1 The owner's pushes and merges, in the order of the migration plan
+- [x] 5.2 Archive the change, which writes the requirements into `specs/organization/spec.md` and `specs/site/spec.md`; update the organization's `## Purpose` by hand (design D9)
