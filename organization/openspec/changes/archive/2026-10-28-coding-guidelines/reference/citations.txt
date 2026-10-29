@@ -1,0 +1,102 @@
+69: chapter 13 -> A 1: `CODING-GUIDELINES.md` chapter 16
+77: chapter 5 -> A 1: `CODING-GUIDELINES.md` chapter 12
+78: chapter 6 -> A 1: `CODING-GUIDELINES.md` chapter 4
+79: chapter 9 -> A 1: chapter 4
+80: chapter 6 -> A 1: `CODING-GUIDELINES.md` chapter 6
+103: chapter 2 -> A 1: guidelines chapter 10
+107: chapter 9 -> A 1: chapter 4
+109: chapter 9 -> A 1: chapter 4
+114: chapter 2 -> A 1: guidelines chapter 10
+115: chapter 9 -> A 1: guidelines chapter 8
+119: chapter 5 -> A 1: guidelines chapter 12
+132: chapter 9 -> A 1: chapter 4
+149: chapter 9 -> A 1: chapter 4
+152: chapter 9 -> A 1: chapter 4
+155: chapter 9 -> A 1: chapter 4
+166: chapter 3 -> A 1: guidelines chapter 3
+171: chapter 5 -> A 1: guidelines chapter 12
+174: chapter 9 -> A 1: chapter 4
+176: chapter 8 -> A 1: chapter 3
+180: chapter 6 -> A 1: guidelines chapter 9
+191: chapter 9 -> A 1: chapter 4
+216: chapter 7 -> A 1: chapter 2
+224: chapter 13 -> A 1: `CODING-GUIDELINES.md` chapter 16
+242: chapter 9 -> A 1: chapter 4
+243: chapter 9 -> A 1: chapter 4
+246: chapter 13 -> A 1: `CODING-GUIDELINES.md` chapter 16
+307: chapter 12 -> A 1: chapter 6
+330: chapter 9 -> A 1: chapter 4
+342: chapter 7 -> A 1: chapter 2
+379: chapter 8 -> A 1: chapter 3
+384: chapter 9 -> A 1: chapter 4
+387: chapters 5 and 9 -> A 1: `CODING-GUIDELINES.md` chapter 12; chapter 4
+388: chapter 9 -> A 1: chapter 4
+390: chapter 5 -> A 1: `CODING-GUIDELINES.md` chapter 12
+391: chapter 5 -> A 1: `CODING-GUIDELINES.md` chapter 12
+392: chapter 9 -> A 1: chapter 4
+393: chapter 9 -> A 1: chapter 4
+395: chapter 6 -> A 1: `CODING-GUIDELINES.md` chapter 9
+396: chapter 10 -> A 1: `CODING-GUIDELINES.md` chapter 1
+397: chapter 9 -> A 1: chapter 4
+398: chapter 9 -> A 1: chapter 4
+399: chapter 11 -> A 1: chapter 5
+400: chapter 11 -> A 1: chapter 5
+401: chapter 11 -> A 1: chapter 5
+1266: chapter 5 -> A 3: `CODING-GUIDELINES.md` chapter 12
+1290: chapter 4 -> A 3: `CODING-GUIDELINES.md` chapter 11
+1291: chapter 11 -> A 3: chapter 5
+1421: chapter 9 -> A 3: chapter 4
+1424: chapter 7 -> A 3: `CODING-GUIDELINES.md` chapter 7
+1446: chapter 9 -> A 3: chapter 4
+1454: chapter 11 -> A 3: chapter 5
+1474: chapter 12 -> A 4: chapter 6
+1483: chapter 12 -> A 4: chapter 6
+1521: chapter 8 -> A 4: chapter 3
+1537: chapter 7 -> A 4: chapter 2
+1562: chapter 5 -> A 4: `CODING-GUIDELINES.md` chapter 12
+1588: chapter 13 -> A 4: `CODING-GUIDELINES.md` chapter 16
+1623: chapter 8 -> A 4: chapter 3
+1625: chapter 7 -> A 4: chapter 2
+1627: chapter 5 -> A 4: `CODING-GUIDELINES.md` chapter 12
+1748: chapter 8 -> A 4: chapter 3
+1751: chapter 5 -> A 4: `CODING-GUIDELINES.md` chapter 12
+1756: chapter 5 -> A 4: `CODING-GUIDELINES.md` chapter 12
+2025: chapter 13 -> A 4: `CODING-GUIDELINES.md` chapter 16
+2048: chapter 5 -> A 4: `CODING-GUIDELINES.md` chapter 12
+2078: chapter 7 -> A 4: chapter 2
+2200: chapter 8 -> A 4: chapter 3
+2222: chapter 7 -> A 4: chapter 2
+2545: chapter 2 -> A 5: `CODING-GUIDELINES.md` chapter 10
+789: chapter 13 -> G 4: chapter 16
+794: chapter 13 -> G 4: chapter 16
+846: chapter 9 -> G 5: `AGENTS.md` chapter 4
+959: chapter 2 -> G 9: chapter 10
+965: chapter 1 -> G 9: `AGENTS.md` chapter 1
+970: chapter 6 -> G 9: chapter 4
+971: chapter 11 -> G 9: chapter 2
+974: chapter 9 -> G 9: `AGENTS.md` chapter 4
+984: chapter 11 -> G 9: `AGENTS.md` chapter 5
+478: chapter 11 -> G 10: chapter 2
+489: chapter 1 -> G 10: `AGENTS.md` chapter 1
+522: chapter 9 -> G 10: `AGENTS.md` chapter 4
+528: chapter 9; chapter 8 -> G 10: `AGENTS.md` chapter 4; `AGENTS.md` chapter 3
+533: chapter 11 -> G 10: `AGENTS.md` chapter 5
+540: chapter 9 -> G 10: `AGENTS.md` chapter 4
+566: chapter 6 -> G 10: chapter 9
+616: chapter 5 -> G 11: chapter 12
+650: chapter 4 -> G 12: chapter 11
+655: chapter 9 -> G 12: `AGENTS.md` chapter 4
+679: chapter 8 -> G 12: `AGENTS.md` chapter 3
+681: chapter 9 -> G 12: `AGENTS.md` chapter 4
+2400: chapter 2 -> G 13: chapter 10
+2401: chapter 2 -> G 13: chapter 10
+2405: chapter 5 -> G 13: chapter 12
+2409: chapters 4, 8 -> G 13: chapter 11; `AGENTS.md` chapter 3
+2651: chapter 9 -> G 16: `AGENTS.md` chapter 4
+2656: chapter 6 -> G 16: chapter 4
+2661: chapter 6 -> G 16: chapter 4
+2676: chapter 9 -> G 16: `AGENTS.md` chapter 4
+2696: chapters 1 and 9 -> G 16: `AGENTS.md` chapters 1 and 4
+2702: chapter 6 -> G 16: chapter 4
+2706: chapter 6 -> G 16: chapter 4
+2714: chapter 1 -> G 16: `AGENTS.md` chapter 1

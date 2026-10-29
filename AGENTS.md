@@ -1,8 +1,9 @@
 # Working on webcpp's proposals
 
-Read the superproject's `AGENTS.md` first
-(<https://github.com/webcpporg/webcpp/blob/main/AGENTS.md>), then
-`CONTRIBUTING.md`. This file holds only what is specific to this repository.
+Read the superproject's `CODING-GUIDELINES.md`
+(<https://github.com/webcpporg/webcpp/blob/main/CODING-GUIDELINES.md>) and its `AGENTS.md`
+(<https://github.com/webcpporg/webcpp/blob/main/AGENTS.md>) first, then `CONTRIBUTING.md`. This
+file holds only what is specific to this repository.
 
 - **Several OpenSpec roots.** There is no `openspec/` at the repository's root: the organization
   is `organization/openspec/`, each library `libraries/<name>/openspec/`. Every `openspec`

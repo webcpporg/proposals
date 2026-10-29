@@ -9,8 +9,10 @@ submit one, and how it is decided.
 1. The organization's genesis, `organization/openspec/changes/archive/*-genesis/` and
    `organization/openspec/specs/`: how webcpp is organized, built, documented, tested and
    released, and what every library must be. A proposal that does not fit it is not accepted.
-2. The superproject's [AGENTS.md](https://github.com/webcpporg/webcpp/blob/main/AGENTS.md), the
-   rulebook every library follows.
+2. The superproject's
+   [CODING-GUIDELINES.md](https://github.com/webcpporg/webcpp/blob/main/CODING-GUIDELINES.md), the
+   rules every library follows and the decisions of webcpp's design, and its
+   [AGENTS.md](https://github.com/webcpporg/webcpp/blob/main/AGENTS.md), how to work in the tree.
 3. One finished proposal of the kind you write: `libraries/lexical/openspec/changes/` holds a
    genesis (implemented) and a change (draft); `libraries/json_schema/openspec/changes/genesis/`
    a new library partly built.
@@ -68,11 +70,19 @@ identity they publish under, and holds no private data.
 
 ## Commit identity in older plans
 
-Every contributor follows the current superproject `AGENTS.md`, chapter 11, using the identity
-of the account they act for or their own account. An older plan's fixed identity is historical
-context, not an instruction to impersonate its author. Update that command when the open proposal
-is next revised. Existing commits, archived proposals and recorded patches keep their original
-identity; no bulk rewrite is required.
+Every contributor follows the current superproject `CODING-GUIDELINES.md`, chapter 2, using the
+identity of the account they act for or their own account. An older plan's fixed identity is
+historical context, not an instruction to impersonate its author. Update that command when the open
+proposal is next revised. Existing commits, archived proposals and recorded patches keep their
+original identity; no bulk rewrite is required.
+
+## Chapter citations in older proposals
+
+Until 2026-10-26 the superproject's `AGENTS.md` held every rule, in thirteen chapters. The
+organization's change `coding-guidelines` moved the rules and the decisions of webcpp's design to
+`CODING-GUIDELINES.md` and renumbered both files. A citation of an old chapter in an open proposal
+is read through that change's table (its `design.md`, D2), and updated when the proposal is next
+revised. Archived proposals, recorded patches, plans and reference trees keep their citations.
 
 ## Grants and the DAO
 
