@@ -16,7 +16,8 @@ The original 53-application inventory and all target requirements remain in scop
 - The current superproject candidate is `55a72c056de1e6522e1fc6dbc3ee2b9ef3715327`.
   Focused Windows verification [41596986983](https://github.com/webcpporg/webcpp/actions/runs/41596986983)
   runs MSVC 14.3 and 14.5 on that exact source tree plus a diagnostic-only workflow.
-  A complete final-candidate run remains required before merging.
+  Complete final-candidate CI [41597577370](https://github.com/webcpporg/webcpp/actions/runs/41597577370)
+  is running on that exact superproject commit; its result remains required before merging.
   Run [41594383436](https://github.com/webcpporg/webcpp/actions/runs/41594383436)
   was cancelled after the preceding run exposed shared Windows build defects.
   Earlier candidate runs [41587540931](https://github.com/webcpporg/webcpp/actions/runs/41587540931)
