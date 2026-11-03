@@ -1,0 +1,52 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project : requirements -<library>/webcpp/beast//beast ;
+import webcpp ;
+webcpp.targets emscripten ;
+webcpp.variants browser_test : browser_test.cpp : <library>/webcpp/beast//browser ;
+
+webcpp.original node ;
+webcpp.drive browser_contracts : .//browser_test
+  : <dependency>browser_test.variants.json <webcpp-drive-timeout>120
+  : run.mjs ;
+webcpp.lane browser : browser_contracts browser_allocations browser_lifecycle browser_environment : emscripten ;
+
+# A facade may not cross a differently configured translation unit.
+webcpp.run config_boundary : config_provider.cpp config_consumer.cpp
+  : <library>/webcpp/beast//browser ;
+webcpp.link-fail config_mismatch : config_provider.cpp config_consumer.cpp
+  : <library>/webcpp/beast//browser <define>WEBCPP_BEAST_TEST_MISMATCH ;
+
+webcpp.variants allocation_test : allocation_test.cpp : <library>/webcpp/beast//browser ;
+webcpp.drive browser_allocations : .//allocation_test
+  : <dependency>allocation_test.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --program allocation_test --expected "browser allocator: ok" ;
+
+webcpp.drive node_contracts : .//browser_test
+  : <dependency>browser_test.variants.json <webcpp-drive-timeout>120
+  : node.mjs ;
+webcpp.drive node_allocations : .//allocation_test
+  : <dependency>allocation_test.variants.json <webcpp-drive-timeout>120
+  : node.mjs : --program allocation_test --expected "browser allocator: ok" ;
+webcpp.lane browser-node : node_contracts node_allocations node_lifecycle : emscripten ;
+
+webcpp.variants lifecycle_test : lifecycle_test.cpp : <library>/webcpp/beast//browser ;
+webcpp.drive browser_lifecycle : .//lifecycle_test
+  : <dependency>lifecycle_test.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --program lifecycle_test --expected "browser lifecycle: ok" ;
+webcpp.drive node_lifecycle : .//lifecycle_test
+  : <dependency>lifecycle_test.variants.json <webcpp-drive-timeout>120
+  : node.mjs : --program lifecycle_test --expected "browser lifecycle: ok" ;
+
+# Browser-only policy evidence and yielding facade probes run from a
+# trusted HTTPS page.
+webcpp.variants environment_test : environment_test.cpp : <library>/webcpp/beast//browser ;
+webcpp.drive browser_environment : .//environment_test
+  : <dependency>environment_test.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --program environment_test --expected "browser environment: ok" --environment ;
+
+build-project peer ;

@@ -1,9 +1,10 @@
 # webcpp::beast
 
 Beast-compatible HTTP and WebSocket interfaces for native and WebAssembly applications.
-The implementation is in progress. The initial backend reuses Boost.Beast 1.92's data
-types and native/WASIp3 socket algorithms; browser WebSocket/fetch and WASI host HTTP
-are planned separate adapters.
+The facade reuses Boost.Beast 1.92's data types and native/WASIp3 socket algorithms.
+Browser WebSocket/fetch and WASI host HTTP are separate adapters: the environment
+owns their transport and TLS policy. The guide distinguishes source-compatible
+programs from explicit application counterparts and records their verification.
 
 Use this repository inside the WebCPP superproject at `libs/beast`.
 
@@ -15,16 +16,18 @@ b2 -a toolset=clang-wasip3 testing.launcher=tools/boost/asio-wasip3/run.sh libs/
 b2 -a toolset=emscripten libs/beast/test libs/beast/example
 ```
 
-The WASIp2 and Emscripten commands currently exercise data interfaces, not network
-transport. Native/WASIp3 tests additionally exercise HTTP, binary WebSocket echo,
-closing handshakes, timeouts and the optional TLS SNI helper.
+Host HTTP and real-browser tests have dedicated lanes. Data tests under Node do
+not establish browser transport behaviour. Native/WASIp3 socket tests use real
+loopback peers; TLS tests use source-built OpenSSL and fresh local certificates.
 
 Build dependencies are explicit: `/webcpp/beast//beast` for messages,
 `/webcpp/beast//sockets` for guest networking and `/webcpp/beast//tls` for guest TLS.
-`beast.hpp` omits the optional transport/TLS headers.
+Select `/webcpp/beast//browser` for browser-owned transport,
+`/webcpp/beast//wasi-http` for host HTTP, or `/webcpp/beast//wasi-streams` for
+explicit supplied-stream counterparts. `beast.hpp` omits optional transport/TLS
+headers so constructing an HTTP message never brings in a socket reactor.
 
 See [the guide](doc/beast.adoc) for the feature matrix and commands. API reference
 comes from the public headers through MrDocs. Build locally with `b2 -a libs/beast/doc`.
-No release or published documentation is claimed yet.
 
 Distributed under the [Boost Software License 1.0](LICENSE_1_0.txt).

@@ -12,8 +12,9 @@ needs, and the last one (the WebSocket handshake, or an HTTP request) opens the 
 The historical baseline is `reference/spec.md` (2026-10-10). The owner expanded the scope
 on 2026-11-02 to all upstream example applications and explicitly included WASIp2 and
 WASIp3. This design and `specs/beast/spec.md` are the current draft; the historical baseline
-is not rewritten. It rests on a review of Boost.Beast 1.92 and Emscripten 6.0.11 whose probes are
-cited there; this change has not re-run them. The library builds on webcpp::asio
+is not rewritten. The committed implementation now has native, WASI and actual browser
+measurements; `reference/STATUS.md` identifies the exact source snapshot, evidence and
+remaining acceptance gates. The library builds on webcpp::asio
 (`libraries/asio`, change `genesis`): the io_context, the bridge that posts the browser's
 events to it, Boost's timers, the `ip::tcp` types with the resolver of its decision 5, and the
 `ssl` record of the program's TLS settings.
@@ -370,12 +371,24 @@ lists. Trystero moves onto the library in a later change.
 
 - **O1. Header layout, initial decision.** The convenience header contains portable data.
   Byte-stream algorithms, sockets and TLS have explicit headers and dependencies. Host-entry
-  headers will also be explicit. This keeps message-only WASIp2 builds free of a reactor.
-- **O2. The defaults of the receive queue bound** (the send bound is 4 MiB) and the names of the
-  two options. To measure and decide in the plan.
-- **O3. How a decorator is called** on an empty `websocket::request_type`: whether any other
-  field can be told apart from `User-Agent` by name alone, or every non-subprotocol field is
-  unsupported (the specification says the latter: confirm with a test).
+  headers are also explicit. This keeps message-only WASIp2 builds free of a reactor.
+- **O2. Queue defaults, implemented decision.** `websocket::queue_limits` exposes `send` and
+  `receive`, both defaulting to 4 MiB. The send bound includes browser `bufferedAmount`
+  and unsent application fragments. The receive bound includes retained payload capacity
+  and message records, including arrivals before executor dispatch and partially consumed
+  records. Empty messages consume record budget. Ingress is charged before retention and
+  uses one allocator-bound notification for a batch; a paused executor cannot accumulate
+  an unbounded queue of notifications. `test/browser/browser_test.cpp` and
+  `test/browser/lifecycle_test.cpp` exercise limits with real native Beast peers, including
+  paused empty/payload bursts. Browser-internal memory remains outside this bound.
+- **O3. Decorator shape and classification, implemented decision.** The browser calls the
+  decorator on an empty `websocket::request_type` with PMR fields backed by the stream's
+  allocator. Only `Sec-WebSocket-Protocol` is representable, including comma-separated
+  protocol tokens. Every other field, including `User-Agent`, is unsupported: ERROR
+  rejects the dependent handshake and IGNORE omits the field. Actual Chrome and Node
+  JSPI/Asyncify tests exercise both policies; the allocation witness covers long field
+  values and allocator-owned decorator state. Guest protocol decorators remain a separate
+  explicit adapter and do not relax the browser host restriction.
 - **O4. Streaming request bodies.** The specification buffers a request body whole before the
   `fetch`; whether a streaming upload (Chromium only) is wanted is open, and belongs to a later
   change.

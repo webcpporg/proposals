@@ -14,7 +14,7 @@
  Records the facade's exception policy for host-adapter implementations.
 
  Defined automatically when webcpp has no exceptions, or explicitly by the application.
- This initial socket facade has no throwing overloads of its own. Inherited
+ Host adapters report recoverable failures through error codes. Inherited
  upstream overloads and data types retain Boost's own exception configuration.
 */
 #define WEBCPP_BEAST_NO_EXCEPTIONS

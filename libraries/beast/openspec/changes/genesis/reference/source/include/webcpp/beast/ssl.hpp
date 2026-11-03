@@ -49,6 +49,8 @@ template <class NextLayer>
     return {};
 }
 }  // namespace webcpp::beast
+#elif defined(WEBCPP_TARGET_EMSCRIPTEN)
+#include <webcpp/beast/browser/ssl_stream.hpp>
 #else
 #error "Guest-owned Beast TLS currently requires native or WASIp3 and /webcpp/beast//tls"
 #endif

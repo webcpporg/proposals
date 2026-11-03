@@ -1,0 +1,20 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+import webcpp ;
+webcpp.targets native wasip3 ;
+webcpp.original node : .. ;
+webcpp.drive chat-ui-native
+  : [ glob ../../../example/applications/port/websocket/server/chat-multi/*.cpp ]
+  : <library>/webcpp/beast//sockets <exception-handling>on <threading>multi
+    <include>../../../example/applications <webcpp-drive-timeout>60
+  : run.mjs : : native ;
+webcpp.drive chat-ui-p3
+  : [ glob ../../../example/applications/wasip3/websocket/server/chat-multi/*.cpp ]
+  : <library>/webcpp/beast//sockets <exception-handling>on <threading>single
+    <include>../../../example/applications <webcpp-drive-timeout>60
+  : run.mjs : : wasip3 ;
+webcpp.lane applications-chat : chat-ui-native chat-ui-p3 : native wasip3 ;

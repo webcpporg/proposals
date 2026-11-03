@@ -17,12 +17,18 @@
 #include <utility>
 
 namespace webcpp::beast::websocket {
+/** Reports whether a request asks for a WebSocket upgrade. */
+using boost::beast::websocket::is_upgrade;
 /** Upstream WebSocket closing status codes. */
 using boost::beast::websocket::close_code;
 /** Upstream WebSocket close code and UTF-8 reason. */
 using boost::beast::websocket::close_reason;
 /** Upstream WebSocket operation errors. */
 using boost::beast::websocket::error;
+/** WebSocket control-frame category. */
+using boost::beast::websocket::frame_type;
+/** Bounded WebSocket ping or pong payload. */
+using boost::beast::websocket::ping_data;
 /** Upstream per-message compression settings. */
 using boost::beast::websocket::permessage_deflate;
 /** Upstream handshake request type. */
@@ -81,8 +87,8 @@ public:
      @note As upstream does, this moves the next layer, not established protocol state.
     */
     template <class Other>
-    explicit stream(stream<Other>&& other)
-        : base(static_cast<boost::beast::websocket::stream<Other>&&>(other)) {}
+    explicit stream(stream<Other, DeflateSupported>&& other)
+        : base(std::move(other.next_layer())) {}
 
     /**
      Constructs the socket backend with the facade's portable allocator syntax.
@@ -100,6 +106,8 @@ public:
         : base(std::forward<Args>(args)...) {}
 };
 }  // namespace webcpp::beast::websocket
+#elif defined(WEBCPP_TARGET_EMSCRIPTEN)
+#include <webcpp/beast/browser/websocket.hpp>
 #else
 #error "The Beast WebSocket socket backend currently requires native or WASIp3"
 #endif

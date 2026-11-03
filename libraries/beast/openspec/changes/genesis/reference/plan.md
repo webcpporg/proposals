@@ -18,14 +18,19 @@
 - No claim of browser support from Node execution alone; no claim of runtime support from compilation alone.
 - Tests use bounded controlled peers, deterministic payloads, explicit trust and cleanup.
 - English files, BSL-1.0 source notices, no em dash, no hand edits of generated artifacts or CHANGELOG.md files.
-- Current user authorization starts implementation and fixes the previous CI failures. No new remote run or push is required by this plan.
+- Current closeout follows the committed implementation and published candidate. Formal proposal
+  acceptance and release remain separate gates; current CI state is in `STATUS.md`.
 
 ## Decisions at implementation start
 
 - The user authorized implementation after the recommendation to reuse upstream data types. Keep those types; remove O6 as a blocker. This does not require executing upstream protocol code for host HTTP/WebSocket.
 - The convenience header exposes portable data interfaces. Optional socket/TLS and host-entry headers are included explicitly, so message-only WASIp2 code does not import the missing socket reactor.
 - Begin with a verified native/WASIp3 socket baseline and portable messages, then implement host backends. This is an implementation order, not a reduction of the required target matrix.
-- Use a local repository at `libs/beast` until the organization repository exists, following the new-library checklist. Do not add an unpublishable gitlink to the superproject.
+- The organization repository now exists and the superproject candidate references its published
+  commit. `STATUS.md` identifies the current snapshot; the initial local-only record below is history.
+- Browser `websocket::queue_limits` uses 4 MiB for both send and receive; receive accounting
+  includes payload and record storage before executor dispatch. The decorator receives a
+  stream-allocator-backed PMR request and only subprotocol fields are representable (O2/O3).
 
 ## Review focus
 
@@ -67,10 +72,10 @@
 
 **Interfaces:** Browser `tcp_stream` records resolver results, executor and timeout; TLS records policy; `websocket::stream` supplies Beast-shaped async operations, backed by JavaScript WebSocket and webcpp::asio's event bridge.
 
-- [ ] Pin default queue sizes in the design with measured boundary tests; implement URL/TLS/unsupported-setting validation and category values 1 through 7.
-- [ ] Implement connect/handshake, message read/write, binary/text, close, queue limits, cancellation and destructor completion, one contract at a time with a failing test first.
-- [ ] Use controlled local WebSocket peers and a real browser; run JSPI/Asyncify and EH on/off, allocator counting, invalid URL, rejected handshake, timeout and late-event tests.
-- [ ] Port the applicable upstream client examples and retain browser-unavailable server facilities in the manifest.
+- [x] Pin default queue sizes in the design with measured boundary tests; implement URL/TLS/unsupported-setting validation and category values 1 through 7.
+- [x] Implement connect/handshake, message read/write, binary/text, close, queue limits, cancellation and destructor completion, one contract at a time with a failing test first.
+- [x] Use controlled local WebSocket peers and a real browser; run JSPI/Asyncify and EH on/off, allocator counting, invalid URL, rejected handshake, timeout and late-event tests.
+- [x] Port the applicable upstream client examples and retain browser-unavailable server facilities in the manifest.
 
 ## Task 4: Host HTTP and supplied streams
 
@@ -78,20 +83,28 @@
 
 **Interfaces:** Preserve Beast request/response operations; map directly to fetch or pinned WASI outgoing interfaces. Server entry adapters invoke the application handler once per host request, commit one response, and retain body/resource ownership until completion.
 
-- [ ] Extend reusable WASI interfaces beyond method/target/content-type/whole-body; test P2 resource ownership and P3 stream/future completion independently.
-- [ ] Implement host client and server adapters without Asio raw sockets or guest OpenSSL; test headers, request bodies, response bodies, trailers, cancellation and failure after commitment.
-- [ ] Implement browser fetch request/response mapping and optional byte adapter; test HEAD/204/304, CORS, unsupported fields, redirects, limits and cancellation.
-- [ ] Implement host-supplied input/output channel and stdin/stdout application counterpart; test partial I/O, EOF, bounded buffering and cancellation with concurrent draining.
+- [x] Extend reusable WASI interfaces beyond method/target/content-type/whole-body; test P2 resource ownership and P3 stream/future completion independently.
+- [x] Implement host client and server adapters without Asio raw sockets or guest OpenSSL; test headers, request bodies, response bodies, trailers, cancellation and failure after commitment.
+- [x] Implement browser fetch request/response mapping and optional byte adapter; test HEAD/204/304, CORS, unsupported fields, redirects, limits and cancellation.
+- [x] Implement host-supplied input/output channel and stdin/stdout application counterpart; test partial I/O, EOF, bounded buffering and cancellation with concurrent draining.
 
 ## Task 5: Complete application coverage and documentation
 
 **Files:** checked upstream executable manifest, adapted examples/drivers, feature/results matrix, AsciiDoc guide, MrDocs configuration and public API comments.
 
-- [ ] Reconcile all 53 executable targets, support sources and snippet harnesses against the pinned upstream source.
-- [ ] Build/run native oracle and every promised target/variant/backend counterpart with exact adaptation diffs and evidence.
+- [x] Reconcile all 53 executable targets, support sources and snippet harnesses against the pinned upstream source.
+- [x] Build/run native oracle and every promised target/variant/backend counterpart with exact adaptation diffs and evidence.
 - [ ] Resolve WASIp2 socket/TLS and stackful coroutine prerequisites in their owning libraries; never hide blocked rows.
-- [ ] Publish the Diataxis guide with compiled examples and observed outputs, plus independent feature and application matrices.
-- [ ] Run local documented validation, perform independent review and fix regressions. Report any runtime/platform still unverified before publication.
+- [x] Publish the Diataxis guide with compiled examples and observed outputs, plus independent feature and application matrices.
+- [x] Run local documented validation, perform independent review and fix regressions. Report any runtime/platform still unverified before publication.
+
+## Current acceptance gates
+
+The implementation and application accounting above are committed. This does not close
+WASIp2 raw sockets/guest TLS, unverified stackful Wasm backends, formal proposal acceptance,
+or the final CI/release gate. `../tasks.md` and `STATUS.md` retain the exact pending items.
+The verification and initial implementation sections below preserve the earlier intake
+chronology; `source/` is refreshed to the current commit named in `STATUS.md`.
 
 ## Verification observed for the initial increment
 

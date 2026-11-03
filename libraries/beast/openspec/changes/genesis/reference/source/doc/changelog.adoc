@@ -16,5 +16,8 @@ Changes to the unreleased Beast facade.
 // tag::unreleased[]
 * Added portable HTTP data interfaces and native/WASIp3 socket operations.
 * Added optional guest TLS SNI configuration with hostname validation.
+* Added browser WebSocket and fetch adapters with explicit capability policies.
+* Added WASI host HTTP and supplied-stream application counterparts.
+* Fixed WebSocket executor conversion when per-message compression is disabled.
 * Added executable examples, API reference and a verified target matrix.
 // end::unreleased[]

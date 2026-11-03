@@ -12,9 +12,13 @@
 :attribute-missing: warn
 
 `webcpp::beast` is a {cpp}20 compatibility facade for Boost.Beast applications.
-Implementation is in progress: portable data interfaces and the native/WASIp3
-socket backend are the first increment. Browser WebSocket/fetch and WASI host HTTP
-are subsequent adapters, not capabilities established by the current tests.
+It preserves Boost.Beast's messages, buffers and parsers while selecting a
+transport appropriate to the program's environment. Native and WASIp3 socket
+programs use the guest protocol engine. Browser clients use WebSocket and fetch;
+WASI host HTTP programs use the host's request and response resources.
+The application matrix distinguishes direct source compatibility from explicit
+counterparts, since a browser client and a host HTTP handler do not own a TCP
+listener.
 
 [#beast-tutorial]
 == Tutorial: construct a response
@@ -46,6 +50,62 @@ include::{examples}/http_message.expected[]
 The successful finish is a matched `.output` target. Compiling the executable alone
 does not check its result.
 
+[#beast-browser-tutorial]
+=== Exchange a message in the browser
+
+Configure Emscripten and the project's pinned Chrome. The browser driver serves
+controlled local peers and the compiled page, runs JSPI and Asyncify, and checks
+the page's result. It does not substitute Node for the browser.
+
+[source,bash]
+----
+b2 -a toolset=emscripten variant=release libs/beast/example/browser//browser
+----
+
+The example resolves the local test peer and records its authority. These
+operations then exchange a text message through the browser's WebSocket:
+
+[source,cpp]
+----
+include::{examples}/browser/client.cpp[tag=browser-websocket-client,indent=0]
+----
+
+The synchronous interface suspends the {cpp} stack while the browser handles the
+operation. Use the Asio suspension configuration supplied by the B2 dependency;
+blocking the browser thread would prevent the event that completes the wait.
+
+The same example sends an HTTP message through fetch and validates the response:
+
+[source,cpp]
+----
+include::{examples}/browser/client.cpp[tag=browser-fetch-client,indent=0]
+----
+
+A successful page prints `browser tutorial: ok`; the driver requires that result
+for both suspension variants. The controlled peer uses loopback HTTP. Production
+HTTPS/WSS connections use the browser's certificate validation and trust store.
+
+[#beast-host-tutorial]
+=== Handle a host HTTP request
+
+The WASI example receives an HTTP request from the host and returns a Beast
+response. The host owns the listener, connection and any HTTPS termination:
+
+[source,cpp]
+----
+include::{examples}/wasi/http_echo.cpp[]
+----
+
+[source,bash]
+----
+b2 -a toolset=clang-wasip2 variant=release libs/beast/example/wasi//http
+b2 -a toolset=clang-wasip3 variant=release libs/beast/example/wasi//http
+----
+
+The served test checks the health response and echoed request body against the
+example's recorded request transcript. A failed response, timeout or mismatch
+fails the test. Supplying a guest TCP acceptor is unnecessary for this backend.
+
 [#beast-how-to]
 == How-to: select a dependency and target
 
@@ -55,6 +115,9 @@ does not check its result.
 |`/webcpp/beast//beast` |Portable buffers, HTTP messages, parsers and serializers.
 |`/webcpp/beast//sockets` |Native/WASIp3 guest socket algorithms and Asio configuration.
 |`/webcpp/beast//tls` |Guest-owned TLS with source-built OpenSSL.
+|`/webcpp/beast//browser` |Browser-owned WebSocket, fetch and TLS policy.
+|`/webcpp/beast//wasi-http` |WASIp2/P3 host HTTP resources, without guest sockets or OpenSSL.
+|`/webcpp/beast//wasi-streams` |Explicit supplied-stream counterparts, including WASI CLI input/output.
 |===
 
 Include `<webcpp/beast/http/read.hpp>` and `<webcpp/beast/http/write.hpp>` explicitly
@@ -62,8 +125,10 @@ for byte-stream operations, and `<webcpp/beast/tcp_stream.hpp>` or
 `<webcpp/beast/websocket.hpp>` for the socket types. The convenience header omits
 these transport headers and `<webcpp/beast/ssl.hpp>`.
 
-The host-service adapters are not implemented yet. Do not select a guest socket/TLS
-dependency merely to construct a message for future use with `wasi:http` or `fetch`.
+Select the dependency for the transport the application actually uses. A WASI
+host HTTP handler does not need the guest socket or TLS dependency. Combining
+backends is explicit, for example a WASIp3 service that accepts host HTTP requests
+and separately contacts a TCP service.
 
 [source,bash]
 ----
@@ -98,10 +163,21 @@ On WASIp2 that introduces unavailable reactor/platform facilities even when an
 application only constructs a response. This facade exposes data headers separately,
 retaining upstream type identity and parsing behaviour without a guest reactor.
 
-The socket backend currently executes upstream Beast over the existing Asio port.
-Future host adapters will map operations to browser WebSocket/fetch and `wasi:http`,
-preserving application-visible messages while documenting host-owned connection,
-header, framing and TLS differences. A host HTTP handler does not imply a TCP acceptor.
+The socket backend executes upstream Beast over the existing Asio port. Host
+adapters map operations to browser WebSocket/fetch and `wasi:http`, preserving
+application-visible messages with documented differences in connection ownership,
+headers, framing and TLS. A host HTTP handler does not imply a TCP acceptor.
+
+For a server counterpart, keep the application's HTTP request processing and
+replace its accept loop with the host handler entry. For a local-stream
+counterpart, explicitly supply the two stream directions; stdin and stdout do
+not provide Unix socket names, descriptor passing or peer credentials.
+
+Browser security remains the browser's: CORS, forbidden request headers,
+certificate validation, redirects and WebSocket control frames cannot be
+implemented as arbitrary raw-socket options. Host TLS never uses guest OpenSSL
+settings. Prefer explicit errors to silently claiming that the host accepted an
+unavailable setting.
 
 The native/WASIp3 WebSocket allocator constructor accepts the portable constructor
 syntax, but upstream Beast still controls its internal stream-state allocation.
@@ -116,28 +192,51 @@ be represented as changing browser or WASI host trust policy.
 [#beast-matrix]
 == Feature matrix
 
-This is an initial implementation matrix, not completion of the 53-example proposal.
-The checked commands and runtime observations belong to the first local increment.
+Capabilities belong to a backend, not only a compiler target. The runtime record
+below and the application matrix state which variants were actually exercised.
+An application counterpart preserves a stated use case; it does not imply every
+API or transport detail of the original program is available.
 
 [cols="2,1,1,1,1",options="header"]
 |===
 |Feature |Native |WASIp2 |WASIp3 |Emscripten
 |HTTP message/parser/serializer interfaces |Implemented |Implemented |Implemented |Implemented
-|Real HTTP loopback exchange |Implemented |Pending socket port |Implemented |Pending fetch adapter
-|Binary WebSocket echo and close |Implemented |Pending transport |Implemented |Pending browser adapter
-|Guest stream timeout |Implemented |Pending socket port |Implemented |Pending browser adapter
-|Guest TLS SNI helper |Implemented |Pending TLS port |Implemented |Host TLS adapter pending
-|Host HTTP entry/client |Not applicable |Pending |Pending |Client adapter pending
-|Host-supplied stdin/stdout counterpart |Pending |Pending |Pending |Separate host channel required
-|All 53 upstream examples |Pending |Pending |Pending |Pending
+|Guest HTTP/WebSocket socket engine |Asio sockets |No raw socket backend |Asio socket port |Explicit supplied byte stream only
+|Browser WebSocket and fetch |Not applicable |Not applicable |Not applicable |JSPI and Asyncify
+|Guest TLS, identity verification and shutdown |Source-built OpenSSL |No guest TLS backend |Source-built OpenSSL |Browser owns TLS
+|Host HTTP entry/client |Not applicable |wasi:http |wasi:http |fetch client only
+|Unix socket namespace and peer identity |Operating-system sockets |Unavailable |Unavailable |Unavailable
+|Explicit supplied-stream counterpart |Borrowed descriptors |CLI input/output |CLI input/output |Caller-supplied channel
+|Raw TCP HTTP/WebSocket listener |Available |Use host HTTP entry |Available |Unavailable
+|Host HTTP WebSocket upgrade |Not applicable |Not provided by host adapter |Use guest socket backend |Browser WebSocket client only
+|Native CPU-parallel threads |Available |Unavailable |Cooperative WASI threads only |Not implied by this backend
 |===
 
 Exception and thread variants are reported separately in the verification record.
-Emscripten data tests run under Node; this does not establish browser transport support.
+Emscripten data tests run under Node; transport tests run in the pinned Chrome.
 Cooperative WASIp3 threads are not CPU-parallel threads, and their SDK 34 runtime
 currently requires exceptions off.
 
+include::browser-differences.adoc[]
+
+[#beast-stream-cancellation]
+=== Cancellation of host-supplied streams
+
+Supplied-stream cancellation is checked between host calls and while waiting on
+supported readiness operations. It cannot preempt a host import that blocks the
+calling thread. In the tested Wasmtime 50 CLI, WASIp2 stdout can block when its
+operating-system pipe fills even after `check-write` grants permission. A paused
+consumer must resume draining before that import returns and the component can
+observe cancellation. Keep the consumer draining or select a host/channel with
+nonblocking write behaviour when a strict cancellation deadline is required.
+
+This is separate from a guest socket's cancellation semantics. Standard input
+and output also do not acquire Unix socket addressing or peer credentials merely
+because they are exposed through file descriptors.
+
 include::verification.adoc[]
+
+include::application-matrix.adoc[]
 
 [#beast-guarantees]
 == Guarantees and evidence
@@ -151,6 +250,12 @@ include::verification.adoc[]
   name. It does not claim that an SNI setting authenticates the peer.
 * `config_test.cpp` checks compiler/global/library exception configuration, both
   unsupported-operation policies and rejection of conflicting definitions.
+* `test/tls/protocol.cpp` checks actual TLS HTTP and WebSocket exchanges,
+  authentication failures, transfer cancellation and TLS shutdown outcomes.
+* `test/browser/browser_test.cpp` runs the browser contracts in Chrome. Its local
+  server controls delayed headers and bodies, redirects, WebSocket closure and CORS.
+* `test/applications/inventory.py` verifies all 53 pinned upstream executables and
+  their source hashes; application drivers compare explicit local exchanges.
 
 [#reference]
 == Reference

@@ -1,0 +1,6 @@
+{
+  "name": "webcpp-beast-application-drivers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Python standard-library drivers for the pinned Boost.Beast application corpus"
+}

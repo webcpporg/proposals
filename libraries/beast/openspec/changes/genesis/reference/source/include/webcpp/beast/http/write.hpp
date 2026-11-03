@@ -11,6 +11,7 @@
 
 #include <boost/beast/http/write.hpp>  // lint-world: explicit HTTP byte-stream operations
 
+// NOLINTNEXTLINE(modernize-concat-nested-namespaces): policy selects an inline namespace
 namespace webcpp::beast::http {
 /** Upstream HTTP write operation on a byte stream. */
 using boost::beast::http::write;
@@ -25,5 +26,9 @@ using boost::beast::http::async_write_header;
 /** Upstream HTTP async write some operation on a byte stream. */
 using boost::beast::http::async_write_some;
 }  // namespace webcpp::beast::http
+
+#ifdef WEBCPP_TARGET_EMSCRIPTEN
+#include <webcpp/beast/browser/http.hpp>
+#endif
 
 #endif

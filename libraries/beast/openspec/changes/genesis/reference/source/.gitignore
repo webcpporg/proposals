@@ -1,1 +1,6 @@
 doc/html/
+node_modules
+.node-modules/
+__pycache__/
+*.pyc
+test/applications/host-tls/target/

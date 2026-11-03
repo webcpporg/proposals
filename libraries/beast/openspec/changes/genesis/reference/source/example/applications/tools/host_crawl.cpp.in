@@ -1,0 +1,125 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+#include <webcpp/beast/wasi/async.hpp>
+#include <boost/beast/version.hpp>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace beast = webcpp::beast;
+namespace http = beast::http;
+namespace wasi = beast::wasi;
+
+namespace {
+struct crawl_target {
+    std::string authority;
+    std::string path;
+};
+
+@REPORT@
+
+// Retain the upstream worker's get-next, complete, aggregate and repeat algorithm.
+// Host HTTP combines resolution, connect, write and read into one asynchronous exchange.
+class worker : public std::enable_shared_from_this<worker> {
+    crawl_report& report_;
+    wasi::http_context& context_;
+    std::optional<wasi::client> connection_;
+    http::request<http::empty_body> req_;
+    http::response<http::string_body> res_;
+
+public:
+    worker(crawl_report& report, wasi::http_context& context)
+        : report_(report), context_(context) {
+        req_.version(11);
+        req_.method(http::verb::get);
+        req_.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    }
+
+    void run() { do_get_host(); }
+
+    void do_get_host() {
+        const auto* host = report_.get_host();
+        if (host == nullptr) {
+            return;
+        }
+        req_.target(host->path);
+        req_.set(http::field::host, host->authority);
+        connection_.emplace("http", host->authority);
+        res_ = {};
+        wasi::transfer_options options;
+        options.body_limit = 65536;
+        options.expires_after(5000000000);
+        wasi::async_perform(context_, *connection_, req_, res_,
+            [self = shared_from_this()](boost::system::error_code ec, std::size_t) {
+                self->on_read(ec);
+            }, options);
+    }
+
+    void on_read(boost::system::error_code ec) {
+        if (ec) {
+            // The host does not expose individual socket phases. An unsuccessful complete
+            // exchange increments Read; the other upstream phase counters remain unmeasured.
+            report_.aggregate([](crawl_report& report) { ++report.read_failures; });
+        } else {
+            const auto code = res_.result_int();
+            report_.aggregate([code](crawl_report& report) {
+                ++report.success;
+                ++report.status_codes[code];
+            });
+        }
+        connection_.reset();
+        do_get_host();
+    }
+};
+
+http::response<http::string_body> invalid_targets() {
+    http::response<http::string_body> response{http::status::bad_request, 11};
+    response.body() = "Expected 1 to 32 lines containing an authority and an absolute path";
+    response.prepare_payload();
+    return response;
+}
+
+http::response<http::string_body> handle(const http::request<http::string_body>& incoming) {
+    std::vector<crawl_target> hosts;
+    std::istringstream input(incoming.body());
+    std::string line;
+    while (std::getline(input, line)) {
+        const auto split = line.find(' ');
+        if (hosts.size() == 32 || split == std::string::npos || split == 0 ||
+            split + 1 >= line.size() || line[split + 1] != '/' || line.size() > 2048) {
+            return invalid_targets();
+        }
+        hosts.push_back({.authority = line.substr(0, split), .path = line.substr(split + 1)});
+    }
+    if (hosts.empty()) {
+        return invalid_targets();
+    }
+    wasi::http_context context;
+    crawl_report report(context, hosts);
+    // Two bounded asynchronous workers share one serialized host readiness/reporting queue.
+    // This preserves overlapping requests without claiming operating-system worker threads.
+    for (unsigned index = 0; index < 2; ++index) {
+        std::make_shared<worker>(report, context)->run();
+    }
+    context.run();
+    std::ostringstream output;
+    output << report;
+    http::response<http::string_body> response{http::status::ok, 11};
+    response.set("X-Crawl-Completed", std::to_string(report.completed()));
+    response.set("X-Crawl-Workers", "2");
+    response.body() = output.str();
+    response.prepare_payload();
+    return response;
+}
+}  // namespace
+
+WEBCPP_BEAST_WASI_HTTP_EXPORT(handle)

@@ -19,6 +19,8 @@
 #include <boost/beast/http/string_body.hpp>   // lint-world: memory buffers only
 
 namespace webcpp::beast::http {
+/** Upstream body backed by a selected dynamic buffer type. */
+using boost::beast::http::basic_dynamic_body;
 /** Upstream HTTP fields with an application-supplied allocator. */
 using boost::beast::http::basic_fields;
 /** Upstream string body with an application-supplied allocator. */
@@ -41,6 +43,8 @@ using boost::beast::http::file_body;
 using boost::beast::http::header;
 /** Upstream HTTP request or response message. */
 using boost::beast::http::message;
+/** Returns the conventional reason phrase for a status code. */
+using boost::beast::http::obsolete_reason;
 /** Upstream incremental message parser. */
 using boost::beast::http::parser;
 /** Upstream HTTP request. */

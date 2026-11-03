@@ -10,3 +10,6 @@ import webcpp ;
 
 webcpp.targets native wasip2 wasip3 emscripten ;
 webcpp.example http_message.cpp ;
+
+build-project browser ;
+build-project wasi ;

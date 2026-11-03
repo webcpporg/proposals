@@ -30,6 +30,8 @@ using boost::system::error_code;
 using namespace std::chrono_literals;
 
 static_assert(std::is_same_v<beast::tcp_stream, boost::beast::tcp_stream>);
+static_assert(std::is_same_v<websocket::frame_type, boost::beast::websocket::frame_type>);
+static_assert(std::is_same_v<websocket::ping_data, boost::beast::websocket::ping_data>);
 static_assert(std::is_base_of_v<boost::beast::websocket::stream<beast::tcp_stream>,
                                 websocket::stream<beast::tcp_stream>>);
 
@@ -64,6 +66,14 @@ void test_constructors() {
     precise_stream precise(context);
     const rebound converted(std::move(precise));
     BOOST_TEST(!converted.is_open());
+
+    using no_deflate_stream = websocket::stream<precise_socket, false>;
+    using no_deflate_rebound =
+        no_deflate_stream::rebind_executor<boost::asio::any_io_executor>::other;
+    static_assert(std::is_same_v<no_deflate_rebound, websocket::stream<tcp::socket, false>>);
+    no_deflate_stream no_deflate(context);
+    const no_deflate_rebound converted_no_deflate(std::move(no_deflate));
+    BOOST_TEST(!converted_no_deflate.is_open());
 }
 
 class http_exchange {

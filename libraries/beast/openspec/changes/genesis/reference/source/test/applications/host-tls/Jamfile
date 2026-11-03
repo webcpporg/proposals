@@ -1,0 +1,21 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+import webcpp ;
+webcpp.targets wasip2 wasip3 ;
+webcpp.original python3 : .. ;
+webcpp.drive host_tls : client.cpp
+  : <library>/webcpp/beast//wasi-http <linkflags>-mexec-model=reactor <webcpp-drive-timeout>120
+  : driver.py : : wasip2 wasip3 ;
+local clients = doc-ssl-client http-client-async-ssl http-client-async-ssl-system-executor
+  http-client-awaitable-ssl http-client-coro-ssl http-client-sync-ssl ;
+for local client in $(clients)
+{
+    webcpp.drive tls-$(client) : ../../../example/applications/host-clients/$(client).cpp
+      : <library>/webcpp/beast//wasi-http <linkflags>-mexec-model=reactor <webcpp-drive-timeout>120
+      : driver.py : $(client) : wasip2 wasip3 ;
+}
+webcpp.lane applications-host-tls : host_tls tls-$(clients) : wasip2 wasip3 ;

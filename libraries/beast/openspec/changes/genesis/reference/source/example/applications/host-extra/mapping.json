@@ -1,0 +1,25 @@
+{
+  "applications": [
+    {
+      "id": "http-server-fast",
+      "upstream": "http/server/fast/http_server_fast.cpp",
+      "source": "http-server-fast.cpp"
+    },
+    {
+      "id": "http-server-small",
+      "upstream": "http/server/small/http_server_small.cpp",
+      "source": "http-server-small.cpp"
+    },
+    {
+      "id": "doc-ssl-server",
+      "upstream": "doc/ssl/server.cpp",
+      "source": "doc-ssl-server.cpp"
+    }
+  ],
+  "adaptations": [
+    "The host owns connection acceptance, framing, persistence and TLS.",
+    "Fast retains GET-only path/error/file logic; host fields use the default allocator.",
+    "Small retains /count and /time; counter lifetime is the host component instance.",
+    "The TLS example requires an explicit host mutual-TLS capability assertion."
+  ]
+}

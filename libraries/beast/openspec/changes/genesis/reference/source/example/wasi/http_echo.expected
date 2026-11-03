@@ -1,0 +1,6 @@
+$ curl -i -X GET http://localhost:8080/health
+HTTP/1.1 200 OK
+content-length: 6
+content-type: text/plain
+
+ready
