@@ -71,11 +71,11 @@ completion tokens directly to host HTTP services; browser WebSocket uses the bro
 Application compatibility does not require that the implementation be Boost.Beast. A raw
 stream/socket backend can retain upstream protocol algorithms where useful and supported.
 
-The owner is clarifying whether reusing upstream C++ data types/headers remains acceptable,
-or whether Wasm must also be independent of those headers. Until resolved, this draft makes
-no universal alias/static-type-identity requirement for Wasm. It does require compatible
-observable operations, allocator/error contracts and inspectable application changes. A
-complete independent reimplementation of Beast types has not been authorized by inference.
+The owner authorized implementation after the recommendation to reuse upstream data
+types while delegating operations to the environment. The initial implementation therefore
+retains Boost.Beast headers and type identity for portable data; host operations remain
+separate adapters. This is not a dependency-free Wasm library. Compatible observable
+operations, allocator/error contracts and inspectable application changes remain required.
 
 ### D3. What the browser cannot honour fails as a value, by default
 
@@ -368,9 +368,9 @@ lists. Trystero moves onto the library in a later change.
 
 ## Open Questions
 
-- **O1. Header layout.** The public headers and the convenience header are not fixed by the
-  specification (the plan will fix them). webcpp::asio's convenience header leaves `ssl` out
-  natively because it brings OpenSSL; whether `<webcpp/beast.hpp>` does the same is to decide.
+- **O1. Header layout, initial decision.** The convenience header contains portable data.
+  Byte-stream algorithms, sockets and TLS have explicit headers and dependencies. Host-entry
+  headers will also be explicit. This keeps message-only WASIp2 builds free of a reactor.
 - **O2. The defaults of the receive queue bound** (the send bound is 4 MiB) and the names of the
   two options. To measure and decide in the plan.
 - **O3. How a decorator is called** on an empty `websocket::request_type`: whether any other
@@ -379,10 +379,9 @@ lists. Trystero moves onto the library in a later change.
 - **O4. Streaming request bodies.** The specification buffers a request body whole before the
   `fetch`; whether a streaming upload (Chromium only) is wanted is open, and belongs to a later
   change.
-- **O6. Upstream header/type dependency.** The owner has been asked whether Wasm may reuse
-  Boost.Beast data types while delegating execution, or must eliminate the headers too.
-  Backend work does not settle this question; do not claim a dependency-free Wasm library
-  until it is answered and proved.
+- **O6. Upstream header/type dependency, implementation decision.** Following the authorized
+  recommendation, reuse upstream data types. Browser and WASI host operations still map
+  directly to environment services; they need not execute the upstream protocol engine.
 - **O5. The Boost proposal** (specification section 10) is made when both libraries have run in
   real programs, trystero first; no work in this change.
 

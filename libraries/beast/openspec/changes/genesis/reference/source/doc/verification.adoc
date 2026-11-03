@@ -1,0 +1,69 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#beast-verification]
+== Local verification: initial increment
+
+Observed on macOS ARM64 on 2026-11-02, using Boost 1.92, native Clang 21,
+wasi-sdk 34, Emscripten 6.0.11 and the project-pinned Wasmtime 50.0.1.
+All rows use Release builds. Initial WASI runs used 47.0.3 and 49.0.3; the
+collection-wide upgrade reran the Beast tests and example with 50.0.1.
+No new remote CI run is represented by this record.
+
+[cols="2,1,1,3",options="header"]
+|===
+|Target |Threads |Exceptions |Observed result
+|Native |Single |On/off |Data tests, HTTP and binary WebSocket exchange, close, timeout, SNI and example passed.
+|Native |Multi |On/off |The same tests passed with the thread-enabled build; this does not test simultaneous operations from multiple threads.
+|WASIp2 |Single |On/off |Data tests and example passed. No networking backend was exercised.
+|WASIp3 |Single |On/off |Data tests, HTTP and binary WebSocket exchange, close, timeout, SNI and example passed.
+|WASIp3 |Cooperative |Off |The same socket/data/SNI tests and example passed with Wasmtime 50.0.1.
+|WASIp3 |Cooperative |On |Unavailable in the SDK 34 cooperative {cpp} runtime; rejected by B2.
+|Emscripten |Single |On/off |Data tests and example passed under Node. Browser transport remains pending.
+|===
+
+The cooperative row selects `threading=multi`; it does not claim CPU parallelism
+or concurrent access to a stream. Socket tests drive one context and real loopback
+peers. SDK 34 cooperative components in this test were rejected by Wasmtime 47.0.3
+with an end-of-file parse diagnostic; those files passed with 49.0.3, and
+the current rebuilt suite passed with 50.0.1.
+Select the intended runtime explicitly through `PATH` before running B2.
+
+The commands below assume the toolsets in `.local/user-config.jam`. The local
+build directories isolate this evidence from other work. A leading `-a` forces
+compilation and execution. These focused reproduction commands select the same
+Beast targets exercised by the collection-wide upgrade. The complete requests and
+logs of that rerun are in `.local/wasmtime-50-validation/`: `wasip2-single-all.log`,
+`wasip3-single-all.log` and `wasip3-coop-all.log`.
+
+[source,bash]
+----
+unset CPATH CPLUS_INCLUDE_PATH C_INCLUDE_PATH
+export PATH="$PWD/.local/wasmtime-50/wasmtime:$PATH"
+b2 --user-config=.local/user-config.jam --build-dir=.local/beast-implementation/native-final -a variant=release exception-handling=on,off libs/beast/test libs/beast/example
+b2 --user-config=.local/user-config.jam --build-dir=.local/beast-implementation/native-multi -a variant=release threading=multi exception-handling=on,off libs/beast/test libs/beast/example
+b2 --user-config=.local/user-config.jam --build-dir=.local/beast-implementation/p2-final -a toolset=clang-wasip2 variant=release exception-handling=on,off testing.launcher=wasmtime libs/beast/test libs/beast/example
+b2 --user-config=.local/user-config.jam --build-dir=.local/beast-implementation/p3-final -a toolset=clang-wasip3 variant=release exception-handling=on,off testing.launcher=tools/boost/asio-wasip3/run.sh libs/beast/test libs/beast/example
+b2 --user-config=.local/user-config.jam --build-dir=.local/beast-implementation/p3-cooperative -a toolset=clang-wasip3 variant=release threading=multi exception-handling=off testing.launcher=tools/boost/asio-wasip3/run.sh libs/beast/test libs/beast/example
+b2 --user-config=.local/user-config.jam --build-dir=.local/beast-implementation/browser-final -a toolset=emscripten variant=release exception-handling=on,off libs/beast/test libs/beast/example
+----
+
+The constructor regression was also rebuilt and executed after independent review:
+default construction with a defaultable layer, same-type move, conversion from a
+specific executor to `any_io_executor`, and `rebind_executor` retaining the facade.
+The conflicting-policy test deliberately fails compilation; B2 must report it as
+`failed-as-expected`, not a failed test.
+
+The example's output was first captured by compiling its upstream branch with
+`WEBCPP_TEST_UPSTREAM_BEAST`, then compared by B2 for each target. The guide's code
+and output include those source files directly. MrDocs generated the API reference
+and the AsciiDoc source and rendered-page checks passed locally.
+
+Remaining acceptance work includes actual TLS protocol exchanges through Beast,
+socket cancellation, host HTTP and supplied streams, browser WebSocket/fetch,
+the full 53-example corpus, browser JSPI/Asyncify transport variants, and Windows
+execution. Existing Asio/TLS tests are prerequisites, not substitutes for these
+Beast application tests.

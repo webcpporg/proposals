@@ -1,0 +1,7 @@
+# Examples let an allocation or operation error terminate their main, as
+# Boost's examples do. Other exception-escape checks remain enabled.
+---
+InheritParentConfig: true
+CheckOptions:
+  - key: bugprone-exception-escape.CheckMain
+    value: 'false'

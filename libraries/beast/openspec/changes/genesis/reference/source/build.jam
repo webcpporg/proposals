@@ -1,0 +1,22 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project /webcpp/beast ;
+
+import feature ;
+
+feature.feature webcpp-beast-unsupported : error ignore : propagated ;
+
+# Data interfaces do not require a socket reactor or guest TLS library.
+alias beast : : : : <include>include <library>/webcpp/config//config
+  <webcpp-beast-unsupported>error:<define>WEBCPP_BEAST_UNSUPPORTED_ERROR
+  <webcpp-beast-unsupported>ignore:<define>WEBCPP_BEAST_UNSUPPORTED_IGNORE ;
+
+# Only a program using guest-owned sockets acquires the Asio dependency.
+alias sockets : : : : <library>beast <library>/webcpp/asio//asio ;
+
+# Source-built OpenSSL is optional and belongs only to guest-owned TLS.
+alias tls : : : : <library>sockets <library>/webcpp/asio//openssl ;

@@ -1,49 +1,51 @@
-# webcpp::beast: current draft and how to resume
+# webcpp::beast: implementation status
 
-Updated 2026-11-02. The owner clarified the primary goal: existing Boost.Beast applications
-compiled to WASIp2, WASIp3 and Emscripten, with minimal changes and execution through the environment's own HTTP/WebSocket/stream facilities. Useful stream and host-HTTP adaptations are requested
-for absent OS facilities. All upstream example
-applications are the acceptance corpus; native Boost.Beast is the behavioural reference.
+Updated 2026-11-02. The owner authorized implementation and corrections for the
+previous superproject CI failures. `plan.md` records the implementation sequence.
+The original 53-application acceptance corpus and all target requirements remain.
 
-**Reference code: none. No Beast implementation, build or runtime success is claimed.**
-`spec.md` below this directory is the preserved 2026-10-10 baseline. Current intent and
-requirements are `../proposal.md`, `../design.md`, `../specs/beast/spec.md` and `../tasks.md`.
-They supersede the baseline's WASI exclusion and three-example acceptance boundary.
+## Initial local implementation
 
-## Evidence of this revision
+A local repository exists at `asio-task9-review/libs/beast` in the organization's
+isolated checkout. It has no organization remote or superproject gitlink yet.
+The organization repository is still to be created by the owner.
+Its first commit is `c7dfe2bffb16559aa4f5a6e3bece633e6999b0b4`; `source/` is an exact archive
+of its tracked tree.
 
-- Read the upstream Boost 1.92 source at Beast commit
-  `7c1e061f91e2ef542217b76286c314d006c0c8fc`.
-- Counted 53 executable declarations in `example/**/Jamfile`, matched to 53 entry-point
-  sources, including the doc SSL pair and legacy echo-op. Recorded every executable in
-  `../design.md`, with support files and dependency constraints.
-- Read the integrated Asio capabilities at Asio `3611a6e`, superproject `2ba5116`:
-  browser and WASIp3 support exists; Asio WASIp2 does not. WASIp3 single async DNS is
-  unsupported; cooperative threads use the tested SDK's EH-off runtime.
-- Read webcpp::wasi's existing P2/P3 HTTP entrypoint, response helper, WIT worlds and B2
-  targets. The method/target/whole-body helper needs extension for the full Beast bridge;
-  host HTTP does not require the missing Asio WASIp2 socket backend or guest OpenSSL.
-- Inspected the pinned `wasi:http@0.2.12` and `@0.3.0` handler interfaces and CLI stdio
-  resources/streams. Added independent host-HTTP and supplied-stream application paths,
-  with ownership, cancellation and explicit differences from Unix-domain sockets.
-- The Beast examples have not been compiled or executed in this revision. Asio results
-  are prerequisite evidence only. Candidate classifications are not passing tests.
+- Portable upstream HTTP messages, parsers, serializers and buffers compile and run
+  on native, WASIp2, WASIp3 and Emscripten, with exceptions on and off.
+- Native and WASIp3 socket backends passed real loopback HTTP, binary WebSocket echo,
+  close handshake and timeout tests, plus optional TLS SNI validation.
+- WASIp3 cooperative threading passed with exceptions off using Wasmtime 50.0.1;
+  SDK 34 has no cooperative C++ exception runtime. Initial comparisons showed that
+  Wasmtime 47.0.3 rejected the cooperative components while 49.0.3 ran them. The
+  project-wide runtime and current regression runs now use 50.0.1.
+- Emscripten tests here exercise data under Node, not browser networking.
+- Constructors preserve defaultable layers, same-type move, executor conversion and
+  facade rebinding; independent review found the missing cases and they were fixed.
+- The guide uses Diataxis, AsciiDoc source inclusions and MrDocs API extraction.
+  Exact commands and limitations are in `source/doc/verification.adoc`.
 
-## Pending work
+O1 now selects explicit transport/TLS headers and a data-only convenience header.
+O6 follows the recommended upstream type reuse after authorization to implement.
+This makes no dependency-free Wasm claim and does not make host-service execution
+use the upstream protocol engine. O2 and O3 remain browser implementation decisions.
 
-1. Review this expanded draft and write the implementation plan and reference code.
-2. Implement host-HTTP and supplied-stream adapters using webcpp::wasi; extend Asio and
-   shared TLS for the distinct WASIp2 raw-socket profile, without making it a host-HTTP gate.
-3. Validate upstream Beast over the existing WASIp3 Asio/TLS integration.
-4. Probe stackful Context support and synchronous browser suspension before making promises.
-5. Implement the browser WebSocket and HTTP transports, then all-example application tests.
-6. Publish target/variant/backend feature and example matrices, separating original parity
-   from successfully adapted applications.
-7. Resolve whether Wasm can reuse Boost.Beast headers/data types or must be independent of
-   them; this question is pending the owner's answer and no dependency-free claim is made.
+## Remaining acceptance work
 
-No new implementation task is checked off. The proposal remains `draft`, with no release.
-The following dated record is retained as history, not the current dependency status.
+1. Complete browser WebSocket and fetch adapters, including lifetime, cancellation,
+   allocator, unsupported-setting and JSPI/Asyncify tests in a real browser.
+2. Implement WASI host HTTP and supplied-stream applications without requiring guest
+   Asio sockets or OpenSSL for that profile.
+3. Complete Beast-level TLS/cancellation tests and WASIp2 socket/TLS prerequisites.
+4. Probe synchronous browser suspension and Boost.Context before declaring support.
+5. Implement and validate all 53 upstream applications or explicitly classified
+   counterparts, then publish the complete target/variant/backend feature matrix.
+6. Create the organization repository and register its published commit before adding
+   the superproject gitlink. No release or new remote CI run is claimed.
+
+The plan's first two tasks are the initial increment, not completion of this proposal.
+The retained historical section below does not describe the current source state.
 
 ## Historical intake record, 2026-10-13
 

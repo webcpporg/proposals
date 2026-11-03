@@ -1,8 +1,9 @@
 # Tasks
 
 The current draft incorporates the owner's 2026-11-02 WebAssembly-first scope and all 53
-upstream example applications; no Beast implementation exists. There is no plan and no reference code yet, so
-group 0 comes first and every later task is refined by the plan. `reference/spec.md` is the
+upstream example applications. A first local increment now implements portable data and
+native/WASIp3 socket interfaces; `reference/plan.md` orders the remaining implementation.
+Unchecked tasks retain their complete acceptance criteria. `reference/spec.md` is the
 historical baseline, `specs/beast/spec.md` the current requirements, `reference/STATUS.md` says where things
 stand.
 
@@ -28,19 +29,19 @@ stand.
 
 ## 1. The skeleton and the configuration (requirements: Library, Config)
 
-- [ ] 1.1 The repository layout: `build.jam` (project `/webcpp/beast`, alias `beast`), `meta/libraries.json` (`"port-of": null`), `README.md`, `AGENTS.md`, licence, `doc/changelog.adoc`, CI calling the superproject's workflow
-- [ ] 1.2 `<webcpp/beast/config.hpp>`: `WEBCPP_BEAST_UNSUPPORTED_ERROR` (default), `WEBCPP_BEAST_UNSUPPORTED_IGNORE`, the `#error` when both, `WEBCPP_BEAST_NO_EXCEPTIONS`
-- [ ] 1.3 The b2 feature `webcpp-beast-unsupported=error|ignore` and its usage requirement
+- [x] 1.1 The repository layout: `build.jam` (project `/webcpp/beast`, alias `beast`), `meta/libraries.json` (`"port-of": null`), `README.md`, `AGENTS.md`, licence, `doc/changelog.adoc`, CI calling the superproject's workflow
+- [x] 1.2 `<webcpp/beast/config.hpp>`: `WEBCPP_BEAST_UNSUPPORTED_ERROR` (default), `WEBCPP_BEAST_UNSUPPORTED_IGNORE`, the `#error` when both, `WEBCPP_BEAST_NO_EXCEPTIONS`
+- [x] 1.3 The b2 feature `webcpp-beast-unsupported=error|ignore` and its usage requirement
 - [ ] 1.4 The inline namespace named after the setting for the browser classes; test a cross-translation-unit stream interface with mismatched settings, without promising universal mismatch detection
-- [ ] 1.5 `test/config_test.cpp` built under each setting and with exceptions on and off
+- [x] 1.5 `test/config_test.cpp` built under each setting and with exceptions on and off
 
 ## 2. The native and WASI names (requirements: Names)
 
 - [ ] 2.1 The native aliases of Boost.Beast types; settle Wasm header/type dependency decision O6 before implementing Wasm data interfaces
-- [ ] 2.2 `websocket::stream` derived from Beast's with `stream(std::allocator_arg_t, const Allocator&, Args&&...)`
-- [ ] 2.3 `set_server_name(ssl_stream&, std::string_view)` returning `boost::system::result<void>`, natively through OpenSSL
+- [x] 2.2 `websocket::stream` derived from Beast's with `stream(std::allocator_arg_t, const Allocator&, Args&&...)`
+- [x] 2.3 `set_server_name(ssl_stream&, std::string_view)` returning `boost::system::result<void>`, natively through OpenSSL
 - [ ] 2.4 `teardown` and `async_teardown` for webcpp::asio's sockets, found by argument-dependent lookup
-- [ ] 2.5 Static-assertion tests on native and explicit WASI socket profiles where upstream types are reused: the aliases are Beast's types, the stream derives from Beast's; also instantiate and run real protocol operations
+- [x] 2.5 Static-assertion tests on native and explicit WASI socket profiles where upstream types are reused: the aliases are Beast's types, the stream derives from Beast's; also instantiate and run real protocol operations
 
 ## 3. The browser streams and the layers (requirements: Resolver, WebSocket layers)
 

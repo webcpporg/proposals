@@ -1,0 +1,160 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+= beast: HTTP and WebSocket for WebAssembly
+:toc: left
+:toclevels: 2
+:idprefix:
+:sectanchors:
+:attribute-missing: warn
+
+`webcpp::beast` is a {cpp}20 compatibility facade for Boost.Beast applications.
+Implementation is in progress: portable data interfaces and the native/WASIp3
+socket backend are the first increment. Browser WebSocket/fetch and WASI host HTTP
+are subsequent adapters, not capabilities established by the current tests.
+
+[#beast-tutorial]
+== Tutorial: construct a response
+
+Use the library at `libs/beast` in the WebCPP superproject, with Boost 1.92 and B2
+configured. This first example handles an in-memory request; it opens no connection.
+
+[source,cpp]
+----
+include::{examples}/http_message.cpp[tag=handler,indent=0]
+include::{examples}/http_message.cpp[tag=program,indent=0]
+----
+
+From the superproject root, run:
+
+[source,bash]
+----
+unset CPATH CPLUS_INCLUDE_PATH C_INCLUDE_PATH
+b2 -a libs/beast/example//http_message.output
+----
+
+The expected output is captured from the same example compiled against upstream Beast:
+
+[listing]
+----
+include::{examples}/http_message.expected[]
+----
+
+The successful finish is a matched `.output` target. Compiling the executable alone
+does not check its result.
+
+[#beast-how-to]
+== How-to: select a dependency and target
+
+[cols="1,2",options="header"]
+|===
+|B2 dependency |Purpose
+|`/webcpp/beast//beast` |Portable buffers, HTTP messages, parsers and serializers.
+|`/webcpp/beast//sockets` |Native/WASIp3 guest socket algorithms and Asio configuration.
+|`/webcpp/beast//tls` |Guest-owned TLS with source-built OpenSSL.
+|===
+
+Include `<webcpp/beast/http/read.hpp>` and `<webcpp/beast/http/write.hpp>` explicitly
+for byte-stream operations, and `<webcpp/beast/tcp_stream.hpp>` or
+`<webcpp/beast/websocket.hpp>` for the socket types. The convenience header omits
+these transport headers and `<webcpp/beast/ssl.hpp>`.
+
+The host-service adapters are not implemented yet. Do not select a guest socket/TLS
+dependency merely to construct a message for future use with `wasi:http` or `fetch`.
+
+[source,bash]
+----
+b2 -a variant=release exception-handling=on,off libs/beast/test libs/beast/example
+b2 -a toolset=clang-wasip2 testing.launcher=wasmtime exception-handling=on,off libs/beast/test libs/beast/example
+b2 -a toolset=clang-wasip3 testing.launcher=tools/boost/asio-wasip3/run.sh exception-handling=on,off libs/beast/test libs/beast/example
+b2 -a toolset=emscripten exception-handling=on,off libs/beast/test libs/beast/example
+----
+
+WASIp3 socket tests require the launcher's loopback networking capabilities. Production
+hosts should grant only the capabilities their application needs.
+
+[#beast-configuration]
+=== Configure error policy
+
+`webcpp-beast-unsupported=error` is the default; `ignore` is the alternative intended
+for documented host-adapter restrictions. It does not make an unavailable transport
+work. The B2 feature defines exactly one of `WEBCPP_BEAST_UNSUPPORTED_ERROR` and
+`WEBCPP_BEAST_UNSUPPORTED_IGNORE`. Defining both fails compilation.
+
+`WEBCPP_BEAST_NO_EXCEPTIONS` follows `<webcpp/config.hpp>` and can also be defined by
+the application. `WEBCPP_NO_EXCEPTIONS` applies to all WebCPP libraries. These macros
+do not change the compiler configuration or remove upstream Boost overloads; use
+`exception-handling=off` for a complete build without exception handling. Prefer
+upstream error-code overloads when recovery is required.
+
+[#beast-explanation]
+== Explanation: separate messages from transport
+
+Boost.Beast's general headers include stream algorithms that reach Asio sockets.
+On WASIp2 that introduces unavailable reactor/platform facilities even when an
+application only constructs a response. This facade exposes data headers separately,
+retaining upstream type identity and parsing behaviour without a guest reactor.
+
+The socket backend currently executes upstream Beast over the existing Asio port.
+Future host adapters will map operations to browser WebSocket/fetch and `wasi:http`,
+preserving application-visible messages while documenting host-owned connection,
+header, framing and TLS differences. A host HTTP handler does not imply a TCP acceptor.
+
+The native/WASIp3 WebSocket allocator constructor accepts the portable constructor
+syntax, but upstream Beast still controls its internal stream-state allocation.
+Associated completion-handler allocators retain upstream semantics. Data containers
+use their upstream allocator template parameters.
+
+`set_server_name` configures SNI only. It copies a non-terminated string view into a
+bounded buffer and rejects empty, overlong or embedded-NUL hostnames. Certificate and
+hostname verification remain separate TLS settings. Guest OpenSSL settings must never
+be represented as changing browser or WASI host trust policy.
+
+[#beast-matrix]
+== Feature matrix
+
+This is an initial implementation matrix, not completion of the 53-example proposal.
+The checked commands and runtime observations belong to the first local increment.
+
+[cols="2,1,1,1,1",options="header"]
+|===
+|Feature |Native |WASIp2 |WASIp3 |Emscripten
+|HTTP message/parser/serializer interfaces |Implemented |Implemented |Implemented |Implemented
+|Real HTTP loopback exchange |Implemented |Pending socket port |Implemented |Pending fetch adapter
+|Binary WebSocket echo and close |Implemented |Pending transport |Implemented |Pending browser adapter
+|Guest stream timeout |Implemented |Pending socket port |Implemented |Pending browser adapter
+|Guest TLS SNI helper |Implemented |Pending TLS port |Implemented |Host TLS adapter pending
+|Host HTTP entry/client |Not applicable |Pending |Pending |Client adapter pending
+|Host-supplied stdin/stdout counterpart |Pending |Pending |Pending |Separate host channel required
+|All 53 upstream examples |Pending |Pending |Pending |Pending
+|===
+
+Exception and thread variants are reported separately in the verification record.
+Emscripten data tests run under Node; this does not establish browser transport support.
+Cooperative WASIp3 threads are not CPU-parallel threads, and their SDK 34 runtime
+currently requires exceptions off.
+
+include::verification.adoc[]
+
+[#beast-guarantees]
+== Guarantees and evidence
+
+* `message_test.cpp` checks upstream type identity, embedded-NUL payloads, parser body
+  limits and malformed fields on every declared data target.
+* `socket_test.cpp` exchanges real HTTP and binary WebSocket payloads, completes both
+  sides of a close handshake, and verifies a stalled peer reaches the stream timeout.
+  Each case has a five-second outer deadline.
+* `ssl_test.cpp` checks SNI copying and rejection without replacing an existing valid
+  name. It does not claim that an SNI setting authenticates the peer.
+* `config_test.cpp` checks compiler/global/library exception configuration, both
+  unsupported-operation policies and rejection of conflicting definitions.
+
+[#reference]
+== Reference
+
+include::{reference}[leveloffset=+1]
+
+include::changelog.adoc[]
