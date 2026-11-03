@@ -4,6 +4,8 @@ The primary purpose of webcpp::beast is to take existing Boost.Beast application
 WebAssembly: WASIp2, WASIp3 and Emscripten in a real browser. Native Boost.Beast is the
 behavioural reference. Keeping the original operations, types and control flow with minimal,
 reviewable source changes matters more than providing a new HTTP or WebSocket interface.
+The implementation should use the target's own facilities: browser fetch/WebSocket and WASI
+HTTP/streams, rather than requiring Boost.Beast's transport/protocol implementation everywhere.
 
 The owner's scope clarification of 2026-11-02 includes every application in Boost.Beast's
 examples. The pinned Boost 1.92 catalogue contains 53 executable targets, including clients,
@@ -22,12 +24,20 @@ The library remains a draft with no implementation or measured Beast runtime res
   Emscripten are required target workstreams. Missing backend support is tracked work, not
   a reason to drop a target from the specification.
 - **A separate library `webcpp::beast`**, a C++20 wrapper over Boost.Beast and webcpp::asio,
-  retaining Beast's HTTP messages, parsers, serializers and generic protocol algorithms.
+  presenting Beast-compatible operations and data interfaces while selecting an environment
+  backend. Native retains upstream Beast. The Wasm header/type dependency policy is pending
+  the owner's clarification; protocol execution need not use upstream Beast.
   The first increment remains WebSocket, followed by HTTP.
-- **Native and WASI use real streams.** Reuse Boost.Beast over Asio sockets and the shared
-  source-built OpenSSL/TLS support, with the smallest verified adaptations. Extend Asio and
-  the shared TLS build for WASIp2 before claiming that target works. Do not implement a
-  second socket reactor, resolver or trust store inside Beast.
+- **WASI HTTP uses the host's HTTP interfaces.** Adapt client requests and server handlers to
+  `wasi:http` on P2/P3, reusing and extending webcpp::wasi. The host owns transport and may
+  own TLS; this path does not require the raw-socket Asio port or guest OpenSSL. Keep a
+  separate stream/socket backend for applications that need wire-level control, with shared
+  Asio/OpenSSL dependencies where available.
+- **Stream counterparts preserve useful applications.** For Unix-domain socket examples,
+  add a pair-of-streams counterpart, including host-wired stdin/stdout, keeping the exchange
+  logic. Document startup and endpoint changes; do not pretend to implement Unix-domain
+  addressing, ancillary data or peer credentials. Similar applications are part of the
+  requested deliverable, not merely rejected examples.
 - **Emscripten uses browser transports.** The layered connection calls record URL and TLS
   intent; the final handshake or request uses WebSocket or fetch. Add synchronous client
   coverage through suspending adapters as well as the asynchronous interface. Run both
@@ -41,7 +51,8 @@ The library remains a draft with no implementation or measured Beast runtime res
   platform-unavailable operations. No silent skips or trivial replacement programs count.
 - **Browser differences stay explicit.** The default unsupported-setting policy reports
   errors as values; the optional ignore policy cannot create a listening socket, Unix-domain
-  socket or unsupported execution backend. Raw servers run on native/WASI and serve the
+  socket or unsupported execution backend. An explicit host-service/stream adaptation can
+  nevertheless provide the application with a supported execution path. Raw servers run on native/WASI and serve the
   browser clients; they are not advertised as browser server ports.
 - **Validation uses real exchanges.** Test each runnable example with local controlled peers,
   compare application payloads and outcomes against native Boost.Beast, and exercise failure,
@@ -59,7 +70,8 @@ The library remains a draft with no implementation or measured Beast runtime res
 
 ### Modified Capabilities
 
-None in this OpenSpec root. The required Asio WASIp2 backend, shared TLS/B2 changes and any
+None in this OpenSpec root. Extensions to webcpp::wasi for complete HTTP requests/responses
+and stream I/O, the optional raw-socket Asio WASIp2 backend, shared TLS/B2 changes and any
 Boost.Context work belong to their owning components and must have linked changes and tests;
 this proposal does not declare those dependencies implemented.
 
@@ -70,11 +82,13 @@ this proposal does not declare those dependencies implemented.
 - **Implementation:** not started. The plan and reference code are still required before
   acceptance. This revision is a specification and a source inventory, not a port result.
 - **Dependencies:** pinned Boost.Beast 1.92, webcpp::asio, Boost.System and webcpp::config;
-  shared OpenSSL and CA targets for native/WASI TLS; wasi-sdk and Wasmtime for WASI;
+  webcpp::wasi for host HTTP/streams; shared OpenSSL and CA targets only for guest-owned
+  TLS in native/WASI socket backends; wasi-sdk and Wasmtime for WASI;
   Emscripten, Node and a real browser for JSPI/Asyncify. Stackful examples additionally
   require a proven Boost.Coroutine/Context backend; replacing them with C++20 coroutines
   does not establish compatibility of the original examples.
 - **Status:** draft; no release. Intended targets: native, wasip2, wasip3, emscripten.
-  Asio currently declares native, wasip3 and emscripten; WASIp2 remains prerequisite work.
+  Asio currently declares native, wasip3 and emscripten; WASIp2 raw sockets remain
+  prerequisite work for that backend, not a gate for host-provided WASI HTTP.
 - **Other proposals:** build on the published Asio integration and record extensions in its
   proposal. Trystero's later relay migration and an upstream Boost proposal remain separate.

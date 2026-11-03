@@ -1,7 +1,8 @@
 # webcpp::beast: current draft and how to resume
 
 Updated 2026-11-02. The owner clarified the primary goal: existing Boost.Beast applications
-compiled to WASIp2, WASIp3 and Emscripten, with minimal changes. All upstream example
+compiled to WASIp2, WASIp3 and Emscripten, with minimal changes and execution through the environment's own HTTP/WebSocket/stream facilities. Useful stream and host-HTTP adaptations are requested
+for absent OS facilities. All upstream example
 applications are the acceptance corpus; native Boost.Beast is the behavioural reference.
 
 **Reference code: none. No Beast implementation, build or runtime success is claimed.**
@@ -19,17 +20,27 @@ They supersede the baseline's WASI exclusion and three-example acceptance bounda
 - Read the integrated Asio capabilities at Asio `3611a6e`, superproject `2ba5116`:
   browser and WASIp3 support exists; Asio WASIp2 does not. WASIp3 single async DNS is
   unsupported; cooperative threads use the tested SDK's EH-off runtime.
+- Read webcpp::wasi's existing P2/P3 HTTP entrypoint, response helper, WIT worlds and B2
+  targets. The method/target/whole-body helper needs extension for the full Beast bridge;
+  host HTTP does not require the missing Asio WASIp2 socket backend or guest OpenSSL.
+- Inspected the pinned `wasi:http@0.2.12` and `@0.3.0` handler interfaces and CLI stdio
+  resources/streams. Added independent host-HTTP and supplied-stream application paths,
+  with ownership, cancellation and explicit differences from Unix-domain sockets.
 - The Beast examples have not been compiled or executed in this revision. Asio results
   are prerequisite evidence only. Candidate classifications are not passing tests.
 
 ## Pending work
 
 1. Review this expanded draft and write the implementation plan and reference code.
-2. Implement/validate Asio and shared TLS prerequisites for WASIp2 in their owning components.
+2. Implement host-HTTP and supplied-stream adapters using webcpp::wasi; extend Asio and
+   shared TLS for the distinct WASIp2 raw-socket profile, without making it a host-HTTP gate.
 3. Validate upstream Beast over the existing WASIp3 Asio/TLS integration.
 4. Probe stackful Context support and synchronous browser suspension before making promises.
 5. Implement the browser WebSocket and HTTP transports, then all-example application tests.
-6. Publish target/variant feature and example matrices, with blockers retained.
+6. Publish target/variant/backend feature and example matrices, separating original parity
+   from successfully adapted applications.
+7. Resolve whether Wasm can reuse Boost.Beast headers/data types or must be independent of
+   them; this question is pending the owner's answer and no dependency-free claim is made.
 
 No new implementation task is checked off. The proposal remains `draft`, with no release.
 The following dated record is retained as history, not the current dependency status.

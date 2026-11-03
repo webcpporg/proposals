@@ -2,7 +2,9 @@
 
 The primary goal is to compile existing Boost.Beast programs to WebAssembly, on WASIp2,
 WASIp3 and Emscripten, with minimal source changes. Native Boost.Beast is the reference.
-webcpp::beast is a wrapper of webcpp, not a replacement protocol library. Compiled with
+webcpp::beast is a compatibility facade with environment-specific implementations.
+Use the platform's HTTP/WebSocket services where they exist; do not require an upstream
+Beast protocol engine merely because the application uses its programming interface. Compiled with
 Emscripten, the same names and interfaces drive the browser's `WebSocket` and `fetch`: the
 layers the browser does not expose (resolve, connect, the TLS handshake) record what the browser
 needs, and the last one (the WebSocket handshake, or an HTTP request) opens the connection.
@@ -19,8 +21,8 @@ events to it, Boost's timers, the `ip::tcp` types with the resolver of its decis
 Constraints every decision below works within, from the superproject's rulebook:
 
 - header-only C++20, namespace `webcpp::beast`, macros `WEBCPP_BEAST_*`;
-- targets native, WASIp2, WASIp3 and Emscripten; the Asio WASIp2 backend and its shared TLS
-  integration are prerequisite work, while WASIp3 builds on the existing Asio port;
+- targets native, WASIp2, WASIp3 and Emscripten; WASI host-HTTP and stream/socket backends
+  are separate. Missing Asio WASIp2 sockets do not block the host-HTTP workstream;
 - errors as values; exceptions optional through `WEBCPP_BEAST_NO_EXCEPTIONS`;
 - allocation through allocators the program gives; Boost and std before custom code; outside
   interfaces wrapped; fixed-width types;
@@ -32,7 +34,8 @@ Constraints every decision below works within, from the superproject's rulebook:
 
 - Account for all 53 executable targets in the pinned Beast examples, plus their support
   files and documentation snippets. Run every application whose required facilities the
-  target exposes, and keep blockers visible until fixed or explicitly decided.
+  target exposes, and provide useful host-service or stream counterparts for applications
+  whose original OS transport is absent. Keep both results visible.
 - Preserve the original programming model and protocol behaviour. Every source adaptation
   has an inspectable diff; a counterpart with a different model is reported separately.
 - Natively, no cost and no difference: Beast's own types, one derived class, two functions.
@@ -61,14 +64,18 @@ transport and completes HTTP example coverage. WASI prerequisites can advance in
 All upstream examples are covered by this change; WebSocketStream and trystero migration
 remain later changes.
 
-### D2. Reuse Boost.Beast on native and WASI; browser classes exist only on Emscripten
+### D2. Preserve the interface while selecting the platform implementation
 
-Every name that touches no network (buffers, `http` messages, parsers, serializers, `websocket`
-close reasons and errors) is Beast's own on every target. On native and supported WASI profiles, `tcp_stream` and
-`ssl_stream` are Beast's, and `websocket::stream` is a class derived from Beast's, adding the
-allocator constructor, so that all targets have one constructor set. A static-assertion test
-proves the aliases are Beast's types. WASI tests must also instantiate the algorithms over
-the actual Asio backend; type aliases alone do not establish a working port.
+Native uses upstream Beast. Wasm HTTP can translate Beast-shaped requests, responses and
+completion tokens directly to host HTTP services; browser WebSocket uses the browser object.
+Application compatibility does not require that the implementation be Boost.Beast. A raw
+stream/socket backend can retain upstream protocol algorithms where useful and supported.
+
+The owner is clarifying whether reusing upstream C++ data types/headers remains acceptable,
+or whether Wasm must also be independent of those headers. Until resolved, this draft makes
+no universal alias/static-type-identity requirement for Wasm. It does require compatible
+observable operations, allocator/error contracts and inspectable application changes. A
+complete independent reimplementation of Beast types has not been authorized by inference.
 
 ### D3. What the browser cannot honour fails as a value, by default
 
@@ -99,8 +106,10 @@ browser has one call that does resolution, connection, TLS and the upgrade toget
 ### D6. The browser WebSocket is selected by the next layer's type
 
 `websocket::stream<NextLayer>` over the browser `tcp_stream` or `ssl_stream` is webcpp's
-browser WebSocket; over any other next layer (a relay socket, a WebRTC channel's byte stream) it
-is Beast's, as natively. `teardown` and `async_teardown` for webcpp::asio's sockets are declared
+browser WebSocket. A supported explicit byte-stream next layer (a relay socket, a WebRTC
+channel's byte stream) needs a guest protocol engine. Upstream Beast is the proposed engine
+for that opt-in path, subject to O6; it is not a prerequisite for browser-native WebSocket.
+Where Beast is reused, `teardown` and `async_teardown` for webcpp::asio's sockets are declared
 in the sockets' namespace so that argument-dependent lookup finds them, as Beast's
 `websocket/teardown.hpp` asks of a user-defined socket.
 
@@ -115,15 +124,20 @@ closes and the next read completes with `browser_errc::receive_limit`. A queued 
 `run` alive. `WebSocketStream`, which would pause receiving while C++ does not read, is a later
 increment.
 
-### D8. The HTTP client reuses Beast's algorithms by being a byte stream
+### D8. HTTP host backends translate messages directly
 
-The browser `tcp_stream` accepts the bytes Beast's serializer writes, parses them back with
-Beast's `request_parser`, makes one `fetch` per whole request, and serializes the response with
-Beast's serializer into the bytes the reads yield (chunked, with `Content-Length` and
-`Content-Encoding` left out). webcpp::beast overloads no HTTP algorithm. The cost is one parse
-and one serialization per message, for Beast's code unchanged. Responses to HEAD and
-status 204/304 contain headers only, never a synthetic chunk terminator; request-method
-tracking and back-to-back exchanges test that no framing remains in the next response.
+The default browser HTTP backend maps request/response operations to fetch. The WASI host-HTTP
+backend maps them to wasi:http, with separate P2/P3 ABI adapters. Facade overloads or dispatch
+for HTTP operations are allowed; the old rule forbidding all overloads is removed. Do not
+require serialize-parse-serialize round trips just to reuse upstream algorithms over an
+imaginary socket. Message/body/serializer incremental interfaces still need explicit coverage;
+this is not permission to drop them or ignore body limits, back-pressure or allocators.
+
+A byte-oriented compatibility adapter remains available when an application explicitly needs
+parser/serializer stream APIs or a supplied stream. Its cost and changed framing are recorded;
+wire parsers are not claims about the host's real HTTP framing. HEAD/204/304 responses have no
+synthetic body or chunk terminator. Direct and byte-adapter paths must agree on application
+status, exposed headers, body and cancellation outcomes.
 
 ### D9. Configuration is propagated once, with distinct browser types
 
@@ -166,23 +180,28 @@ every target and a program changes that line once. Exact-version TLS context met
 restriction: `tlsv12_client` fixes both minimum and maximum to TLS 1.2 upstream. Browser
 strict mode rejects it; a documented `tls_client` counterpart delegates version negotiation
 to the browser. Ignoring a version restriction is never reported as enforcing it.
+For host-service backends, record the requested SNI hostname and validate it against the
+eventual URL authority. The host controls SNI; a differing requested name follows the
+unsupported-setting policy. Only guest-owned socket TLS calls OpenSSL.
 
 ### D14. Target profiles and ownership of the WASI prerequisites
 
-This is an implementation recommendation, not a claim of tested Beast support. Keep Beast's
-protocol code upstream; put socket/reactor/resolver changes in Asio or wasi-libc and common
-TLS/build changes in the existing shared targets. Extend the WASIp3 overlay only where a
-WASIp2 probe proves the assumptions valid. Otherwise add a target-specific backend there.
-A WASI HTTP handler alone does not supply the byte-stream or listening-socket semantics
-needed by the complete Beast examples.
+Use the target's own service first for that protocol, selected explicitly by backend type or
+build configuration; do not silently fall back to a different trust/transport policy after an
+error. WASI host-HTTP uses webcpp::wasi and the component ABI. Its completion scheduling may
+need Asio executor integration, but not TCP, a socket reactor, DNS workers or guest OpenSSL.
+For a socket backend, keep socket/reactor/resolver fixes in Asio or wasi-libc and TLS changes
+in the shared build. These are distinct dependency chains and are tested independently.
 
 | Profile | Threading | Exceptions | Current dependency position |
 | --- | --- | --- | --- |
 | Native | single or OS threads | on/off | reference, with example-specific dependencies |
-| WASIp2 | single first; multi probed separately | probe on/off independently | Asio and TLS integration missing; required work |
-| WASIp3 single | disabled | on/off | Asio/TLS integrated; async DNS unsupported |
-| WASIp3 multi | cooperative, not CPU-parallel | off | Asio/TLS integrated |
-| WASIp3 multi | cooperative | on | blocked by the tested SDK 34 exception runtime |
+| WASIp2 host HTTP | host invocations; guest threads separately probed | on/off independently verified | webcpp::wasi entrypoint exists; full Beast bridge required |
+| WASIp2 streams/sockets | single first; multi separately probed | on/off independently verified | stdio streams can be adapted; Asio socket/TLS port still missing |
+| WASIp3 host HTTP | host invocations; guest threads separately probed | on/off independently verified | webcpp::wasi entrypoint exists; full Beast bridge required |
+| WASIp3 sockets, single | disabled | on/off | Asio/TLS integrated; async DNS unsupported |
+| WASIp3 sockets, multi | cooperative, not CPU-parallel | off | Asio/TLS integrated |
+| WASIp3 sockets, multi | cooperative | on | blocked by the tested SDK 34 exception runtime |
 | Emscripten JSPI | single | on/off | browser Asio integration available |
 | Emscripten Asyncify | single | on/off | browser Asio integration available |
 
@@ -213,15 +232,18 @@ Retain upstream notices. Common certificate headers are fixtures, not a producti
 
 ### D16. Execution, scheduling and TLS remain faithful to the target
 
-- Ordinary WASI TCP/HTTP/WebSocket applications use real sockets, including server listen and
-  accept when the host grants those capabilities. Test permissions denied as well as success.
+- WASI HTTP applications use host request/response resources by default. Applications that
+  need real TCP/HTTP wire control or WebSocket framing can explicitly select a socket/stream
+  backend. Host HTTP is not evidence of a WebSocket upgrade/tunnel API; probe such a
+  facility independently before exposing it.
 - On WASIp3 single, the existing async resolver's unsupported result is a required negative
   test. A pre-resolved endpoint (or synchronous resolution before running the context) is an
   explicit example adaptation. The program's URL hostname is still used for Host, SNI and
   certificate identity. Do not claim this establishes asynchronous DNS compatibility.
-- Native/WASI TLS uses the existing OpenSSL and embedded/replacement-CA targets. WASIp2 needs
-  its own source build and trust/entropy validation. In the browser the browser owns TLS:
-  never turn certificate verification off to make an example pass.
+- Guest-owned TLS in native/WASI socket backends uses existing OpenSSL and CA targets.
+  WASIp2 raw TLS needs its own build/validation. WASI host HTTP and browser services use the
+  host's TLS and trust policy where provided; guest CAs do not automatically affect it.
+  Never disable verification or silently switch backends to make an example pass.
 - Browser synchronous client methods need a suspending facade over the asynchronous transport.
   Probe this before promising compatibility: JSPI/Asyncify must resume the original call and
   allow a browser heartbeat to run while it waits. No busy waits or nested `io_context::run`
@@ -249,7 +271,8 @@ and browser clients against those servers. The chat example includes its HTML cl
 multiple simultaneous participants. A browser client talking to a WASI server is a working
 cross-target application, not evidence that the server runs inside the browser. Browser TCP
 listeners, Unix-domain sockets and raw TCP echo remain unavailable without another transport;
-adding a proxy or replacing the protocol requires a separately labelled design.
+provide the requested stream or host-service counterparts, labelled as such. A network
+proxy or a different application protocol is a separate design, not an implicit dependency.
 
 For HTTP compare status, exposed application headers and decoded payloads, using a documented
 normalization of framing and browser-controlled fields. Do not erase meaningful errors, body
@@ -266,8 +289,50 @@ MrDocs supplies API reference from headers. Include compiled example regions and
 output. Publish one feature matrix and one example matrix, with target, JSPI/Asyncify where
 applicable, threads, EH, tool versions, flags and commands. Label results as planned, passed,
 failed, blocked or platform-unavailable. Unsupported-policy IGNORE never changes a blocked
-backend into a supported one. All runnable rows must pass; blockers keep the full portability
-objective incomplete. Do not reduce the denominator to the examples that happen to build.
+backend into a supported one. All promised runnable rows must pass. A documented host-service/stream counterpart can
+fulfil application portability even when the original OS transport is unavailable; it does
+not establish exact source/transport parity. Unresolved implementation blockers still remain
+visible for their promised backend. Do not reduce the denominator to the examples that happen to build.
+
+### D19. Adapt WASI HTTP servers at the host entrypoint
+
+The owner explicitly wants WASI's HTTP infrastructure reused for Beast HTTP servers. Keep
+request-handling logic and message operations, replacing transport bootstrap with a component
+entry adapter. In P2 the host calls incoming-handler with a request and response-outparam;
+in P3 it calls the versioned async handler. The host owns bind/listen, physical connections,
+HTTP version and potentially TLS. An HTTP handler is not a physical TCP accept event.
+
+Offer the host-adapted application alongside the raw-socket example. The diff identifies the
+entrypoint and listener/session plumbing replaced by the adapter. It must not fake socket
+options, peer identity, pipelined physical connection identity, keep-alive ownership, TLS
+inspection or WebSocket upgrades. Request routing and response construction remain the
+application's. A library entry adapter may standardize this bootstrap, but cannot infer an
+arbitrary program's application handler from its main function.
+
+Reuse webcpp::wasi's component/B2 machinery. Its current helper exposes method/target and a
+response containing status, content type and a whole body; that is evidence of an existing
+entrypoint, not a complete Beast bridge. Extend its reusable request/header/body/trailer,
+streaming and lifetime interfaces in that library. Exactly one response is committed per
+request; cancellation after commitment fails the remaining body rather than sending a second
+response. P2 response-outparam and P3 async-resource lifetimes have independent tests.
+
+### D20. Pair-of-streams counterparts for local-socket examples
+
+Treat an input stream plus an output stream as one already-connected byte channel when the
+host wires them to a peer. stdin/stdout are possible endpoints, not an implicit Unix socket.
+The adapter implements synchronous/asynchronous read/write, partial progress, EOF,
+back-pressure, cancellation and ownership to the extent the specific host streams provide.
+A regular file, terminal and pipe can have different readiness/closure behaviour; test the
+provided endpoints rather than infer capabilities from an integer descriptor.
+
+Run the original HTTP or WebSocket application exchange over this explicit stream transport
+where the protocol engine supports it. stdin/stdout carry protocol bytes only; diagnostics go
+to stderr. The test driver wires both directions, drains output concurrently, injects partial
+reads/writes, closes endpoints and enforces a deadline. One input/output pair is one peer;
+multiple connections require additional host-supplied resources, not invented accept calls.
+No pathname bind/connect, descriptor passing, Unix peer credentials or socket-only options
+are promised. These are successful adapted applications when their stated exchanges pass,
+while the original Unix-domain transport row remains unavailable on that profile.
 
 ## Risks / Trade-offs
 
@@ -278,8 +343,9 @@ objective incomplete. Do not reduce the denominator to the examples that happen 
   DNS, TLS, a blocked port and CORS-like failures. Accepted: the Web APIs offer no more.
 - **Node enforces neither CORS nor mixed content** (measured by the review), so those failures
   are only seen in the headless-browser lane.
-- **One parse and one serialization per HTTP message** in the browser. Accepted for Beast's code
-  unchanged; a direct path is a later optimisation if measured necessary.
+- **Synthetic HTTP framing costs and differences.** The explicit byte-stream adapter may
+  parse/serialize messages and change framing. Measure and document that optional path;
+  direct request/response mapping to host services is the default architecture.
 - **The `ERROR` default makes some of Beast's examples fail as written** (`User-Agent`, added
   roots); the specification lists, per example, what changes under each setting. The trade-off
   is honesty over compatibility.
@@ -313,10 +379,14 @@ lists. Trystero moves onto the library in a later change.
 - **O4. Streaming request bodies.** The specification buffers a request body whole before the
   `fetch`; whether a streaming upload (Chromium only) is wanted is open, and belongs to a later
   change.
+- **O6. Upstream header/type dependency.** The owner has been asked whether Wasm may reuse
+  Boost.Beast data types while delegating execution, or must eliminate the headers too.
+  Backend work does not settle this question; do not claim a dependency-free Wasm library
+  until it is answered and proved.
 - **O5. The Boost proposal** (specification section 10) is made when both libraries have run in
   real programs, trystero first; no work in this change.
 
-## Upstream executable inventory
+## Upstream executable inventory: original transport/programming model
 
 Source: [Boost.Beast 1.92 examples](https://github.com/boostorg/beast/tree/7c1e061f91e2ef542217b76286c314d006c0c8fc/example),
 read on 2026-11-02. This is a source audit, not build or runtime evidence.
@@ -324,7 +394,10 @@ read on 2026-11-02. This is a source audit, not build or runtime evidence.
 `T`: intended direct twin after common include/namespace/SNI changes; `A`: an explicit
 platform adaptation is also expected; `B`: dependency or implementation probe blocks a
 compatibility claim; `U`: required platform facility is unavailable in the selected backend.
-All cells are prospective. Native denotes an OS/EH/thread configuration that supplies the
+All cells are prospective. This table describes the original transport/model, not the
+complete application result: the measured manifest must add host-HTTP and pair-of-streams
+counterparts for each applicable executable. An original `U` does not exclude those
+counterparts from the deliverable. Native denotes an OS/EH/thread configuration that supplies the
 example's dependencies; every single-thread and EH-off variant is tested and reported
 separately. WASIp2 `B` always includes the missing Asio/TLS integration. Browser columns
 must expand to both JSPI/Asyncify and EH modes in the measured matrix.
@@ -412,3 +485,22 @@ scenarios. Primary references:
 - [Beast HTTP parser](https://github.com/boostorg/beast/blob/7c1e061f91e2ef542217b76286c314d006c0c8fc/include/boost/beast/http/impl/basic_parser.ipp)
 - [Browser WebSocket interface](https://websockets.spec.whatwg.org/)
 - [Fetch transport and response model](https://fetch.spec.whatwg.org/)
+
+The environment-backend review additionally removed universal WASI socket/OpenSSL
+prerequisites and mandatory HTTP serialization in the browser. Host HTTP and supplied-stream
+counterparts now count as application portability with their original transport limitations
+retained. SNI intent is validated against the host URL rather than silently discarded.
+
+Sources inspected for this revision include webcpp::wasi's `http/entrypoint.hpp`,
+`http/response.hpp`, `example/http_hello.cpp`, `build.jam` and the HTTP P2/P3 WIT worlds.
+The current helper accepts method/target and returns status/content-type/whole-body; it
+does not yet provide the complete request/body/trailer bridge described in D19. The pinned
+interfaces are `wasi:http@0.2.12` (incoming-handler/response-outparam) and `@0.3.0`
+(async handler). P2 CLI stdio uses input/output resources; P3 uses asynchronous streams and
+completion futures. Source inspection establishes available interfaces, not passing Beast
+tests. Further references:
+
+- [WASI HTTP host interface rationale](https://github.com/WebAssembly/wasi-http)
+- [WASI stream abstraction](https://github.com/WebAssembly/wasi-io)
+- [Wasmtime P2 HTTP embedding](https://docs.wasmtime.dev/api/wasmtime_wasi_http/p2/index.html)
+- [Wasmtime P3 HTTP embedding](https://docs.wasmtime.dev/api/wasmtime_wasi_http/p3/index.html)
