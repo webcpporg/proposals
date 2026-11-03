@@ -1,15 +1,15 @@
 ## Purpose
 
-webcpp::beast lets code written against Boost.Beast, in its layers (resolve, connect, the TLS handshake, the WebSocket handshake, then reads and writes), run in a browser with the same code. Natively it is Boost.Beast itself. Compiled with Emscripten, the same names and interfaces drive the browser's `WebSocket` and `fetch`: the layers the browser does not expose record what the browser needs, and the last one opens the connection. What the browser cannot honour fails as a value by default. It is to webcpp::asio what Boost.Beast is to Boost.Asio. These requirements are the structured form of `reference/spec.md` (draft of 2026-10-10); the library is not built, so nothing here has been run.
+webcpp::beast lets code written against Boost.Beast, in its layers (resolve, connect, the TLS handshake, the WebSocket handshake, then reads and writes), run in a browser with the same code. Native Boost.Beast is the behavioural reference; WASIp2, WASIp3 and Emscripten are the primary portability targets. Compiled with Emscripten, the same names and interfaces drive the browser's `WebSocket` and `fetch`: the layers the browser does not expose record what the browser needs, and the last one opens the connection. What the browser cannot honour fails as a value by default. It is to webcpp::asio what Boost.Beast is to Boost.Asio. These requirements revise the historical `reference/spec.md` draft with the owner's 2026-11-02 scope: all upstream example applications on WebAssembly. The library is not built; requirements are not runtime evidence. The WebSocket, Settings, Back-pressure, Lifetime and HTTP browser adaptation contracts below apply to Emscripten; native and WASI keep upstream transport semantics.
 
 ## ADDED Requirements
 
 ### Requirement: Library: header-only library in its namespace
-The library SHALL be header-only C++20, in namespace `webcpp::beast`, with public headers under `<webcpp/beast/...>`, one per responsibility, macros prefixed `WEBCPP_BEAST_`, on native and Emscripten targets. It MUST NOT declare a WASI target, because webcpp::asio, on which it builds, has none (Boost.Asio 1.92 does not compile for wasm32-wasip2 or wasm32-wasip3 with wasi-sdk 34).
+The library SHALL be header-only C++20, in namespace `webcpp::beast`, with public headers under `<webcpp/beast/...>`, one per responsibility, macros prefixed `WEBCPP_BEAST_`, for native, WASIp2, WASIp3 and Emscripten. Each target SHALL be declared supported only after its transport dependencies and executable tests pass. Missing Asio support for WASIp2 MUST be tracked as prerequisite implementation work, not as a non-goal.
 
 #### Scenario: A program names the library like Boost.Beast
 - **WHEN** a program writes `namespace beast = webcpp::beast;` where it wrote `namespace beast = boost::beast;`
-- **THEN** it compiles on native and on Emscripten with the names of Boost.Beast's layered client code
+- **THEN** the supported profiles compile with the names of Boost.Beast's layered code, and an unavailable profile reports its specific dependency rather than silently selecting another target
 
 ### Requirement: Library: build target and dependencies
 `build.jam` SHALL declare `project /webcpp/beast` and one alias `beast` whose usage requirements include the library's headers, webcpp::asio, Boost's headers and `/webcpp/config//config`. The alias MUST carry the `webcpp-beast-unsupported` feature's define (see the Config requirements) in its usage requirements.
@@ -33,7 +33,7 @@ The library SHALL be built and tested with exceptions on and off (`WEBCPP_BEAST_
 - **THEN** the handler receives an `error_code`, and nothing is thrown
 
 ### Requirement: Names: Beast's network-free names are Beast's own
-Everything of Boost.Beast that touches no network (buffers, `http` messages, parsers, serializers, `websocket` close reasons and errors) SHALL be Beast's own on both targets, and every other name not listed in the Names requirements MUST be an alias of Boost.Beast's natively, so that the two are the same types.
+Everything of Boost.Beast that touches no network (buffers, `http` messages, parsers, serializers, `websocket` close reasons and errors) SHALL be Beast's own on every target, and every other name not listed in the Names requirements MUST be an alias of Boost.Beast's natively, so that the two are the same types.
 
 #### Scenario: An alias is the same type
 - **WHEN** a native test compares `webcpp::beast::flat_buffer` with `boost::beast::flat_buffer` through `std::is_same_v`
@@ -47,21 +47,21 @@ A program SHALL write `webcpp::asio` where it wrote `boost::asio`, `ssl` include
 - **THEN** the stream's TLS handshake judges that recorded setting
 
 ### Requirement: Names: tcp_stream
-`tcp_stream` SHALL be Beast's own natively. On Emscripten it MUST be a browser stream of webcpp's that records the resolver's entry, keeps Beast's timeout interface (`expires_after`, `expires_never`) on a Boost timer, and carries HTTP's bytes (see the HTTP requirements).
+`tcp_stream` SHALL be Beast's own on native and supported WASI profiles. On Emscripten it MUST be a browser stream of webcpp's that records the resolver's entry, keeps Beast's timeout interface (`expires_after`, `expires_never`) on a Boost timer, and carries HTTP's bytes (see the HTTP requirements).
 
 #### Scenario: Native tcp_stream is Beast's
 - **WHEN** a native test compares `webcpp::beast::tcp_stream` with `boost::beast::tcp_stream`
 - **THEN** they are the same type
 
 ### Requirement: Names: ssl_stream
-`ssl_stream<tcp_stream>` SHALL be Beast's own natively. On Emscripten it MUST be a browser stream of webcpp's that records the TLS settings and makes the scheme `wss` or `https`.
+`ssl_stream<tcp_stream>` SHALL be Beast's own on native and supported WASI profiles. On Emscripten it MUST be a browser stream of webcpp's that records the TLS settings and makes the scheme `wss` or `https`.
 
 #### Scenario: The TLS stream makes the scheme secure
 - **WHEN** on Emscripten `ws.next_layer().async_handshake(ssl::stream_base::client)` succeeds on a `websocket::stream<ssl_stream<tcp_stream>>`
 - **THEN** the WebSocket handshake opens a URL whose scheme is `wss`
 
 ### Requirement: Names: websocket::stream natively
-`websocket::stream<NextLayer>` SHALL natively be a class derived from Beast's, adding the allocator constructor `template <class Allocator, class... Args> explicit stream(std::allocator_arg_t, const Allocator& allocator, Args&&... next_layer_args)`, which is present on both targets.
+`websocket::stream<NextLayer>` SHALL on native and supported WASI profiles be a class derived from Beast's, adding the allocator constructor `template <class Allocator, class... Args> explicit stream(std::allocator_arg_t, const Allocator& allocator, Args&&... next_layer_args)`, which is present on every target.
 
 #### Scenario: The native stream derives from Beast's
 - **WHEN** a native static assertion tests `std::is_base_of_v<boost::beast::websocket::stream<boost::beast::tcp_stream>, webcpp::beast::websocket::stream<webcpp::beast::tcp_stream>>`
@@ -75,14 +75,14 @@ On Emscripten, `websocket::stream<NextLayer>` over the browser `tcp_stream` or `
 - **THEN** the instantiation is Beast's implementation, which frames the bytes itself
 
 ### Requirement: Names: HTTP algorithms
-`http::async_write`, `http::async_read` and the rest of Beast's HTTP algorithms SHALL be Beast's, unchanged, on both targets; webcpp::beast MUST overload none of them. In the browser they run over the browser `tcp_stream`'s bytes.
+`http::async_write`, `http::async_read` and the rest of Beast's HTTP algorithms SHALL be Beast's, unchanged, on every target; webcpp::beast MUST overload none of them. In the browser they run over the browser `tcp_stream`'s bytes.
 
 #### Scenario: No overload of async_read
 - **WHEN** the headers of webcpp::beast are searched for a declaration of an `http::async_read` overload
 - **THEN** there is none
 
 ### Requirement: Names: set_server_name
-The library SHALL provide `set_server_name(ssl_stream&, std::string_view host)` returning `boost::system::result<void>`. Natively it MUST set SNI through OpenSSL; on Emscripten it MUST record nothing, because the browser sends SNI itself, and MUST succeed. It replaces `SSL_set_tlsext_host_name(ws_.next_layer().native_handle(), host)`, since Boost 1.92 has no SNI helper and there is no OpenSSL handle in a browser.
+The library SHALL provide `set_server_name(ssl_stream&, std::string_view host)` returning `boost::system::result<void>`. On native and WASI it MUST set SNI through OpenSSL; on Emscripten it MUST record nothing, because the browser sends SNI itself, and MUST succeed. It replaces `SSL_set_tlsext_host_name(ws_.next_layer().native_handle(), host)`, since Boost 1.92 has no SNI helper and there is no OpenSSL handle in a browser.
 
 #### Scenario: SNI set in the browser
 - **WHEN** on Emscripten a program calls `set_server_name(ws.next_layer(), "echo.example.org")`
@@ -107,7 +107,7 @@ On Emscripten the browser streams SHALL accept the single entry webcpp::asio's r
 - **THEN** it completes with `boost::asio::error::service_not_found`
 
 ### Requirement: WebSocket: connecting records, it does not connect
-`get_lowest_layer(ws).async_connect(results)` SHALL record the first entry's host and service and complete at once. `async_connect(endpoint)` MUST record the endpoint's address as the host (an IPv6 address in brackets) and its port, and an endpoint with an unspecified address MUST fail with `webcpp::beast::error::no_host`, because the browser connects by name or by address and this one is neither.
+`get_lowest_layer(ws).async_connect(results)` SHALL record the first entry's host and service and complete at once. `async_connect(endpoint)` MUST record the endpoint's address as the host (an IPv6 address in brackets) and its port, and an endpoint with an unspecified address MUST fail with `webcpp::beast::browser_errc::no_host`, because the browser connects by name or by address and this one is neither.
 
 #### Scenario: An IPv6 endpoint
 - **WHEN** `async_connect` is called with the endpoint `[::1]:8080`
@@ -115,7 +115,7 @@ On Emscripten the browser streams SHALL accept the single entry webcpp::asio's r
 
 #### Scenario: An unspecified address
 - **WHEN** `async_connect` is called with an endpoint whose address is unspecified
-- **THEN** it completes with `webcpp::beast::error::no_host`
+- **THEN** it completes with `webcpp::beast::browser_errc::no_host`
 
 ### Requirement: WebSocket: the TLS handshake judges the record
 `ws.next_layer().async_handshake(ssl::stream_base::client)` SHALL judge the recorded TLS settings (see the Settings requirements) and record that the scheme is `wss`; the browser does TLS and verifies the certificate.
@@ -164,7 +164,7 @@ On Emscripten the browser streams SHALL accept the single entry webcpp::asio's r
 - **THEN** the peer receives one message `abcd`
 
 ### Requirement: WebSocket: closing
-`ws.async_close(reason)` SHALL call the browser's `close(code, reason)` and complete on `close`. The codes the browser accepts, 1000 and 3000 to 4999, are honoured; any other (Beast's `going_away`, 1001, and the rest of the codes of `boost/beast/websocket/rfc6455.hpp`) is unsupported. The reason fits: Beast's `reason_string` holds at most 123 characters.
+`ws.async_close(reason)` SHALL call the browser's `close(code, reason)` and complete on `close`. The codes the browser accepts, 1000 and 3000 to 4999, are honoured; any other (Beast's `going_away`, 1001, and the rest of the codes of `boost/beast/websocket/rfc6455.hpp`) is unsupported. The reason fits: Beast's `reason_string` holds at most 123 UTF-8 bytes.
 
 #### Scenario: A code the browser refuses
 - **WHEN** under `ERROR` a program calls `async_close(websocket::close_code::going_away)`
@@ -203,18 +203,22 @@ Each setting of Beast's and Asio's that a program can set SHALL be classified by
 - **THEN** its table of differences lists each unsupported and each ignored setting of this specification
 
 ### Requirement: Settings: TLS settings the browser honours
-SNI through `set_server_name`, `ssl::verify_peer`, `ctx.set_default_verify_paths()`, `set_verify_callback(ssl::host_name_verification(h))` when `h` is the URL's host, and a method that admits TLS 1.2 or later (`tls_client`, `tlsv12_client`, `sslv23_client`) SHALL be honoured. The browser stream MUST tell `host_name_verification` from any other callback by its type.
+SNI through `set_server_name`, `ssl::verify_peer`, `ctx.set_default_verify_paths()`, `set_verify_callback(ssl::host_name_verification(h))` when `h` is the URL's host, and a version-flexible client method (`tls_client` or `sslv23_client`) SHALL be accepted as delegating negotiation to the browser. This delegation MUST NOT claim that the program controls the browser's enabled versions or cipher suites. The browser stream MUST tell `host_name_verification` from any other callback by its type.
 
 #### Scenario: Host name verification for the URL's host
 - **WHEN** a program sets `ssl::host_name_verification("echo.example.org")` and connects to that host
 - **THEN** the TLS handshake succeeds
 
 ### Requirement: Settings: TLS settings the browser cannot honour
-A method that excludes TLS 1.2 (`tlsv13_client`) or admits only older versions, `ssl::verify_none`, any other verify callback, a client certificate or private key (`use_certificate*`, `use_private_key*`), added roots (`add_certificate_authority`, `load_verify_file`, `add_verify_path`), and `host_name_verification` for a host other than the URL's SHALL be unsupported, because the browser verifies by its own rules.
+An exact-version method (`tlsv12_client`, `tlsv13_client`, or an older fixed version), `ssl::verify_none`, any other verify callback, a client certificate or private key (`use_certificate*`, `use_private_key*`), added roots (`add_certificate_authority`, `load_verify_file`, `add_verify_path`), and `host_name_verification` for a host other than the URL's SHALL be unsupported, because the browser verifies by its own rules.
 
 #### Scenario: TLS 1.3 only
 - **WHEN** under `ERROR` a program uses `ssl::context ctx{ssl::context::tlsv13_client}` and runs the TLS handshake
 - **THEN** it completes with `operation_not_supported`
+
+#### Scenario: TLS 1.2 only
+- **WHEN** under `ERROR` a program uses `ssl::context ctx{ssl::context::tlsv12_client}` and runs the TLS handshake
+- **THEN** it completes with `operation_not_supported`, instead of claiming that the browser enforced TLS 1.2
 
 ### Requirement: Settings: stream timeouts
 `stream_base::timeout` SHALL be honoured for `handshake_timeout`, and for `idle_timeout` with `keep_alive_pings` false: the connection closes after the interval without activity, as Beast's, where activity is messages and close frames (the browser answers the peer's pings itself and shows none). `idle_timeout` with `keep_alive_pings` true MUST be unsupported, because the browser sends no ping on request. `suggested(role_type::client)`, a 30 s handshake timeout with no idle timeout and no pings, MUST be honoured whole.
@@ -260,18 +264,18 @@ Under `WEBCPP_BEAST_UNSUPPORTED_ERROR` (the default) an unsupported setting SHAL
 - **THEN** the handshake fails with `operation_not_supported` under `ERROR` and succeeds under `IGNORE`
 
 ### Requirement: Back-pressure: sending is bounded
-`send` SHALL never block and never refuse; the library MUST bound `bufferedAmount` (default 4 MiB, an option), and a write that would pass the bound fails with `webcpp::beast::error::send_limit` and closes the connection.
+The browser write SHALL check that the WebSocket is OPEN and report failures as error values. It MUST NOT block the browser event loop or claim peer delivery when the browser has only accepted a message for sending. The library MUST bound `bufferedAmount` (default 4 MiB, an option), and a write that would pass the bound fails with `webcpp::beast::browser_errc::send_limit` and closes the connection.
 
 #### Scenario: A writer faster than the server
 - **WHEN** a program writes messages in a loop to a server that does not read, until `bufferedAmount` would pass 4 MiB
-- **THEN** that write completes with `error::send_limit` and the stream is closed
+- **THEN** that write completes with `browser_errc::send_limit` and the stream is closed
 
 ### Requirement: Back-pressure: receiving is queued and bounded
-Messages SHALL arrive whether a read is pending or not and wait in a queue in the stream's allocator, bounded by an option; past the bound the stream closes without a code and the next read completes with `webcpp::beast::error::receive_limit`. A queued message MUST NOT keep `io_context::run` alive.
+Messages SHALL arrive whether a read is pending or not and wait in a queue in the stream's allocator, bounded by an option; past the bound the stream closes without a code and the next read completes with `webcpp::beast::browser_errc::receive_limit`. A queued message MUST NOT keep `io_context::run` alive.
 
 #### Scenario: A reader that does not read
 - **WHEN** the server sends messages past the queue bound while the program reads none
-- **THEN** the stream closes without a code and the next `async_read` completes with `error::receive_limit`
+- **THEN** the stream closes without a code and the next `async_read` completes with `browser_errc::receive_limit`
 
 #### Scenario: A queued message and run
 - **WHEN** a message is queued and no operation is pending
@@ -299,18 +303,22 @@ Operation state SHALL use the handler's associated allocator, as Beast's does. T
 - **THEN** no allocation of the stream's state goes outside the given allocator
 
 ### Requirement: Errors: the category webcpp.beast
-Failures with no counterpart in Beast or Asio SHALL be in webcpp::beast's own category, named `webcpp.beast`, with fixed values never reused: `invalid_url` (1), `blocked` (2), `connection_failed` (3), `send_limit` (4), `receive_limit` (5), `fetch_failed` (6), `no_host` (7), as members of `webcpp::beast::error`.
+Failures with no counterpart in Beast or Asio SHALL be in webcpp::beast's own category, named `webcpp.beast`, with fixed values never reused: `invalid_url` (1), `blocked` (2), `connection_failed` (3), `send_limit` (4), `receive_limit` (5), `fetch_failed` (6), `no_host` (7), as members of `webcpp::beast::browser_errc`, convertible to `boost::system::error_code`. `webcpp::beast::error` SHALL remain the upstream Beast error enum, including `timeout`, without changed values or category.
 
 #### Scenario: Values are fixed
-- **WHEN** a test reads the integer value of each `webcpp::beast::error` enumerator
+- **WHEN** a test reads the integer value of each `webcpp::beast::browser_errc` enumerator
 - **THEN** they are 1 to 7 in the order above, and the category's `name()` is `"webcpp.beast"`
+
+#### Scenario: Upstream timeout keeps its identity
+- **WHEN** an application converts `webcpp::beast::error::timeout` and `webcpp::beast::browser_errc::invalid_url` to error codes
+- **THEN** timeout retains Boost.Beast's type and category, and invalid_url belongs to the distinct `webcpp.beast` category
 
 ### Requirement: Errors: browser outcomes by name
 The browser's outcomes SHALL map to error codes: a constructor throwing `SyntaxError` (a URL or subprotocol it rejects) to `invalid_url`; one throwing `SecurityError` to `blocked`; `error` then `close` 1006 before `open` (refused, DNS, TLS, a blocked port) to `connection_failed`; `close` with a code after `open` to `websocket::error::closed`, with `ws.reason()` holding the code and the reason, as Beast's; `close` 1006 after `open` to `boost::asio::error::connection_reset`; a timeout to `beast::error::timeout`; a message past `read_message_max` to `websocket::error::message_too_big`; a setting the browser cannot honour to `boost::asio::error::operation_not_supported`.
 
 #### Scenario: A refused connection
 - **WHEN** the server refuses the connection and the browser reports `error` then `close` 1006 before `open`
-- **THEN** the handshake completes with `webcpp::beast::error::connection_failed`
+- **THEN** the handshake completes with `webcpp::beast::browser_errc::connection_failed`
 
 #### Scenario: The peer closes with a code
 - **WHEN** the server closes with code 4000 and reason `bye` after `open`
@@ -318,14 +326,14 @@ The browser's outcomes SHALL map to error codes: a constructor throwing `SyntaxE
 
 #### Scenario: An invalid URL
 - **WHEN** the recorded host is not a valid URL host and the handshake is made
-- **THEN** it completes with `webcpp::beast::error::invalid_url`
+- **THEN** it completes with `webcpp::beast::browser_errc::invalid_url`
 
 ### Requirement: HTTP: a byte stream for Beast's algorithms
 The browser `tcp_stream` and `ssl_stream` SHALL be a byte stream for HTTP, so that Beast's own algorithms run over it unchanged: `http::async_write`, `http::async_read`, `response_parser`, `body_limit` and `async_read_header` included. This is the second increment.
 
 #### Scenario: Beast's client over fetch
 - **WHEN** the twin of Beast's `http_client_async` runs in the browser against a local server
-- **THEN** it prints the same response as natively
+- **THEN** it produces the same application status and decoded payload as natively, with documented browser header/framing differences
 
 ### Requirement: HTTP: writing makes one fetch
 The bytes Beast's serializer writes SHALL be parsed back with Beast's `request_parser`; when a request is whole, the stream MUST make one `fetch` from it: the method, the URL from the recorded scheme, host and port and the request's target, the fields `fetch` allows, and the body, buffered whole (a chunked body is sent with its length: the server receives the same bytes). `redirect` is `"follow"` and `mode` is `"cors"`.
@@ -335,11 +343,15 @@ The bytes Beast's serializer writes SHALL be parsed back with Beast's `request_p
 - **THEN** one `fetch` is made for `<scheme>://<host>:<port>/index.html` with method GET, `redirect: "follow"` and `mode: "cors"`
 
 ### Requirement: HTTP: reading serializes the response
-The response SHALL be serialized with Beast's serializer into the bytes the stream's reads yield: the status line, with Beast's reason phrase for the status when the response has none (HTTP/2), the fields `fetch` exposes, and the body as it streams, framed by the stream with `Transfer-Encoding: chunked`. `Content-Length` and `Content-Encoding` MUST be left out, since `fetch` hands over the body decoded.
+The response SHALL be serialized with Beast's serializer into the bytes the stream's reads yield: the status line, with Beast's reason phrase for the status when the response has none (HTTP/2), the fields `fetch` exposes, and the decoded body. Responses that permit a body SHALL use `Transfer-Encoding: chunked`, omitting the original `Content-Length` and `Content-Encoding`. Responses to HEAD and status 204/304 SHALL end after the headers, with no body, chunk terminator or synthetic Transfer-Encoding. The facade MUST remember the request method; HEAD callers retain Beast's `response_parser::skip(true)` convention. The omission of representation metadata for these bodyless responses MUST be documented, and no leftover framing bytes may corrupt the next exchange.
 
 #### Scenario: A response without a reason phrase
 - **WHEN** `fetch` resolves with status 200 and an empty status text
 - **THEN** the bytes read begin `HTTP/1.1 200 OK` and carry `Transfer-Encoding: chunked`
+
+#### Scenario: A bodyless response followed by another exchange
+- **WHEN** the client performs HEAD or receives 204/304 and then performs GET on the same facade
+- **THEN** the first response leaves no body or chunk terminator in the input buffer and the next response parses correctly
 
 ### Requirement: HTTP: request fields
 `Host` SHALL be honoured when it is the URL's host or `host:port` (the browser sets it from the URL), unsupported otherwise. `Content-Length` and `Transfer-Encoding` are the framing of the bytes and MUST be honoured. `Connection` and `Keep-Alive` MUST be ignored, on both settings, since connection reuse is the browser's and the exchange is the same. `User-Agent` and every other field the browser forbids or sets itself SHALL be unsupported.
@@ -374,11 +386,11 @@ The response SHALL be serialized with Beast's serializer into the bytes the stre
 - **THEN** `ec` holds no error and no further request is made
 
 ### Requirement: HTTP: failed fetches
-A `fetch` that rejects SHALL complete the read with `webcpp::beast::error::fetch_failed`; CORS and mixed content are among its causes, which the browser does not tell apart.
+A `fetch` that rejects SHALL complete the read with `webcpp::beast::browser_errc::fetch_failed`; CORS and mixed content are among its causes, which the browser does not tell apart.
 
 #### Scenario: A rejected fetch
 - **WHEN** `fetch` rejects with `TypeError`
-- **THEN** the read completes with `error::fetch_failed`
+- **THEN** the read completes with `browser_errc::fetch_failed`
 
 ### Requirement: Config: the unsupported-setting macros
 `WEBCPP_BEAST_UNSUPPORTED_ERROR` and `WEBCPP_BEAST_UNSUPPORTED_IGNORE` SHALL be read in `<webcpp/beast/config.hpp>`, which every public header includes first, with `WEBCPP_BEAST_NO_EXCEPTIONS`. `ERROR` MUST be defined when neither is, and both defined MUST be an `#error`.
@@ -399,10 +411,10 @@ A b2 feature `webcpp-beast-unsupported=error|ignore` (propagated) SHALL drive th
 - **THEN** every translation unit it links is compiled with `WEBCPP_BEAST_UNSUPPORTED_IGNORE`
 
 ### Requirement: Config: the browser classes are tagged by the setting
-The browser classes SHALL live in an inline namespace named after the setting, as Asio tags its own, so that translation units that disagree name different types and fail at link, never silently.
+The browser classes SHALL live in an inline namespace named after the setting, so different settings name different types. B2 SHALL propagate one setting throughout a program. A mismatch across an externally linked interface that passes a configured stream MUST fail to link; independent functions that do not exchange such types are not guaranteed to be diagnosed by the linker.
 
 #### Scenario: Two units disagree
-- **WHEN** one translation unit is compiled under `ERROR` and another under `IGNORE` and both are linked
+- **WHEN** one translation unit defines a function taking a configured stream under `ERROR`, another calls that function under `IGNORE`, and both are linked
 - **THEN** linking fails with undefined or duplicate symbols naming the different inline namespaces
 
 ### Requirement: Config: the configuration test
@@ -438,17 +450,17 @@ The browser lane SHALL run the same programs in headless Chrome, and test what o
 
 #### Scenario: A CORS failure
 - **WHEN** the HTTP client in headless Chrome requests a server that sends no CORS headers
-- **THEN** the read completes with `webcpp::beast::error::fetch_failed`
+- **THEN** the read completes with `webcpp::beast::browser_errc::fetch_failed`
 
 ### Requirement: Testing: twins of the examples
-Each example of the guide SHALL print the same natively and in the browser, and Beast's three examples (`websocket_client_async`, `websocket_client_async_ssl`, `http_client_async`) MUST be among them, as the examples table adapts them.
+Every runnable example SHALL be compared with its native upstream reference. The three original guide clients remain initial smoke tests, but MUST NOT be the acceptance boundary: the entire pinned inventory is required. Compare exact output where the platform exposes the same representation; otherwise compare status, exposed application headers and decoded payload with explicit normalization rules, retaining raw output.
 
 #### Scenario: A twin's output
 - **WHEN** a twin runs natively and then in the browser against the same echo server
-- **THEN** the two outputs are byte for byte equal
+- **THEN** application payloads and observable outcomes match, and any framing or browser-controlled-field normalization is recorded rather than hiding a behavioural difference
 
 ### Requirement: Examples: Beast's examples, setting by setting
-For Beast 1.92's examples the twins use, the specification SHALL state what each needs under `ERROR` and under `IGNORE`. `websocket_client_async`: the decorator setting `User-Agent` fails the handshake under `ERROR` (the twin leaves it out), and runs unchanged under `IGNORE`. `websocket_client_async_ssl`: the SNI line becomes `set_server_name`; `host_name_verification`, `tlsv12_client`, `verify_peer` and `suggested(client)` are honoured; the decorator and `load_root_certificates` (added roots) fail the handshakes under `ERROR`, and the twin leaves the decorator out and calls `ctx.set_default_verify_paths()` instead; under `IGNORE` only the SNI line changes. `http_client_async`: `Host` is honoured when it is the URL's host, `User-Agent` fails the write under `ERROR` (the twin leaves it out), and `shutdown` is honoured.
+For Beast 1.92's examples the twins use, the specification SHALL state what each needs under `ERROR` and under `IGNORE`. `websocket_client_async`: the decorator setting `User-Agent` fails the handshake under `ERROR` (the twin leaves it out), and runs unchanged under `IGNORE`. `websocket_client_async_ssl`: the SNI line becomes `set_server_name`; `host_name_verification`, `verify_peer` and `suggested(client)` are honoured; a fixed `tlsv12_client` fails under `ERROR`, and the adapted twin explicitly selects the browser-owned `tls_client` policy; the decorator and `load_root_certificates` (added roots) fail the handshakes under `ERROR`, and the twin leaves the decorator out and calls `ctx.set_default_verify_paths()` instead; under `IGNORE` the SNI line changes and the report explicitly says fixed TLS-version and custom-root requests were not applied. `http_client_async`: `Host` is honoured when it is the URL's host, `User-Agent` fails the write under `ERROR` (the twin leaves it out), and `shutdown` is honoured.
 
 #### Scenario: The SSL example under ERROR
 - **WHEN** `websocket_client_async_ssl` is built on Emscripten under `ERROR` with `load_root_certificates` unchanged
@@ -460,3 +472,93 @@ The library SHALL have a documentation page with a guide, a reference, and a tab
 #### Scenario: The page builds
 - **WHEN** the documentation target is built
 - **THEN** it succeeds and its table of differences lists the settings of the Settings requirements
+
+
+### Requirement: Portability: source changes are inspectable
+The library SHALL prioritize existing Boost.Beast application source and preserve its protocol and programming model. Each example MUST retain an inspectable upstream-to-webcpp diff. An application rewritten from stackful to C++20 coroutines, synchronous to callbacks, or a system executor to an event loop MUST be reported as a separate adapted counterpart, never evidence that the original model works.
+
+#### Scenario: A rewritten coroutine is not original compatibility
+- **WHEN** a C++20 coroutine counterpart passes but the original `spawn` example cannot link Boost.Context
+- **THEN** the original remains blocked with that dependency, and the counterpart is reported separately
+
+### Requirement: Portability: all upstream example applications are accounted for
+The acceptance inventory SHALL contain every executable in Boost.Beast tag `boost-1.92.0`, commit `7c1e061f91e2ef542217b76286c314d006c0c8fc`: 53 executable targets found in `example/**/Jamfile`, cross-checked with their entry points and CMake definitions. It MUST include source paths, supporting files, fixtures and documentation snippet harnesses. Every target/profile row SHALL record compilation and execution separately, adaptations, dependency restrictions, exact commands, versions and evidence.
+
+#### Scenario: An example is omitted
+- **WHEN** the upstream manifest contains an executable absent from webcpp's coverage manifest
+- **THEN** the coverage check fails and names the omitted path and target
+
+#### Scenario: A compile-only or fallback program
+- **WHEN** an example links but is never run, or a feature guard selects a fallback main that performs no exchange
+- **THEN** it is not reported as a passed application or a working browser port
+
+### Requirement: Portability: target and variant matrix
+Documentation and test reports SHALL enumerate native, WASIp2, WASIp3 and Emscripten, with each applicable threading and exception setting, and JSPI/Asyncify separately for Emscripten. Every feature and example row MUST distinguish planned, passed, failed, blocked and platform-unavailable results. Unavailable or unimplemented combinations MUST retain their reasons and MUST NOT silently disappear from totals. Cooperative threads MUST NOT be described as CPU-parallel threads.
+
+#### Scenario: WASIp3 cooperative exceptions are requested
+- **WHEN** a build selects WASIp3 cooperative threads and exceptions with SDK 34's tested sysroot lacking its exception runtime
+- **THEN** configuration fails with that specific limitation and the row remains visible in the report
+
+#### Scenario: WASIp2 is not yet implemented
+- **WHEN** the current Asio dependency lacks a WASIp2 backend
+- **THEN** WASIp2 remains a required blocked workstream with linked prerequisite tasks, rather than being removed from the specification
+
+### Requirement: WASI: real transport and shared dependencies
+WASIp2 and WASIp3 SHALL implement TCP client/server HTTP and WebSocket examples over real sockets, with host-granted capabilities. Network-free Beast types and algorithms MUST be reused. Common reactor, resolver and socket fixes SHALL belong to Asio or wasi-libc; common TLS support SHALL use the shared OpenSSL and trust targets. Beast MUST NOT duplicate those backends. WASIp2 requires independent build/runtime evidence; WASIp3 results MUST NOT be reused as proof of WASIp2 support.
+
+#### Scenario: A WASI server serves a browser client
+- **WHEN** a WASI Beast server is given loopback listen permission and the browser client connects
+- **THEN** a real HTTP or WebSocket exchange completes, and the report identifies the server as WASI and the client as Emscripten
+
+#### Scenario: A permission is missing
+- **WHEN** the host denies a socket or filesystem capability needed by an example
+- **THEN** the application reports the error without a hang, and a permission-denied result is distinct from a successful exchange
+
+### Requirement: WASI: resolver compatibility is not inferred
+The single-thread WASIp3 async resolver's current `operation_not_supported` behaviour SHALL be tested and documented. Examples that use a pre-resolved endpoint or synchronous resolution instead MUST declare that adaptation while retaining the original hostname for HTTP Host, SNI and certificate verification. Original asynchronous DNS compatibility MUST remain blocked until the backend provides it.
+
+#### Scenario: An address is supplied to bypass DNS
+- **WHEN** a single-thread WASIp3 HTTPS example uses a fixture's numeric endpoint but the application hostname is `localhost`
+- **THEN** TLS still verifies `localhost`, the report labels the resolver adaptation, and it does not claim that async DNS passed
+
+### Requirement: Examples: synchronous browser clients yield to the browser
+Synchronous client examples SHALL have a suspending transport facade that preserves their synchronous call sequence on JSPI and Asyncify. Waiting MUST allow browser events to run without busy-waiting. The facade MUST NOT recursively invoke `io_context::run` from a running handler; unsupported reentrant entry MUST be diagnosed. Until its probes and applications pass, synchronous browser compatibility SHALL remain blocked.
+
+#### Scenario: A delayed synchronous read
+- **WHEN** a synchronous client runs from the application's outer entry point and waits for a delayed response
+- **THEN** a browser heartbeat runs during the wait, the original call resumes with the expected bytes, and the test passes independently on JSPI and Asyncify
+
+### Requirement: Examples: execution dependencies are explicit
+Stackful coroutine examples SHALL test Boost.Coroutine/Context, including unwinding and exception restrictions, separately from C++20 awaitables and stackless state-machine coroutines. Examples using a system executor, threads, signal handlers or Unix-domain sockets SHALL name those dependencies and test the available profiles. The ignore policy MUST NOT mask a missing execution backend or transport.
+
+#### Scenario: Asyncify is available but Context is not
+- **WHEN** Asyncify builds a callback example but the stackful example has no usable Boost.Context backend
+- **THEN** the stackful example remains blocked and the report names the missing backend
+
+### Requirement: Examples: browser server limitations are explicit
+Browser APIs SHALL NOT be represented as TCP listeners, Unix-domain sockets or arbitrary raw byte sockets. Server and local-socket examples MUST remain in the inventory with the missing facility and a diagnostic test. Their native/WASI versions and browser-facing client counterparts SHALL be tested where supported, without claiming the original server executes inside the browser.
+
+#### Scenario: The chat application is used from a browser
+- **WHEN** its server runs in WASI and two browser clients exchange messages
+- **THEN** the application test records WASI server and browser client success, while browser server execution remains unavailable
+
+### Requirement: Testing: bounded deterministic application exchanges
+Runnable examples SHALL execute real exchanges against controlled local peers with readiness checks, deadlines, deterministic fixture data and cleanup. Tests MUST cover successful payloads, TLS verification and hostname failures, timeout, cancellation during transfer, peer closure and shutdown errors where applicable. The crawler MUST use a bounded local corpus, not public-internet crawling. Browser success requires an actual browser run, not Node alone.
+
+#### Scenario: A peer never replies
+- **WHEN** a fixture deliberately withholds a response
+- **THEN** the test verifies the expected timeout or cancellation, stops within its deadline, and leaves no server or browser process running
+
+### Requirement: Testing: security settings are not weakened for compatibility
+TLS examples SHALL use verified peers and explicit trust configuration. Native and WASI SHALL use the shared source-built TLS support with embedded or replacement CAs; browsers SHALL use their own trust store. Adding a test CA MUST NOT disable verification globally. The test report MUST distinguish a genuine trust path from any test-environment certificate exception.
+
+#### Scenario: The peer certificate names another host
+- **WHEN** the fixture presents a trusted certificate for the wrong application hostname
+- **THEN** the verified client refuses it on every supported TLS profile
+
+### Requirement: Documentation: portable programs and reproducible evidence
+The documentation SHALL use Diataxis, AsciiDoc and MrDocs, with tutorials, task guides, API reference and explanations. It MUST publish both feature and example matrices, exact compile and runtime commands, source adaptations, capability grants and expected output from the tested examples. Blocked rows MUST remain visible until resolved or the owner explicitly changes scope; a full-compatibility claim MUST NOT be made while implementation blockers remain.
+
+#### Scenario: A reader chooses an example
+- **WHEN** the reader selects a target, threading mode, exception mode and suspension variant
+- **THEN** the documentation shows its supported commands and evidence, or a precise unresolved dependency or platform limitation

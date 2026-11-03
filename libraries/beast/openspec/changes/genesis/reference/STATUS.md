@@ -1,4 +1,40 @@
-# webcpp::beast: where the work stands, and how to resume
+# webcpp::beast: current draft and how to resume
+
+Updated 2026-11-02. The owner clarified the primary goal: existing Boost.Beast applications
+compiled to WASIp2, WASIp3 and Emscripten, with minimal changes. All upstream example
+applications are the acceptance corpus; native Boost.Beast is the behavioural reference.
+
+**Reference code: none. No Beast implementation, build or runtime success is claimed.**
+`spec.md` below this directory is the preserved 2026-10-10 baseline. Current intent and
+requirements are `../proposal.md`, `../design.md`, `../specs/beast/spec.md` and `../tasks.md`.
+They supersede the baseline's WASI exclusion and three-example acceptance boundary.
+
+## Evidence of this revision
+
+- Read the upstream Boost 1.92 source at Beast commit
+  `7c1e061f91e2ef542217b76286c314d006c0c8fc`.
+- Counted 53 executable declarations in `example/**/Jamfile`, matched to 53 entry-point
+  sources, including the doc SSL pair and legacy echo-op. Recorded every executable in
+  `../design.md`, with support files and dependency constraints.
+- Read the integrated Asio capabilities at Asio `3611a6e`, superproject `2ba5116`:
+  browser and WASIp3 support exists; Asio WASIp2 does not. WASIp3 single async DNS is
+  unsupported; cooperative threads use the tested SDK's EH-off runtime.
+- The Beast examples have not been compiled or executed in this revision. Asio results
+  are prerequisite evidence only. Candidate classifications are not passing tests.
+
+## Pending work
+
+1. Review this expanded draft and write the implementation plan and reference code.
+2. Implement/validate Asio and shared TLS prerequisites for WASIp2 in their owning components.
+3. Validate upstream Beast over the existing WASIp3 Asio/TLS integration.
+4. Probe stackful Context support and synchronous browser suspension before making promises.
+5. Implement the browser WebSocket and HTTP transports, then all-example application tests.
+6. Publish target/variant feature and example matrices, with blockers retained.
+
+No new implementation task is checked off. The proposal remains `draft`, with no release.
+The following dated record is retained as history, not the current dependency status.
+
+## Historical intake record, 2026-10-13
 
 Written 2026-10-13, when this proposal took beast in as a specified library with nothing built.
 `spec.md` is the specification; `../tasks.md` is the checklist; `../design.md` the decisions.
