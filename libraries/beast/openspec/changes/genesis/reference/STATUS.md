@@ -75,10 +75,12 @@ The final committed follow-up also distinguishes normal WebSocket closure in exc
 sync/SSL server counterparts: clean closure is recorded and the server continues accepting,
 while genuine read/accept/write failures retain the explicit failure path. The targeted
 normal-close and marker-evidence regressions passed. The complete final WASIp3 application
-rerun passed all 120 cases with an explicit successful exit. The final 247-case native
-application rerun is still in progress at this closeout; it is not counted as a completed
-final-candidate pass. Independent review of the frozen candidate reported no remaining
-findings, but does not replace the pending runtime and CI results.
+rerun passed all 120 cases with an explicit successful exit. The final native application
+rerun passed all 247 cases with exit 0: 53 upstream oracle, 53 threaded port, 44 threaded
+exception-off, 53 single-thread exception-on and 44 single-thread exception-off executions.
+All eight exception-off synchronous WebSocket server cases observed normal closure inside
+the engine. Independent review of the frozen candidate reported no remaining findings;
+complete remote CI is the remaining integration gate.
 
 
 ## How to resume current work
