@@ -8,7 +8,7 @@
 
 #include <webcpp/asio/config.hpp>
 #if defined(__MRDOCS__) || defined(WEBCPP_ASIO_REFERENCE)
-#include <boost/asio/io_context.hpp>
+#include <boost/asio/io_context.hpp>  // lint-world: names the readiness executor
 #include <boost/system/error_code.hpp>
 #include <cstddef>
 
@@ -103,12 +103,12 @@ void beast_close_socket(stdio_stream& stream);
 #else
 #include <wasi/wasip2.h>
 #include <algorithm>
-#include <boost/asio/append.hpp>
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/compose.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/posix/stream_descriptor.hpp>
-#include <boost/asio/post.hpp>
+#include <boost/asio/append.hpp>      // lint-world: preserve completion associations
+#include <boost/asio/buffer.hpp>      // lint-world: borrow the caller's I/O buffers
+#include <boost/asio/compose.hpp>     // lint-world: compose pollable I/O and preserve associations
+#include <boost/asio/io_context.hpp>  // lint-world: caller-owned readiness context
+#include <boost/asio/posix/stream_descriptor.hpp>  // lint-world: wait on CLI pollables
+#include <boost/asio/post.hpp>                     // lint-world: defer initiation onto the executor
 #include <boost/system/system_error.hpp>
 #include <boost/throw_exception.hpp>
 #include <cstring>
@@ -379,6 +379,7 @@ public:
     [[nodiscard]] executor_type get_executor() const noexcept { return state_->executor; }
 
     /** Returns this stream, which is its own lowest layer. */
+    // lint-std: boost::asio::posix::basic_descriptor::lowest_layer returns itself
     lowest_layer_type& lowest_layer() noexcept { return *this; }
 
     /** Cancels outstanding operations. Subsequent operations remain usable. */

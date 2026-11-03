@@ -36,7 +36,8 @@ def base_cell(row, profile):
         reason = ("Asio P2 core is available; guest-socket application adapters still require "
                   "P2 integration and validation.")
         if row["tls"]:
-            reason = "The Asio P2 target does not yet provide guest OpenSSL."
+            reason = ("Asio P2 provides guest OpenSSL; Beast guest-TLS applications still "
+                      "require P2 integration and validation.")
         elif row["stackful"]:
             reason = "Boost.Context has no verified WASI backend."
     if "socket" in profile and row["local_socket"]:
@@ -425,8 +426,8 @@ def write_document(matrix, destination):
               "* Exception-off counterparts retain error-code paths and successful operations; ",
               "formerly throwing paths report failure and abort. Stackful Context remains "
               "blocked.\n",
-              "* Asio P2 core now provides sockets, but the guest-socket application corpus "
-              "still needs P2 integration and validation; guest TLS is not enabled. "
+              "* Asio P2 provides sockets and guest TLS, but the Beast guest-socket and "
+              "guest-TLS application corpus still needs P2 integration and validation. "
               "Browser listeners and WASI Unix-domain socket addressing remain unavailable. ",
               "WASIp3 cooperative EH-on lacks the toolchain exception runtime.\n\n",
               "==== Reproduction\n\n[source,bash]\n----\n",

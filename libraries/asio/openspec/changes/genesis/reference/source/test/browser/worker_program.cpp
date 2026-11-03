@@ -105,9 +105,9 @@ void* run_worker(void* pointer) {
         ++result.callbacks;
 #ifdef WEBCPP_TEST_WORKER_AFFINITY
         // An invalid main-thread runner is rejected before reading the worker's JS handles.
-        if (io.run() != 0) {
+        if (io.run() != 0) {  // lint-run: reject main-thread entry before suspension
             ++result.errors;
-        }  // lint-run: negative affinity witness
+        }
 #endif
         return_to_worker();
     }));

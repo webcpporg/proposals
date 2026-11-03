@@ -16,7 +16,7 @@
 
 #include <emscripten/proxying.h>
 #include <emscripten/threading.h>
-#include <boost/asio/detail/throw_exception.hpp>
+#include <boost/asio/detail/throw_exception.hpp>  // lint-world: Asio's exception policy
 #include <boost/asio/execution_context.hpp>  // lint-world: owns the main-thread executor service
 #include <boost/assert.hpp>
 #include <boost/intrusive/list.hpp>

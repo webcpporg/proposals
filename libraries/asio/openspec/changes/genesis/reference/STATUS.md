@@ -2,7 +2,7 @@
 
 ## Current committed snapshot
 
-- Asio: `9455076a56ece86204229c455fe64b7ed5fbf530`.
+- Asio: `984c7054c4cecd2d7fb7beeae2ddaa83deaea299`.
 - Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
 - Superproject evidence/review record: `ad092876333dac2cd310cff58a7bc8fe64636bdf`.
 - `reference/source/`: 206 tracked files, exported from the Asio commit above.
@@ -10,16 +10,31 @@
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
   sequences, native P3 async DNS and central compile-time capability diagnostics.
   P2 multiple threads and P3 cooperative exceptions remain SDK restrictions.
-- Publication gates: the current local candidate needs fresh remote CI and integration;
+- Publication gates: the published candidate needs green remote CI and integration;
   the earlier run `41597577370` passed for root `55a72c0` only.
+
+## Publication verification, 2026-11-03
+
+The owner authorized push and integration after green CI. Source branches are now
+published. Root run 41675267321 stopped during checkout because a Trystero gitlink
+had not yet been pushed; the missing Trystero and WASI commits are now published.
+Asio run 41675251165 uses the old superproject main and fails to find the new P2
+build project. Its checks must be rerun after the tested parent machinery is integrated.
+
+The full documentation build passed. Full lint identified missing preparation of
+program-specific OpenSSL headers, probe style findings and three narrow Asio
+annotation omissions. The current Asio snapshot records the interface and executor
+justifications without changing behavior. Final root lint fixes and current-head
+CI remain gates; no formal approval or merge is claimed yet.
 
 ## Capability completion, 2026-11-03
 
 The owner requested completing WebCPP-owned gaps while documenting SDK/environment
 restrictions and diagnosing unsupported compile-visible combinations. The committed
 candidate above implements those extensions. Its exact 206-file reference export
-was verified against every Git blob and executable mode. No remote CI, push, merge
-or release ran for this increment. The final whole-candidate review and its scoped
+was verified against every Git blob and executable mode. The original completion
+checkpoint preceded publication; the current publication state is recorded above.
+The final whole-candidate review and its scoped
 fix re-review are complete; every finding is addressed with no new breakage.
 
 Final local Release runs passed 105 native, 66 P2, 117 P3 and 233 Emscripten B2 test

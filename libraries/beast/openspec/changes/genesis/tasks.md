@@ -131,6 +131,7 @@ remain separate gates.
   There is no formal acceptance decision.
 - Former tasks 0A.3 and 0A.4 were removed by the earlier owner scope decision. The
   subsequent P2 approval provides Asio core and supplied-stream WebSocket support.
-  Raw-socket Beast application integration remains blocked; P2 guest TLS is unsupported.
+  Asio now provides P2 guest TLS and Cobalt too. Raw-socket and guest-TLS Beast
+  application integration remains blocked pending its own implementation and validation.
 - 8.3 remains pending until current-candidate CI and the separately authorized release
   steps have happened. Local checks and a dispatched workflow do not complete it.

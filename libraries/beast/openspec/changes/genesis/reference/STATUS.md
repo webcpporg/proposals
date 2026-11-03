@@ -7,17 +7,38 @@ integration commits. The original 53-application inventory remains in scope.
 ## Current committed snapshot
 
 - Repository: [webcpporg/beast](https://github.com/webcpporg/beast).
-- Local commit: `ab95e844d2eee707eedd3ac708e3a14c9ff8b47d`.
+- Published commit: `7d41654d750061ecf4b1bac873cd66af28cf8a09`.
 - `source/` is an exact `git archive` of that commit: 774 tracked files, with
   every Git blob identity and executable mode checked against the commit.
-- Current local superproject candidate: `15e2f44d2bdff0602b8e761a5a9c89b98c3a5d97`.
-- [Superproject pull request 7](https://github.com/webcpporg/webcpp/pull/7) still
-  carries the earlier published candidate. New local commits need push and fresh CI.
+- Published superproject candidate: `ad092876333dac2cd310cff58a7bc8fe64636bdf`.
+- [Superproject pull request 7](https://github.com/webcpporg/webcpp/pull/7) carries
+  the completed Asio capabilities. The Beast documentation correction and final
+  lint fixes are being verified for a follow-up candidate.
 - Full CI [41597577370](https://github.com/webcpporg/webcpp/actions/runs/41597577370)
   passed for root `55a72c056de1e6522e1fc6dbc3ee2b9ef3715327` only. It does not
   establish a green result for the current local tree.
 
-## WASIp2 follow-up verified and committed, 2026-11-03
+## Publication checks, 2026-11-03
+
+Asio commit `9455076` supplies WASIp2 guest OpenSSL and Cobalt, along with the
+completed WASIp3 asynchronous resolver. Those Asio results do not establish
+Beast's separate P2 guest-socket application corpus or remove the existing
+WASIp3 fixture-resolver adaptations. The generated matrix preserves 571 passed,
+216 blocked and 432 platform-unavailable cells. The correction passed ten
+inventory tests and a fresh Beast MrDocs/rendered-documentation build.
+
+The owner authorized publishing and integration after green CI. The first new
+root run, [41675267321](https://github.com/webcpporg/webcpp/actions/runs/41675267321),
+failed during checkout because a pinned Trystero commit had not been pushed.
+The missing Trystero and WASI dependency commits are now published. Asio's
+library CI still selects the superproject's old main, which lacks the new P2
+build project. Current-candidate root CI and the post-integration library CI
+remain required. These failures are not passing validation evidence.
+
+## Earlier WASIp2 follow-up, 2026-11-03
+
+The following subsection records the earlier core-only increment. Its TLS,
+Cobalt and publication limitations are superseded by the current snapshot above.
 
 The final documentation-only root commit is `15e2f44d2bdff0602b8e761a5a9c89b98c3a5d97`; implementation
 remains root `e80ffab`, Asio `dad1aef` and Beast `ab95e84`. A later fresh Emscripten
@@ -148,7 +169,8 @@ Each adaptation and the host-blocking boundary remain explicit.
   as `proposed`. Acceptance remains a separate decision; `decided` and `release` are null.
 - Former **0A.3 and 0A.4** were removed by an earlier approved scope decision. The
   subsequent P2 approval adds Asio core and supplied WebSocket support. Raw-socket
-  Beast applications are blocked work; P2 guest TLS remains unsupported.
+  Beast guest-socket and guest-TLS applications remain blocked integration work,
+  even though Asio now supplies P2 guest OpenSSL and Cobalt.
 - **8.3:** complete final-candidate CI and release steps remain pending. Local checks
   and published source do not close the gate. No tag or release publication is authorized.
 

@@ -248,7 +248,8 @@ Retain upstream notices. Common certificate headers are fixtures, not a producti
   explicit example adaptation. The program's URL hostname is still used for Host, SNI and
   certificate identity. Do not claim this establishes asynchronous DNS compatibility.
 - Guest-owned TLS in native/WASIp3 socket backends uses existing OpenSSL and CA targets.
-  WASIp2 guest-socket applications remain pending integration; guest TLS is not enabled. WASI host HTTP and browser services use the
+  Asio also provides WASIp2 guest TLS, but Beast's P2 guest-socket and guest-TLS
+  applications remain pending integration and validation. WASI host HTTP and browser services use the
   host's TLS and trust policy where provided; guest CAs do not automatically affect it.
   Never disable verification or silently switch backends to make an example pass.
 - Browser synchronous client methods need a suspending facade over the asynchronous transport.
@@ -534,6 +535,8 @@ operations via Asio pollables and preserve host channel ownership. Their client
 and server exchanges pass with exceptions on/off, including 128 KiB binary
 frames, ping/pong and close. Other supplied counterparts remain synchronous.
 The new Asio capability does not establish the separate Beast guest-socket
-application corpus or P2 guest OpenSSL. Its cells are blocked integration work,
+application corpus. Asio's later capability completion also provides P2 guest
+OpenSSL and Cobalt; Beast's P2 guest-socket and guest-TLS application cells remain
+blocked integration work,
 not an inherent WASI platform impossibility. The generated matrix now has 571
 measured passing cells, 216 blocked cells and 432 platform-unavailable cells.

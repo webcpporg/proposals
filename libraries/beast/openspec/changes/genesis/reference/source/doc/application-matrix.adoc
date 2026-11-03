@@ -281,7 +281,7 @@ A passing counterpart preserves the measured application operations. It does not
 * Supplied streams replace Unix-domain addressing with caller-provided stdio. P2 WebSocket counterparts retain asynchronous partial operations through Asio pollables; the other supplied counterparts use synchronous partial operations.
 * Browser fetch/WebSocket own DNS, framing and TLS. Guest CA lists, protocol pinning and handshake User-Agent are removed explicitly. HTTPS fixtures install an ephemeral CA in an isolated Chrome profile. A fresh untrusted profile rejects the certificate; the trusted profile rejects its incorrect IP hostname. No certificate-error bypass or system trust-store modification is used.
 * Exception-off counterparts retain error-code paths and successful operations; formerly throwing paths report failure and abort. Stackful Context remains blocked.
-* Asio P2 core now provides sockets, but the guest-socket application corpus still needs P2 integration and validation; guest TLS is not enabled. Browser listeners and WASI Unix-domain socket addressing remain unavailable. WASIp3 cooperative EH-on lacks the toolchain exception runtime.
+* Asio P2 provides sockets and guest TLS, but the Beast guest-socket and guest-TLS application corpus still needs P2 integration and validation. Browser listeners and WASI Unix-domain socket addressing remain unavailable. WASIp3 cooperative EH-on lacks the toolchain exception runtime.
 
 ==== Reproduction
 
