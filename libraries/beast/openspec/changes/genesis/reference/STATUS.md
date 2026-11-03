@@ -7,19 +7,27 @@ The original 53-application inventory and all target requirements remain in scop
 ## Current committed snapshot
 
 - Repository: [webcpporg/beast](https://github.com/webcpporg/beast).
-- Commit: [`4da3e791c30a5ffb2598009828ab0a2b59e8d58c`](https://github.com/webcpporg/beast/commit/4da3e791c30a5ffb2598009828ab0a2b59e8d58c).
-- `source/` is an exact `git archive` of that commit: 772 tracked files, with
+- Commit: [`adeb202693d927d8865e2102aeee97c4911ff40b`](https://github.com/webcpporg/beast/commit/adeb202693d927d8865e2102aeee97c4911ff40b).
+- `source/` is an exact `git archive` of that commit: 773 tracked files, with
   every file's Git blob identity and executable mode checked against the commit.
   No uncommitted implementation files or build artifacts are included.
 - The superproject candidate registers the published library and its shared prerequisites
   in [pull request 7](https://github.com/webcpporg/webcpp/pull/7).
-- Final candidate CI [41588828531](https://github.com/webcpporg/webcpp/actions/runs/41588828531)
-  targets superproject commit `a8064a1c3907bc16a70930f12a1f92f9fef27632`;
+- Final candidate CI [41590629467](https://github.com/webcpporg/webcpp/actions/runs/41590629467)
+  targets superproject commit `adb5fa32658b73f45ea44c25b3af55bb0b19de60`;
   its result is pending.
   Earlier candidate runs [41587540931](https://github.com/webcpporg/webcpp/actions/runs/41587540931)
   and [41587845453](https://github.com/webcpporg/webcpp/actions/runs/41587845453)
   were cancelled because they preceded later reviewed corrections. They do not establish
   a green final candidate.
+- Run [41588828531](https://github.com/webcpporg/webcpp/actions/runs/41588828531)
+  exposed a response-before-observation race in the HTTP test peer. The fix records
+  each complete request before transmitting its response. A deterministic real-TCP
+  regression failed for GET, HEAD and POST with the old ordering and passes with the
+  correction. The follow-up passed 56 P2/P3 host-client executions across both exception
+  modes and four native protocol checks. The new CI also explicitly expands browser
+  contracts across both exception modes and ERROR/IGNORE policies: 56 test executions
+  plus eight tutorial executions. All 39 CI planner tests passed.
 
 The reference snapshot will be refreshed if further reviewed implementation commits land.
 This status does not turn publication of source into formal proposal acceptance or release.

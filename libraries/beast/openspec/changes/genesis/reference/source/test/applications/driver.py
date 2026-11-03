@@ -139,13 +139,14 @@ class Peer(socketserver.BaseRequestHandler):
                 response = body if body else PAYLOAD
                 media = "application/json" if headers.get("content-type") == "application/json" \
                     else "text/plain"
+                # Publish the complete request before the client can consume its response.
+                cast(TcpPeer, self.server).exchanges.append({"method": method, "target": target,
+                                                            "body": body.decode("utf8")})
                 peer.sendall(("HTTP/1.1 200 OK\r\nContent-Type: " + media +
                               "\r\nContent-Length: " + str(len(response)) +
                               "\r\nX-Beast-Fixture: local\r\n\r\n").encode())
                 if method != "HEAD":
                     peer.sendall(response)
-                cast(TcpPeer, self.server).exchanges.append({"method": method, "target": target,
-                                                            "body": body.decode("utf8")})
                 if headers.get("connection", "").lower() == "close":
                     return
         except (EOFError, ConnectionError, TimeoutError, ssl.SSLError):
