@@ -22,9 +22,10 @@ own asynchronous model (promises, events) should reach C++ as ordinary Asio oper
   behavior. Emscripten suspends Boost's own `io_context` into the browser event loop.
   A checked Boost overlay provides timers and TCP/UDP on WASIp2 and WASIp3.
   WASIp2 adds pollable-driven forward async DNS and supplied CLI streams, with a
-  pinned private wasi-libc descriptor bridge. It is single-threaded and rejects
-  guest TLS/Cobalt explicitly. WASIp3 retains optional guest TLS/Cobalt and its
-  validated cooperative thread profile. Unsupported combinations are refused by name.
+  pinned private wasi-libc descriptor bridge. It is single-threaded and supports
+  the shared source-built OpenSSL, embedded/replacement CAs and Cobalt/SSL with
+  exceptions on or off. WASIp3 also supports these facilities and its validated
+  cooperative thread profile. Unsupported combinations are refused by name.
 - `webcpp::asio::io_context`, derived from `boost::asio::io_context` across targets, with
   `io_context_options{max_handlers_per_turn}` (100 by default, configurable in config.hpp or by compiler define), a reactor made at construction
   and a run family composed of `poll_one` and `run_one` that yields to the browser through a

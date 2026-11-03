@@ -11,12 +11,13 @@
 import assert from 'node:assert/strict'
 import {spawn} from 'node:child_process'
 import {once} from 'node:events'
-import {existsSync, mkdtempSync, readFileSync, readdirSync, rmSync} from 'node:fs'
+import {mkdtempSync, readFileSync, rmSync} from 'node:fs'
 import {createServer} from 'node:http'
-import {homedir, tmpdir} from 'node:os'
+import {tmpdir} from 'node:os'
 import {dirname, extname, join, resolve, sep} from 'node:path'
 import {setTimeout as delay} from 'node:timers/promises'
 import {fileURLToPath} from 'node:url'
+import {findChrome, waitForChrome} from './chrome_startup.mjs'
 
 const args = process.argv.slice(2)
 assert.equal(args.length, 3, 'usage: run.mjs --mode <idle|render|loader|workers> <program>')
@@ -26,21 +27,6 @@ assert.ok(['idle', 'render', 'loader', 'workers'].includes(mode), `unknown mode 
 const workerVariant = args[2].includes('asyncify') ? 'asyncify' : 'jspi'
 const here = dirname(fileURLToPath(import.meta.url))
 const build = dirname(resolve(args[2]))
-const findChrome = () => {
-    if (process.env.CHROME) return process.env.CHROME
-    assert.equal(process.platform, 'darwin', 'set CHROME to the Chrome executable')
-    const cache = join(homedir(), 'Library/Caches/ms-playwright')
-    const shells = existsSync(cache) ? readdirSync(cache)
-        .filter(name => /^chromium_headless_shell-\d+$/.test(name))
-        .sort((a, b) => Number(b.split('-').at(-1)) - Number(a.split('-').at(-1))) : []
-    for (const shell of shells) {
-        for (const arch of ['arm64', 'x64']) {
-            const path = join(cache, shell, `chrome-headless-shell-mac-${arch}`, 'chrome-headless-shell')
-            if (existsSync(path)) return path
-        }
-    }
-    throw new Error('no cached headless Chrome found; set CHROME')
-}
 
 const left = {chrome: null, profile: null, server: null, sockets: new Set()}
 const exited = child => child.exitCode !== null || child.signalCode !== null
@@ -101,27 +87,9 @@ const startChrome = async () => {
         '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', 'about:blank'
     ], {stdio: ['ignore', 'ignore', 'pipe']})
     left.chrome = chrome
-    let error
-    let said = ''
-    chrome.on('error', value => { error = value })
-    chrome.stderr.on('data', data => { said = (said + data).slice(-2000) })
-    const deadline = Date.now() + 10000
-    while (Date.now() < deadline) {
-        if (error) throw error
-        if (exited(chrome)) throw new Error(`Chrome exited during startup: ${said}`)
-        const active = join(left.profile, 'DevToolsActivePort')
-        const port = existsSync(active) ? readFileSync(active, 'utf8').split('\n')[0] : ''
-        if (/^\d+$/.test(port)) {
-            const devtools = `http://127.0.0.1:${port}`
-            try {
-                const version = await (await fetch(`${devtools}/json/version`)).json()
-                console.log(`browser ${mode}: ${version.Browser}`)
-                return devtools
-            } catch {}
-        }
-        await delay(50)
-    }
-    throw new Error(`Chrome startup timed out: ${said}`)
+    const {devtools, version} = await waitForChrome(chrome, left.profile)
+    console.log(`browser ${mode}: ${version.Browser}`)
+    return devtools
 }
 
 // Installed before any program code; only page calls are recorded, not driver polling.

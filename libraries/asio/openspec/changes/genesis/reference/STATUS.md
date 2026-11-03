@@ -2,10 +2,10 @@
 
 ## Current committed snapshot
 
-- Asio: `984c7054c4cecd2d7fb7beeae2ddaa83deaea299`.
+- Asio: `059f64c4c6aa316e351b10aca1f31ca810b446e6`.
 - Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
-- Superproject evidence/review record: `ad092876333dac2cd310cff58a7bc8fe64636bdf`.
-- `reference/source/`: 206 tracked files, exported from the Asio commit above.
+- Superproject publication candidate: `d7a6614516facca397a60e8c3192c3328ebcfc46`.
+- `reference/source/`: 208 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, explicit browser pthread execution and
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
   sequences, native P3 async DNS and central compile-time capability diagnostics.
@@ -21,17 +21,33 @@ had not yet been pushed; the missing Trystero and WASI commits are now published
 Asio run 41675251165 uses the old superproject main and fails to find the new P2
 build project. Its checks must be rerun after the tested parent machinery is integrated.
 
-The full documentation build passed. Full lint identified missing preparation of
-program-specific OpenSSL headers, probe style findings and three narrow Asio
-annotation omissions. The current Asio snapshot records the interface and executor
-justifications without changing behavior. Final root lint fixes and current-head
-CI remain gates; no formal approval or merge is claimed yet.
+The full documentation build passed locally and in root CI at `3b2bf44`.
+Final local lint passed all 803 translation units and every text/type/style rule.
+Its compilation database contains 1,451 commands. Program-specific OpenSSL header
+preparation now uses a dedicated B2 target; clean, repeated and stale/missing-header
+regressions pass without compiling or executing consumers. The own-lane release
+default, relocated build tree and both exception modes are covered.
+
+Root CI 41680879413 was canceled after the incremental preparation defect was
+found locally. Its report also identified four Chrome startup timeouts, despite
+the browser-workers job itself returning success. The launcher now bounds startup
+at 30 seconds, bounds each discovery request, stops on process errors and reports
+the last discovery stage. A real Chrome delayed by 11 seconds fails the old limit
+and passes the new one. Pinned Linux Chrome 155 passed 18 worker/move fixtures,
+loader/idle/render with both exception profiles, and the startup regressions.
+The public B2 startup target passed both exception profiles. The cause of Chrome's
+historical startup delay remains unknown; D-Bus/fontconfig warnings also occur
+in successful runs and are not diagnosed as the cause.
+
+Independent reviews accepted both fixes. The current source and superproject
+commits are published for root CI run 41686583077, which tests `d7a6614`. Remote green results and main
+integration remain gates; no formal approval or merge is claimed yet.
 
 ## Capability completion, 2026-11-03
 
 The owner requested completing WebCPP-owned gaps while documenting SDK/environment
 restrictions and diagnosing unsupported compile-visible combinations. The committed
-candidate above implements those extensions. Its exact 206-file reference export
+candidate above implements those extensions. Its exact 208-file reference export
 was verified against every Git blob and executable mode. The original completion
 checkpoint preceded publication; the current publication state is recorded above.
 The final whole-candidate review and its scoped
@@ -62,8 +78,10 @@ allocation cleanup. The raw Asyncify pthread-return probe remains a documented S
 counterexample, not a passing test. The default browser profile remains single
 threaded and the per-turn handler budget remains 100.
 
-Focused clang-tidy, owned Python/text/format checks, overlay/source-build tests,
-MrDocs and rendered guide checks passed. This is not a full repository lint claim.
+At the earlier local completion checkpoint, focused clang-tidy, owned
+Python/text/format checks, overlay/source-build tests, MrDocs and rendered guide
+checks passed. That checkpoint did not claim full repository lint; the publication
+verification above records its later successful complete run.
 Complete lint database generation passed with 1,451 commands and materialized
 headers; it is not a full tidy run. The local release check also passed.
 Visual screenshot review remains unverified after blank local screenshots and a

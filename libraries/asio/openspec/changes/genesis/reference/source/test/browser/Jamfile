@@ -38,8 +38,12 @@ webcpp.drive browser_render : .//render_program
 webcpp.drive browser_loader : .//page_program
   : <dependency>page_program.variants.json <webcpp-drive-timeout>120
   : run.mjs : --mode loader ;
+webcpp.drive browser_startup : .//page_program
+  : <dependency>page_program.variants.json <webcpp-drive-timeout>120
+  : startup_test.mjs ;
 
-webcpp.lane browser : loader_node browser_idle browser_render browser_loader : emscripten ;
+webcpp.lane browser : loader_node browser_idle browser_render browser_loader
+  browser_startup : emscripten ;
 
 # The threaded profile retains the selected suspension mechanism. A pool starts
 # browser workers before a handler needs them. Applications choose its size.

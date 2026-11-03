@@ -217,17 +217,17 @@ All of them are of 2026-10-11, as `R`.
 
 ## 22. The rulebook, the index and the page whole (plan: Task 22)
 
-- [ ] 22.1 Reconcile CODING-GUIDELINES chapters 15/16/19 and AGENTS with the approved WASIp3/TLS scope (supersedes the old chapter 13 references)
-- [ ] 22.2 Write the rows of the table of libraries (Step 2)
-- [ ] 22.3 Keep the owner-approved Diataxis page order, generated MrDocs reference and final changelog appendix (supersedes the older overview-first order)
-- [ ] 22.4 Check the text for the banned characters (Step 4)
-- [ ] 22.5 Commit both repositories (Step 5)
+- [x] 22.1 Reconcile CODING-GUIDELINES chapters 15/16/19 and AGENTS with the approved WASIp3/TLS scope (supersedes the old chapter 13 references)
+- [x] 22.2 Write the rows of the table of libraries (Step 2)
+- [x] 22.3 Keep the owner-approved Diataxis page order, generated MrDocs reference and final changelog appendix (supersedes the older overview-first order)
+- [x] 22.4 Check the text for the banned characters (Step 4)
+- [x] 22.5 Commit both repositories (Step 5)
 
 ## 23. Green, review and the gates (plan: Task 23)
 
 - [ ] 23.1 Run the definition of green, each lane from scratch (plan: Task 23, Step 1)
-- [ ] 23.2 Dispatch the whole-branch review (Step 2)
-- [ ] 23.3 Fix what it finds, each with a failing test first (Step 3)
+- [x] 23.2 Dispatch the whole-branch review (Step 2)
+- [x] 23.3 Fix what it finds, each with a failing test first (Step 3)
 - [x] 23.4 Record the owner's five approvals of 2026-10-11, already present in reference/plan.md; later amendments supersede only the explicitly changed departures
 - [x] 23.5 Gate G1: `webcpporg/asio` was created with owner authorization on 2026-11-03 (UTC)
 - [x] 23.6 Gate G2: the owner-authorized submodule integration is recorded by superproject commit `2ba5116`
