@@ -15,6 +15,12 @@ The default turn contains at most 100 handlers, configurable with
 interrupted, and a yield offers the browser an opportunity to run rather
 than promising a timer deadline or a rendered frame.
 
+The Cobalt target supports WASIp3 with the single-thread and cooperative
+profiles in <<asio-capabilities>>. Its checked private Boost overlay removes
+unavailable local-socket, serial-port and process-signal dependencies from IP
+networking. The same thread and exception settings reach the application and
+compiled archive. See <<asio-wasip3-cobalt>> for commands.
+
 [#asio-cobalt-example]
 === Tutorial: wait for a timer in co_main
 
@@ -64,12 +70,147 @@ Cobalt library or compile Boost's `src/main.cpp`.
 
 Exception handling follows the application. A build without exceptions
 prints the warning linked to https://github.com/boostorg/cobalt/issues/287[Cobalt issue 287].
-Clang's diagnostic about a missing `unhandled_exception` is suppressed only
-for this exception-free target: Boost removes that member in this mode.
-Other compiler warnings and their warnings-as-errors policy are unchanged.
+The checked Boost 1.92 header overlay supplies the coroutine promise's
+required `unhandled_exception` member when exceptions are disabled. It calls
+`std::terminate` if reached; it does not enable exception propagation.
+Compiler warnings and their warnings-as-errors policy are unchanged.
 Result adapters do not repair upstream operations that construct exception
 objects internally. This integration does not establish universal support
 for Cobalt without exceptions.
+
+[#asio-cobalt-ssl]
+=== How to use Cobalt's SSL stream
+
+Include `<boost/cobalt/io/ssl.hpp>` and add
+`<library>/webcpp/asio//cobalt_ssl` to the program's requirements. This optional
+target combines the Cobalt runner, the compiled SSL wrapper, source-built
+OpenSSL and embedded CAs. It supports native Clang/GCC on macOS/Linux and the
+three available WASIp3 profiles in <<asio-feature-cobalt-wasip3>>. The local
+native validation uses macOS; it does not establish Linux runtime coverage.
+Browser, WASIp2 and the unavailable cooperative/EH-on runtime are refused.
+
+[listing]
+----
+include::{library-root}/build.jam[tag=cobalt-ssl,indent=0]
+----
+
+Prepare the context with `webcpp::asio::make_tls_client_context`, as in
+<<asio-ca-certificates>>, and check its result. Cobalt's SSL context is an alias for
+Asio's, so the factory's context can be passed directly to
+`boost::cobalt::io::ssl::stream`. A supplied PEM bundle replaces the embedded
+roots. Configure `set_verify_callback` with Asio's `host_name_verification` for
+the intended hostname, and set SNI with `SSL_set_tlsext_host_name` on
+`stream.native_ssl_handle()`. Check both results before connecting.
+
+`native_ssl_handle()` is an extension supplied by WebCPP's checked Boost 1.92
+patch. It returns a borrowed `SSL*` owned by the stream; do not free it or retain
+it after stream destruction. The inherited `native_handle()` still denotes
+the TCP socket. This extension is available only when using the patched target.
+Ordinary `main` consumers can link `/webcpp//boost_cobalt_io_ssl` without adding
+a `co_main` runner; the low-level target does not add WebCPP's CA factory headers.
+
+[#asio-cobalt-ssl-state]
+==== Reference: handshake and stream state
+
+The wrapper supports STARTTLS: before the first handshake begins, reads and
+writes use plain TCP. Complete a successful handshake before sending confidential
+application data. `secure()` reports whether TLS is established, not whether
+the application enabled peer/hostname verification.
+
+[cols="2,4",options="header"]
+|===
+| State or operation | Behavior
+| Before the first handshake | `secure()` is false; plain TCP I/O is allowed.
+| Handshake succeeds | `secure()` becomes true before the awaiting coroutine
+resumes; application I/O uses TLS.
+| Handshake fails or is cancelled | `secure()` remains false; subsequent reads
+and writes return `not_connected` with zero bytes, without falling back to plaintext.
+| Another handshake after an attempt has started | Returns `already_started`;
+use a new stream for a new TLS attempt.
+| Shutdown before TLS is established | Returns `no_protocol_option`.
+| TLS shutdown completes, including with an error | `secure()` becomes false;
+further application I/O is blocked. A second shutdown returns `no_protocol_option`.
+|===
+
+Both handshake overloads update the same state. The buffered overload consumes
+already-read handshake bytes and reports their consumed size. Keep the context,
+stream and buffers alive while operations are pending. Serialize state-changing
+operations; the wrapper does not add synchronization for overlapping handshakes,
+shutdown or concurrent manipulation of the underlying SSL object.
+
+The private patch also corrects the verification callback constraint to use
+`boost::asio::ssl::verify_context`. The installed Boost tree is not modified.
+Rebase and verify this patch when updating Boost. The no-exceptions warning in
+<<asio-cobalt-build>> still applies.
+
+[#asio-cobalt-ssl-tests]
+==== Run the local wrapper checks
+
+From the configured superproject root, build the client and state tests:
+
+[source,bash]
+----
+b2 variant=release tools/openssl/test//cobalt_ssl_client tools/openssl/test//cobalt_ssl_state
+b2 toolset=clang-wasip3 variant=release threading=single exception-handling=on \
+  tools/openssl/test//cobalt_ssl_client tools/openssl/test//cobalt_ssl_state
+b2 variant=release tools/openssl/test//cobalt_ssl_cancel
+b2 toolset=clang-wasip3 variant=release tools/openssl/test//cobalt_ssl_cancel
+----
+
+Use each executable path printed by B2's link action. For WASI, put Wasmtime
+50.0.1 on `PATH` or set `WASMTIME` to it. The harness needs Python with TLS 1.3
+and an OpenSSL CLI to generate temporary local certificates; the tested {cpp}
+program still links WebCPP's source-built OpenSSL.
+
+[source,bash]
+----
+python3 tools/openssl/test/tls.py <client-path> --embedded --require-sni
+python3 tools/openssl/test/tls.py <client-path> --embedded --require-sni --client-arg=buffered
+python3 tools/openssl/test/tls.py <state-test-path> --state-test
+python3 tools/openssl/test/tls.py <cancellation-test-path> --state-test
+----
+
+The client checks TLS 1.2/1.3, encrypted ping/pong, hostname, SNI, trust rejection,
+malformed CA data and clean shutdown. The state test checks a STARTTLS exchange,
+a server handshake with actual buffered ClientHello bytes, operation state read
+at await time, and coroutine cancellation while a handshake is pending. It uses
+loopback sockets and temporary certificate material, without a WASI CA preopen.
+The cancellation test covers pending `read_some` and `write_some`, composed
+`io::read` after receiving part of its buffer, and composed `io::write` under TCP
+backpressure. It requires `operation_aborted` and checks the partial byte count.
+The peer stops reading, socket buffers are bounded, and a zero-timeout poll
+confirms the TCP socket is not writable before cancellation. An SSL completion
+may nevertheless already be queued. If cancellation loses to successful
+completion, the test closes that connection and retries with a fresh one,
+up to eight attempts; only an actual `operation_aborted` satisfies the case.
+A watchdog catches lost cancellation; elapsed time is not the witness that an
+operation is pending.
+
+For shutdown, the peer first observes `close_notify` but does not send its own.
+Closing its TCP socket produces `stream_truncated`; cancelling the pending
+shutdown produces `operation_aborted`. Both paths clear `secure()`, block further
+application I/O, and make a second shutdown return `no_protocol_option`.
+These checks run with TLS 1.2 and 1.3 in the supported native/WASIp3 profiles.
+Select one case with `--client-arg=read_some`, `write_some`, `read`, `write`,
+`shutdown_error` or `shutdown_cancel` when diagnosing a failure.
+
+These transfer tests request terminal cancellation through the Cobalt promise.
+Close the socket afterward: cancellation cannot retract bytes already sent and
+the test does not promise safe connection reuse. Cancelling a transfer does not
+undo the TLS negotiation, so `secure()` can remain true; it is not a connection
+health or retry-safety indicator. Shutdown completion, including failure or
+cancellation, does clear that flag.
+
+The common checked Boost 1.92 patch in `tools/boost/cobalt-common` connects a
+composition promise's cancellation source to its completion handler. Without
+this connection, a cancelled composed `io::read` or `io::write` can remain
+pending indefinitely. The B2 target applies the fix to both compiled Cobalt
+operations and application-defined compositions, including consumers without SSL.
+The separately compiled WASIp3 acceptor object receives this patch too.
+`cobalt_accept_cancel` initiates the composed `accept()` overload without a
+client connection, cancels its Cobalt promise and requires `operation_aborted`
+with an unopened returned socket. A watchdog fails if cancellation is lost;
+no timer is used to guess when the accept is pending.
 
 [#asio-cobalt-runner]
 === Why the runner changes
@@ -89,6 +230,23 @@ Boost change may require updating this adapter. Linking Cobalt's original
 runner instead is a fallback with its original behavior, without webcpp's
 turn limit; the two runners must not be linked together.
 
+On WASIp3, the runner omits the POSIX signal headers, registration and cleanup,
+and initializes the promise's `signal_set` pointer to null. This removes its
+dependency on `SIGINT` and `SIGTERM`; it does not remove Asio's internal
+`cancellation_signal` or Cobalt's coroutine cancellation machinery. Native and
+Emscripten builds keep the existing process-signal integration.
+
+A WASIp3 host cannot request graceful shutdown through this automatic signal
+bridge. An application needs an explicit host/component shutdown protocol that
+requests cancellation on its executor and lets pending operations finish their
+cleanup. Calling `io_context::stop()` alone does not do that, and forcibly
+terminating the component does not guarantee {cpp} cleanup. No host shutdown API
+is supplied by this runner change.
+
+The `cobalt_main_wasip3` compile test checks the actual runner without requiring
+signal emulation. Public-target tests additionally execute timers, Asio socket
+operations through `use_op`, Cobalt's own IP socket wrappers and cancellation.
+
 [#asio-cobalt-status]
 === Completion and limitations
 
@@ -99,10 +257,16 @@ that a timer followed by `co_return 7` exits with exactly 7. With Emscripten's
 default `EXIT_RUNTIME=0`, a debug Asyncify build may print its runtime-retained
 notice after `std::exit`; the integration does not force runtime shutdown.
 
-The Cobalt source target omits `io/ssl.cpp`, which requires OpenSSL.
-`boost::cobalt::io::ssl_stream` is therefore not supplied by this target.
-This is a deliberate restriction of the source target, separate from the
-future webcpp SSL integration.
+The WASIp3 runner returns the coroutine's result to wasi-libc. In wasi-sdk 34.0,
+the command startup code reduces that integer to success or failure before
+returning through `wasi:cli/run`. In the local runner probe, `co_return 7`
+therefore produces host exit status 1, while `co_return 0` produces 0. This
+runtime mapping is separate from process-signal cancellation; do not assume
+that every target exposes an arbitrary nonzero exit code unchanged.
+
+The plain Cobalt target keeps OpenSSL optional. For Cobalt's own SSL stream,
+use <<asio-cobalt-ssl>>. Asio SSL streams with `boost::cobalt::use_op` remain
+available by combining `/webcpp/asio//cobalt` and `/webcpp/asio//tls`.
 
 [#asio-cobalt-verify]
 === Reference: checks and suspension storage

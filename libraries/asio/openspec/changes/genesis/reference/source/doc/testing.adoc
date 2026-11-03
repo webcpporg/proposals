@@ -28,9 +28,10 @@ use a real browser when your contract depends on page events or animation.
 === What the library checks
 
 asio's tests are under `test/`, each declared in `test/Jamfile` with
-webcpp's rules, for two targets, native and emscripten:
-{n-tests} tests in all, {n-tests-native} natively and {n-tests-emscripten}
-on emscripten, run by node. Each public header is also compiled alone, as
+webcpp's rules, for native, emscripten and wasip3:
+{n-tests} tests in all, {n-tests-native} natively, {n-tests-emscripten}
+on emscripten, run by node, and {n-tests-wasip3} on WASIp3.
+The WASIp3 profiles and local commands are in <<asio-wasip3>>. Each public header is also compiled alone, as
 the only include of its translation unit, so that a header that leans on an
 include it does not make fails, naming it.
 
@@ -38,12 +39,13 @@ include it does not make fails, naming it.
 first, defines `WEBCPP_ASIO_NO_EXCEPTIONS` when the build has no exceptions,
 and a program may define it itself to turn asio's exceptions off in a build
 that has them, as Boost.Asio's `BOOST_ASIO_NO_EXCEPTIONS` does. The tests
-`config` and `config_developer_defined` check both ways it is defined.
+`config`, `config_developer_defined` and `config_all_off` check compiler,
+library-specific and global WebCPP settings.
 
 [#asio-testing-lanes]
 === The lanes
 
-asio declares six lanes for the build and test matrix, each built from scratch
+In addition to the WASIp3 target above, asio declares these lanes for the build and test matrix, each built from scratch
 with `b2 -a` and a `--build-dir` of its own. From the root of a webcpp
 checkout:
 
@@ -404,3 +406,28 @@ small differences are not evidence that a flag makes application code faster.
 | `-Oz -flto` | on | 3.34 (3.21 to 3.39) | 10.93 (10.46 to 11.06) | 2.94 (2.90 to 3.11) | 14.75 (14.21 to 14.96)
 | `-Oz -flto` | off | 3.17 (3.09 to 3.19) | 10.27 (10.10 to 10.34) | 2.80 (2.74 to 2.99) | 11.25 (11.07 to 11.86)
 |===
+
+threads::
+The `threads` lane runs Cobalt worker/post/join, multiple Asio context runners
+and the WASIp3 allocator witness. The cooperative SDK profile uses exceptions
+off and remains distinct from simultaneous native CPU execution.
++
+[source,bash]
+----
+b2 -a libs/asio/test//threads
+b2 -a toolset=clang-wasip3 libs/asio/test//threads
+----
+
+tls-integration::
+Real peers exercise trusted/rejected certificates, SNI, embedded/replacement
+roots, Cobalt TLS state, encrypted transfer cancellation, and shutdown errors
+and cancellation. Native single/multi profiles run with exceptions on/off;
+WASIp3 runs single with exceptions on/off and cooperative with exceptions off.
+The WASIp3 entropy control verifies that host randomness failure prevents
+random output and key generation. It does not measure entropy quality.
++
+[source,bash]
+----
+b2 -a libs/asio/test/tls//tls-integration
+b2 -a toolset=clang-wasip3 libs/asio/test/tls//tls-integration
+----

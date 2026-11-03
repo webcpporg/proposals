@@ -1,0 +1,33 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project : requirements <library>/webcpp/asio//asio ;
+import webcpp ;
+webcpp.targets wasip2 ;
+
+# Exercise the same public timer, stream and datagram contracts as WASIp3.
+webcpp.run core : ../wasi_core_test.cpp : : wasip2 ;
+webcpp.run contract : ../wasi_contract_test.cpp : : wasip2 ;
+webcpp.run udp_gather : ../wasi_udp_gather_test.cpp : : wasip2 ;
+webcpp.run coroutine : ../wasi_coroutine_test.cpp : : wasip2 ;
+webcpp.run pollable : pollable_test.cpp : : wasip2 ;
+webcpp.run resolver : resolver_test.cpp : : wasip2 ;
+webcpp.run run_family : ../run_family_test.cpp : : wasip2 ;
+webcpp.run timers : ../timers_test.cpp : : wasip2 ;
+webcpp.run write_permit : write_permit_test.cpp
+  : <linkflags>-Wl,--wrap=streams_method_output_stream_check_write : wasip2 ;
+webcpp.run pending_write : write_permit_test.cpp
+  : <define>WEBCPP_TEST_PENDING_WRITE
+    <linkflags>-Wl,--wrap=streams_method_output_stream_check_write
+    <linkflags>-Wl,--wrap=streams_method_output_stream_subscribe : wasip2 ;
+webcpp.original python3 : . ;
+webcpp.drive stdio : stdio_test.cpp : <library>/webcpp//node-test : stdio_driver.py : : wasip2 ;
+webcpp.lane supplied-stream : stdio : wasip2 ;
+webcpp.drive idle : idle_test.cpp : <library>/webcpp//node-test : idle_driver.py : : wasip2 ;
+webcpp.lane scheduler-idle : idle : wasip2 ;
+
+webcpp.headers-alone asio : ../../include : asio/wasi/*.hpp
+  asio/detail/wasi_pollable_descriptor.hpp : : wasip2 ;

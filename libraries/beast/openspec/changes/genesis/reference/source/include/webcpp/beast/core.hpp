@@ -7,8 +7,9 @@
 #ifndef WEBCPP_BEAST_CORE_HPP
 #define WEBCPP_BEAST_CORE_HPP
 
-#include <webcpp/beast/browser/error.hpp>
 #include <webcpp/beast/config.hpp>
+
+#include <webcpp/beast/browser/error.hpp>
 
 #include <boost/beast/core/bind_handler.hpp>        // lint-world: binds handler arguments only
 #include <boost/beast/core/buffers_prefix.hpp>      // lint-world: buffer-sequence views only

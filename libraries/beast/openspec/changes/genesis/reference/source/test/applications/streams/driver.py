@@ -7,6 +7,7 @@
 
 """Exercise actual supplied stdin/stdout channels without guest socket grants."""
 import base64
+from contextlib import contextmanager
 import hashlib
 import http.client
 import io
@@ -17,6 +18,8 @@ import struct
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 from typing import cast
 import socket
 
@@ -88,11 +91,67 @@ def receive_headers(pipe):
     return result
 
 
+@contextmanager
+def websocket_peer(cmd, directory):
+    with subprocess.Popen(cmd, cwd=directory, stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE) as peer:
+        # Also bound blocking pipe reads; communicate(timeout) alone cannot do that.
+        watchdog = threading.Timer(30, peer.kill)
+        watchdog.start()
+        try:
+            yield peer
+        finally:
+            watchdog.cancel()
+            if peer.poll() is None:
+                peer.kill()
+            peer.wait()
+
+
+def server_upgrade(peer):
+    assert peer.stdin is not None and peer.stdout is not None
+    peer.stdin.write(b'GET / HTTP/1.1\r\nHost: fixture\r\nUpgrade: websocket\r\n'
+                     b'Connection: upgrade\r\nSec-WebSocket-Version: 13\r\n'
+                     b'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n')
+    peer.stdin.flush()
+    header = receive_headers(peer.stdout)
+    assert header.startswith(b'HTTP/1.1 101 Switching Protocols\r\n')
+    return header
+
+
+def websocket_cancel(cmd, directory):
+    with websocket_peer(cmd, directory) as peer:
+        server_upgrade(peer)
+        # Leave stdin open and empty. EOF must not substitute for cancellation.
+        assert peer.wait(timeout=10) == 0
+        output, diagnostics = peer.communicate(timeout=5)
+        assert not output
+        assert b'No errors detected.' in diagnostics, diagnostics
+
+
+def websocket_truncated(cmd, directory, client):
+    if client:
+        bad = subprocess.run(cmd + ['fixture', 'payload'], cwd=directory,
+                             input=b'HTTP/1.1 101 Switching Protocols\r\nUpgrade:',
+                             capture_output=True, timeout=15)
+        assert bad.returncode == 1, (bad.returncode, bad.stderr)
+        return
+    with websocket_peer(cmd, directory) as peer:
+        server_upgrade(peer)
+        assert peer.stdin is not None
+        # A masked frame declares eight payload bytes but provides only one.
+        peer.stdin.write(b'\x81\x88abcdx')
+        peer.stdin.close()
+        peer.stdin = None
+        _, diagnostics = peer.communicate(timeout=10)
+        # wasi:cli/run reports success/error, so component exits lose the
+        # original nonzero integer. Native consumers preserve return 2.
+        expected = 1 if binary.suffix == '.wasm' else 2
+        assert peer.returncode == expected, (peer.returncode, diagnostics)
+
+
 def websocket_exchange(cmd, directory, client):
     message = 'supplied-WebSocket-echo' * 512
-    with subprocess.Popen(cmd + (['fixture', message] if client else []), cwd=directory,
-                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE) as peer:
+    with websocket_peer(cmd + (['fixture', message] if client else []), directory) as peer:
         assert peer.stdin is not None and peer.stdout is not None
         try:
             if client:
@@ -116,15 +175,13 @@ def websocket_exchange(cmd, directory, client):
                 assert first & 15 == 8
                 send_frame(peer.stdin, 8, body, False)
             else:
-                peer.stdin.write(b'GET / HTTP/1.1\r\nHost: fixture\r\nUpgrade: websocket\r\n'
-                                 b'Connection: upgrade\r\nSec-WebSocket-Version: 13\r\n'
-                                 b'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n')
-                peer.stdin.flush()
-                header = receive_headers(peer.stdout)
-                assert header.startswith(b'HTTP/1.1 101 Switching Protocols\r\n')
+                header = server_upgrade(peer)
                 assert b'websocket-server-async-local' in header
                 for opcode, payload in [(1, message.encode()), (2, bytes(range(256)) * 512)]:
                     send_frame(peer.stdin, opcode, payload, True)
+                    # Pause consumption, then resume. This is a progress check,
+                    # not a promise of cancellation while a host import blocks.
+                    time.sleep(0.05)
                     first, body = receive_frame(peer.stdout)
                     assert first & 15 == opcode
                     actual = body
@@ -193,8 +250,13 @@ with tempfile.TemporaryDirectory(prefix='beast-supplied-') as temporary:
         assert result.returncode == 0 and result.stdout.count(b'HTTP/1.1 ') == 2
         assert b'HTTP/1.1 200 OK\r\n' in result.stdout
         assert b'HTTP/1.1 404 Not Found\r\n' in result.stdout
+    elif name == 'websocket-cancel':
+        websocket_cancel(cmd, directory)
     elif name.startswith('websocket-'):
-        websocket_exchange(cmd, directory, name == 'websocket-client-async-local')
+        client = name == 'websocket-client-async-local'
+        websocket_exchange(cmd, directory, client)
+        websocket_truncated(cmd, directory, client)
     else:
         raise AssertionError(name)
-print(json.dumps({'application': name, 'backend': 'supplied-stdio', 'result': 'passed'}))
+kind = 'test' if name == 'websocket-cancel' else 'application'
+print(json.dumps({kind: name, 'backend': 'supplied-stdio', 'result': 'passed'}))

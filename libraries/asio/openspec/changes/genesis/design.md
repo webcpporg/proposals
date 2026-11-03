@@ -14,7 +14,7 @@ Constraints every decision below works within, from the superproject's rulebook 
 - header-only C++20, namespace `webcpp::asio`, headers under `<webcpp/asio/...>`, internals in
   `detail`, macros `WEBCPP_ASIO_*`, include guards `WEBCPP_ASIO_<HEADER>_HPP`, the b2 target
   `/webcpp/asio//asio`, the error category `webcpp.asio`;
-- the library is built for native and Emscripten and has no WASI target; every test runs on each
+- the library is built for native, Emscripten and WASIp3; every test runs on each
   target its Jamfile names, with exceptions on and off, in both suspension variants;
 - errors as values (`boost::system::error_code`); an API that throws sits behind
   `WEBCPP_ASIO_NO_EXCEPTIONS` and raises through `boost::throw_exception`;
@@ -45,7 +45,7 @@ Constraints every decision below works within, from the superproject's rulebook 
 
 **Non-Goals:**
 
-- A WASI backend (`wasi:io/poll`, p3's async): a later increment with its own specification.
+- WASIp2 guest TLS, Cobalt and multi-thread execution until independently integrated and verified; portable WASI host APIs remain separate.
 - WebSocket and HTTP clients (webcpp::beast), WebRTC (webcpp::webrtc), relay transports and the b2
   feature that enables one, trystero's migration, and offering the additions upstream to
   Boost.Asio.
@@ -79,18 +79,16 @@ in the reactor's `select`). Natively they are Boost's own through `using` declar
 - **Consequence:** code that calls `run` through a `boost::asio::io_context&` gets Boost's run
   without the limit (documented); Cobalt's `co_main` gets the limit by D11.
 
-### D3. The yield is a MessageChannel macrotask, the limit 1000
+### D3. A MessageChannel macrotask and a configurable default of 100
 
-The yield is an `EM_ASYNC_JS` import whose promise a `MessageChannel` message resolves. The
-default `max_handlers_per_turn` is 1000 (measured: the `setTimeout(0)` ran at iteration 1,000
-under JSPI and 999 under Asyncify); 0 is taken as 1; a program changes it at construction or
-later. A deadline is checked before each handler, so a passed deadline runs nothing and a
-self-posting handler cannot outrun `run_for`.
+The yield is an `EM_ASYNC_JS` import whose promise a `MessageChannel` message resolves.
+The original default was 1000. After the 2026-10-15 yield-cost and responsiveness measurements,
+the owner selected 100. `WEBCPP_ASIO_MAX_HANDLERS_PER_TURN` in config sets the compile-time
+default; an application may define it before inclusion and override it per context. Zero
+normalizes to one. A deadline is checked before each handler. No setting preempts a handler.
 
-- **Why:** a macrotask lets the browser render, run timers and deliver events; `MessageChannel`
-  exists in node and in every browser. The default is to be measured again in the browser lane
-  against a frame's budget (the plan's stop rule: a 95th percentile above 8 ms stops the work
-  for the owner's decision).
+The guide retains the benchmark methodology and observed costs. These observations justify
+an adjustable compromise, not a portable time bound or an assurance of a fixed frame rate.
 
 ### D4. JSPI and Asyncify are build variants, a composite propagated feature
 
@@ -222,18 +220,39 @@ fails the same way, so only webcpp::beast's browser streams accept it and Beast'
 code runs unchanged. A resolver that failed like the sockets was rejected: every Beast client
 would change a line.
 
-### D15. TLS names natively, a record on Emscripten, OpenSSL named by the program
+### D15. Explicit source-built TLS on native and WASIp3
 
-`<webcpp/asio/ssl.hpp>` (not in the convenience header) is Boost's `ssl` natively, which needs
-OpenSSL 3, and on Emscripten a record of the program's TLS settings that only webcpp::beast's
-browser streams read. A program names `/webcpp/asio//openssl` for its native builds alone, by a
-condition in its project; naming it for WebAssembly stops the compile with an instruction
-(the owner rejected ignoring it there), and a machine that lacks OpenSSL stops the build.
+`<webcpp/asio/ssl.hpp>` is Boost's SSL interface on native and WASIp3. The program explicitly
+selects `/webcpp/asio//openssl` or `//tls`, backed by `/webcpp/third_party//openssl` and a
+matching generated header/archive pair. The latter includes verified, replaceable embedded
+CA data. Emscripten retains the browser TLS settings adapter and refuses guest OpenSSL.
+Cobalt's optional `//cobalt_ssl` uses the same provider and checked SSL state/cancellation fixes.
 
-### D16. No WASI target
+This supersedes the original departure 4 (system shared OpenSSL). The source build and CA
+package were approved in October and integrated locally on 2026-11-02; the owner ratified
+reconciliation of this proposal with that implementation on 2026-11-03. OpenSSL's process-global
+memory hooks are not an Asio per-operation allocator; the guide states that allocation boundary.
 
-Boost.Asio 1.92 does not compile for wasm32-wasip2 or wasm32-wasip3 with wasi-sdk 34. A library
-on webcpp::asio declares native and Emscripten at most.
+### D16. WASIp3 sockets, with explicit profile limitations
+
+The original accepted browser scope excluded WASI because unmodified Boost 1.92 did not build
+there. The owner approved the WASIp3 port on 2026-10-15, subsequently approved source-built TLS,
+and approved applying these changes to this proposal on 2026-11-03. A checked private Boost
+overlay now supplies timers, TCP/UDP and Cobalt integration on WASIp3. Native and browser
+semantics remain distinct from host-controlled WASI network permissions.
+
+WASIp3 single-thread builds support exceptions on/off. Cooperative threads require the SDK's
+matching experimental sysroot; SDK 34 lacks its C++ exception runtime, so that profile refuses
+exceptions on. The later owner-approved P2 extension below adds a single-thread reactor. Beast socket profiles follow
+Asio's targets; Beast's portable messages, host HTTP and supplied streams do not require this
+reactor and may support WASIp2 independently.
+
+### D17. Coexistence with Trystero
+
+The owner clarified on 2026-11-03 that Asio and Beast are intended foundations for Trystero's
+later migration. Combining the libraries MUST NOT be prohibited as a workaround for OpenSSL
+provenance. A combined native program must use one OpenSSL provider, including libdatachannel's
+transitive dependency. Migrating Trystero's application APIs remains a separate workstream.
 
 ## Risks / Trade-offs
 
@@ -251,23 +270,32 @@ on webcpp::asio declares native and Emscripten at most.
 
 ## Migration Plan
 
-Nothing depends on asio yet. The library is developed in a superproject worktree at
-`libs/asio`; once it is complete (task 23) the owner creates `webcpporg/asio` (gate G1), adds the
-submodule (G2) and approves the pushes (G3). trystero's migration onto asio, webcpp::beast and
-webcpp::webrtc are separate proposals.
+The repository `webcpporg/asio` exists and the superproject integrated its submodule in
+`2ba5116` on 2026-11-02. Tasks 22/23 now close the reconciled rulebook, complete-branch review
+and both CI gates. `reference/STATUS.md` records exact tested commits and remaining work.
+Beast already uses Asio; Trystero's migration onto Asio and Beast follows this foundation.
 
 ## Open Questions
 
-- The default `max_handlers_per_turn` of 1000 is to be measured in headless Chrome (task 13);
-  the stop rule hands any value above an 8 ms 95th percentile to the owner.
 - The b2 feature that enables a relay transport for a whole program (D13) is designed with the
   first relay library.
 - `asyncify-stack-size` should be measured again when b2's release link passes the optimization
   level, and again when the Cobalt tests join the lane (task 16 step 5).
 - The CI's levels (nightly, release) do not exist, so the Asyncify lanes run on every push
   (departure 1) until they do.
-- `/webcpp/asio//openssl` links the system's shared OpenSSL until webcpp::crypto builds
-  `/third_party//openssl` (departure 4).
-- Native suites without exceptions run only on Emscripten for now (departure 5).
-- The re-review of task 9's fix round was stopped by the owner's request to review every task one
-  by one (2026-10-11); it is open.
+- The final review must cover the complete Asio branch and root integration, not only the
+  earlier task 9, tasks 17-21 or WASIp3/TLS review subsets.
+
+### WASIp2 scope amendment approved on 2026-11-03
+
+After the earlier P2 exclusion, Rodrigo explicitly approved both an Asio P2
+pollable-based core and the four Beast supplied-stream WebSocket combinations.
+This supersedes the no-P2-reactor restriction. Retain the Boost scheduler and
+libc select/poll translation for timers, TCP and UDP. Forward asynchronous DNS
+uses native address-stream pollables, with deferred initiation, cancellation and
+associated executor/allocator semantics. The generic pollable descriptor bridge
+is isolated and pinned to SDK 34.0's private libc ABI. P2 single-thread execution
+supports both exception modes; multi-thread, guest TLS and Cobalt remain rejected
+until independently verified. Host HTTP and supplied streams remain separate
+capabilities. This amendment does not declare every Beast P2 socket application
+validated or restore the removed proposal tasks without their own evidence.

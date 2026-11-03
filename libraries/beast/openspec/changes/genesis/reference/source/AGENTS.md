@@ -11,6 +11,8 @@ Read the superproject's [AGENTS.md](../../AGENTS.md) and
   `wasi/http.hpp` and depend on independent host bindings.
 - `/webcpp/beast//beast` supplies portable headers. `//sockets` selects native or
   WASIp3 guest transport; `//tls` selects source-built OpenSSL explicitly.
+  Asio P2 core is now available, but the Beast guest-socket application corpus
+  remains a separate integration task; do not mark it passed from Asio tests.
 - `/webcpp/beast//browser`, `//wasi-http` and `//wasi-streams` select independent
   environment adapters. Their runtime tests are separate from the socket tests.
   Keep source compatibility, application counterparts and unavailable facilities
@@ -31,3 +33,9 @@ Read the superproject's [AGENTS.md](../../AGENTS.md) and
   Cancelling a lowest layer between two internal socket operations is not proof
   that a pending shutdown read was cancelled. WebSocket close already tears down
   TLS and its underlying socket; do not call TLS shutdown again afterwards.
+
+The owner approved the P2 supplied-stream WebSocket port on 2026-11-03. Its
+client/server examples use `webcpp::asio::wasi::stdio_stream` with real asynchronous
+operations, without guest network grants. Keep the explicit flush and the actual
+128 KiB binary/ping/close regression. Host-import blocking limits still apply.
+Regenerate the application matrix from measured logs, never from inferred parity.

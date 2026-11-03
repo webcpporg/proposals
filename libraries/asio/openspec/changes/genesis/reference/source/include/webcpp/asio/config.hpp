@@ -13,7 +13,7 @@
 #ifndef WEBCPP_ASIO_CONFIG_HPP
 #define WEBCPP_ASIO_CONFIG_HPP
 
-#include <boost/config.hpp>
+#include <webcpp/config.hpp>
 
 #ifndef WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN
 /**
@@ -40,8 +40,9 @@
 #ifdef __MRDOCS__
 /**
  Defined when asio is built without exceptions: automatically when the
- compiler has none (`BOOST_NO_EXCEPTIONS`), or by the developer to disable them
- in a build that has them.
+ collection has none (`WEBCPP_HAS_EXCEPTIONS` is not defined), or by the
+ developer to disable them in this library alone. `WEBCPP_NO_EXCEPTIONS`
+ disables them throughout the collection.
 
  asio raises an exception only where Boost.Asio's own interface throws: the
  throwing overloads of its sockets, resolver and `ssl::context` (an
@@ -61,7 +62,7 @@
     "asyncify-stack-size is below 8192 bytes, the least that asio's measured suspensions need, half of it left to the program: ask for 8192 or more"
 #endif
 
-#if defined(BOOST_NO_EXCEPTIONS) && !defined(WEBCPP_ASIO_NO_EXCEPTIONS)
+#if !defined(WEBCPP_HAS_EXCEPTIONS) && !defined(WEBCPP_ASIO_NO_EXCEPTIONS)
 #define WEBCPP_ASIO_NO_EXCEPTIONS
 #endif
 

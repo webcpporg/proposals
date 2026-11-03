@@ -5,9 +5,9 @@
 # https://www.boost.org/LICENSE_1_0.txt)
 
 # tag::project[]
-project : requirements <conditional>@native-openssl ;
+project : requirements <conditional>@source-openssl ;
 
-rule native-openssl ( properties * )
+rule source-openssl ( properties * )
 {
     if ! <toolset>emscripten in $(properties)
     {
@@ -17,6 +17,6 @@ rule native-openssl ( properties * )
 # end::project[]
 
 import webcpp ;
-webcpp.targets native emscripten ;
+webcpp.targets native wasip3 emscripten ;
 webcpp.example asio_tls.cpp ;
-webcpp.lane tls : asio_tls asio_tls.output : native emscripten ;
+webcpp.lane tls : asio_tls asio_tls.output : native wasip3 emscripten ;

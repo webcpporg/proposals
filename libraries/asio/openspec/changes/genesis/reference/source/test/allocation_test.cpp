@@ -14,6 +14,7 @@
 #include <webcpp/test/exit_status.hpp>
 
 #include <boost/asio/bind_allocator.hpp>
+#include <boost/asio/deferred.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/core/lightweight_test.hpp>
 #include <boost/throw_exception.hpp>
@@ -29,6 +30,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <string>
 #include <utility>
 #ifdef _MSC_VER
 #include <malloc.h>
@@ -46,6 +48,9 @@
 #include <webcpp/asio/browser/bridge.hpp>
 #include <webcpp/asio/ip/tcp.hpp>
 #include <webcpp/asio/ssl.hpp>
+#elif defined(__wasi__)
+#include <sys/select.h>
+#include <unistd.h>
 #elif defined(__APPLE__)
 #include <malloc/malloc.h>
 #endif
@@ -65,7 +70,7 @@ bool counting = false;
 // counts nothing: that allocation is operator new's, counted once.
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 bool inside_operator_new = false;
-// Runtime allocation attribution, set only by the Asyncify JavaScript wrapper.
+// Runtime allocation attribution, set only around measured platform runtime calls.
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::uint8_t inside_runtime = 0;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
@@ -73,8 +78,9 @@ std::size_t runtime_allocations = 0;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::size_t aligned_allocations = 0;
 
-#ifdef _MSC_VER
-/** Whether the calling thread is the one the test counts on: MSVC counts every thread. */
+#if defined(_MSC_VER) || (defined(__wasi__) && !defined(_REENTRANT))
+/** Whether the calling thread is the one the test counts on: single-threaded WASI and MSVC count
+ * every thread. */
 bool on_counted_thread() noexcept {
     return true;
 }
@@ -113,7 +119,8 @@ void count_this_thread() noexcept {
 // The C library's allocations, seen where a program can see them: glibc's
 // functions are replaced and forward to glibc's own (__libc_*), Emscripten's
 // dlmalloc defines its functions weak and keeps emscripten_builtin_*, and
-// macOS reports every allocation to malloc_logger. MSVC's are not counted, nor
+// macOS reports every allocation to malloc_logger, and WASI uses linker wrappers.
+// MSVC's are not counted, nor
 // any under AddressSanitizer.
 #ifdef WEBCPP_TEST_ASIO_ADDRESS_SANITIZER
 // Nothing of the C library is counted.
@@ -264,6 +271,103 @@ extern "C" int select(int nfds, fd_set* readfds, fd_set* writefds, fd_set* excep
     return count;
 }
 #endif
+
+#elif defined(__wasi__)
+#define WEBCPP_TEST_ASIO_COUNTS_C_ALLOCATIONS 1
+
+// WASI libc owns its allocator symbols. Linker wrapping observes callers without
+// replacing libc's implementation or recursively counting its internal calls.
+// The linker requires the __real_ and __wrap_ symbol prefixes.
+// NOLINTBEGIN(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp,readability-identifier-naming)
+extern "C" {
+void* __real_malloc(std::size_t size);
+void* __real_calloc(std::size_t count, std::size_t size);
+void* __real_realloc(void* pointer, std::size_t size);
+void* __real_aligned_alloc(std::size_t alignment, std::size_t size);
+int __real_posix_memalign(void** pointer, std::size_t alignment, std::size_t size);
+int __real_pipe(int* descriptors);
+ssize_t __real_write(int descriptor, const void* bytes, std::size_t size);
+int __real_close(int descriptor);
+}
+// NOLINTEND(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp,readability-identifier-naming)
+#define WEBCPP_TEST_C_MEMALIGN __real_aligned_alloc
+
+namespace {
+// Descriptor ownership lets the wrapper distinguish pipe buffers from other writes.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+fd_set wasi_pipe_writers{};
+
+void* observe_wasi_allocation(void* pointer, bool aligned = false) {
+    if (on_counted_thread() && counting && !inside_operator_new) {
+        if (inside_runtime != 0) {
+            ++runtime_allocations;
+        } else if (aligned) {
+            ++aligned_allocations;
+        } else {
+            ++c_allocations;
+        }
+    }
+    return pointer;
+}
+}  // namespace
+
+// NOLINTBEGIN(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp,readability-identifier-naming)
+extern "C" {
+// wasi-libc owns the pipe descriptors and the messages written to their queue.
+// These calls cannot invoke the application's Asio completion handlers.
+int __wrap_pipe(int* descriptors) {
+    const auto previous = std::exchange(inside_runtime, 1);
+    const int result = __real_pipe(descriptors);
+    inside_runtime = previous;
+    if (result == 0 && descriptors[1] < FD_SETSIZE) {
+        FD_SET(descriptors[1], &wasi_pipe_writers);
+    }
+    return result;
+}
+
+ssize_t __wrap_write(int descriptor, const void* bytes, std::size_t size) {
+    const auto previous = inside_runtime;
+    if (descriptor >= 0 && descriptor < FD_SETSIZE && FD_ISSET(descriptor, &wasi_pipe_writers)) {
+        inside_runtime = 1;
+    }
+    const auto result = __real_write(descriptor, bytes, size);
+    inside_runtime = previous;
+    return result;
+}
+
+int __wrap_close(int descriptor) {
+    const int result = __real_close(descriptor);
+    if (result == 0 && descriptor >= 0 && descriptor < FD_SETSIZE) {
+        FD_CLR(descriptor, &wasi_pipe_writers);
+    }
+    return result;
+}
+
+void* __wrap_malloc(std::size_t size) {
+    return observe_wasi_allocation(__real_malloc(size));
+}
+
+void* __wrap_calloc(std::size_t count, std::size_t size) {
+    return observe_wasi_allocation(__real_calloc(count, size));
+}
+
+void* __wrap_realloc(void* pointer, std::size_t size) {
+    return observe_wasi_allocation(__real_realloc(pointer, size));
+}
+
+void* __wrap_aligned_alloc(std::size_t alignment, std::size_t size) {
+    return observe_wasi_allocation(__real_aligned_alloc(alignment, size), true);
+}
+
+int __wrap_posix_memalign(void** pointer, std::size_t alignment, std::size_t size) {
+    const int status = __real_posix_memalign(pointer, alignment, size);
+    if (status == 0) {
+        (void)observe_wasi_allocation(*pointer, true);
+    }
+    return status;
+}
+}
+// NOLINTEND(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp,readability-identifier-naming)
 
 #elif defined(__APPLE__)
 #define WEBCPP_TEST_ASIO_COUNTS_C_ALLOCATIONS 1
@@ -469,7 +573,7 @@ private:
         release(pointer);
     }
 
-    bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override {
+    [[nodiscard]] bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override {
         return this == &other;
     }
 
@@ -479,8 +583,8 @@ private:
 void tls_host_storage_uses_the_resource() {
     namespace ssl = webcpp::asio::ssl;
     // The request object owns its input independently of the context's recorded copy.
-    // Construct it before measuring the context, then transfer it without another copy.
-    ssl::host_name_verification verification(
+    // Construct it before measuring the copy into the context's supplied resource.
+    const ssl::host_name_verification verification(
         "a-long-host-name-that-exceeds-small-string-storage.example.com");
     std::size_t given = 0;
     counted_resource resource(given);
@@ -489,7 +593,7 @@ void tls_host_storage_uses_the_resource() {
         const allocation_window window;
         ssl::context context(ssl::context::tlsv12_client, &resource);
         boost::system::error_code ec;
-        context.set_verify_callback(std::move(verification), ec);
+        context.set_verify_callback(verification, ec);
         recorded = !ec && context.verification_host() ==
                               "a-long-host-name-that-exceeds-small-string-storage.example.com";
     }
@@ -499,6 +603,70 @@ void tls_host_storage_uses_the_resource() {
     BOOST_TEST_EQ(operator_new_calls, 0U);
     BOOST_TEST_EQ(c_allocations, 0U);
     BOOST_TEST_EQ(aligned_allocations, 0U);
+}
+
+/** Long resolver inputs belong to the allocator bound before initiation. */
+void resolver_inputs_use_the_associated_allocator() {
+    using resolver = webcpp::asio::ip::tcp::resolver;
+    std::size_t given = 0;
+    std::size_t completions = 0;
+    bool correct = false;
+    webcpp::asio::io_context io(std::allocator_arg, counted<void>(&given));
+    resolver names(io);
+    {
+        const allocation_window window;
+        names.async_resolve(
+            "a-host-name-longer-than-small-string-storage.example.com",
+            "an-unsupported-service-longer-than-small-string-storage",
+            boost::asio::bind_allocator(
+                counted<void>(&given),
+                [&](boost::system::error_code ec, const resolver::results_type& results) {
+                    correct = ec == boost::asio::error::service_not_found && results.empty();
+                    ++completions;
+                }));
+        names.cancel();
+        io.run();  // lint-run: observes the real posted resolver completion
+    }
+    report("resolver invalid inputs", given);
+    BOOST_TEST(correct);
+    BOOST_TEST_EQ(completions, 1U);
+    BOOST_TEST_GT(given, 0U);
+    BOOST_TEST_EQ(operator_new_calls, 0U);
+    BOOST_TEST_EQ(c_allocations, 0U);
+    BOOST_TEST_EQ(aligned_allocations, 0U);
+
+    std::string host = "a-host-name-longer-than-small-string-storage.example.com";
+    std::string service = "00000000000000000000000000000000000443";
+    const auto before = given;
+    auto deferred = [&] {
+        const allocation_window window;
+        return names.async_resolve(
+            host, service,
+            boost::asio::bind_allocator(counted<void>(&given), boost::asio::deferred));
+    }();
+    report("resolver deferred captures", given - before);
+    // No result entry exists yet: Boost's result storage would allocate globally.
+    BOOST_TEST_GT(given, before);
+    BOOST_TEST_EQ(operator_new_calls, 0U);
+    BOOST_TEST_EQ(c_allocations, 0U);
+    BOOST_TEST_EQ(aligned_allocations, 0U);
+    host.assign("changed");
+    service.assign("invalid");
+    correct = false;
+    std::move(deferred)([&](boost::system::error_code ec, const resolver::results_type& results) {
+        correct = !ec && results.size() == 1 &&
+                  results.begin()->host_name() ==
+                      "a-host-name-longer-than-small-string-storage.example.com" &&
+                  results.begin()->service_name() == "00000000000000000000000000000000000443" &&
+                  results.begin()->endpoint().port() == 443;
+        ++completions;
+    });
+    names.cancel();
+    BOOST_TEST_EQ(completions, 1U);
+    io.restart();
+    io.run();  // lint-run: a deferred resolution keeps its copied inputs until initiation
+    BOOST_TEST(correct);
+    BOOST_TEST_EQ(completions, 2U);
 }
 
 /** Each delivered event posts through its associated allocator, never runs inline. */
@@ -573,14 +741,14 @@ void the_user_s_allocator_takes_everything() {
                                         }));
         target.call<bool>("dispatchEvent",
                           emscripten::val::global("Event").new_(emscripten::val("message")));
-        for (bool rejected : {false, true}) {
+        for (const bool rejected : {false, true}) {
             auto promise = emscripten::val::global("Promise").call<emscripten::val>(
                 rejected ? "reject" : "resolve", 42);
             webcpp::asio::browser::async_await(
                 io.get_executor(), promise,
                 boost::asio::bind_allocator(
                     counted<void>(&given),
-                    [&, rejected](boost::system::error_code ec, emscripten::val value) {
+                    [&, rejected](boost::system::error_code ec, const emscripten::val& value) {
                         ++promised;
                         values_correct =
                             values_correct && value.as<int>() == 42 &&
@@ -612,7 +780,7 @@ void the_user_s_allocator_takes_everything() {
 
 // end::supplied-allocator[]
 
-/** A real suspension proves runtime attribution without depending on a timer's deadline. */
+/** Real platform operations prove runtime attribution independently of the Asio context. */
 void the_counters_separate_runtime_allocations(bool asyncify) {
 #if defined(__EMSCRIPTEN__) && defined(WEBCPP_TEST_ASIO_COUNTS_C_ALLOCATIONS)
     {
@@ -627,6 +795,36 @@ void the_counters_separate_runtime_allocations(bool asyncify) {
         BOOST_TEST_GT(runtime_allocations, 0U);
     } else {
         BOOST_TEST_EQ(runtime_allocations, 0U);
+    }
+#elif defined(__wasi__) && defined(WEBCPP_TEST_ASIO_COUNTS_C_ALLOCATIONS)
+    (void)asyncify;
+    std::array<int, 2> descriptors{};
+    int status = 0;
+    {
+        const allocation_window window;
+        status = ::pipe(descriptors.data());
+    }
+    report("WASI libc pipe storage");
+    BOOST_TEST_EQ(status, 0);
+    BOOST_TEST_GT(runtime_allocations, 0U);
+    BOOST_TEST_EQ(operator_new_calls + c_allocations + aligned_allocations, 0U);
+    BOOST_TEST_EQ(inside_runtime, 0U);
+    if (status == 0) {
+        ssize_t written = 0;
+        {
+            const allocation_window window;
+            written = ::write(descriptors[1], "x", 1);
+        }
+        report("WASI libc pipe message");
+        BOOST_TEST_EQ(written, 1);
+        BOOST_TEST_GT(runtime_allocations, 0U);
+        BOOST_TEST_EQ(operator_new_calls + c_allocations + aligned_allocations, 0U);
+        BOOST_TEST_EQ(inside_runtime, 0U);
+        char received = 0;
+        BOOST_TEST_EQ(::read(descriptors[0], &received, 1), 1);
+        BOOST_TEST_EQ(received, 'x');
+        ::close(descriptors[0]);
+        ::close(descriptors[1]);
     }
 #else
     (void)asyncify;
@@ -860,6 +1058,7 @@ int main() {
     the_user_s_allocator_takes_everything();
 #ifdef __EMSCRIPTEN__
     tls_host_storage_uses_the_resource();
+    resolver_inputs_use_the_associated_allocator();
 #endif
     the_counters_see_an_unbound_handler();
 #if defined(WEBCPP_TEST_ASIO_COUNTS_C_ALLOCATIONS) && defined(__APPLE__) && !defined(__EMSCRIPTEN__)

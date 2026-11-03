@@ -14,6 +14,42 @@
 #include <boost/throw_exception.hpp>
 #include <webcpp/beast/wasi/stream.hpp>
 
+#ifdef __wasip2__
+#include <boost/asio/append.hpp>
+#include <boost/asio/compose.hpp>
+#include <boost/asio/post.hpp>
+#include <webcpp/asio/wasi/stdio_stream.hpp>
+
+namespace webcpp::asio::wasi {
+inline void teardown(boost::beast::role_type /*unused*/, stdio_stream& /*unused*/,
+                     boost::system::error_code& error) {
+    error.clear();
+}
+
+struct teardown_operation {
+    template <class Self>
+    void operator()(Self& self) {
+        boost::asio::post(boost::asio::append(std::move(self), boost::system::error_code{}));
+    }
+
+    template <class Self>
+    void operator()(Self& self, boost::system::error_code error) {
+        self.complete(error);
+    }
+};
+
+template <class Handler>
+void async_teardown(boost::beast::role_type /*role*/, stdio_stream& stream, Handler&& handler) {
+    boost::asio::async_compose<Handler, void(boost::system::error_code)>(
+        teardown_operation{}, handler, stream.get_executor());
+}
+
+}  // namespace webcpp::asio::wasi
+
+namespace supplied_example {
+using channel = webcpp::asio::wasi::stdio_stream;
+}
+#else
 namespace supplied_example {
 // The executor exists for the upstream WebSocket object's associated state.
 // This example performs explicit synchronous I/O on caller-provided CLI streams.
@@ -70,4 +106,5 @@ inline void teardown(boost::beast::role_type /*role*/, channel& /*stream*/,
     error.clear();
 }
 }  // namespace supplied_example
+#endif  // __wasip2__
 #endif

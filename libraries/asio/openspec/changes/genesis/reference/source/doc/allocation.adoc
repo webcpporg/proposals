@@ -10,7 +10,10 @@
 The application supplies an allocator to the `io_context` through its
 `std::allocator_arg` constructor. Boost.Asio uses it for the context's
 services and their I/O state. On Emscripten the bridge's registration map
-uses the context's allocator too.
+uses the context's allocator too. On Windows, a checked Boost 1.92 overlay
+forwards that allocator into IOCP's internal worker and timer thread state.
+This includes the first timer operation, without warming up its thread or
+allowing an extra global allocation.
 
 An asynchronous operation uses its completion handler's associated
 allocator. Giving an allocator to the context does not associate it with
@@ -37,9 +40,17 @@ operation's associated allocator:
 * Asyncify allocates its unwind data when a call suspends.
 * Boost.Asio's `basic_resolver_results` allocates its result entries with
   `new`. The measured operation scenario above does not resolve a name.
-  Forward asynchronous resolution also owns copies of the input names so a
-  deferred operation does not borrow temporary string storage. These result
-  and input strings use the standard allocator, not the handler allocator.
+  Forward asynchronous resolution owns copies of its input names through the
+  initiating token's associated allocator, preserving temporary input lifetimes.
+  Bind the allocator when creating a deferred operation; binding one only when
+  later launching it cannot retroactively change its already-owned input storage.
+* WASI libc allocates pipe descriptors and message storage for Asio's wakeup pipe.
+  The test attributes only calls creating that pipe and writes to its tracked
+  writer descriptors, removes descriptors on close, and exercises a real pipe
+  as a positive control. Ordinary user writes and allocations remain counted.
+* OpenSSL owns context, trust-store and cryptographic allocations. Its memory
+  hooks are process-global and must be set before any OpenSSL allocation; an
+  Asio context cannot install a per-operation allocator for other OpenSSL users.
 
 The allocation test replaces Emscripten's `select` in the test executable
 with a version whose poll array is on the stack. It marks only the call to
@@ -61,6 +72,9 @@ runtime initialization, not the process's cold-start memory usage.
 `allocation_native` runs natively, with `allocation_native_release` also
 checking an optimized build; `allocation` joins the Node-based
 WebAssembly tests with JSPI and Asyncify, each with and without exceptions.
+`allocation_wasip3` checks the single-thread profile with exceptions on/off;
+`allocation_wasip3_threads` checks the supported cooperative profile without
+exceptions through the `threads` lane.
 A counting allocator services context construction, a timer, ten posts and
 on Emscripten the bridge's two event deliveries. The measurement includes
 object destruction. It requires allocations through the supplied allocator

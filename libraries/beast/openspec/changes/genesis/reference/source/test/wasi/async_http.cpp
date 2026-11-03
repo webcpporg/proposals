@@ -9,6 +9,7 @@
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/cancellation_signal.hpp>
 #include <boost/asio/deferred.hpp>
+#include <memory_resource>
 #include <webcpp/beast/wasi/async.hpp>
 
 namespace host = webcpp::wasi::http;
@@ -16,6 +17,47 @@ namespace wasi = webcpp::beast::wasi;
 namespace http = webcpp::beast::http;
 
 namespace {
+struct completion_resource final : std::pmr::memory_resource {
+    std::size_t active = 0;
+
+    ~completion_resource() override {
+        if (active != 0) {
+            std::abort();
+        }
+    }
+
+private:
+    void* do_allocate(std::size_t bytes, std::size_t alignment) override {
+        auto* result = std::pmr::new_delete_resource()->allocate(bytes, alignment);
+        ++active;
+        return result;
+    }
+
+    void do_deallocate(void* value, std::size_t bytes, std::size_t alignment) override {
+        --active;
+        std::pmr::new_delete_resource()->deallocate(value, bytes, alignment);
+    }
+
+    [[nodiscard]] bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override {
+        return this == &other;
+    }
+};
+
+void check_completion_lifetime() {
+    wasi::http_context context;
+    auto resource = std::make_unique<completion_resource>();
+    bool completed = false;
+    context.get_executor().post(
+        [&] {
+            resource.reset();  // Operation storage must already have been released.
+            completed = true;
+        },
+        std::pmr::polymorphic_allocator<char>(resource.get()));
+    if (resource->active != 1 || context.run() != 1 || !completed || resource) {
+        std::abort();
+    }
+}
+
 struct allocation_count {
     std::size_t active = 0, calls = 0;
 };
@@ -55,6 +97,7 @@ struct test_session {
     wasi::http_context completion_context;
     allocation_count allocations;
     counting_allocator<char> allocator{allocations};
+    std::unique_ptr<completion_resource> receive_resource;
     http::request<http::string_body> request;
     http::response<http::string_body> response{http::status::ok, 11};
     http::request<http::string_body> slow_request{http::verb::post, "/slow", 11};
@@ -78,14 +121,15 @@ struct test_session {
 
     void send() {
         response.prepare_payload();
-        wasi::async_send(context, out, response,
-                         boost::asio::bind_allocator(
-                             allocator, [this](boost::system::error_code error, std::size_t count) {
-                                 if (error || count != response.body().size()) {
-                                     std::abort();
-                                 }
-                                 completed = true;
-                             }));
+        wasi::async_send(
+            context, out, response,
+            boost::asio::bind_allocator(
+                allocator, [this](boost::system::error_code error, std::size_t count) {
+                    if (error || count != response.body().size() || allocations.active != 0) {
+                        std::abort();
+                    }
+                    completed = true;
+                }));
     }
 
     void client_done(bool fast, boost::system::error_code error, std::size_t count) {
@@ -190,7 +234,7 @@ struct test_session {
     }
 
     void receive_done(boost::system::error_code error, std::size_t count) {
-        if (!initiated || count != request.body().size()) {
+        if (!initiated || count != request.body().size() || allocations.active != 0) {
             std::abort();
         }
         received = true;
@@ -222,14 +266,26 @@ struct test_session {
             std::abort();
         }
 
-        std::move(deferred)(boost::asio::bind_executor(
-            completion_context.get_executor(),
-            boost::asio::bind_allocator(
-                allocator, boost::asio::bind_cancellation_slot(
-                               cancellation.slot(),
-                               [this](boost::system::error_code error, std::size_t count) {
-                                   receive_done(error, count);
-                               }))));
+        if (path == "/pmr") {
+            receive_resource = std::make_unique<completion_resource>();
+            std::move(deferred)(boost::asio::bind_executor(
+                completion_context.get_executor(),
+                boost::asio::bind_allocator(
+                    std::pmr::polymorphic_allocator<char>(receive_resource.get()),
+                    [this](boost::system::error_code error, std::size_t count) {
+                        receive_resource.reset();
+                        receive_done(error, count);
+                    })));
+        } else {
+            std::move(deferred)(boost::asio::bind_executor(
+                completion_context.get_executor(),
+                boost::asio::bind_allocator(
+                    allocator, boost::asio::bind_cancellation_slot(
+                                   cancellation.slot(),
+                                   [this](boost::system::error_code error, std::size_t count) {
+                                       receive_done(error, count);
+                                   }))));
+        }
         initiated = true;
         if (path == "/cancel") {
             context.get_executor().post(
@@ -241,13 +297,16 @@ struct test_session {
         }
         completion_context.run();
         context.run();
-        if (!received || !completed || allocations.active != 0 || allocations.calls < 4) {
+        const std::size_t minimum_calls = path == "/pmr" ? 2 : 4;
+        if (!received || !completed || allocations.active != 0 || receive_resource ||
+            allocations.calls < minimum_calls) {
             std::abort();
         }
     }
 };
 
 void handle(host::request_handle raw, host::response_out out) {
+    check_completion_lifetime();
     test_session session(raw, out);
     session.run();
 }

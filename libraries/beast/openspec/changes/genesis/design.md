@@ -11,8 +11,11 @@ needs, and the last one (the WebSocket handshake, or an HTTP request) opens the 
 
 The historical baseline is `reference/spec.md` (2026-10-10). The owner expanded the scope
 on 2026-11-02 to all upstream example applications and explicitly included WASIp2 and
-WASIp3. This design and `specs/beast/spec.md` are the current draft; the historical baseline
-is not rewritten. The committed implementation now has native, WASI and actual browser
+WASIp3. On 2026-11-03 the owner confirmed that guest sockets/TLS follow Asio's targets:
+initially native and WASIp3. Later that day the owner approved a single-thread Asio
+WASIp2 core and asynchronous supplied-channel WebSocket. Portable HTTP and host HTTP
+remain independent of the reactor; the full P2 guest-socket corpus needs its own validation. This design and `specs/beast/spec.md` are the current proposal;
+the historical baseline is not rewritten. The committed implementation has native, WASI and actual browser
 measurements; `reference/STATUS.md` identifies the exact source snapshot, evidence and
 remaining acceptance gates. The library builds on webcpp::asio
 (`libraries/asio`, change `genesis`): the io_context, the bridge that posts the browser's
@@ -23,7 +26,7 @@ Constraints every decision below works within, from the superproject's rulebook:
 
 - header-only C++20, namespace `webcpp::beast`, macros `WEBCPP_BEAST_*`;
 - targets native, WASIp2, WASIp3 and Emscripten; WASI host-HTTP and stream/socket backends
-  are separate. Missing Asio WASIp2 sockets do not block the host-HTTP workstream;
+  are separate. The newly approved Asio P2 core makes sockets possible, while the Beast P2 guest-socket corpus remains an integration/validation task;
 - errors as values; exceptions optional through `WEBCPP_BEAST_NO_EXCEPTIONS`;
 - allocation through allocators the program gives; Boost and std before custom code; outside
   interfaces wrapped; fixed-width types;
@@ -192,14 +195,17 @@ build configuration; do not silently fall back to a different trust/transport po
 error. WASI host-HTTP uses webcpp::wasi and the component ABI. Its completion scheduling may
 need Asio executor integration, but not TCP, a socket reactor, DNS workers or guest OpenSSL.
 For a socket backend, keep socket/reactor/resolver fixes in Asio or wasi-libc and TLS changes
-in the shared build. These are distinct dependency chains and are tested independently.
+in the shared build. Guest sockets follow Asio's declared targets: native, WASIp2 single
+and WASIp3. Guest TLS is currently validated only for native and WASIp3. These are distinct dependency chains
+and are tested independently.
 
 | Profile | Threading | Exceptions | Current dependency position |
 | --- | --- | --- | --- |
 | Native | single or OS threads | on/off | reference, with example-specific dependencies |
-| WASIp2 host HTTP | host invocations; guest threads separately probed | on/off independently verified | webcpp::wasi entrypoint exists; full Beast bridge required |
-| WASIp2 streams/sockets | single first; multi separately probed | on/off independently verified | stdio streams can be adapted; Asio socket/TLS port still missing |
-| WASIp3 host HTTP | host invocations; guest threads separately probed | on/off independently verified | webcpp::wasi entrypoint exists; full Beast bridge required |
+| WASIp2 host HTTP | host invocations; guest threads separately probed | on/off independently verified | independent Beast bridge and application counterparts measured |
+| WASIp2 supplied streams | single; guest threads separately probed | on/off independently verified | HTTP counterparts and asynchronous WebSocket client/server counterparts measured |
+| WASIp2 sockets/TLS | single for Asio core | on/off for Asio core | Asio core is available; Beast guest-socket applications and guest TLS remain unvalidated/not integrated |
+| WASIp3 host HTTP | host invocations; guest threads separately probed | on/off independently verified | independent Beast bridge and application counterparts measured |
 | WASIp3 sockets, single | disabled | on/off | Asio/TLS integrated; async DNS unsupported |
 | WASIp3 sockets, multi | cooperative, not CPU-parallel | off | Asio/TLS integrated |
 | WASIp3 sockets, multi | cooperative | on | blocked by the tested SDK 34 exception runtime |
@@ -241,8 +247,8 @@ Retain upstream notices. Common certificate headers are fixtures, not a producti
   test. A pre-resolved endpoint (or synchronous resolution before running the context) is an
   explicit example adaptation. The program's URL hostname is still used for Host, SNI and
   certificate identity. Do not claim this establishes asynchronous DNS compatibility.
-- Guest-owned TLS in native/WASI socket backends uses existing OpenSSL and CA targets.
-  WASIp2 raw TLS needs its own build/validation. WASI host HTTP and browser services use the
+- Guest-owned TLS in native/WASIp3 socket backends uses existing OpenSSL and CA targets.
+  WASIp2 guest-socket applications remain pending integration; guest TLS is not enabled. WASI host HTTP and browser services use the
   host's TLS and trust policy where provided; guest CAs do not automatically affect it.
   Never disable verification or silently switch backends to make an example pass.
 - Browser synchronous client methods need a suspending facade over the asynchronous transport.
@@ -353,7 +359,7 @@ while the original Unix-domain transport row remains unavailable on that profile
 - **Idle-timeout activity** is messages and close frames only, because the browser answers the
   peer's pings itself and shows none; stated in the table of differences.
 - **Backend gaps are not Beast features.** The integrated Asio already has browser and WASIp3
-  support, but no WASIp2 target. Its WASIp3 single-thread async resolver reports
+  support and now a single-thread WASIp2 core with asynchronous forward DNS. Its WASIp3 single-thread async resolver reports
   `operation_not_supported`; cooperative threads currently require exceptions off. Keep
   those constraints in the matrix and fix common transport issues in Asio/libc, not Beast.
 - **Stackful coroutines and operating-system facilities.** Boost.Context, Unix sockets,
@@ -411,7 +417,9 @@ complete application result: the measured manifest must add host-HTTP and pair-o
 counterparts for each applicable executable. An original `U` does not exclude those
 counterparts from the deliverable. Native denotes an OS/EH/thread configuration that supplies the
 example's dependencies; every single-thread and EH-off variant is tested and reported
-separately. WASIp2 `B` always includes the missing Asio/TLS integration. Browser columns
+separately. WASIp2 socket cells are `B` until integrated and tested against the newly
+approved Asio P2 core. Unix-domain and system-executor requirements remain `U`. Host HTTP and supplied-stream results remain
+separate from these original socket cells. Browser columns
 must expand to both JSPI/Asyncify and EH modes in the measured matrix.
 
 Notes: `DNS` = async DNS gap on WASIp3 single; `CTX` = stackful coroutine backend;
@@ -420,7 +428,7 @@ facade; `RUN` = thread/signal/server-lifetime adaptation; `TLS` = trust/SNI adap
 `FIX` = controlled fixture input; `STREAM` = raw Asio stream needs browser Beast transport.
 A `U` is documented and negatively tested, never counted as a passed application.
 
-| Upstream path under example/ | Executable | Native | WASIp2 | WASIp3 single | WASIp3 cooperative | Browser | Notes |
+| Upstream path under example/ | Executable | Native | WASIp2 sockets | WASIp3 single | WASIp3 cooperative | Browser | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `advanced/server` | `advanced-server` | A | B | A | A | U | RUN |
 | `advanced/server-flex` | `advanced-server-flex` | A | B | A | A | U | RUN, TLS |
@@ -431,7 +439,7 @@ A `U` is documented and negatively tested, never counted as a passed application
 | `http/client/async` | `http-client-async` | T | B | A | T | A | DNS |
 | `http/client/async-local` | `http-client-async-local` | T | U | U | U | U | LOCAL |
 | `http/client/async-ssl` | `http-client-async-ssl` | A | B | A | A | A | DNS, TLS |
-| `http/client/async-ssl-system-executor` | `http-client-async-ssl-system-executor` | A | B | B | A | B | DNS, EXEC, TLS |
+| `http/client/async-ssl-system-executor` | `http-client-async-ssl-system-executor` | A | U | B | A | B | DNS, EXEC, TLS |
 | `http/client/awaitable` | `http-client-awaitable` | T | B | A | T | A | DNS |
 | `http/client/awaitable-ssl` | `http-client-awaitable-ssl` | A | B | A | A | A | DNS, TLS |
 | `http/client/body` | `json_client` | A | B | T | T | B | SYNC, FIX |
@@ -457,7 +465,7 @@ A `U` is documented and negatively tested, never counted as a passed application
 | `websocket/client/async` | `websocket-client-async` | T | B | A | T | A | DNS |
 | `websocket/client/async-local` | `websocket-client-async-local` | T | U | U | U | U | LOCAL |
 | `websocket/client/async-ssl` | `websocket-client-async-ssl` | A | B | A | A | A | DNS, TLS |
-| `websocket/client/async-ssl-system-executor` | `websocket-client-async-ssl-system-executor` | A | B | B | A | B | DNS, EXEC, TLS |
+| `websocket/client/async-ssl-system-executor` | `websocket-client-async-ssl-system-executor` | A | U | B | A | B | DNS, EXEC, TLS |
 | `websocket/client/awaitable` | `websocket-client-awaitable` | T | B | A | T | A | DNS |
 | `websocket/client/coro` | `websocket-client-coro` | T | B | B | B | B | DNS, CTX |
 | `websocket/client/coro-ssl` | `websocket-client-coro-ssl` | A | B | B | B | B | DNS, CTX, TLS |
@@ -516,3 +524,16 @@ tests. Further references:
 - [WASI stream abstraction](https://github.com/WebAssembly/wasi-io)
 - [Wasmtime P2 HTTP embedding](https://docs.wasmtime.dev/api/wasmtime_wasi_http/p2/index.html)
 - [Wasmtime P3 HTTP embedding](https://docs.wasmtime.dev/api/wasmtime_wasi_http/p3/index.html)
+
+### Later P2 core and supplied-WebSocket approval, 2026-11-03
+
+The owner subsequently approved Asio P2 core and the four supplied-stream
+WebSocket combinations. This supersedes the earlier explanation that no Asio P2
+target exists. The current P2 WebSocket counterparts retain asynchronous
+operations via Asio pollables and preserve host channel ownership. Their client
+and server exchanges pass with exceptions on/off, including 128 KiB binary
+frames, ping/pong and close. Other supplied counterparts remain synchronous.
+The new Asio capability does not establish the separate Beast guest-socket
+application corpus or P2 guest OpenSSL. Its cells are blocked integration work,
+not an inherent WASI platform impossibility. The generated matrix now has 571
+measured passing cells, 216 blocked cells and 432 platform-unavailable cells.

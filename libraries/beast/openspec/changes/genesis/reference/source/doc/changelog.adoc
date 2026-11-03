@@ -14,10 +14,18 @@ Changes to the unreleased Beast facade.
 === Unreleased
 
 // tag::unreleased[]
+// end::unreleased[]
+
+[#beast-changelog-0-1-0]
+=== webcpp 0.1.0
+
+// tag::0.1.0[]
 * Added portable HTTP data interfaces and native/WASIp3 socket operations.
 * Added optional guest TLS SNI configuration with hostname validation.
 * Added browser WebSocket and fetch adapters with explicit capability policies.
 * Added WASI host HTTP and supplied-stream application counterparts.
 * Fixed WebSocket executor conversion when per-message compression is disabled.
+* Fixed host completion storage lifetime and support for PMR operation allocators.
+* Fixed supplied-stream HTTP reads with small bounded buffers.
 * Added executable examples, API reference and a verified target matrix.
-// end::unreleased[]
+// end::0.1.0[]

@@ -1,0 +1,59 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+import webcpp ;
+webcpp.targets native wasip3 ;
+webcpp.original python3 ;
+
+# These are the real OpenSSL/Cobalt fixtures, now part of recurring CI rather
+# than executables requiring a manual request. Both thread profiles are kept.
+local tests ;
+for local threading in single multi
+{
+    for local exceptions in "on" "off"
+    {
+        local targets = native wasip3 ;
+        if $(threading) = multi && $(exceptions) = "on" { targets = native ; }
+        for local mode in client embedded cobalt state cancel
+        {
+            local source ;
+            switch $(mode)
+            {
+                case client : source = tls_client ;
+                case embedded : source = tls_client_embedded ;
+                case cobalt : source = cobalt_ssl_client ;
+                case state : source = cobalt_ssl_state ;
+                case cancel : source = cobalt_ssl_cancel ;
+            }
+            local name = $(mode)-$(threading)-$(exceptions) ;
+            webcpp.drive $(name) : ../../../../tools/openssl/test//$(source)
+              : <threading>$(threading) <exception-handling>$(exceptions)
+                <webcpp-drive-timeout>180
+              : driver.py : $(mode) : $(targets) ;
+            tests += $(name) ;
+        }
+    }
+}
+webcpp.drive entropy : ../../../../tools/openssl/test//entropy
+  : <exception-handling>off <threading>single <webcpp-drive-timeout>60
+  : driver.py : entropy : wasip3 ;
+webcpp.drive entropy-threads : ../../../../tools/openssl/test//threads
+  : <exception-handling>off <threading>multi <webcpp-drive-timeout>60
+  : driver.py : threads : native wasip3 ;
+webcpp.lane tls-integration : $(tests) entropy entropy-threads : native wasip3 ;
+
+# Test the exact native archives before this real TLS consumer links them.
+# The opt-in feature isolates the upstream suite from ordinary consumer builds.
+for local threading in single multi
+{
+    webcpp.drive upstream-$(threading) : ../../../../tools/openssl/test//tls_client
+      : <variant>release <threading>$(threading) <exception-handling>on
+        <webcpp-openssl-tests>on <webcpp-drive-timeout>180
+      : driver.py : client : native ;
+}
+webcpp.lane openssl-upstream : upstream-single upstream-multi : native ;
+webcpp.lane openssl-upstream-msvc-14.3 : upstream-single upstream-multi : native ;
+webcpp.lane openssl-upstream-msvc-14.5 : upstream-single upstream-multi : native ;

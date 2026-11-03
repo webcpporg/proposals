@@ -8,7 +8,7 @@
 == Timers
 
 `steady_timer`, `system_timer` and `basic_waitable_timer` are aliases of
-Boost.Asio's timers on both targets. Their executors, completion tokens,
+Boost.Asio's timers on native, Emscripten and WASIp3. Their executors, completion tokens,
 associated allocators and per-operation cancellation slots keep Boost's
 interfaces and behaviour.
 

@@ -9,9 +9,21 @@ lacks there, the configuration Asio needs to build, what wakes `run` from a
 browser event, and a limit on the handlers one turn runs, so that the page
 keeps rendering. The program's code runs only when the browser delivers an
 event (a message, a promise, a timer), never by polling, and its stack and
-objects stay as they were. Timers are Boost's on both targets, so that a
+objects stay as they were. Timers are Boost's on these targets, so that a
 library written on asio, and every Boost library built on Asio, never knows
 where it runs.
+
+WASIp3 has a minimal port for timers and plain TCP/UDP, with single-thread and
+experimental cooperative-thread profiles. See the [capability matrix](doc/capabilities.adoc)
+and [WASIp3 build instructions](doc/wasip3.adoc) for exception settings, SDK/runtime
+requirements and unsupported operations. `/webcpp/asio//cobalt` supports the same
+WASIp3 profiles with its normal `co_main`, timers and IP socket APIs.
+OpenSSL is built from pinned sources for
+native and WASIp3 targets through `/webcpp/asio//openssl`.
+For embedded Mozilla CA roots and an error-returning TLS client factory, use
+`/webcpp/asio//tls` and `<webcpp/asio/tls_client_context.hpp>`.
+Its replacement overload trusts only the authorities supplied by the application;
+see [trusted certificate authorities](doc/building.adoc#asio-ca-certificates).
 
 ## First program
 

@@ -1,5 +1,73 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Current committed snapshot
+
+- Asio: `dad1aefbe99f8a2cae4e2e3389779106a24cf3dc`.
+- Superproject: `e80ffabb9cc3223f71f07696d3d6a5e806a24f20`.
+- `reference/source/`: 182 tracked files, exported from the Asio commit above.
+- Scope: native/browser functionality, WASIp3 networking/TLS/Cobalt and the approved
+  single-thread WASIp2 core below. Optional P2 TLS/Cobalt/thread targets remain unsupported.
+- Publication gates: the current local candidate needs fresh remote CI and integration;
+  the earlier run `41597577370` passed for root `55a72c0` only.
+
+## WASIp2 follow-up verified and committed, 2026-11-03
+
+The owner approved both the Asio pollable core and supplied-stream WebSocket work.
+The local implementation commits are Asio `dad1aef`, Beast `ab95e84` and superproject
+`e80ffab`. Each library's `reference/source/` is exported from its exact committed
+tree, with every Git blob and executable mode verified. These new commits have not
+been pushed or tested by remote CI. The older green root run does not validate them.
+
+Fresh Release builds passed 138 native, 131 WASIp3 and 68 WASIp2 B2 test targets,
+including compile/header and runtime targets, with exceptions on/off. The selected
+scope covers the default suites and supplied-stream lanes; it is not a new complete
+all-platform CI run. Focused clang-tidy passed 20 translation-unit configurations.
+Formatting, text rules, Pyright, Asio/Beast MrDocs and rendered-guide checks passed.
+Build tests verify the public P2 target, explicit multi-thread/Cobalt/TLS rejection,
+pinned SDK/private-ABI refusal and unchanged P3 profile selection. Root
+`b2 check-release` passed after the implementation commits.
+
+One independent review found two defects, each reproduced before its correction:
+guard-only idle trapped on an empty poll list, and a valid 64-bit host write permit
+could narrow to zero on wasm32. Idle now waits on a clock pollable; the permit is
+clamped before narrowing. Added consumers cover readiness at registration and
+pending-write cancellation. A controlled ABI fixture supplies the large/zero
+permit; it does not claim every host's stdout import is nonblocking or preemptible.
+
+P2 core supports timers, TCP/UDP, forward asynchronous DNS and the supplied CLI
+stream in a single thread. DNS preserves deferred initiation and handler
+associations. P2 guest TLS, Cobalt and multiple threads remain explicitly rejected.
+Both supplied WebSocket roles pass with EH on/off. Their actual exchanges cover
+upgrade, text/binary frames, fragmentation, ping/pong, close, truncated input,
+consumer pause/resume and pending-read cancellation. The application matrix records
+571 passed, 216 blocked and 432 platform-unavailable cells. P2 raw-socket Beast
+application integration remains blocked despite the now-working Asio core.
+
+## Joint Asio and Beast closure, 2026-11-03
+
+The owner approved applying the remaining Asio tasks 22/23 to the current Beast closure.
+The owner also clarified that Asio and Beast are foundations for Trystero's later migration;
+a temporary prohibition on combining them was proposed in an external audit but was not
+approved or implemented. Dependency provenance is being corrected instead.
+
+Repository `webcpporg/asio` exists (created 2026-11-03 UTC), and superproject commit `2ba5116`
+records its owner-authorized submodule integration. G1 and G2 are complete. The five original
+departures were approved on 2026-10-11 as already recorded in `reference/plan.md`; task 23.4
+records that existing decision. G3 still requires final successful library and root CI.
+
+The pre-closure published candidate is root `55a72c0`, Asio `9ed4ba8`, Beast `c173858`.
+Root CI run `41597577370` verifies that baseline; its results must not be presented as proof
+for subsequent local changes. The library's own CI had no runs at the start of this audit.
+The closure review covers Asio changes and superproject integration beyond
+previous task-specific reviews; its fixes are in the subsequent local candidate. No final merge, archived implementation claim or release is
+recorded by this progress entry.
+
+The proposal now includes WASIp3 timers, TCP/UDP, source-built TLS, cooperative-profile
+limitations, the selected default of 100 and the Diataxis page order. This reconciles the
+original accepted scope with the later approvals; the original dated implementation entries
+below remain historical records. `reference/source` now records the exact committed
+library tree identified at the top of this file.
+
 ## Tasks 17 through 21 and default 100, 2026-10-15
 
 The library is at `f5fd7a8` on `work/task14-guide` in

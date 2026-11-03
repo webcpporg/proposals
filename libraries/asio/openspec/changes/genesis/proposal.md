@@ -18,12 +18,15 @@ own asynchronous model (promises, events) should reach C++ as ordinary Asio oper
 ## What Changes
 
 - **New library `webcpp::asio`**, a wrapper (webcpp's interface over Boost.Asio, not a port):
-  header-only C++20 over Boost.Asio on two targets, native and Emscripten.
-  Natively every name is Boost's. On Emscripten it is Boost's own `io_context` suspended into
-  the browser's event loop. There is no WASI target (Boost.Asio 1.92 does not compile for
-  wasm32-wasip2 or wasm32-wasip3 with wasi-sdk 34).
-- `webcpp::asio::io_context`, derived from `boost::asio::io_context` on both targets, with
-  `io_context_options{max_handlers_per_turn}` (1000 by default), a reactor made at construction
+  C++20 over Boost.Asio on native, Emscripten, WASIp2 and WASIp3. Native names retain Boost's
+  behavior. Emscripten suspends Boost's own `io_context` into the browser event loop.
+  A checked Boost overlay provides timers and TCP/UDP on WASIp2 and WASIp3.
+  WASIp2 adds pollable-driven forward async DNS and supplied CLI streams, with a
+  pinned private wasi-libc descriptor bridge. It is single-threaded and rejects
+  guest TLS/Cobalt explicitly. WASIp3 retains optional guest TLS/Cobalt and its
+  validated cooperative thread profile. Unsupported combinations are refused by name.
+- `webcpp::asio::io_context`, derived from `boost::asio::io_context` across targets, with
+  `io_context_options{max_handlers_per_turn}` (100 by default, configurable in config.hpp or by compiler define), a reactor made at construction
   and a run family composed of `poll_one` and `run_one` that yields to the browser through a
   `MessageChannel` macrotask after every turn on Emscripten; timers are aliases of Boost's.
 - The bridge, `webcpp::asio::browser::bridge`, a service of the io_context through which browser
@@ -38,7 +41,8 @@ own asynchronous model (promises, events) should reach C++ as ordinary Asio oper
 - Superproject changes the library needs: the propagated composite feature `webcpp-suspend`,
   a test support that fails a test whose `main` did not finish (`webcpp::test::exit_status`),
   `webcpp.variants`, `webcpp.size-table`, and `/webcpp//boost_cobalt`.
-- No breaking change: nothing depends on asio yet.
+- Beast builds on this foundation; the owner intends a later Trystero migration to Asio
+  and Beast. Combining the libraries remains supported through one OpenSSL provider.
 
 ## Capabilities
 
@@ -48,7 +52,7 @@ own asynchronous model (promises, events) should reach C++ as ordinary Asio oper
   suspended into the page's event loop, with its io_context, run family, turn limit, bridge,
   detection, suspension variants, Asyncify stack, loader, Cobalt `run_main`, promises and
   events as operations, transport point, resolver, `ssl` names, allocation and exception
-  guarantees, tests, examples and documentation.
+  guarantees, WASI timers/networking and supplied streams, tests, examples and documentation.
 
 ### Modified Capabilities
 
@@ -56,22 +60,20 @@ None.
 
 ## Impact
 
-- **Kind:** a wrapper (`"port-of": null`): webcpp's interface over Boost.Asio, repository
-  `webcpporg/asio` (not created; the owner creates it, gate G1), checked out as the submodule
-  `libs/asio`, BSL-1.0, "Copyright (c) 2026 WebCpp.org".
-- **Implementation:** a local repository, unpublished, 13 commits on `main` of 2026-10-11 (tip
-  `7cfd449`), all as `R`, covering tasks 1 and 4 to 9 of the plan; the superproject's tasks 2 and
-  3 are 10 commits on a superproject branch, also local. `reference/source/` is the library's
-  tree at the tip; `reference/STATUS.md` says how the two local copies differ and how to resume.
-  Tasks 10 to 23 are not started.
-- **Dependencies:** Boost 1.92 headers (Asio, and for the tests Beast's `test::stream`;
-  Cobalt's sources are compiled by the superproject, task 15; Core's `lightweight_test`;
-  Unordered's `unordered_flat_map` for the bridge), Emscripten 6.0.11 with embind, node 26.7.0 for
-  the tests, chrome-headless-shell for the browser lane, OpenSSL 3 natively and only for
-  `<webcpp/asio/ssl.hpp>`. webcpp::xactor is a user of the library, not a dependency. No new
-  third-party code.
-- **Status:** `implementing`; not in a release; the owner accepted the specification on
-  2026-10-11 and approved the plan's five departures the same day.
-- **Other proposals:** webcpp::beast (WebSocket and HTTP, over the bridge, the transport point
-  and the `ssl` record), webcpp::webrtc (over the bridge) and trystero's migration onto asio
-  (its event-side polling removed) depend on this one; none exists as a proposal yet.
+- **Kind:** a wrapper (`"port-of": null`), repository `webcpporg/asio`, checked out as
+  the superproject submodule `libs/asio`, under BSL-1.0.
+- **Implementation:** tasks 1-21, the later WASIp3/TLS increments and the approved
+  single-thread WASIp2 core/supplied-stream increment are implemented locally.
+  The repository was created on 2026-11-03 UTC and the owner-authorized superproject
+  integration is commit `2ba5116`. Tasks 22/23 close the documentation, conformance,
+  complete-branch review and final CI gates. `reference/STATUS.md` distinguishes tested
+  commits from work in progress and identifies the exact reference source snapshot.
+- **Dependencies:** Boost 1.92, WebCPP config, Emscripten 6.0.11, the pinned Node/browser
+  test tools, WASI SDK 34 and Wasmtime 50.0.1. Guest TLS explicitly selects source-built
+  OpenSSL 3.5.9 and optionally the verified embedded Mozilla CA snapshot. xactor is a
+  user of Asio, not a dependency of it.
+- **Status:** `implementing`, for 0.1.0 in preparation. The owner accepted the original
+  specification and five departures on 2026-10-11, approved subsequent WASIp3/TLS work,
+  and ratified the reconciled scope on 2026-11-03. No release has been published.
+- **Other proposals:** Beast has its own proposal and uses the browser and socket
+  facilities. WebRTC and Trystero's application migration remain separate workstreams.

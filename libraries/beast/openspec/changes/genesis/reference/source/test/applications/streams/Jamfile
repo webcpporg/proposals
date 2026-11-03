@@ -17,8 +17,13 @@ webcpp.lane applications-streams : http-client-async-local http-server-async-loc
 
 webcpp.drive websocket-client-async-local : ../../../example/applications/streams/websocket-client-async-local.cpp
   : <target-os>windows:<build>no <library>/webcpp/beast//sockets <library>/webcpp/wasi//wasi
-  : driver.py : websocket-client-async-local : native wasip3 ;
+  : driver.py : websocket-client-async-local : native wasip2 wasip3 ;
 webcpp.drive websocket-server-async-local : ../../../example/applications/streams/websocket-server-async-local.cpp
   : <target-os>windows:<build>no <library>/webcpp/beast//sockets <library>/webcpp/wasi//wasi
-  : driver.py : websocket-server-async-local : native wasip3 ;
-webcpp.lane applications-websocket-streams : websocket-client-async-local websocket-server-async-local : native wasip3 ;
+  : driver.py : websocket-server-async-local : native wasip2 wasip3 ;
+webcpp.lane applications-websocket-streams : websocket-client-async-local websocket-server-async-local : native wasip2 wasip3 ;
+
+webcpp.drive websocket-cancel : websocket_cancel_test.cpp
+  : <library>/webcpp//node-test <library>/webcpp/beast//sockets <library>/webcpp/wasi//wasi
+  : driver.py : websocket-cancel : wasip2 ;
+webcpp.lane websocket-cancellation : websocket-cancel : wasip2 ;

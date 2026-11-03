@@ -12,6 +12,13 @@ project /webcpp/asio ;
 
 import feature ;
 import numbers ;
+import errors ;
+import webcpp ;
+import webcpp-target ;
+
+use-project /webcpp/asio-wasip3 : ../../tools/boost/asio-wasip3 ;
+use-project /webcpp/asio-wasip2 : ../../tools/boost/asio-wasip2 ;
+use-project /webcpp/asio-windows : ../../tools/boost/asio-windows ;
 
 # The stack Asyncify saves a suspension in, in bytes: 8192 unless a program
 # asks for more with <asyncify-stack-size>, propagated so that asio's usage
@@ -56,6 +63,7 @@ rule asyncify-stack ( properties * )
 # (include/webcpp/asio/browser/src.hpp), linked into every program on
 # emscripten by asio's usage requirements below.
 obj browser-src : src/browser_src.cpp : <include>include <library>/boost//headers
+  <library>/webcpp/config//config
   <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS ;
 explicit browser-src ;
 
@@ -79,6 +87,11 @@ explicit browser-src ;
 # not otherwise need them; JavaScript calls both through stackSave/Restore.
 # tag::asio[]
 alias asio : : : : <include>include <library>/boost//headers
+  <library>/webcpp/config//config
+  <target-os>windows:<library>/webcpp/asio-windows//headers
+  <toolset>clang-wasip2:<library>/webcpp/asio-wasip2//headers
+  <toolset>clang-wasip2:<source>/webcpp/asio-wasip2//pollable
+  <toolset>clang-wasip3:<library>/webcpp/asio-wasip3//headers
   <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS
   <toolset>emscripten:<linkflags>-lembind
   <toolset>emscripten:<linkflags>-Wl,--export=emscripten_stack_get_current
@@ -90,48 +103,40 @@ alias asio : : : : <include>include <library>/boost//headers
   <toolset>emscripten:<tag>@webcpp%suspend-tag ;
 # end::asio[]
 
+# WASIp3 uses the checked Cobalt/Asio overlays.
+# The Cobalt integration is not validated on WASIp2.
+rule cobalt-platform ( properties * )
+{
+    if [ webcpp-target.target-of $(properties) ] = wasip2
+    {
+        errors.user-error "webcpp::asio: Cobalt requires native, Emscripten or WASIp3." ;
+    }
+}
+
 # Cobalt's entry point, with webcpp's bounded application event loop.
 # tag::cobalt[]
 lib cobalt-main : src/cobalt_main.cpp
   : <link>static <library>asio <library>/webcpp//boost_cobalt ;
 explicit cobalt-main ;
-# Boost omits main_promise::unhandled_exception without exceptions. Clang
-# diagnoses the entry coroutine anyway; suppress only that diagnostic, and
-# only in the explicitly exception-free Cobalt consumer configuration.
-alias cobalt : : : : <library>asio <library>cobalt-main <library>/webcpp//boost_cobalt
-  <toolset>clang,<exception-handling>off:<cxxflags>-Wno-coroutine-missing-unhandled-exception
-  <toolset>emscripten,<exception-handling>off:<cxxflags>-Wno-coroutine-missing-unhandled-exception ;
+# The checked common Cobalt patch supplies the promise member required even
+# when a compiler builds the coroutine without exception handling.
+alias cobalt : : <conditional>@cobalt-platform : : <library>asio <library>cobalt-main <library>/webcpp//boost_cobalt ;
 # end::cobalt[]
 
-import webcpp ;
-
 # tag::openssl[]
-local openssl-root = [ webcpp.external asio : OpenSSL : OPENSSL_ROOT : openssl
-    : openssl/ssl.h : native ] ;
-lib openssl-ssl : : <name>libssl <toolset>msvc <search>$(openssl-root)/lib
-    <search>$(openssl-root)/lib/VC/x64/MD : : <include>$(openssl-root)/include ;
-lib openssl-ssl : : <name>ssl <search>$(openssl-root)/lib
-  : : <include>$(openssl-root)/include ;
-lib openssl-crypto : : <name>libcrypto <toolset>msvc <search>$(openssl-root)/lib
-    <search>$(openssl-root)/lib/VC/x64/MD : : <include>$(openssl-root)/include ;
-lib openssl-crypto : : <name>crypto <search>$(openssl-root)/lib
-  : : <include>$(openssl-root)/include ;
-explicit openssl-ssl openssl-crypto ;
-
 rule openssl-required ( properties * )
 {
-    if ! <toolset>emscripten in $(properties)
+    if [ webcpp-target.target-of $(properties) ] = wasip2
     {
-        return [ webcpp.external-found asio : OpenSSL
-            : $(properties) <webcpp-require-external>on ] ;
+        errors.user-error "webcpp::asio: OpenSSL requires native or WASIp3; WASIp2 is not supported." ;
     }
 }
 
 rule openssl-linked ( properties * )
 {
-    if ! <toolset>emscripten in $(properties)
+    if [ webcpp-target.target-of $(properties) ] in native wasip3
     {
-        return <library>openssl-ssl <library>openssl-crypto
+        return <library>/webcpp/third_party//openssl
             <define>WEBCPP_ASIO_HAS_OPENSSL=1 ;
     }
 }
@@ -147,14 +152,18 @@ alias openssl : : <conditional>@openssl-required
     <toolset>emscripten:<cxxflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\"" ;
 # end::openssl[]
 
-rule openssl-for-tests ( properties * )
-{
-    if ! <toolset>emscripten in $(properties)
-    {
-        return [ webcpp.external-found asio : OpenSSL : $(properties) ] ;
-    }
-}
-
-alias openssl-tests : : <conditional>@openssl-for-tests
+# Browser tests exercise the settings adapter without linking OpenSSL.
+alias openssl-tests : : <conditional>@openssl-required
   : : <conditional>@openssl-linked ;
 explicit openssl-tests ;
+
+# An explicit portable trust policy, separate from the raw OpenSSL context.
+# tag::tls[]
+alias tls : : : : <library>asio <library>openssl
+  <library>/webcpp/third_party//ca_certificates ;
+# end::tls[]
+
+# tag::cobalt-ssl[]
+alias cobalt_ssl : : : : <library>cobalt <library>tls
+  <library>/webcpp//boost_cobalt_io_ssl ;
+# end::cobalt-ssl[]

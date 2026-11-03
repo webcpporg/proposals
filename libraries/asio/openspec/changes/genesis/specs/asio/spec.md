@@ -1,17 +1,14 @@
 ## Purpose
 
-webcpp::asio is a header-only C++20 wrapper over Boost.Asio, for native and Emscripten targets.
+webcpp::asio is a header-only C++20 wrapper over Boost.Asio, for native, Emscripten and WASIp3 targets.
 Natively it is Boost.Asio itself; compiled with Emscripten it is still Boost's own `io_context`,
 whose `run` suspends into the browser's event loop, and it adds only what Boost lacks there: the
 configuration Asio needs to build, a reactor made at construction, a limit on the handlers one
 turn runs so that the page keeps rendering, and a bridge through which browser events post.
-These requirements are the structured form of `reference/spec.md` and `reference/plan.md`. The
-areas Library, Build (the suspension feature, names, manifest, size table and test support
-included), Names, Options, Reactor, Run, Detection, Bridge, Exceptions, Stack and Testing
-describe the code of `reference/source/` and the superproject commits of tasks 2 and 3 as they
-are, but for the lane `browser` and the lanes of the later tasks; the areas Timers, Allocation,
-Loader, Browser, Docs, Cobalt, Promise, Event, Socket, Resolver, Ssl and Release describe what the
-plan's tasks 10 to 23 require and are not built.
+These requirements reconcile the original accepted browser specification with the owner's
+later WASIp3, source-built TLS, Cobalt and embedded-CA approvals, ratified on 2026-11-03.
+The source snapshot and completed validation are identified in `reference/STATUS.md`;
+requirements alone do not establish that a gate has passed.
 
 ## ADDED Requirements
 
@@ -22,12 +19,23 @@ The library SHALL be header-only C++20 in namespace `webcpp::asio`, with public 
 - **WHEN** each of `asio.hpp`, `asio/config.hpp`, `asio/io_context.hpp`, `asio/steady_timer.hpp`, `asio/system_timer.hpp` and `asio/basic_waitable_timer.hpp` is compiled alone with `-std=c++20` and Boost 1.92's headers
 - **THEN** each compiles (`-fsyntax-only` exit 0), and `test/Jamfile` declares `webcpp.headers-alone` for them on both targets and for `asio/browser/*.hpp` and `asio/detail/*.hpp` on Emscripten alone
 
-### Requirement: Library: Targets are native and Emscripten, with no WASI backend
-The library SHALL declare native and Emscripten as its targets (`webcpp.targets native emscripten`) and MUST NOT declare wasm32-wasip2 or wasm32-wasip3, because Boost.Asio 1.92 does not compile for them with wasi-sdk 34; a library built on webcpp::asio declares native and Emscripten at most.
+### Requirement: Library: Native, Emscripten and WASIp3 targets
+The library SHALL declare `webcpp.targets native emscripten wasip2 wasip3`. Its WASIp3 backend SHALL use checked, version-pinned Boost overlays for timers, TCP and UDP. Its WASIp2 core SHALL support timers, TCP, UDP and pollable-based asynchronous forward DNS in the single-thread profile with exceptions on or off. Unsupported P2 thread, Cobalt and guest TLS build targets SHALL be rejected explicitly. Libraries using Asio's socket reactor MUST follow these targets; portable messages and host APIs without that reactor may support additional targets independently.
 
-#### Scenario: The test Jamfile names two targets
-- **WHEN** `test/Jamfile` and `example/Jamfile` are read
-- **THEN** each calls `webcpp.targets native emscripten`, and no lane of asio names a WASI toolset
+#### Scenario: The target declarations match the backend
+- **WHEN** the test and example Jamfiles are read
+- **THEN** their supported target declarations include native, Emscripten, WASIp2 and WASIp3, with P2 limited to its verified single-thread feature profile
+
+### Requirement: WASIp3: Networking, TLS and threading profiles
+WASIp3 SHALL support timer waits, TCP accept/connect/read/write, UDP send/receive and cancellation using the host's permitted network. Optional source-built OpenSSL SHALL provide guest TLS, embedded or replacement CA trust, peer verification and explicit per-connection hostname/SNI configuration. Single-thread profiles SHALL support exceptions on and off. Cooperative-thread profiles SHALL require the matching SDK sysroot; a request for exceptions without a supplied C++ exception runtime MUST fail by name instead of silently disabling exceptions.
+
+#### Scenario: Real network and encrypted operations
+- **WHEN** loopback TCP/UDP and TLS tests run on single-thread profiles and the supported cooperative profile
+- **THEN** real peers exchange data, cancellation completes with the documented errors, untrusted peers fail verification, and entropy failure prevents key generation
+
+#### Scenario: Unsupported cooperative exception runtime
+- **WHEN** a WASIp3 multi-thread build requests exceptions using an SDK whose cooperative sysroot has no C++ exception runtime
+- **THEN** configuration stops with an actionable diagnostic naming that profile limitation
 
 ### Requirement: Library: Convenience header
 `include/webcpp/asio.hpp` SHALL include `config.hpp`, `basic_waitable_timer.hpp`, `io_context.hpp`, `steady_timer.hpp` and `system_timer.hpp` and, on Emscripten alone, `browser/bridge.hpp`; it MUST leave out `<webcpp/asio/ssl.hpp>`, which natively brings OpenSSL.
@@ -37,11 +45,11 @@ The library SHALL declare native and Emscripten as its targets (`webcpp.targets 
 - **THEN** it compiles natively, and on Emscripten `webcpp::asio::browser::bridge` is also declared
 
 ### Requirement: Library: Configuration header and the no-exceptions macro
-`<webcpp/asio/config.hpp>`, which every public header includes first, SHALL include `<boost/config.hpp>` and define `WEBCPP_ASIO_NO_EXCEPTIONS` exactly when `BOOST_NO_EXCEPTIONS` is defined, and MUST keep it when a developer defines it in a build that has exceptions; an API of asio that throws sits behind `#ifndef WEBCPP_ASIO_NO_EXCEPTIONS`.
+`<webcpp/asio/config.hpp>`, which every public header includes first, SHALL include `<webcpp/config.hpp>` first and define `WEBCPP_ASIO_NO_EXCEPTIONS` when `WEBCPP_NO_EXCEPTIONS` or `BOOST_NO_EXCEPTIONS` is defined, and MUST keep it when a developer defines it in a build that has exceptions; an API of asio that throws sits behind `#ifndef WEBCPP_ASIO_NO_EXCEPTIONS`.
 
 #### Scenario: The macro follows the build
 - **WHEN** `config_test.cpp` is compiled with exceptions, without exceptions (`-fno-exceptions`), and with `-DWEBCPP_ASIO_NO_EXCEPTIONS -DWEBCPP_TEST_ASIO_DEVELOPER_DEFINED`
-- **THEN** each compiles: the macro is defined exactly when `BOOST_NO_EXCEPTIONS` is, and the developer's definition is kept
+- **THEN** each compiles: the macro follows the compiler or global WebCPP exception setting, and the developer's definition is kept
 
 #### Scenario: The test lane builds the configuration twice
 - **WHEN** `test/Jamfile` is read
@@ -54,8 +62,12 @@ The library SHALL declare native and Emscripten as its targets (`webcpp.targets 
 - **WHEN** `asyncify_stack_size_test.cpp` is built with `<webcpp-suspend>asyncify <asyncify-stack-size>4096`
 - **THEN** it does not compile (`asyncify_stack_size_refused`, a `compile-fail`), while the same source with `<asyncify-stack-size>8192` compiles (`asyncify_stack_size_control`)
 
+#### Scenario: Global configuration reaches Asio
+- **WHEN** `WEBCPP_NO_EXCEPTIONS` is defined before including an Asio header
+- **THEN** Asio's no-exceptions setting is active, and its B2 target propagates the config library dependency
+
 ### Requirement: Library: Repository files of a webcpp library
-The repository SHALL hold `build.jam`, `meta/libraries.json` (key `asio`, `"port-of": null`, categories `["Concurrent", "IO"]`, `cxxstd` `20`, maintainer `R <github.overboard312@passmail.net>`), `README.md`, `AGENTS.md` (only what is specific to asio), `LICENSE_1_0.txt`, `.gitignore` (at least `doc/html/`), `.gitattributes`, `.github/workflows/ci.yml` calling the superproject's reusable `library.yml` with `library: asio`, `doc/`, `test/` and `example/`.
+The repository SHALL hold `build.jam`, `meta/libraries.json` (key `asio`, `"port-of": null`, categories `["Concurrent", "IO"]`, `cxxstd` `20`, maintainer `R <github.overboard312@passmail.net>`), `README.md`, `AGENTS.md` (only what is specific to asio), `LICENSE_1_0.txt`, `.gitignore` (at least `doc/html/`), `.gitattributes`, `.github/workflows/ci.yml` calling the superproject's reusable `library.yml` with `library: asio`, `doc/` including a maintained `doc/changelog.adoc` as the last page appendix, `test/` and `example/`.
 
 #### Scenario: The metadata names no port
 - **WHEN** `meta/libraries.json` is read
@@ -168,11 +180,11 @@ A program SHALL keep naming `post`, `dispatch`, `co_spawn`, `use_awaitable`, `bi
 - **THEN** they behave as on Boost's context (`names_test`: `a_posted_handler_runs`)
 
 ### Requirement: Options: The io_context's options and their default
-`webcpp::asio::io_context_options` SHALL be a struct with one member, `std::size_t max_handlers_per_turn`, defaulting to 1000, which bounds the handlers one turn of the run family runs on Emscripten before it yields to the browser; a value of 0 MUST be taken as 1.
+`webcpp::asio::io_context_options` SHALL be a struct with one member, `std::size_t max_handlers_per_turn`, defaulting to `WEBCPP_ASIO_MAX_HANDLERS_PER_TURN` (100 unless defined by the application before including config), which bounds the handlers one turn of the run family runs on Emscripten before it yields to the browser; a value of 0 MUST be taken as 1.
 
 #### Scenario: The default, a given value and zero
 - **WHEN** `names_test`'s `options_are_kept` constructs a default context, a context with `io_context_options{.max_handlers_per_turn = 64}` and one with `{.max_handlers_per_turn = 0}`
-- **THEN** `max_handlers_per_turn()` is 1000, 64 and 1
+- **THEN** `max_handlers_per_turn()` is 100, 64 and 1
 
 ### Requirement: Options: The option can be read and changed later
 `io_context` SHALL provide `std::size_t max_handlers_per_turn() const noexcept` and `void max_handlers_per_turn(std::size_t n) noexcept`, where 0 is taken as 1, on both targets.
@@ -186,7 +198,7 @@ A program SHALL keep naming `post`, `dispatch`, `co_spawn`, `use_awaitable`, `bi
 
 #### Scenario: Boost's idiom and a hint with options
 - **WHEN** `names_test`'s `a_concurrency_hint_is_boost_s` constructs `webcpp::asio::io_context io{1}` and one with `BOOST_ASIO_CONCURRENCY_HINT_1` and `.max_handlers_per_turn = 8`
-- **THEN** the first reports 1000 and the second 8, and a posted handler runs once under `run()`
+- **THEN** the first reports 100 and the second 8, and a posted handler runs once under `run()`
 
 ### Requirement: Options: Natively the options change nothing and the run family is Boost's
 Natively `io_context` SHALL bring Boost's `run`, `run_for`, `run_one`, `run_one_for`, `run_one_until` and `run_until` into its scope with `using` declarations and MUST accept the options without effect, since no page waits on a native loop.
@@ -237,7 +249,7 @@ On Emscripten the six members SHALL hide Boost's (which are not virtual) and `ru
 
 #### Scenario: The yield count of a self-posting handler
 - **WHEN** `turn_limit_test`'s `run_yields_every_turn` runs a handler that posts itself 5000 times under `run()` with the default limit
-- **THEN** `run()` returns 5000, the longest run of handlers between two yields is 1000 and the yield counter reads 4
+- **THEN** `run()` returns 5000, the longest run of handlers between two yields is 100 and the yield counter reads 49
 
 #### Scenario: run_for yields the same way
 - **WHEN** `run_for_yields_every_turn` sets the limit to 250 and runs 5000 self-posts under `run_for(10s)`
@@ -251,7 +263,7 @@ The yield SHALL be the `EM_ASYNC_JS` import `webcpp_asio_yield`, which awaits a 
 - **THEN** the first handler that sees the timeout run is the first handler of a turn (`seen_since` is 1), at least one yield has happened and no turn exceeded 250 handlers
 
 ### Requirement: Run: A turn is bounded, and the bound between two yields is stated
-The run family SHALL run at most `max_handlers_per_turn` handlers in one turn; step 4's single handler belongs to no turn, so that up to `k + 1 + max_handlers_per_turn` handlers, fewer than twice the limit and one, can run between two yields when a short turn of `k` handlers is followed by a wait that ends at once; the default of 1000 was measured with Emscripten 6.0.11 (a `setTimeout(0)` ran after 1,000 handlers under JSPI and 999 under Asyncify, against 300,000 without the limit).
+The run family SHALL run at most `max_handlers_per_turn` handlers in one turn; step 4's single handler belongs to no turn, so that up to `k + 1 + max_handlers_per_turn` handlers, fewer than twice the limit and one, can run between two yields when a short turn of `k` handlers is followed by a wait that ends at once; the owner selected the default of 100 after the 2026-10-15 yield-cost measurements. The guide SHALL retain the measured costs, methodology and responsiveness limits; a handler is never preempted by the turn limit.
 
 #### Scenario: Boost's own run has no limit
 - **WHEN** `boost_s_own_run_never_yields` runs 5000 self-posts through a `boost::asio::io_context&` reference to the context
@@ -775,26 +787,52 @@ Reverse resolution (`resolve(endpoint, ec)`, `async_resolve(endpoint, ...)`) SHA
 - **THEN** the error is `operation_not_supported`
 
 ### Requirement: Ssl: Boost's ssl natively and a record on Emscripten
-`<webcpp/asio/ssl.hpp>`, which the convenience header leaves out, SHALL define `namespace ssl = boost::asio::ssl;` in `webcpp::asio` natively (needing OpenSSL 3) and on Emscripten a record of the program's TLS settings (`context`, `stream_base`, `verify_*`, `host_name_verification`) that links no library and that only webcpp::beast's browser streams read; without `WEBCPP_ASIO_HAS_OPENSSL` natively the header MUST stop with a message telling the program to add `/webcpp/asio//openssl` beside `/webcpp/asio//asio`.
+`<webcpp/asio/ssl.hpp>`, which the convenience header leaves out, SHALL define `namespace ssl = boost::asio::ssl;` in `webcpp::asio` natively and on WASIp3 (needing source-built OpenSSL 3) and on Emscripten a record of the program's TLS settings (`context`, `stream_base`, `verify_*`, `host_name_verification`) that links no library and that only webcpp::beast's browser streams read; without `WEBCPP_ASIO_HAS_OPENSSL` on those guest TLS targets the header MUST stop with a message telling the program to add `/webcpp/asio//openssl` beside `/webcpp/asio//asio`.
 
 #### Scenario: Natively without OpenSSL
 - **WHEN** a native program includes `<webcpp/asio/ssl.hpp>` without naming `/webcpp/asio//openssl` (`ssl_without_openssl_test`)
 - **THEN** the compile stops with the instruction
 
-### Requirement: Ssl: OpenSSL is named by the program for native builds alone
-`/webcpp/asio//openssl` SHALL link OpenSSL 3's `libssl` and `libcrypto`, found by `webcpp.external` and linked as the system's (shared), with `WEBCPP_ASIO_HAS_OPENSSL=1`, and a program that names it on a machine that lacks it stops the build with a message naming asio, OpenSSL, every place looked and `-sOPENSSL_ROOT=<dir>`; named in a build for Emscripten it MUST stop the compile through the forced include `src/openssl_on_webassembly.hpp` with a message naming what to write, the form for a program built for both targets being a `<conditional>@native-openssl` in the project's requirements; `/webcpp/asio//openssl-tests` is the same for asio's own tests, left out on a machine that lacks OpenSSL.
+### Requirement: Ssl: OpenSSL is an explicit source-built dependency
+`/webcpp/asio//openssl` SHALL select `/webcpp/third_party//openssl`, built from the pinned unmodified upstream source for native or WASIp3, with matching generated headers and archives for the requested compiler, optimization, runtime and threading profile. It MUST NOT silently fall back to system OpenSSL. Emscripten MUST refuse a guest OpenSSL target by name because browser streams use host-managed TLS. `/webcpp/asio//tls` SHALL add the verified embedded CA snapshot and support an explicit replacement trust set without combining it with implicit system roots.
 
-#### Scenario: Named on WebAssembly
-- **WHEN** a program names `/webcpp/asio//openssl` in a build for Emscripten (`openssl_on_webassembly_test`)
-- **THEN** every source fails to compile with the instruction
+#### Scenario: Native and WASIp3 source builds
+- **WHEN** a program names `/webcpp/asio//openssl` or `/webcpp/asio//tls` on native or WASIp3
+- **THEN** its OpenSSL headers and binaries come from the same B2 variant and pinned source, without requiring a system OpenSSL installation
 
-#### Scenario: One program for both targets
-- **WHEN** `example/tls/asio_tls.cpp` is built natively and with `toolset=emscripten` under the lane `tls`
-- **THEN** it builds and prints the same line on both
+#### Scenario: Guest OpenSSL requested in the browser
+- **WHEN** a program names `/webcpp/asio//openssl` for Emscripten
+- **THEN** its compile fails with the instruction to use the browser settings adapter
 
-### Requirement: Release: The rulebook, the index and the gates
-Task 22 SHALL write the superproject's `AGENTS.md` chapter 13 items (every variant tested in three levels of the CI, the compiled Boost libraries naming Cobalt first, the levels item recording that the Asyncify lanes run on every push until the levels exist, and the OpenSSL item recording that `/webcpp/asio//openssl` moves onto `/third_party//openssl` with webcpp::crypto) and the library's row, and the repository MUST NOT be published before the whole-branch review is fixed and the owner has taken the three gates: G1 he creates `webcpporg/asio` (public, BSL-1.0), G2 he adds the submodule `libs/asio` (`git submodule add ../asio.git libs/asio`) and the superproject commits it, G3 the library is pushed first and the superproject second; no subagent ever pushes, creates a repository or changes a GitHub setting.
+#### Scenario: Cobalt's optional SSL wrapper
+- **WHEN** a program names `/webcpp/asio//cobalt_ssl` on native or WASIp3
+- **THEN** the checked Cobalt SSL overlay and source-built OpenSSL are linked, and TLS state, encrypted transfers, cancellation and shutdown are covered by real-peer tests
 
-#### Scenario: The matrix names asio's lanes
-- **WHEN** `python3 tools/ci/matrix.py plan --library asio` and `own-lanes --library asio` run after task 22
-- **THEN** the lanes of every native compiler and Emscripten appear, and the own lanes `emscripten.asio.asyncify`, `emscripten.asio.browser` (with `chrome` true), `native.asio.tls` and `emscripten.asio.tls` (with `external` true)
+### Requirement: Release: The rulebook, index, documentation and gates
+Task 22 SHALL reconcile CODING-GUIDELINES chapters 15/16 and AGENTS with the actual targets, compiled dependencies and named compatibility departures. The page SHALL retain the owner's Diataxis organization and generated MrDocs reference, followed by the changelog. Task 23 SHALL review the complete library and superproject integration, correct important findings with failing regressions first, and verify the exact candidate tree in CI before final integration. G1 records repository creation, G2 the superproject submodule, and G3 publication plus successful library and superproject CI. Existing owner-authorized publication is recorded as history, not repeated or hidden. No subagent pushes, creates a repository or changes a GitHub setting.
+
+#### Scenario: Validation covers the actual target variants
+- **WHEN** the CI plan and declared own lanes are inspected
+- **THEN** they include native, Emscripten and WASIp3, JSPI/Asyncify, browser runtime checks and the supported networking/TLS/threading variants; unsupported profiles are refused and documented explicitly
+
+### Requirement: WASIp2 pollable readiness and cancellation
+
+The P2 backend SHALL combine socket, timer and forward-DNS readiness through the
+executor without resolver worker threads or fixed-interval lookup polling. It
+SHALL preserve deferred initiation, associated executors and allocators, and
+resolver-wide and per-operation cancellation. Unsupported resolver policies
+SHALL complete with explicit error values. Any private libc ABI bridge SHALL
+verify its SDK/libc revision and copied declaration hashes before building.
+
+#### Scenario: A pending CLI read is cancelled by a timer
+
+- **GIVEN** a P2 CLI input stream that remains open without input
+- **WHEN** an Asio timer cancels its pending asynchronous read
+- **THEN** the read completes once with operation_aborted, with no dependency on EOF
+- **AND** this guarantee excludes a host import that blocks inside the host itself
+
+#### Scenario: A deferred operation has not been initiated
+
+- **GIVEN** a deferred asynchronous operation and an intervening cancellation
+- **WHEN** the application later initiates that operation
+- **THEN** the earlier cancellation does not cancel the newly initiated operation

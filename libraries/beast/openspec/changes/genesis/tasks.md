@@ -1,11 +1,12 @@
 # Tasks
 
-The current draft incorporates the owner's WebAssembly-first scope and all 53 upstream
+The current proposal incorporates the owner's WebAssembly-first scope and all 53 upstream
 example applications. Checked items are implemented in the committed source identified by
 `reference/STATUS.md`, or recorded in the committed proposal plan. Backend blockers remain
 explicit; an adapted application does not establish unchanged transport or scheduling parity.
-`reference/spec.md` and the intake record remain historical. Formal proposal submission,
-full candidate CI and release are separate pending gates.
+`reference/spec.md` and the intake record remain historical. The owner has approved submission
+with status `proposed`; committing that update, acceptance, full candidate CI and release
+remain separate gates.
 
 ## 0. Before anything: the plan and the reference code
 
@@ -13,14 +14,12 @@ full candidate CI and release are separate pending gates.
 - [x] 0.2 Write the implementation plan, `reference/plan.md`: every task below with its files, interfaces, steps, code and expected output, in the form of the other libraries' plans
 - [x] 0.3 Write the reference code: the library's first tree (skeleton, configuration, the native names, `set_server_name`, `teardown`) as a local branch, in the form `reference/source/` takes in the other proposals
 - [x] 0.4 Settle the open questions O1 to O3 and O6 of `design.md` with the owner and record them in the plan
-- [ ] 0.5 Submit the proposal for a decision (status `proposed`) once 0.2 and 0.3 exist
+- [x] 0.5 Submit the proposal for a decision (status `proposed`) once 0.2 and 0.3 exist
 
 ## 0A. Portability preflight and backend-specific prerequisites
 
 - [x] 0A.1 Pin Beast 1.92 at `7c1e061f91e2ef542217b76286c314d006c0c8fc`; turn the 53-row design inventory into a checked manifest, reconcile all Jamfile/CMake targets, support files and documentation snippets
 - [x] 0A.2 Build and run the original native examples with controlled fixtures to establish the oracle; record EH, thread, SSL, Context and OS dependencies
-- [ ] 0A.3 Probe WASIp2 Asio timers, TCP connect/listen/accept/read/write, cancellation and DNS on SDK 34; reproduce gaps and implement fixes in Asio/libc with a linked change before enabling the raw-socket Beast profile; do not gate host-HTTP on this port
-- [ ] 0A.4 Extend shared OpenSSL, CAs and B2 for the WASIp2 raw-socket TLS profile; validate source-built TLS, entropy source, hostname verification and replacement CAs, with an independent result for each supported thread/EH profile
 - [x] 0A.5 Probe WASIp2 thread/EH combinations; retain unavailable profiles with specific diagnostics, without inferring support from WASIp3
 - [x] 0A.6 Instantiate upstream Beast over the integrated WASIp3 Asio/TLS backend; test real client/server exchanges, timers, shutdown and cancellation with threads disabled and cooperative threads where available
 - [x] 0A.7 Reproduce and record the WASIp3 single async DNS gap; provide explicitly labelled endpoint-resolution counterparts, and track original async-DNS compatibility as blocked until fixed
@@ -118,11 +117,20 @@ full candidate CI and release are separate pending gates.
 - [x] 8.2 Feature and all-example matrices with target, suspension, threading, EH, source changes and reproducible commands; every listing/output comes from a compiled/run example
 - [ ] 8.3 The lint, the site, CI green on every declared native, WASIp2, WASIp3 and browser lane, with unresolved compatibility blockers reported separately, the changelog line, the tag
 
+## Approved WASIp2 follow-up, 2026-11-03
+
+- [x] P2.1 Use the Asio P2 pollable core and supplied CLI stream for the WebSocket engine.
+- [x] P2.2 Verify client/server with EH on/off, framing, control frames, truncated input,
+  slow consumers and pending-read cancellation; commit the runtime evidence.
+- [x] P2.3 Regenerate the matrix: 571 passed, 216 blocked, 432 platform-unavailable.
+- [x] P2.4 Record the committed source, local regressions and host-blocking limits.
+
 ## Open acceptance gates
 
-- 0.5 remains pending: the repository has implementation code, but the proposal is still
-  formally draft and has no recorded acceptance decision.
-- 0A.3 and 0A.4 remain pending: WASIp2 raw sockets and guest-owned TLS are not implemented.
-  Successful WASI host HTTP/HTTPS does not complete these separate backends.
-- 8.3 remains pending until the complete final candidate CI is green and release steps,
-  including the tag, have happened. Local checks and a dispatched workflow do not complete it.
+- 0.5 records the owner-approved submission state `proposed`, committed with this update.
+  There is no formal acceptance decision.
+- Former tasks 0A.3 and 0A.4 were removed by the earlier owner scope decision. The
+  subsequent P2 approval provides Asio core and supplied-stream WebSocket support.
+  Raw-socket Beast application integration remains blocked; P2 guest TLS is unsupported.
+- 8.3 remains pending until current-candidate CI and the separately authorized release
+  steps have happened. Local checks and a dispatched workflow do not complete it.

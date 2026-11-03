@@ -5,7 +5,8 @@
 // https://www.boost.org/LICENSE_1_0.txt)
 
 /**
- Every public header of asio but <webcpp/asio/ssl.hpp>, which natively brings OpenSSL.
+ Every public header except ssl.hpp and tls_client_context.hpp, which bring optional TLS
+ dependencies.
 */
 #ifndef WEBCPP_ASIO_HPP
 #define WEBCPP_ASIO_HPP
@@ -23,7 +24,7 @@
 #include <webcpp/asio/steady_timer.hpp>  // lint-world: Boost's timers are asio's
 #include <webcpp/asio/system_timer.hpp>  // lint-world: Boost's timers are asio's
 
-#ifdef __EMSCRIPTEN__
+#ifdef WEBCPP_TARGET_EMSCRIPTEN
 #include <webcpp/asio/browser/async_await.hpp>
 #include <webcpp/asio/browser/async_wait_event.hpp>
 #include <webcpp/asio/browser/bridge.hpp>

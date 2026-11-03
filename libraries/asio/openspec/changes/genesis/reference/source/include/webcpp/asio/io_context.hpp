@@ -10,7 +10,7 @@
 #include <webcpp/asio/config.hpp>
 
 #include <boost/asio/io_context.hpp>  // lint-world: the program's event loop, asio's purpose
-#ifdef __EMSCRIPTEN__
+#ifdef WEBCPP_TARGET_EMSCRIPTEN
 #include <webcpp/asio/browser/bridge.hpp>
 #include <webcpp/asio/detail/browser_imports.hpp>
 #include <webcpp/asio/detail/flag_scope.hpp>
@@ -40,7 +40,7 @@ struct io_context_options {
  Boost.Asio's io_context, whose run family on emscripten suspends into the browser's event loop
  and yields to it after every turn of max_handlers_per_turn handlers.
 
- Natively it is Boost's, and its options change nothing.
+ Natively and on WASIp3 it uses Boost's run family, and its options change nothing.
 
  @see "The run family", in the guide.
 */
@@ -109,7 +109,7 @@ public:
         options_.max_handlers_per_turn = n == 0 ? 1 : n;
     }
 
-#ifdef __EMSCRIPTEN__
+#ifdef WEBCPP_TARGET_EMSCRIPTEN
     // run and run_one hide Boost's, which are not virtual: run to compose them with the turn
     // limit, and run_one so that the whole run family is this class's; hence the exemption from
     // bugprone-derived-method-shadowing-base-method.
@@ -308,7 +308,7 @@ private:
     }
 
     io_context_options options_;
-#ifdef __EMSCRIPTEN__
+#ifdef WEBCPP_TARGET_EMSCRIPTEN
     // Never armed: its construction makes the reactor, which the scheduler then waits on, so a
     // run with work and no timer of the program's own suspends in select, which a post wakes,
     // rather than in ::pause(), which nothing wakes (measured with Emscripten 6.0.11;

@@ -95,13 +95,13 @@ include::{examples}/asio_resolver.expected[]
 
 === Explanation: TLS settings
 
-Native `ssl` names are Boost's, with OpenSSL explicitly linked as described
+Native and WASIp3 `ssl` names are Boost's, with OpenSSL explicitly linked as described
 in <<asio-tls>>. In the browser, `ssl::context` records method, verification,
 options, additional roots and client-credential requests. It does not read
 files, parse certificates, implement TLS or execute verification callbacks.
 A browser stream adapter must check this record against its capabilities
 before use; recording a request successfully does not mean the browser honors it.
-The future webcpp::beast integration consumes these settings.
+The webcpp::beast browser integration consumes these settings.
 
 A `host_name_verification` request owns its input string. The context copies
 that name into its own `std::pmr::string`, using the resource given to its

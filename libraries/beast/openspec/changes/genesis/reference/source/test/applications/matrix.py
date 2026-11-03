@@ -32,7 +32,13 @@ def base_cell(row, profile):
     state = "planned"
     reason = "No measured evidence for this profile."
     if profile.startswith("wasip2-socket"):
-        state, reason = "blocked", "Asio has no WASIp2 raw-socket backend."
+        state = "blocked"
+        reason = ("Asio P2 core is available; guest-socket application adapters still require "
+                  "P2 integration and validation.")
+        if row["tls"]:
+            reason = "The Asio P2 target does not yet provide guest OpenSSL."
+        elif row["stackful"]:
+            reason = "Boost.Context has no verified WASI backend."
     if "socket" in profile and row["local_socket"]:
         state, reason = "platform-unavailable", "WASI has no Unix-domain socket namespace."
     if profile.startswith("wasip3-socket") and row["stackful"]:
@@ -60,10 +66,6 @@ def base_cell(row, profile):
         reason = "WASI HTTP cannot expose WebSocket upgrade streams."
     if "supplied-stream" in profile and not row["local_socket"]:
         state, reason = "platform-unavailable", "No original Unix-domain transport to replace."
-    if (profile.startswith("wasip2-supplied") and row["local_socket"] and
-            row["path"].startswith("websocket/")):
-        state = "blocked"
-        reason = "Upstream WebSocket engine requires the P3 socket header surface."
     return {"compile": state, "run": state, "reason": reason, "adaptations": [], "evidence": []}
 
 
@@ -266,7 +268,9 @@ def add_measurements(cells, evidence):
                     command += "libs/beast/test/applications/streams//" + name
                     cells[name][profile] = measured(command, log,
                         ["Original Unix transport replaced by supplied bidirectional stdio.",
-                         "Explicit synchronous partial operations replace callbacks."],
+                         ("P2 pollables preserve asynchronous partial operations." if
+                          abi == "p2" and name.startswith("websocket-") else
+                          "Explicit synchronous partial operations replace callbacks.")],
                         "Supplied-stream application counterpart")
     log = evidence / "host-extra-green.log"
     if log.exists():
@@ -410,7 +414,9 @@ def write_document(matrix, destination):
               "continued work. Host HTTP combines transport phases: failures count as Read; "
               "separate DNS/connect/write/timer phase counts are unmeasured.\n",
               "* Supplied streams replace Unix-domain addressing with caller-provided stdio. ",
-              "Their explicit partial operations replace the original asynchronous model.\n",
+              "P2 WebSocket counterparts retain asynchronous partial operations "
+              "through Asio pollables; "
+              "the other supplied counterparts use synchronous partial operations.\n",
               "* Browser fetch/WebSocket own DNS, framing and TLS. Guest CA lists, protocol ",
               "pinning and handshake User-Agent are removed explicitly. HTTPS fixtures install "
               "an ephemeral CA in an isolated Chrome profile. A fresh untrusted profile rejects "
@@ -419,8 +425,9 @@ def write_document(matrix, destination):
               "* Exception-off counterparts retain error-code paths and successful operations; ",
               "formerly throwing paths report failure and abort. Stackful Context remains "
               "blocked.\n",
-              "* WASIp2 raw sockets, browser listeners and WASI Unix-domain sockets are "
-              "unavailable. ",
+              "* Asio P2 core now provides sockets, but the guest-socket application corpus "
+              "still needs P2 integration and validation; guest TLS is not enabled. "
+              "Browser listeners and WASI Unix-domain socket addressing remain unavailable. ",
               "WASIp3 cooperative EH-on lacks the toolchain exception runtime.\n\n",
               "==== Reproduction\n\n[source,bash]\n----\n",
               "python3 libs/beast/test/applications/inventory.py --check\n",

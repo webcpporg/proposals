@@ -16,15 +16,19 @@ so compatibility has to state the platform boundaries rather than promise imposs
 
 The original specification of 2026-10-10 is preserved in `reference/spec.md`. This revision
 supersedes its native/Emscripten-only scope and its three-example acceptance criterion.
-The formal proposal remains a draft, with no release or acceptance decision. The committed
+The owner has approved submission with status `proposed`, with no release or acceptance decision. The committed
 implementation and measured backend/application results are recorded in `reference/STATUS.md`;
 remaining prerequisites and acceptance gates stay explicit in `tasks.md`.
 
 ## What Changes
 
 - **WebAssembly is the main deliverable.** Native is the reference; WASIp2, WASIp3 and
-  Emscripten are required target workstreams. Missing backend support is tracked work, not
-  a reason to drop a target from the specification.
+  Emscripten are required target workstreams through their declared backends. Guest sockets
+  follow Asio's declared targets and each Beast backend needs independent validation.
+  Asio now offers a single-thread WASIp2 core; Beast's P2 raw-socket application corpus
+  remains blocked integration work and guest TLS remains unsupported there. P2 portable
+  HTTP, host `wasi:http` and supplied stdin/stdout have independent supported paths.
+  P2 supplied WebSocket uses the new pollable executor; host HTTP does not require it.
 - **A separate library `webcpp::beast`**, a C++20 wrapper over Boost.Beast and webcpp::asio,
   presenting Beast-compatible operations and data interfaces while selecting an environment
   backend. Native retains upstream Beast. Wasm data interfaces reuse upstream types while
@@ -73,7 +77,7 @@ remaining prerequisites and acceptance gates stay explicit in `tasks.md`.
 ### Modified Capabilities
 
 None in this OpenSpec root. Extensions to webcpp::wasi for complete HTTP requests/responses
-and stream I/O, the optional raw-socket Asio WASIp2 backend, shared TLS/B2 changes and any
+and stream I/O, shared TLS/B2 changes for Asio's declared socket targets and any
 Boost.Context work belong to their owning components and must have linked changes and tests;
 this proposal does not declare those dependencies implemented.
 
@@ -84,16 +88,19 @@ this proposal does not declare those dependencies implemented.
   superproject candidate. Retain upstream copyright and licence on adapted code.
 - **Implementation:** committed browser, WASI host HTTP, supplied-stream and native/WASIp3
   socket backends, with the full 53-application inventory and explicit adaptations.
-  `reference/source/` records the exact published commit named in `reference/STATUS.md`.
-  WASIp2 raw sockets/guest TLS and other classified backend blockers remain open.
+  The P2 supplied-channel WebSocket backend now also passes its four role/EH cells.
+  `reference/source/` records the exact committed tree named in `reference/STATUS.md`;
+  the new local commits still need publication and fresh CI. WASIp2 raw-socket application
+  integration is blocked and guest TLS is unsupported. All classifications remain explicit
+  in the complete matrix.
 - **Dependencies:** pinned Boost.Beast 1.92, webcpp::asio, Boost.System and webcpp::config;
   webcpp::wasi for host HTTP/streams; shared OpenSSL and CA targets only for guest-owned
   TLS in native/WASI socket backends; wasi-sdk and Wasmtime for WASI;
   Emscripten, Node and a real browser for JSPI/Asyncify. Stackful examples additionally
   require a proven Boost.Coroutine/Context backend; replacing them with C++20 coroutines
   does not establish compatibility of the original examples.
-- **Status:** draft; no release. Intended targets: native, wasip2, wasip3, emscripten.
-  Asio currently declares native, wasip3 and emscripten; WASIp2 raw sockets remain
-  prerequisite work for that backend, not a gate for host-provided WASI HTTP.
+- **Status:** proposed; no acceptance decision or release. Intended targets: native, wasip2,
+  wasip3, emscripten, by backend. Asio declares native, wasip3 and emscripten; Beast guest
+  sockets use native/WASIp3, while WASIp2 uses portable HTTP, host HTTP and supplied streams.
 - **Other proposals:** build on the published Asio integration and record extensions in its
   proposal. Trystero's later relay migration and an upstream Boost proposal remain separate.

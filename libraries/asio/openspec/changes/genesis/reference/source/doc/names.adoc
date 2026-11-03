@@ -7,7 +7,9 @@
 [#asio-names]
 == The names
 
-asio's targets are native and emscripten. On each, a name of asio is
+asio's targets are native, emscripten and wasip3. The table below compares
+native and browser interfaces; <<asio-capabilities>> specifies the WASIp3
+subset, which keeps Boost's socket and timer types. A name of asio is
 Boost.Asio's own, or a type with Boost.Asio's interface where the browser
 needs one of its own:
 
@@ -69,8 +71,8 @@ the concurrency it will see, with or without an allocator, so that Boost's
 idiom `+io_context io{1}+` compiles unchanged. Its one option,
 `max_handlers_per_turn`, 100 by default, bounds the handlers one turn of
 its run family runs on emscripten before it yields to the browser; 0 is
-taken as 1. Natively the options are accepted and change nothing, since no
-page waits on a native loop.
+taken as 1. Natively and on WASIp3 the options are accepted and change nothing, since
+no browser page waits on these loops.
 
 On emscripten, `/webcpp/asio//asio` also gives every program the
 configuration Asio needs to build there, and the link flags of its

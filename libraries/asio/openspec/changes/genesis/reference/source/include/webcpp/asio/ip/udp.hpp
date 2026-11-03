@@ -9,7 +9,7 @@
 #include <webcpp/asio/config.hpp>
 
 #include <webcpp/asio/ip/basic_resolver.hpp>
-#ifndef __EMSCRIPTEN__
+#ifndef WEBCPP_TARGET_EMSCRIPTEN
 #include <boost/asio/ip/udp.hpp>  // lint-world: native protocol alias
 
 namespace webcpp::asio::ip {

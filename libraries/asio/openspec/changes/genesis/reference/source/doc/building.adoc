@@ -7,16 +7,21 @@
 [#asio-building]
 == Building
 
-asio is header-only, and is developed inside the webcpp superproject, as a
-Boost library is developed inside Boost. A b2 program uses it through one
-target, `/webcpp/asio//asio`, on every target:
+asio is developed inside the webcpp superproject, as a Boost library is
+developed inside Boost. Its headers share Boost's executor model; the browser
+bridge and optional Cobalt entry point have compiled support units. A b2
+program uses `/webcpp/asio//asio` on native, Emscripten and WASIp3:
 
 [listing]
 ----
 exe app : app.cpp /webcpp/asio//asio ;
 ----
 
-The target adds asio's headers and Boost's, and on emscripten everything
+The target adds asio's headers, Boost's and the webcpp configuration dependency.
+`<webcpp/asio/config.hpp>` includes `<webcpp/config.hpp>` first;
+`WEBCPP_NO_EXCEPTIONS` disables asio's throwing APIs even when the compiler
+supports exceptions. An explicit `WEBCPP_ASIO_NO_EXCEPTIONS` remains supported.
+On emscripten the target also supplies everything
 else a program needs there: the define Asio needs to build, embind, the
 JavaScript functions asio calls, compiled once in `src/browser_src.cpp`,
 the link flags of the program's suspension variant, and the variant in the
@@ -261,39 +266,109 @@ a pass, in each variant: a `main` that never finishes, and a `main` that
 suspended and then returns 1 without the helper.
 
 [#asio-tls]
-=== TLS: name OpenSSL for native builds alone
+=== TLS: build OpenSSL from source on native and WASIp3
 
-For a native program including `<webcpp/asio/ssl.hpp>`, add
+For a program including `<webcpp/asio/ssl.hpp>`, add
 `/webcpp/asio//openssl` beside `/webcpp/asio//asio` in its target sources:
 `exe app : app.cpp /webcpp/asio//asio /webcpp/asio//openssl ;`.
-OpenSSL 3 supplies libssl and libcrypto. Use `-sOPENSSL_ROOT=<dir>` when
-its include and lib directories are outside the configured search locations.
+This forwards `/webcpp/third_party//openssl`, which builds OpenSSL 3.5.9
+(commit `45e844fa2a14ec92d146bd8f5778ac130b6625fb`) from the unmodified
+upstream submodule. No installed OpenSSL or `OPENSSL_ROOT` is used by this target.
 
-For a program built both natively and for the browser, put this condition in
-its project requirements. Every program in that project then shares it:
+In a Git checkout, initialize the source with
+`git submodule update --init third_party/libs/openssl`.
+A WebCPP source distribution already contains the required OpenSSL files and
+does not need Git. The build needs Python 3, Perl, Make, and the selected
+compiler toolchain; Git is also used to verify a source checkout.
+B2 invokes upstream Configure/Make and exports static `libssl.a`, `libcrypto.a`
+and their matching generated headers. Before Configure, it stages the
+distributable source files in a temporary directory and verifies their paths,
+file modes and content hashes against the pin. Missing, additional or altered
+files fail the build. Dot paths and pinned optional upstream repositories are
+omitted, just as in the source distribution. The temporary source directory
+also avoids upstream Makefiles' restriction on source paths containing spaces.
+Different toolsets, optimization flags,
+exception settings and thread profiles use separate build directories. Effective
+C flags and compiler commands also identify separate archive/header directories.
+Flags retain normal B2 scope: dependency-specific `cflags` belong on the OpenSSL
+target, not only on its consumer. Independent concurrent B2 processes should use
+separate `--build-dir` directories.
+`threading=single` builds OpenSSL with `no-threads`; `threading=multi` enables
+its platform threading implementation. Native recipes support Clang/GCC on
+macOS/Linux and MSVC on Windows. MSVC uses upstream Configure and nmake,
+static archives and the B2 runtime/debug settings; the initial Windows recipe
+uses portable C without requiring NASM.
+
+For a program built both natively and for the browser, use the condition below.
+It also selects OpenSSL for WASIp3; browser builds retain the settings adapter:
 
 [listing]
 ----
 include::{library-root}/example/tls/Jamfile[tag=project,indent=0]
 ----
 
-Declare the program normally with
-`exe app : app.cpp /webcpp/asio//asio ;`. The `tls` example builds these
-project requirements on both targets. Do not use
-`<toolset>!emscripten:<library>/webcpp/asio//openssl`: that spelling silently
-fails to link OpenSSL natively in the tested b2 configuration.
+Do not use `<toolset>!emscripten:<library>/webcpp/asio//openssl`: that spelling
+silently fails to link OpenSSL in the tested B2 configuration.
 
-The three refusal messages identify a different correction:
+Correct configuration errors as follows:
 
-* If `ssl.hpp` says OpenSSL is not linked natively, name the `openssl` target.
-  Outside b2, define `WEBCPP_ASIO_HAS_OPENSSL=1` and link libssl and libcrypto.
-* If the build says OpenSSL was not found, install OpenSSL 3 or supply its
-  root with `-sOPENSSL_ROOT=<dir>`. An explicitly requested missing library
-  stops the build. The library's own tests may omit it unless
-  `webcpp-require-external=on` is set.
-* If the build says OpenSSL was named for WebAssembly, use the native-only
-  condition above. The browser settings record does not link OpenSSL and
-  does not provide TLS inside the Wasm module.
+* If `ssl.hpp` reports that OpenSSL is not linked, name the `openssl` target.
+  Outside B2, define `WEBCPP_ASIO_HAS_OPENSSL=1` and supply matching headers,
+  libssl, libcrypto and platform dependencies yourself.
+* If the source checkout is missing, initialize the submodule with the command
+  above. Tests requiring OpenSSL fail rather than silently skipping TLS.
+* If the target is named for the browser or WASIp2, select native or WASIp3.
+  The browser settings record does not implement TLS inside the Wasm module.
+* With WASIp3 `threading=multi`, use `exception-handling=off` with wasi-sdk 34.0:
+  its cooperative sysroot does not contain the {cpp} exception runtime.
+
+The built-in default and base providers are linked statically. Loading provider
+modules is disabled; this configuration is not a FIPS build. WASIp3 also disables
+assembly, dynamic loading, QUIC, Unix-domain sockets and the OpenSSL thread pool.
+Native Clang/GCC builds retain upstream assembly optimizations; the initial
+MSVC recipe uses portable C. The recipe uses function and data sections plus
+platform dead stripping. A program has one OpenSSL provider. Native Trystero's
+`/webcpp/trystero//native` target builds pinned static libdatachannel and its
+required nested sources against this same provider, so it can coexist with
+Asio and Beast. Such a program selects `threading=multi` and exceptions for
+Trystero's worker-thread backend. Libsecp256k1 remains externally provisioned;
+`OPENSSL_ROOT` and `LIBDATACHANNEL_ROOT` do not select alternate providers.
+
+The configured certificate directory is `/etc/ssl`. A source-built library does
+not install a system trust store or import the macOS keychain. Use the embedded
+factory in <<asio-ca-certificates>> for portable defaults, or explicitly load
+the intended CA file, set `verify_peer`, and verify the peer's hostname on a raw
+context. WASI applications using a file must preopen its directory. Embedded
+authorities need no certificate filesystem access. Both require the needed TCP
+network capability; linking the library grants no runtime permission.
+
+WASIp3 seeding explicitly selects OpenSSL's `getrandom` configuration, whose
+WASI implementation calls `getentropy`, then wasi-libc's secure
+`wasi:random/random.get-random-bytes` host import. With Wasmtime's default host
+configuration, the generator is seeded from the operating system. The host
+remains trusted: an embedder can replace its randomness provider. The tests
+verify that host entropy is requested and a reported entropy failure prevents
+random output and key generation; they do not prove cryptographic entropy
+quality or snapshot/restore safety. Reseed policy after restoring a seeded
+instance requires separate validation.
+
+The reproducible local test driver is `python3 tools/openssl/test/run.py --fresh`
+from the superproject. It needs Python with TLS 1.3 and an OpenSSL 3 command-line
+program only to create short-lived server fixtures. The client links the
+source-built library. `WASMTIME` selects the runtime executable; the recorded
+WASIp3 checks use wasi-sdk 34.0 and Wasmtime 50.0.1. See
+<<asio-capabilities-network>> for the target/variant matrix.
+
+The recurring own lane `b2 libs/asio/test/tls//tls-integration` drives those
+TLS, embedded-CA, state, cancellation and entropy fixtures on native and WASIp3
+profiles. `b2 libs/asio/test/tls//openssl-upstream` is native only: it requests
+`webcpp-openssl-tests=on`, builds and runs upstream's full `alltests` suite,
+then links a TLS consumer against those exact archives. The
+`openssl-upstream-msvc-14.3` and `openssl-upstream-msvc-14.5` aliases exercise
+that suite with the corresponding Windows CI toolsets. Ordinary consumers do
+not run that suite. The upstream harness is unavailable on WASIp3; the separate
+integration tests give narrower evidence and do not claim upstream-suite parity.
+A lane declaration is not evidence that the current candidate passed CI.
 
 The library's targets implement that distinction:
 
@@ -301,3 +376,103 @@ The library's targets implement that distinction:
 ----
 include::{library-root}/build.jam[tag=openssl,indent=0]
 ----
+
+[#asio-ca-certificates]
+=== How-to: configure trusted certificate authorities
+
+For a native or WASIp3 client with portable trust defaults, include
+`<webcpp/asio/tls_client_context.hpp>` and link `/webcpp/asio//tls`.
+The target includes Asio, source-built OpenSSL and
+`/webcpp/third_party//ca_certificates`. No certificate file, environment setting,
+system trust store or network download is read by the factory. WASIp3 needs no
+certificate directory preopen; a network connection still needs host permission.
+
+This program prepares the context and checks errors without exceptions. With no
+arguments it uses the embedded roots. An optional argument supplies replacement
+PEM bytes, not a file path:
+
+[source,cpp]
+----
+include::{examples}/asio_tls_client.cpp[tag=program,indent=0]
+----
+
+The default invocation prints:
+
+[listing]
+----
+include::{examples}/asio_tls_client.expected[]
+----
+
+Use the resulting context when constructing TLS streams and keep it alive while
+they exist. The factory enables `verify_peer` and requires TLS 1.2 or newer.
+Configure `ssl::host_name_verification` for the expected hostname and set SNI on
+each connection. A trusted issuer alone does not establish the intended hostname.
+
+The overload taking `std::string_view` replaces the complete trust set. It does
+not append private authorities to public roots. Supply one or more PEM CA
+certificates separated by whitespace. Empty input, malformed certificates,
+non-CA certificates, and trailing non-whitespace data return an error without
+a usable context. The certificates are copied into the context; the input may
+then be released. Initialization failures are errors as values too, with or
+without exceptions. OpenSSL owns its allocations and does not use an Asio
+allocator. On Emscripten the helper returns `unsupported_target`: browser TLS
+and its trust policy remain under the browser's control.
+
+==== Updating the embedded snapshot
+
+The source is the https://curl.se/docs/caextract.html[Mozilla CA export from curl],
+preserved in `third_party/ca_certificates/cacert.pem` with its MPL-2.0 license.
+The adjacent manifest records the source URL, date, SHA-256 and each certificate's
+DER fingerprint. The initial snapshot is dated 2026-09-25 and contains 121 CAs.
+Keep its license and corresponding PEM source available when redistributing it.
+
+Choose a published date from the curl CA Extract page. From the superproject root:
+
+[source,bash]
+----
+python3 tools/ca_certificates/update.py --date 2026-09-25
+python3 tools/test/ca_certificates_test.py
+python3 tools/test/ca_certificates_b2_test.py
+python3 tools/ca_certificates/run.py --fresh
+----
+
+The updater downloads through verified HTTPS, checks the published SHA-256,
+validates every certificate and reports added/removed fingerprints. Review the
+trust changes and version the PEM and manifest together. An older date is
+rejected. Use `--output DIRECTORY` to stage a candidate separately, or
+`--source-file PATH --sha256 DIGEST` for an independently authenticated offline
+copy. A checksum detects a changed artifact; it is not an independent publisher
+signature. Normal builds use the pinned artifact without downloading anything.
+
+Rebuild and redeploy applications after changing the snapshot. Existing binaries
+retain their embedded roots. The updater does not schedule downloads or alter
+running programs. The build rejects a missing or hash-mismatched snapshot. If an
+update was interrupted between replacing its two files, restore both from Git
+and repeat it. Run only one updater per output directory.
+
+==== Using installed headers
+
+`b2 install --prefix=DIR` includes the generated
+`webcpp/asio/detail/ca_certificates.hpp` under `DIR/include/`. Its private
+namespace is `webcpp::asio::detail::ca_certificates`. The matching PEM
+source, manifest and MPL notices are under `DIR/include/webcpp/ca_certificates/`.
+The CA package is generated locally without compiling OpenSSL. A consumer of
+the installed TLS header must still configure Boost, define
+`WEBCPP_ASIO_HAS_OPENSSL=1` and link compatible OpenSSL headers and archives.
+Installation does not package the Cobalt runner or dependency archives.
+
+==== What portable trust does and does not mean
+
+The PEM export omits some additional constraints enforced by Firefox. It does
+not reproduce the complete browser policy, consult the host's private roots or
+automatically fetch revocation information. Explicit replacement lets an
+application choose a narrower or organizational trust set. Native system trust
+integration and automatic runtime updates are separate features.
+
+Local tests cover real TLS 1.2/1.3 connections, wrong hostnames, an unrelated CA,
+and rejection of a private test CA by the default public bundle. They also check
+complete replacement and invalid input. The matrix covers native macOS
+single/multi with exceptions on/off, WASIp3 single with exceptions on/off, and
+WASIp3 cooperative threads with exceptions off under SDK 34. The WASIp3 client
+runs without certificate filesystem grants. Tests use a fresh local test CA;
+they do not depend on a public website's availability.

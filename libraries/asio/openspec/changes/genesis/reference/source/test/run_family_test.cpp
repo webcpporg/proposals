@@ -108,9 +108,13 @@ void stop_and_restart() {
         ++ran;
         io.stop();
     });
-    boost::asio::post(io, [&ran] { ++ran; });
     BOOST_TEST_EQ(io.run(), 1U);  // lint-run: the test's event loop
     BOOST_TEST(io.stopped());
+    // IOCP may dispatch earlier queued completions before its stop packet.
+    // Post after the stopped run to test restart without assuming that ordering.
+    boost::asio::post(io, [&ran] { ++ran; });
+    BOOST_TEST_EQ(io.run(), 0U);  // lint-run: a stopped context must not dispatch the new work
+    BOOST_TEST_EQ(ran, 1);
     io.restart();
     BOOST_TEST_EQ(io.run(), 1U);  // lint-run: the test's event loop
     BOOST_TEST_EQ(ran, 2);

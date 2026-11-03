@@ -1,0 +1,121 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-wasip2]
+== Build for WASIp2
+
+Use `/webcpp/asio//asio` with `toolset=clang-wasip2` and `threading=single`.
+This profile uses Boost 1.92, wasi-sdk 34.0 and Wasmtime 50.0.1. Both exception
+modes are supported for the core, timers, TCP/UDP and asynchronous forward DNS.
+It does not enable Cobalt, guest TLS or multiple application threads.
+
+Configure the compiler using the project's wasi-sdk user-configuration example.
+Then run the local consumers from the superproject root:
+
+[source,bash]
+----
+b2 -a toolset=clang-wasip2 variant=release threading=single \
+  exception-handling=on,off testing.launcher=tools/boost/asio-wasip2/run.sh \
+  libs/asio/test/wasip2
+b2 -a toolset=clang-wasip2 variant=release exception-handling=on,off \
+  libs/asio/test/wasip2//supplied-stream libs/asio/test/wasip2//scheduler-idle
+----
+
+The first command exercises timers, the run/poll family, TCP and UDP exchanges,
+coroutines, forward name resolution and pollable readiness. The supplied-stream
+lane keeps standard input open without sending data; its timer must still cancel
+a pending read. Each consumer reports a passing result. The network launcher
+explicitly grants socket access and IP name lookup; production hosts should grant
+only the application's required capabilities.
+
+The idle driver uses an external watchdog and a Wasmtime fuel budget. A context
+with a live work guard must remain asleep, including before a reactor is created.
+The write-permit consumers exercise a real output with a controlled 64-bit quota
+and cancellation against a deliberately non-ready native pollable. Those fixtures
+test the adapter's boundary handling; they do not measure every host implementation.
+
+[#asio-wasip2-readiness]
+=== How readiness reaches the executor
+
+WASIp2 provides TCP, UDP, name-resolution streams, monotonic clocks and resources
+that expose readiness through `wasi:io/poll`. The port retains Boost.Asio's select
+reactor. wasi-libc gathers socket pollables and timer deadlines into one host wait.
+No worker thread, fixed-interval DNS scan or browser turn budget is introduced.
+The P2 single-thread profile omits Asio's pipe-based cross-thread interrupter:
+this libc has no P2 pipe implementation, and the profile cannot receive work from
+another application thread.
+An idle scheduler without a reactor waits on a maximum-instant monotonic-clock
+pollable. It does not submit an empty poll list, which WASIp2 rejects, or spin.
+
+A DNS address stream is not a POSIX descriptor. A small compiled bridge registers
+its borrowed pollable with wasi-libc's descriptor table so the same reactor can
+wait for sockets, DNS and timers together. That registration API is private to
+wasi-libc. The build verifies SDK 34.0, libc revision `2e6fb9d8ee0c` and the exact
+copied declaration hashes. Changing the SDK requires revalidating this bridge;
+the build must not silently use an unknown ABI. The upstream installation is
+never modified.
+
+[#asio-wasip2-dns]
+=== Resolver contract
+
+`async_resolve` starts the native lookup through the executor. A deferred token
+does not start DNS until initiated. The handler never runs inside initiation,
+uses its associated executor, and receives an error value on failure. Resolver
+cancellation and per-operation cancellation work before and after registration.
+Destroying a resolver cancels pending lookups; destroying its context abandons
+handlers and releases the owned resources.
+
+Numeric host parsing and the libc service-name table require no host DNS wait.
+The host supplies forward lookup addresses; host capabilities govern access.
+`canonical_name`, `v4_mapped` and `all_matching` are explicitly unsupported by this
+adapter and complete with `operation_not_supported`. Asynchronous reverse lookup
+also remains unsupported. `address_configured` uses libc's numeric family checks.
+Loopback tests establish local resolution, not access to every external DNS server.
+
+Operation storage and copied input/endpoint scratch storage use the associated
+handler allocator. Resolver ownership uses the context allocator. The public
+Boost result container, libc address parsing and descriptor-table storage retain
+their upstream allocation behavior; this is not a zero-global-allocation promise.
+
+[#asio-wasip2-streams]
+=== Use a supplied CLI byte stream
+
+`webcpp::asio::wasi::stdio_stream` implements partial synchronous and asynchronous
+reads/writes over WASIp2 CLI resources. Its asynchronous waits use the same reactor,
+preserve completion-token associations and support cancellation. Only one read
+and one write may be pending per stream. Keep buffer storage alive until completion.
+The stream owns resource handles but does not close libc's descriptors 0 and 1.
+Cancellation aborts pending operations; subsequent operations remain usable.
+Closing or destroying the stream cancels pending operations and prevents new I/O.
+
+The Beast supplied-channel client and server run real WebSocket upgrade, text,
+fragmented binary transfer, ping/pong and close over this adapter, in both exception
+modes. They need no TCP socket grant. These channels do not provide Unix socket
+names, descriptor passing, peer credentials or `wasi:http` WebSocket upgrades.
+
+Writes request a WASI flush before the protocol switches to reading. Readiness
+cannot preempt an import that the host itself implements with blocking I/O. In
+particular, Wasmtime CLI stdout can block when its OS pipe fills. A paused consumer
+must resume draining before the component can observe cancellation. A strict
+cancellation deadline requires a host/channel whose write imports remain nonblocking.
+
+[#asio-wasip2-errors]
+=== Unsupported operations and build profiles
+
+`threading=multi`, `/webcpp/asio//cobalt`, `//openssl`, `//tls` and `//cobalt_ssl`
+are rejected by this P2 build integration. This does not claim that those features
+are impossible in a future port. POSIX signals, Unix-domain sockets, serial ports
+and CPU-parallel threads are not provided by this profile.
+
+Unsupported socket operations retain error-code overloads. Tested examples include
+`linger`, `at_mark` and UDP receive into multiple nonempty buffers, which return
+`operation_not_supported`. A rejected receive does not consume its datagram.
+UDP `send_to` can gather multiple buffers into one datagram; connected UDP
+`send` does not support multiple nonempty buffers. TCP retains partial I/O semantics.
+Numeric IPv6 scope identifiers work; named interfaces are rejected with
+`invalid_argument`. Host permission denial is a runtime error, distinct from an
+unsupported build profile. Prefer error-code/completion-handler paths for recovery,
+especially when exception handling is disabled.

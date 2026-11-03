@@ -159,8 +159,8 @@ upstream error-code overloads when recovery is required.
 == Explanation: separate messages from transport
 
 Boost.Beast's general headers include stream algorithms that reach Asio sockets.
-On WASIp2 that introduces unavailable reactor/platform facilities even when an
-application only constructs a response. This facade exposes data headers separately,
+A message-only application does not need those dependencies, even though the
+Asio port now offers a WASIp2 socket reactor. This facade exposes data headers separately,
 retaining upstream type identity and parsing behaviour without a guest reactor.
 
 The socket backend executes upstream Beast over the existing Asio port. Host
@@ -179,7 +179,7 @@ implemented as arbitrary raw-socket options. Host TLS never uses guest OpenSSL
 settings. Prefer explicit errors to silently claiming that the host accepted an
 unavailable setting.
 
-The native/WASIp3 WebSocket allocator constructor accepts the portable constructor
+The native/WASI WebSocket allocator constructor accepts the portable constructor
 syntax, but upstream Beast still controls its internal stream-state allocation.
 Associated completion-handler allocators retain upstream semantics. Data containers
 use their upstream allocator template parameters.
@@ -201,12 +201,12 @@ API or transport detail of the original program is available.
 |===
 |Feature |Native |WASIp2 |WASIp3 |Emscripten
 |HTTP message/parser/serializer interfaces |Implemented |Implemented |Implemented |Implemented
-|Guest HTTP/WebSocket socket engine |Asio sockets |No raw socket backend |Asio socket port |Explicit supplied byte stream only
+|Guest HTTP/WebSocket socket engine |Asio sockets |Asio core available; guest-socket facade/application integration pending |Asio socket port |Explicit supplied byte stream only
 |Browser WebSocket and fetch |Not applicable |Not applicable |Not applicable |JSPI and Asyncify
 |Guest TLS, identity verification and shutdown |Source-built OpenSSL |No guest TLS backend |Source-built OpenSSL |Browser owns TLS
 |Host HTTP entry/client |Not applicable |wasi:http |wasi:http |fetch client only
 |Unix socket namespace and peer identity |Operating-system sockets |Unavailable |Unavailable |Unavailable
-|Explicit supplied-stream counterpart |Borrowed descriptors |CLI input/output |CLI input/output |Caller-supplied channel
+|Explicit supplied-stream counterpart |Borrowed descriptors |CLI input/output; asynchronous WebSocket via pollables |CLI input/output |Caller-supplied channel
 |Raw TCP HTTP/WebSocket listener |Available |Use host HTTP entry |Available |Unavailable
 |Host HTTP WebSocket upgrade |Not applicable |Not provided by host adapter |Use guest socket backend |Browser WebSocket client only
 |Native CPU-parallel threads |Available |Unavailable |Cooperative WASI threads only |Not implied by this backend
@@ -221,6 +221,13 @@ include::browser-differences.adoc[]
 
 [#beast-stream-cancellation]
 === Cancellation of host-supplied streams
+
+The WASIp2 WebSocket counterparts use Asio's pollable-driven CLI adapter and
+retain asynchronous read/write operations. Their actual client/server exchanges
+pass with both exception profiles. The P2 Asio supplied-stream lane checks a
+pending read with open, empty input, timer cancellation, cancellation slots,
+stream destruction, deferred initiation and handler allocator/executor associations.
+Other supplied counterparts retain their explicit synchronous partial operations.
 
 Supplied-stream cancellation is checked between host calls and while waiting on
 supported readiness operations. It cannot preempt a host import that blocks the

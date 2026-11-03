@@ -1,11 +1,11 @@
 ## Purpose
 
-webcpp::beast lets code written against Boost.Beast, in its layers (resolve, connect, the TLS handshake, the WebSocket handshake, then reads and writes), run in a browser with the same code. Native Boost.Beast is the behavioural reference; WASIp2, WASIp3 and Emscripten are the primary portability targets. Compiled with Emscripten, the same names and interfaces drive the browser's `WebSocket` and `fetch`: the layers the browser does not expose record what the browser needs, and the last one opens the connection. What the browser cannot honour fails as a value by default. It is to webcpp::asio what Boost.Beast is to Boost.Asio. These requirements revise the historical `reference/spec.md` draft with the owner's 2026-11-02 scope: all upstream example applications on WebAssembly. The library is not built; requirements are not runtime evidence. The WebSocket, Settings, Back-pressure, Lifetime and HTTP browser adaptation contracts below apply to Emscripten; native and the explicit WASI socket backend keep upstream transport semantics. WASI host-HTTP and supplied-stream counterparts have the explicit contracts below.
+webcpp::beast lets code written against Boost.Beast, in its layers (resolve, connect, the TLS handshake, the WebSocket handshake, then reads and writes), run in a browser with the same code. Native Boost.Beast is the behavioural reference; WASIp2, WASIp3 and Emscripten are the primary portability targets. Compiled with Emscripten, the same names and interfaces drive the browser's `WebSocket` and `fetch`: the layers the browser does not expose record what the browser needs, and the last one opens the connection. What the browser cannot honour fails as a value by default. It is to webcpp::asio what Boost.Beast is to Boost.Asio. These requirements revise the historical `reference/spec.md` draft with the owner's 2026-11-02 scope: all upstream example applications on WebAssembly. The committed implementation and its measured evidence are identified in `reference/STATUS.md`; requirements alone are not runtime evidence. The WebSocket, Settings, Back-pressure, Lifetime and HTTP browser adaptation contracts below apply to Emscripten; native and the explicit WASI socket backend keep upstream transport semantics. WASI host-HTTP and supplied-stream counterparts have the explicit contracts below.
 
 ## ADDED Requirements
 
 ### Requirement: Library: header-only library in its namespace
-The library SHALL be header-only C++20, in namespace `webcpp::beast`, with public headers under `<webcpp/beast/...>`, one per responsibility, macros prefixed `WEBCPP_BEAST_`, for native, WASIp2, WASIp3 and Emscripten. Each target SHALL be declared supported only after its transport dependencies and executable tests pass. Missing Asio support for WASIp2 raw sockets MUST be tracked as prerequisite work for that backend, not a gate on a host-HTTP backend that does not use sockets.
+The library SHALL be header-only C++20, in namespace `webcpp::beast`, with public headers under `<webcpp/beast/...>`, one per responsibility, macros prefixed `WEBCPP_BEAST_`, for native, WASIp2, WASIp3 and Emscripten. Each target SHALL be declared supported only after its transport dependencies and executable tests pass. Guest sockets and guest-owned TLS MUST each follow webcpp::asio's independently validated features. The owner-approved WASIp2 single-thread core provides sockets and pollables, but Beast's unvalidated P2 guest-socket application cells MUST remain blocked until integrated and tested. P2 guest TLS MUST NOT be inferred from a working plain socket. WASIp2 portable HTTP, host `wasi:http` and supplied stdin/stdout remain in scope with independent evidence.
 
 #### Scenario: A program names the library like Boost.Beast
 - **WHEN** a program writes `namespace beast = webcpp::beast;` where it wrote `namespace beast = boost::beast;`
@@ -82,14 +82,14 @@ HTTP operations SHALL retain their supported Beast-shaped signatures, completion
 - **THEN** its request is sent through fetch or wasi:http and its completion preserves the documented application contract, without requiring an upstream Beast network operation
 
 ### Requirement: Names: set_server_name
-The library SHALL provide `set_server_name(ssl_stream&, std::string_view host)` returning `boost::system::result<void>`. Native and WASI socket profiles with guest-owned TLS MUST set SNI through OpenSSL. Host-service profiles MUST record the requested host and validate it against the eventual URL authority; a differing SNI name that the host cannot honour MUST follow the unsupported-setting policy. Validation MAY be deferred until that authority is known. Host profiles MUST NOT require OpenSSL or claim to configure host TLS directly. This replaces `SSL_set_tlsext_host_name(ws_.next_layer().native_handle(), host)`, since Boost 1.92 has no SNI helper and there is no OpenSSL handle in a browser.
+The library SHALL provide `set_server_name(ssl_stream&, std::string_view host)` returning `boost::system::result<void>`. Native and WASI socket profiles with guest-owned TLS MUST set SNI through OpenSSL. Host-service `ssl_stream` adapters that expose this setting MUST record the requested host and validate it against the eventual URL authority; a differing SNI name that the host cannot honour MUST follow the unsupported-setting policy. Validation MAY be deferred until that authority is known. Host profiles MUST NOT require OpenSSL or claim to configure host TLS directly. The independent WASI `wasi::client(scheme, authority)` API SHALL derive host TLS identity from its authority and MUST NOT advertise a separate SNI override or silently ignore one. This replaces `SSL_set_tlsext_host_name(ws_.next_layer().native_handle(), host)`, since Boost 1.92 has no SNI helper and there is no OpenSSL handle in a browser.
 
 #### Scenario: SNI delegated to the browser
 - **WHEN** on Emscripten a program calls `set_server_name(ws.next_layer(), "echo.example.org")`
 - **THEN** the requested host is recorded and a handshake for that same URL host succeeds through browser-owned TLS without guest OpenSSL
 
 #### Scenario: Host TLS cannot use a different SNI name
-- **WHEN** under `ERROR` a host-service request uses a URL authority different from the host recorded by `set_server_name`
+- **WHEN** under `ERROR` a host-service `ssl_stream` request uses a URL authority different from the host recorded by `set_server_name`
 - **THEN** the dependent operation completes with `operation_not_supported` before sending the request
 
 ### Requirement: Names: teardown for webcpp::asio's sockets
@@ -503,12 +503,12 @@ Documentation and test reports SHALL enumerate native, WASIp2, WASIp3 and Emscri
 - **WHEN** a build selects WASIp3 cooperative threads and exceptions with SDK 34's tested sysroot lacking its exception runtime
 - **THEN** configuration fails with that specific limitation and the row remains visible in the report
 
-#### Scenario: WASIp2 raw sockets are not yet implemented
-- **WHEN** the current Asio dependency lacks a WASIp2 socket backend
-- **THEN** the WASIp2 raw-socket profile remains a required blocked workstream with linked prerequisite tasks, while the independent host-HTTP profile retains its own status
+#### Scenario: WASIp2 socket applications need independent evidence
+- **WHEN** Asio provides its single-thread WASIp2 core but the Beast socket corpus has not been integrated and tested
+- **THEN** those application cells remain blocked, while portable HTTP, host HTTP and supplied-stream profiles retain their independent requirements and measured results
 
 ### Requirement: WASI: host services and stream backends are independent
-WASIp2 and WASIp3 SHALL offer a host-HTTP backend that maps application requests and responses to wasi:http. It MUST reuse and extend webcpp::wasi's component machinery without depending on an Asio TCP reactor, DNS workers or guest OpenSSL merely to send/receive HTTP. A separate socket/stream backend SHALL serve applications requiring raw transport semantics; its socket/reactor/resolver fixes belong to Asio or wasi-libc and its guest-owned TLS belongs to the shared TLS build. Each backend and ABI version MUST have independent evidence.
+WASIp2 and WASIp3 SHALL offer a host-HTTP backend that maps application requests and responses to wasi:http. It MUST reuse and extend webcpp::wasi's component machinery without depending on an Asio TCP reactor, DNS workers or guest OpenSSL merely to send/receive HTTP. A separate socket backend SHALL serve applications requiring raw transport semantics on Asio's declared socket targets, subject to independent backend validation; its socket/reactor/resolver fixes belong to Asio or wasi-libc and its guest-owned TLS belongs to the shared TLS build. Supplied-stream counterparts SHALL remain independent of a socket reactor wherever their protocol engine permits, including WASIp2 HTTP over stdin/stdout. The WASIp2 supplied-channel WebSocket client and server SHALL use pollable-driven partial reads/writes and preserve cancellation, fragmented messages, ping/pong and close. They SHALL NOT claim Unix socket names or a host HTTP upgrade facility. A blocking host write import MUST be documented as a cancellation boundary. Each backend and ABI version MUST have independent evidence.
 
 #### Scenario: WASIp2 host HTTP without raw sockets
 - **WHEN** an HTTP application is built for the WASIp2 host-HTTP profile while the Asio TCP backend is absent

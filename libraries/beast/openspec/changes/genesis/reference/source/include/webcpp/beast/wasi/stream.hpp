@@ -424,6 +424,9 @@ public:
 #endif
 
 /** Parses one message and retains overread in the caller's buffer.
+
+    Reads fit the buffer's remaining maximum capacity. If an incomplete parser
+    needs more input while that capacity is exhausted, reports buffer_overflow.
     @tparam Stream Supplied stream type.
     @tparam DynamicBuffer Dynamic buffer type.
     @tparam Request Whether the parser reads a request.
@@ -452,7 +455,12 @@ std::size_t read(Stream& stream, DynamicBuffer& buffer,
                 break;
             }
         }
-        const auto transferred = stream.read_some(buffer.prepare(4096), error);
+        const auto available = std::min<std::size_t>(4096, buffer.max_size() - buffer.size());
+        if (available == 0) {
+            error = http::error::buffer_overflow;
+            break;
+        }
+        const auto transferred = stream.read_some(buffer.prepare(available), error);
         buffer.commit(transferred);
         if (error == http::error::end_of_stream) {
             if (parser.got_some()) {

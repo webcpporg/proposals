@@ -42,7 +42,8 @@ these guarantees describe their behaviour together.
 . [[asio-invariant-7]]With exceptions enabled, a handler's {cpp} exception
   propagates out of the run family as it does in Boost.Asio, natively and
   under both suspension variants. JavaScript errors have different rules.
-  See <<asio-run-exceptions>> and <<asio-browser-errors>>; checked by `exceptions`.
+  See <<asio-run-exceptions>> and <<asio-browser-errors,JavaScript errors>>;
+  checked by `exceptions`.
 . [[asio-invariant-8]]Boost's timers and Beast's timeouts complete through
   the reactor on both targets. Timer cancellation retains Boost's semantics,
   including cancellation of an individual wait through its associated slot.

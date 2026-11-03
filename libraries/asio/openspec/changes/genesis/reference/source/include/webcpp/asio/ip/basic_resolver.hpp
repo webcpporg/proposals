@@ -9,7 +9,7 @@
 
 #include <webcpp/asio/config.hpp>
 
-#ifndef __EMSCRIPTEN__
+#ifndef WEBCPP_TARGET_EMSCRIPTEN
 #include <boost/asio/ip/basic_resolver.hpp>  // lint-world: native resolver semantics
 
 namespace webcpp::asio::ip {
@@ -22,16 +22,18 @@ template <class InternetProtocol, class Executor = boost::asio::any_io_executor>
 using basic_resolver = boost::asio::ip::basic_resolver<InternetProtocol, Executor>;
 }  // namespace webcpp::asio::ip
 #else
-#include <boost/asio/append.hpp>         // lint-world: preserve handler associations
-#include <boost/asio/async_result.hpp>   // lint-world: completion token initiation
-#include <boost/asio/error.hpp>          // lint-world: resolver error values
-#include <boost/asio/ip/address_v4.hpp>  // lint-world: an unspecified address without DNS
+#include <boost/asio/append.hpp>                // lint-world: preserve handler associations
+#include <boost/asio/associated_allocator.hpp>  // lint-world: input storage uses the token allocator
+#include <boost/asio/async_result.hpp>          // lint-world: completion token initiation
+#include <boost/asio/error.hpp>                 // lint-world: resolver error values
+#include <boost/asio/ip/address_v4.hpp>         // lint-world: an unspecified address without DNS
 #include <boost/asio/ip/basic_resolver_results.hpp>  // lint-world: Boost resolver result entries
 #include <boost/asio/ip/resolver_base.hpp>           // lint-world: Boost resolver flags
 #include <boost/system/system_error.hpp>
 #include <boost/throw_exception.hpp>
 #include <charconv>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -214,6 +216,10 @@ public:
 
     /**
      Posts a forward result with service parsing flags.
+
+     Copies the inputs with the token's associated allocator before returning.
+     Deferred tokens retain those copies and compute the result only when initiated.
+     Bind an allocator to the deferred token to select its input storage allocator.
      @tparam ResolveToken The completion token type.
      @param host The original host, copied before returning.
      @param service The original service, copied before returning.
@@ -224,15 +230,20 @@ public:
     template <class ResolveToken>
     auto async_resolve(std::string_view host, std::string_view service, flags resolve_flags,
                        ResolveToken&& token) {
+        using input_allocator =
+            std::allocator_traits<boost::asio::associated_allocator_t<std::decay_t<ResolveToken>>>::
+                template rebind_alloc<char>;
+        using input_string = std::basic_string<char, std::char_traits<char>, input_allocator>;
+        const input_allocator allocator(boost::asio::get_associated_allocator(token));
         return boost::asio::async_initiate<ResolveToken,
                                            void(boost::system::error_code, results_type)>(
-            [this](auto handler, const std::string& name, const std::string& port, flags mode) {
+            [this](auto handler, const input_string& name, const input_string& port, flags mode) {
                 boost::system::error_code ec;
                 auto result = resolve(name, port, mode, ec);
                 webcpp::asio::detail::post_completion(
                     executor_, boost::asio::append(std::move(handler), ec, std::move(result)));
             },
-            token, std::string(host), std::string(service), resolve_flags);
+            token, input_string(host, allocator), input_string(service, allocator), resolve_flags);
     }
 
     /**

@@ -1,0 +1,185 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-wasip3]
+== Build and test a WASIp3 program
+
+This how-to uses the same timer example as the native tutorial. The port also
+provides TCP/UDP through Boost's socket types. Read <<asio-capabilities>> before
+choosing a profile; it records the restrictions that still differ from native.
+
+=== Prerequisites
+
+Use Boost 1.92.0, wasi-sdk 34.0 and Wasmtime 50.0.1 for the configuration verified
+here. The port pins the exact input headers: a newer or modified Boost requires
+rebasing the patch and rerunning the tests. It is not accepted silently.
+WASIp3 and cooperative threads require runtime support; the previously installed
+Wasmtime 47.0.3 could not load the SDK's cooperative-thread component.
+
+Register `clang-wasip3` in `user-config.jam` as shown by the superproject's WASI
+setup. Put the SDK in `.local/wasi-sdk`, or supply `-sWASI_SDK=/path/to/wasi-sdk`
+when choosing the cooperative profile. It must be the same SDK as the compiler
+registered for this toolset. Put the tested Wasmtime binary on `PATH`.
+
+`/webcpp/asio//asio` prepares a private copy of the patched Boost headers under
+`bin/boost-asio-wasip3/include`. It verifies the input and output hashes and
+searches those headers before the stock headers, only for `clang-wasip3`.
+It does not rewrite the Boost installation. Native and browser builds retain
+their existing headers and settings.
+
+=== Run without threads
+
+From the superproject root, build and check the existing timer example:
+
+[source,bash]
+----
+b2 -a toolset=clang-wasip3 variant=release threading=single \
+  exception-handling=on \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/asio/example//asio_quick_start.output
+----
+
+The example's source is in <<asio-quick-start>>. Expected output:
+
+[listing]
+----
+include::{examples}/asio_quick_start.expected[]
+----
+
+Repeat with `exception-handling=off` to use the single-thread runtime without
+{cpp} exceptions. The library keeps Boost's callback and error-code interfaces.
+No JSPI or Asyncify flags are needed.
+
+=== Run with cooperative threads
+
+[source,bash]
+----
+b2 -a toolset=clang-wasip3 variant=release threading=multi \
+  exception-handling=off \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/asio/test//wasi_core_threads
+----
+
+The build selects `experimental-coop-threads` as its sysroot and adds `-pthread`
+consistently to compilation and linking. It uses that sysroot's {cpp} configuration
+and the matching SDK's common libc{plus}{plus} headers. This is an experimental SDK profile,
+not a promise of CPU parallelism. In the tested SDK, requesting exceptions in
+this profile fails at configuration with a message naming the missing runtime.
+
+The test launcher is for local and CI verification: it enables WASIp3 asynchronous
+components and cooperative-thread support, grants host network and name-lookup
+access for the loopback tests, and bounds each guest's execution to 600 seconds.
+The global lane also runs large finite document and Unicode workloads. Set
+`WEBCPP_WASIP3_TEST_TIMEOUT` to a positive integer number of seconds to choose
+another bound, for example `WEBCPP_WASIP3_TEST_TIMEOUT=15` for focused loopback
+tests. Invalid or zero bounds fail before launch. Enabling a runtime feature
+does not create threads in a single-thread binary. Production applications
+should choose their own timeout and network capabilities.
+
+=== Reproduce the local verification
+
+Run the declared WASIp3 tests and examples with `-a`, then repeat for each
+supported profile from <<asio-capabilities-config>>:
+
+[source,bash]
+----
+b2 -a toolset=clang-wasip3 variant=release threading=single \
+  exception-handling=on \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/asio/test libs/asio/example
+
+b2 -a toolset=clang-wasip3 variant=release threading=single \
+  exception-handling=off \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/asio/test libs/asio/example
+
+b2 -a toolset=clang-wasip3 variant=release threading=multi \
+  exception-handling=off \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/asio/test libs/asio/test//wasi_core_threads libs/asio/example
+
+python3 tools/boost/asio-wasip3/prepare_test.py
+python3 tools/test/asio_wasip3_test.py
+python3 tools/boost/cobalt-wasip3/prepare_test.py
+python3 tools/test/cobalt_wasip3_test.py
+----
+
+`wasi_core` exchanges real TCP and UDP traffic over ephemeral IPv4 loopback
+ports, tests timer and socket cancellation, scatter/gather TCP, and TCP EOF.
+`wasi_core_threads` adds a cross-thread post into a reactor with a pending timer
+and two runners sharing a context. `wasi_contract` checks empty datagrams,
+unsupported vectored UDP receive without consuming data, IPv6 numeric scopes, socket
+option errors and resolver behavior. `wasi_coroutine` waits for a timer using
+Boost.Asio's `co_spawn` and `awaitable` with result-based error handling.
+The existing run-family and timer tests also run on WASIp3.
+`wasi_udp_gather` checks synchronous and asynchronous multi-buffer `send_to`,
+including complete sequences beyond 64 buffers, allocation routing, empty
+datagrams, oversized input and release of storage before completion.
+
+The preparation tests check exact hashes, idempotence and protection of the
+installed headers. The build tests use a checkout with spaces, check that the
+private headers are selected only for WASIp3, and reject unavailable SDK
+profiles. Native controls use the same runtime test sources. These are local
+commands; none starts a CI job.
+
+[#asio-wasip3-cobalt]
+=== Build a Cobalt application
+
+Use `<library>/webcpp/asio//cobalt` in the application's B2 requirements.
+Its ordinary `boost::cobalt::main co_main(int, char**)` entry point is unchanged.
+The target builds Boost.Cobalt from source, applies the checked Cobalt and Asio
+compatibility overlays, and supplies the signal-free WASIp3 runner. Applications
+do not compile a special subset of Cobalt sources themselves.
+
+Run the existing <<asio-cobalt-example,Cobalt timer example>>:
+
+[source,bash]
+----
+b2 -a toolset=clang-wasip3 variant=release threading=single \
+  exception-handling=on \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/asio/example//asio_cobalt.output
+----
+
+[listing]
+----
+include::{examples}/asio_cobalt.expected[]
+----
+
+Repeat with `exception-handling=off`, or with `threading=multi` and
+`exception-handling=off` for the cooperative runtime. The latter can also run
+the explicit `libs/asio/test//cobalt_thread` test. The ordinary test target
+includes `cobalt_wasi`, `cobalt_network_wasi` and `cobalt_io`; they cover the
+runner, both timer APIs, Asio TCP/UDP through `use_op`, Cobalt's own IP socket
+wrappers, refused TCP connections, TCP/UDP cancellation, EOF and result-based
+resolver behavior.
+
+The `libs/asio/test//cobalt_wasip3` lane checks successful and unsuccessful
+command completion with an exact-status driver. Put Wasmtime 50.0.1 on `PATH`,
+or set `WASMTIME` to its executable for that driver. The SDK maps nonzero
+coroutine returns to host status 1.
+
+For TLS, add `/webcpp/asio//tls` and await Asio SSL operations with
+`boost::cobalt::use_op`. `tools/openssl/test//cobalt_tls_client` is a compiled
+consumer of both public targets. Run the following command to check TLS 1.2/1.3,
+trusted and rejected
+identities, malformed CA data and clean shutdown; the path is printed by B2's
+link action:
+
+[source,bash]
+----
+python3 tools/openssl/test/tls.py <path-to-cobalt_tls_client> --embedded
+----
+
+The WASI client needs network capabilities but no CA filesystem
+preopen. To use Cobalt's own `io::ssl::stream`, link the optional
+`/webcpp/asio//cobalt_ssl` target. Its checked patch, trust configuration and
+local test commands are described in <<asio-cobalt-ssl>>.
+
+The underlying platform contracts are documented by
+https://github.com/WebAssembly/wasi-sdk/blob/main/CoopThreading.md[wasi-sdk's cooperative-thread guide]
+and the
+https://github.com/bytecodealliance/wasmtime/releases/tag/v50.0.1[Wasmtime release used here].

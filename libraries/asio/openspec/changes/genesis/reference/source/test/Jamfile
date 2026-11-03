@@ -8,20 +8,69 @@ project : requirements <library>/webcpp/asio//asio ;
 
 import webcpp ;
 
-webcpp.targets native emscripten ;
+webcpp.targets native emscripten wasip3 ;
 webcpp.original node : browser ;
+
+webcpp.run tls_client_context : tls_client_context_test.cpp
+  : <library>/webcpp/asio//tls
+  : native wasip3 ;
+# Hidden category singletons in the executable and shared object compare equal.
+lib tls_error_peer : tls_error_peer.cpp
+  : <link>shared <visibility>hidden <define>WEBCPP_TEST_ERROR_EXPORT
+    <library>/webcpp/asio//tls ;
+explicit tls_error_peer ;
+webcpp.run tls_error_shared : tls_error_shared_test.cpp
+  : <library>tls_error_peer <library>/webcpp/asio//tls <visibility>hidden : native ;
+webcpp.headers-alone asio : ../include : asio/tls_client_context.hpp
+  : <library>/webcpp/asio//tls : native wasip3 ;
+webcpp.run tls_client_context_browser : tls_client_context_browser_test.cpp : : emscripten ;
+
+webcpp.run wasi_core : wasi_core_test.cpp : : native wasip3 ;
+webcpp.run wasi_contract : wasi_contract_test.cpp : : native wasip3 ;
+webcpp.run wasi_udp_gather : wasi_udp_gather_test.cpp : : native wasip3 ;
+webcpp.run wasi_coroutine : wasi_coroutine_test.cpp : : native wasip3 ;
+for local handling in on off
+{
+    webcpp.run asio_coroutine_exceptions_$(handling) : wasi_coroutine_test.cpp
+      : <exception-handling>$(handling) : emscripten ;
+    webcpp.run asio_coroutine_exceptions_$(handling)_asyncify : wasi_coroutine_test.cpp
+      : <exception-handling>$(handling) <webcpp-suspend>asyncify : emscripten ;
+    .asyncify += asio_coroutine_exceptions_$(handling)_asyncify ;
+    webcpp.run cobalt_network_exceptions_$(handling) : cobalt_network_test.cpp
+      : <library>/webcpp/asio//cobalt <exception-handling>$(handling) : native ;
+}
+webcpp.run cobalt_network_wasi : cobalt_network_test.cpp
+  : <library>/webcpp/asio//cobalt : wasip3 ;
+webcpp.run cobalt_io : cobalt_io_test.cpp : <library>/webcpp/asio//cobalt : native wasip3 ;
+webcpp.run cobalt_accept_cancel : cobalt_accept_cancel_test.cpp
+  : <library>/webcpp/asio//cobalt : native wasip3 ;
+webcpp.run cobalt_wasi : cobalt_test.cpp : <library>/webcpp/asio//cobalt : wasip3 ;
+# The SDK supports cooperative WASIp3 threads only with exceptions disabled.
+webcpp.run cobalt_thread : cobalt_thread_test.cpp
+  : <library>/webcpp/asio//cobalt <threading>multi
+    <toolset>clang-wasip3:<exception-handling>off : native wasip3 ;
+explicit cobalt_thread ;
+# Compile the real runner independently of Cobalt's compiled I/O sources.
+# This must not require wasi-libc's process-signal emulation.
+webcpp.compile cobalt_main_wasip3 : ../src/cobalt_main.cpp
+  : <define>BOOST_COBALT_NO_LIB=1 : wasip3 ;
+webcpp.run wasi_core_threads : wasi_core_test.cpp
+  : <threading>multi <define>WEBCPP_TEST_WASI_THREADS
+    <toolset>clang-wasip3:<exception-handling>off : native wasip3 ;
+explicit wasi_core_threads ;
 
 webcpp.headers-alone asio : ../include : asio.hpp asio/basic_datagram_socket.hpp asio/basic_socket_acceptor.hpp
   asio/basic_stream_socket.hpp asio/basic_waitable_timer.hpp asio/config.hpp
   asio/io_context.hpp asio/steady_timer.hpp asio/system_timer.hpp asio/ip/*.hpp ;
 # The browser's headers name Emscripten's own, and compile on emscripten
 # alone.
-webcpp.headers-alone asio : ../include : asio/browser/*.hpp asio/detail/*.hpp : : emscripten ;
+webcpp.headers-alone asio : ../include : asio/browser/*.hpp asio/detail/browser_*.hpp
+  asio/detail/post_completion.hpp asio/detail/flag_scope.hpp : : emscripten ;
 
-# config.hpp defines WEBCPP_ASIO_NO_EXCEPTIONS exactly when the build has no
-# exceptions, and keeps it when a developer defines it in a build that has
-# them.
+# config.hpp follows the collection exception setting and preserves a
+# developer definition that disables this library alone.
 webcpp.compile config : config_test.cpp ;
+webcpp.compile config_all_off : config_test.cpp : <define>WEBCPP_NO_EXCEPTIONS ;
 webcpp.compile config_developer_defined : config_test.cpp
   : <define>WEBCPP_ASIO_NO_EXCEPTIONS <define>WEBCPP_TEST_ASIO_DEVELOPER_DEFINED ;
 
@@ -103,11 +152,23 @@ for local suspend in jspi asyncify
 # The run family keeps Boost's meaning natively too, where it is Boost's own.
 webcpp.run run_family_native : run_family_test.cpp : : native ;
 webcpp.run timers_native : timers_test.cpp : : native ;
+webcpp.run run_family_wasip3 : run_family_test.cpp : : wasip3 ;
+webcpp.run timers_wasip3 : timers_test.cpp : : wasip3 ;
 # Allocation instrumentation observes calls that compiler builtins may elide
 # or reorder across its measurement flags. Keep the calls observable in this
 # test alone, including release; application and size builds stay unchanged.
 local allocation-native-requirements = <toolset>clang:<cxxflags>-fno-builtin
   <toolset>gcc:<cxxflags>-fno-builtin ;
+local allocation-wasi-requirements = <cxxflags>-fno-builtin
+  <linkflags>-Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=aligned_alloc,--wrap=posix_memalign,--wrap=pipe,--wrap=write,--wrap=close ;
+webcpp.run allocation_wasip3 : allocation_test.cpp
+  : $(allocation-wasi-requirements) : wasip3 ;
+webcpp.run allocation_threads : allocation_test.cpp
+  : <threading>multi $(allocation-native-requirements)
+    <toolset>clang-wasip3:<exception-handling>off
+    <toolset>clang-wasip3:<linkflags>-Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=aligned_alloc,--wrap=posix_memalign,--wrap=pipe,--wrap=write,--wrap=close
+  : native wasip3 ;
+webcpp.lane threads : cobalt_thread wasi_core_threads allocation_threads : native wasip3 ;
 webcpp.run allocation_native : allocation_test.cpp
   : $(allocation-native-requirements) : native ;
 webcpp.run allocation_native_release : allocation_test.cpp
@@ -115,8 +176,10 @@ webcpp.run allocation_native_release : allocation_test.cpp
 
 # Throws and catches across a suspension need exceptions, whatever the build
 # asks: WebAssembly's under jspi, JavaScript's under asyncify (the feature's
-# composition), and natively for the twin.
-webcpp.run exceptions : exceptions_test.cpp : <exception-handling>on : native emscripten ;
+# composition), and natively for the twin. WASIp3 uses its single-threaded
+# runtime here because the cooperative SDK has no exception runtime.
+webcpp.run exceptions : exceptions_test.cpp
+  : <exception-handling>on <toolset>clang-wasip3:<threading>single : native emscripten wasip3 ;
 webcpp.run exceptions_asyncify : exceptions_test.cpp
   : <exception-handling>on <webcpp-suspend>asyncify : emscripten ;
 .asyncify += exceptions_asyncify ;
@@ -204,12 +267,15 @@ for local test in cobalt cobalt_status
 }
 
 # A driver checks the actual status, so a trap cannot satisfy run-fail.
+webcpp.drive cobalt_exit_wasi : cobalt_status_test.cpp : <library>/webcpp/asio//cobalt
+  : cobalt_status_driver.mjs : : wasip3 ;
+webcpp.lane cobalt_wasip3 : cobalt_exit_wasi : wasip3 ;
 for local handling in on off
 {
     local name = cobalt_exit_exceptions_$(handling) ;
     local requirements = <library>/webcpp/asio//cobalt <exception-handling>$(handling) ;
     webcpp.drive $(name) : cobalt_status_test.cpp : $(requirements)
-      : cobalt_status_driver.mjs ;
+      : cobalt_status_driver.mjs : : native emscripten ;
     webcpp.drive $(name)_asyncify : cobalt_status_test.cpp
       : $(requirements) <webcpp-suspend>asyncify : cobalt_status_driver.mjs : : emscripten ;
     .cobalt += $(name) ;
@@ -232,9 +298,10 @@ for local handling in on off
 .asyncify += ssl_asyncify ssl_asyncify_no_exceptions ;
 webcpp.lane asyncify : $(.asyncify) : emscripten ;
 
-webcpp.run ssl : ssl_test.cpp : <library>/webcpp/asio//openssl-tests ;
+webcpp.run ssl : ssl_test.cpp : <library>/webcpp/asio//openssl-tests
+  : native wasip3 emscripten ;
 webcpp.run ssl_no_exceptions : ssl_test.cpp
-  : <library>/webcpp/asio//openssl-tests <exception-handling>off ;
+  : <library>/webcpp/asio//openssl-tests <exception-handling>off : native wasip3 emscripten ;
 webcpp.run ssl_asyncify : ssl_test.cpp
   : <library>/webcpp/asio//openssl-tests <webcpp-suspend>asyncify : emscripten ;
 webcpp.run ssl_asyncify_no_exceptions : ssl_test.cpp
@@ -247,7 +314,12 @@ webcpp.compile-fail openssl_named_on_emscripten : openssl_named_test.cpp
   : <library>/webcpp/asio//openssl : emscripten ;
 
 webcpp.headers-alone asio : ../include : asio/ssl.hpp
-  : <library>/webcpp/asio//openssl-tests ;
+  : <library>/webcpp/asio//openssl-tests : native emscripten wasip3 ;
 
 webcpp.compile-fail openssl_named_c_on_emscripten : openssl_named_c_test.c
   : <library>/webcpp/asio//openssl : emscripten ;
+
+# The TLS lane drives real loopback peers with the shared certificate fixtures.
+build-project tls ;
+
+build-project wasip2 ;

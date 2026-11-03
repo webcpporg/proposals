@@ -7,7 +7,7 @@
 #ifndef WEBCPP_ASIO_BASIC_DATAGRAM_SOCKET_HPP
 #define WEBCPP_ASIO_BASIC_DATAGRAM_SOCKET_HPP
 #include <webcpp/asio/config.hpp>
-#ifndef __EMSCRIPTEN__
+#ifndef WEBCPP_TARGET_EMSCRIPTEN
 #include <boost/asio/basic_datagram_socket.hpp>  // lint-world: native sockets keep Boost semantics
 
 namespace webcpp::asio {

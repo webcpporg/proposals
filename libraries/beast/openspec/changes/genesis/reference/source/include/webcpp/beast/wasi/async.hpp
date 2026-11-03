@@ -6,6 +6,8 @@
 
 #ifndef WEBCPP_BEAST_WASI_ASYNC_HPP
 #define WEBCPP_BEAST_WASI_ASYNC_HPP
+#include <webcpp/beast/config.hpp>
+
 #include <webcpp/beast/wasi/http.hpp>
 #if defined(WEBCPP_WASI_HTTP_P2) || defined(WEBCPP_WASI_HTTP_P3)
 #include <boost/asio/associated_allocator.hpp>  // lint-world: handler allocation association
@@ -29,6 +31,10 @@ struct host_operation {
     host_operation* next = nullptr;
     /** Advances one bounded readiness step and reports final completion. */
     virtual bool poll() = 0;
+
+    /** Takes sole ownership of a completed node and releases its storage. */
+    virtual void complete() { destroy(); }
+
     /** Destroys this node with its retained associated allocator. */
     virtual void destroy() noexcept = 0;
     /** Releases pending host state and retained handler associations. */
@@ -83,26 +89,36 @@ struct host_work {
 template <class Function, class Allocator>
 struct host_job final : host_operation {
     /** Allocator rebound to this operation node. */
-    using allocator_type = std::allocator_traits<Allocator>::template rebind_alloc<host_job>;
+    using storage_allocator_type =
+        std::allocator_traits<Allocator>::template rebind_alloc<host_job>;
     /** Posted function retained until its queued invocation. */
     Function function;
     /** Associated allocator retained for matching deallocation. */
-    allocator_type allocator;
+    storage_allocator_type allocator;
 
     /** Constructs retained transfer state from caller-owned resources. */
-    host_job(Function value, allocator_type alloc) : function(std::move(value)), allocator(alloc) {}
+    host_job(Function value, storage_allocator_type alloc)
+        : function(std::move(value)), allocator(alloc) {}
 
-    /** Advances one bounded readiness step and reports final completion. */
-    bool poll() override {
-        function();
-        return true;
+    /** Reports queued work ready without invoking its callback. */
+    bool poll() override { return true; }
+
+    /** Releases associated storage before invoking the moved callback. */
+    void complete() override {
+        const auto release = [](host_job* value) { value->destroy(); };
+        std::unique_ptr<host_job, decltype(release)> guard(this, release);
+        // Some handler types have a mutable call operator.
+        // NOLINTNEXTLINE(misc-const-correctness)
+        auto value = std::move(function);
+        guard.reset();
+        value();
     }
 
     /** Destroys this node with its retained associated allocator. */
     void destroy() noexcept override {
         auto copy = allocator;
-        std::allocator_traits<allocator_type>::destroy(copy, this);
-        std::allocator_traits<allocator_type>::deallocate(copy, this, 1);
+        std::allocator_traits<storage_allocator_type>::destroy(copy, this);
+        std::allocator_traits<storage_allocator_type>::deallocate(copy, this, 1);
     }
 };
 }  // namespace detail
@@ -111,7 +127,9 @@ struct host_job final : host_operation {
 
     poll performs one bounded scan and never waits for data. run yields the current
     component task between scans. Callers keep messages and resources alive until
-    their completion handler runs. Destroying the context abandons pending handlers
+    their completion handler runs. Posted completion storage is released before
+    invoking the handler, so its associated allocator resource may be released there.
+    Destroying the context abandons pending handlers
     and cancels their host resource operations before releasing state. */
 class http_context {
     detail::host_operation* first_ = nullptr;
@@ -147,7 +165,7 @@ public:
         template <class Function, class Allocator>
         void post(Function&& function, const Allocator& allocator) const {
             using job = detail::host_job<std::decay_t<Function>, Allocator>;
-            typename job::allocator_type alloc(allocator);
+            typename job::storage_allocator_type alloc(allocator);
             context_->enqueue(
                 detail::allocate_host_state<job>(alloc, std::forward<Function>(function), alloc));
         }
@@ -228,6 +246,7 @@ public:
             auto const destroy = [](detail::host_operation* operation) { operation->destroy(); };
             std::unique_ptr<detail::host_operation, decltype(destroy)> guard(value, destroy);
             if (value->poll()) {
+                guard.release()->complete();
                 ++completed;
             } else {
                 enqueue(guard.release());
@@ -266,12 +285,12 @@ void host_post(const Executor& executor, const Allocator& allocator, Function&& 
 template <class State, class Handler>
 struct host_async_operation final : host_operation {
     /** Allocator rebound to this operation node. */
-    using allocator_type = std::allocator_traits<
+    using storage_allocator_type = std::allocator_traits<
         boost::asio::associated_allocator_t<Handler>>::template rebind_alloc<host_async_operation>;
     /** Handler-associated executor with the host executor fallback. */
     using executor_type = boost::asio::associated_executor_t<Handler, http_context::executor_type>;
     /** Associated allocator retained for matching deallocation. */
-    allocator_type allocator;
+    storage_allocator_type allocator;
     /** Completion handler retained until the operation finishes. */
     Handler handler;
     /** Associated executor retained through completion scheduling. */
@@ -287,7 +306,8 @@ struct host_async_operation final : host_operation {
 
     /** Constructs retained state and its handler associations. */
     template <class... Args>
-    host_async_operation(allocator_type alloc, Handler value, http_context& context, Args&&... args)
+    host_async_operation(storage_allocator_type alloc, Handler value, http_context& context,
+                         Args&&... args)
         : allocator(alloc),
           handler(std::move(value)),
           executor(boost::asio::get_associated_executor(handler, context.get_executor())),
@@ -329,8 +349,8 @@ struct host_async_operation final : host_operation {
     /** Destroys this node with its retained associated allocator. */
     void destroy() noexcept override {
         auto alloc = allocator;
-        std::allocator_traits<allocator_type>::destroy(alloc, this);
-        std::allocator_traits<allocator_type>::deallocate(alloc, this, 1);
+        std::allocator_traits<storage_allocator_type>::destroy(alloc, this);
+        std::allocator_traits<storage_allocator_type>::deallocate(alloc, this, 1);
     }
 };
 
@@ -338,7 +358,8 @@ struct host_async_operation final : host_operation {
 template <class State, class Handler, class... Args>
 void start_host_operation(http_context& context, Handler&& handler, Args&&... args) {
     using operation = host_async_operation<State, std::decay_t<Handler>>;
-    typename operation::allocator_type allocator(boost::asio::get_associated_allocator(handler));
+    typename operation::storage_allocator_type allocator(
+        boost::asio::get_associated_allocator(handler));
     context.enqueue(allocate_host_state<operation>(allocator, allocator,
                                                    std::forward<Handler>(handler), context,
                                                    std::forward<Args>(args)...));

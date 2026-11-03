@@ -9,7 +9,7 @@
 
 #include <webcpp/beast/config.hpp>
 
-#if defined(WEBCPP_TARGET_NATIVE) || defined(WEBCPP_TARGET_WASIP3)
+#if defined(WEBCPP_TARGET_NATIVE) || defined(WEBCPP_TARGET_WASIP2) || defined(WEBCPP_TARGET_WASIP3)
 #include <boost/beast/websocket.hpp>  // lint-world: explicit guest WebSocket protocol engine
 
 #include <memory>
@@ -43,7 +43,7 @@ using boost::beast::websocket::stream_base;
 
  @tparam NextLayer The underlying AsyncStream or SyncStream type.
  @tparam DeflateSupported Whether upstream per-message deflate is compiled in.
- @note Native and WASIp3 state allocation remains upstream Beast's; associated
+ @note Native and WASI state allocation remains upstream Beast's; associated
  handler allocators are preserved by upstream operations.
 */
 template <class NextLayer, bool DeflateSupported = true>

@@ -32,11 +32,12 @@ server = serve.start(runtime, flags, component)
 try:
     address = serve.wait_until_serving(server, 10)
     payload = bytes(range(256)) * 1024
-    connection = http.client.HTTPConnection(*address, timeout=10)
-    connection.request('POST', '/echo', payload)
-    response = connection.getresponse()
-    assert response.status == 200 and response.read() == payload
-    connection.close()
+    for route in ('/echo', '/pmr'):
+        connection = http.client.HTTPConnection(*address, timeout=10)
+        connection.request('POST', route, payload)
+        response = connection.getresponse()
+        assert response.status == 200 and response.read() == payload
+        connection.close()
     connection = http.client.HTTPConnection(*address, timeout=10)
     connection.request('POST', '/client', payload, {'x-peer': f'127.0.0.1:{peer.server_port}'})
     response = connection.getresponse()
@@ -70,7 +71,8 @@ try:
             reply.begin()
             assert reply.status == 408 and text in reply.read()
     print('Async host: deferred token, associated executor/allocator, cancellation, deadline, '
-          '256 KiB echo and concurrent fast/slow client with trailers passed')
+          'PMR release inside completion, 256 KiB echo and concurrent fast/slow client '
+          'with trailers passed')
 except BaseException:
     print(server.wrote(), file=sys.stderr)
     raise

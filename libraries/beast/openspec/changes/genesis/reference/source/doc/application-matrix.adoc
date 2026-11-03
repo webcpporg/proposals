@@ -193,7 +193,7 @@ A passing counterpart preserves the measured application operations. It does not
 |`http-server-sync` |P/P |P/P |P/P |U/U |U/U |U/U
 |`http-server-sync-ssl` |P/P |P/P |P/P |U/U |U/U |U/U
 |`websocket-client-async` |U/U |U/U |U/U |U/U |U/U |U/U
-|`websocket-client-async-local` |U/U |U/U |U/U |B/B |B/B |P/P
+|`websocket-client-async-local` |U/U |U/U |U/U |P/P |P/P |P/P
 |`websocket-client-async-ssl` |U/U |U/U |U/U |U/U |U/U |U/U
 |`websocket-client-async-ssl-system-executor` |U/U |U/U |U/U |U/U |U/U |U/U
 |`websocket-client-awaitable` |U/U |U/U |U/U |U/U |U/U |U/U
@@ -202,7 +202,7 @@ A passing counterpart preserves the measured application operations. It does not
 |`websocket-client-sync` |U/U |U/U |U/U |U/U |U/U |U/U
 |`websocket-client-sync-ssl` |U/U |U/U |U/U |U/U |U/U |U/U
 |`websocket-server-async` |U/U |U/U |U/U |U/U |U/U |U/U
-|`websocket-server-async-local` |U/U |U/U |U/U |B/B |B/B |P/P
+|`websocket-server-async-local` |U/U |U/U |U/U |P/P |P/P |P/P
 |`websocket-server-async-ssl` |U/U |U/U |U/U |U/U |U/U |U/U
 |`websocket-server-awaitable` |U/U |U/U |U/U |U/U |U/U |U/U
 |`websocket-chat-multi` |U/U |U/U |U/U |U/U |U/U |U/U
@@ -278,10 +278,10 @@ A passing counterpart preserves the measured application operations. It does not
 * WASIp3 uses a fixture resolver posting the known local endpoint. DNS worker threads remain unverified. Worker/system executors use an explicit event loop.
 * Host HTTP preserves file handlers or request/body operations. Host listeners, framing and TLS are distinct from guest sockets. Six HTTPS client counterparts run through a configured Wasmtime host with an isolated CA, rejecting unknown issuers and trusted certificates for the wrong hostname. The documentation client additionally measures host-owned mutual TLS and missing-identity rejection. The documentation server measures a host mutual-TLS frontend.
 * The host crawler retains upstream report aggregation and two asynchronous workers over bounded authority/path inputs. Its fixture uses two peers, six paths, four response statuses, and a truncated-response failure followed by continued work. Host HTTP combines transport phases: failures count as Read; separate DNS/connect/write/timer phase counts are unmeasured.
-* Supplied streams replace Unix-domain addressing with caller-provided stdio. Their explicit partial operations replace the original asynchronous model.
+* Supplied streams replace Unix-domain addressing with caller-provided stdio. P2 WebSocket counterparts retain asynchronous partial operations through Asio pollables; the other supplied counterparts use synchronous partial operations.
 * Browser fetch/WebSocket own DNS, framing and TLS. Guest CA lists, protocol pinning and handshake User-Agent are removed explicitly. HTTPS fixtures install an ephemeral CA in an isolated Chrome profile. A fresh untrusted profile rejects the certificate; the trusted profile rejects its incorrect IP hostname. No certificate-error bypass or system trust-store modification is used.
 * Exception-off counterparts retain error-code paths and successful operations; formerly throwing paths report failure and abort. Stackful Context remains blocked.
-* WASIp2 raw sockets, browser listeners and WASI Unix-domain sockets are unavailable. WASIp3 cooperative EH-on lacks the toolchain exception runtime.
+* Asio P2 core now provides sockets, but the guest-socket application corpus still needs P2 integration and validation; guest TLS is not enabled. Browser listeners and WASI Unix-domain socket addressing remain unavailable. WASIp3 cooperative EH-on lacks the toolchain exception runtime.
 
 ==== Reproduction
 

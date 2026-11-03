@@ -217,9 +217,9 @@ All of them are of 2026-10-11, as `R`.
 
 ## 22. The rulebook, the index and the page whole (plan: Task 22)
 
-- [ ] 22.1 Write chapter 13's items of the superproject's AGENTS.md (plan: Task 22, Step 1)
+- [ ] 22.1 Reconcile CODING-GUIDELINES chapters 15/16/19 and AGENTS with the approved WASIp3/TLS scope (supersedes the old chapter 13 references)
 - [ ] 22.2 Write the rows of the table of libraries (Step 2)
-- [ ] 22.3 Order the page (Step 3)
+- [ ] 22.3 Keep the owner-approved Diataxis page order, generated MrDocs reference and final changelog appendix (supersedes the older overview-first order)
 - [ ] 22.4 Check the text for the banned characters (Step 4)
 - [ ] 22.5 Commit both repositories (Step 5)
 
@@ -228,7 +228,21 @@ All of them are of 2026-10-11, as `R`.
 - [ ] 23.1 Run the definition of green, each lane from scratch (plan: Task 23, Step 1)
 - [ ] 23.2 Dispatch the whole-branch review (Step 2)
 - [ ] 23.3 Fix what it finds, each with a failing test first (Step 3)
-- [ ] 23.4 Record the owner's approvals of the five departures in the ledger (Step 3a)
-- [ ] 23.5 Gate G1: the owner creates `webcpporg/asio` (Step 4)
-- [ ] 23.6 Gate G2: the owner adds the submodule (Step 5)
+- [x] 23.4 Record the owner's five approvals of 2026-10-11, already present in reference/plan.md; later amendments supersede only the explicitly changed departures
+- [x] 23.5 Gate G1: `webcpporg/asio` was created with owner authorization on 2026-11-03 (UTC)
+- [x] 23.6 Gate G2: the owner-authorized submodule integration is recorded by superproject commit `2ba5116`
 - [ ] 23.7 Gate G3: push the library, then the superproject, and watch both CIs (Step 6)
+
+## Approved WASIp2 follow-up, 2026-11-03
+
+- [x] P2.1 Implement the single-thread pollable core for timers and TCP/UDP; explicitly
+  reject unsupported multi-thread, Cobalt and guest TLS targets.
+- [x] P2.2 Implement deferred forward async DNS with pollables, cancellation and handler
+  associations; pin and verify the private wasi-libc descriptor ABI.
+- [x] P2.3 Implement supplied CLI streams with partial I/O, readiness, cancellation,
+  associated allocation/execution and explicit host-blocking boundaries.
+- [x] P2.4 Reproduce and fix idle empty-poll trapping and write-permit narrowing; add
+  readiness-at-registration and pending-write cancellation consumers.
+- [x] P2.5 Commit local native/P3/P2 regressions, focused lint and rendered documentation;
+  export the exact committed reference tree. See reference/STATUS.md for scope and counts.
+- [ ] P2.6 Complete fresh remote CI and the existing integration gates for the current tree.

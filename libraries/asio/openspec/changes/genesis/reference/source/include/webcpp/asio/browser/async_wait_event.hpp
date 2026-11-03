@@ -7,6 +7,8 @@
 #ifndef WEBCPP_ASIO_BROWSER_ASYNC_WAIT_EVENT_HPP
 #define WEBCPP_ASIO_BROWSER_ASYNC_WAIT_EVENT_HPP
 
+#include <webcpp/asio/config.hpp>
+
 #include <boost/asio/any_io_executor.hpp>  // lint-world: the operation's executor
 #include <boost/asio/append.hpp>  // lint-world: preserve handler associations when posting values
 #include <boost/asio/associated_allocator.hpp>  // lint-world: operation storage belongs to its handler
@@ -23,7 +25,6 @@
 #include <type_traits>
 #include <utility>
 #include <webcpp/asio/browser/bridge.hpp>
-#include <webcpp/asio/config.hpp>
 
 namespace webcpp::asio::browser {
 namespace detail {

@@ -7,10 +7,11 @@
 #ifndef WEBCPP_ASIO_BROWSER_ERROR_HPP
 #define WEBCPP_ASIO_BROWSER_ERROR_HPP
 
+#include <webcpp/asio/config.hpp>
+
 #include <boost/system/error_code.hpp>
 #include <string>
 #include <type_traits>
-#include <webcpp/asio/config.hpp>
 
 namespace webcpp::asio::browser::error {
 /** Errors reported by browser operations; values are never reused. */

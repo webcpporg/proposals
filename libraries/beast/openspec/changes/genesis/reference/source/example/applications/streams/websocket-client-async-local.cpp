@@ -18,6 +18,11 @@
 #include <webcpp/beast/core.hpp>
 #include <webcpp/beast/websocket.hpp>
 #include "websocket-channel.hpp"
+#ifdef __wasip2__
+#include <boost/asio/as_tuple.hpp>
+#include <boost/asio/co_spawn.hpp>
+#include <boost/asio/use_awaitable.hpp>
+#endif
 
 int main(int argc, const char* const* argv) {
     namespace beast = webcpp::beast;
@@ -31,6 +36,42 @@ int main(int argc, const char* const* argv) {
         request.set(beast::http::field::user_agent,
                     std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-async-local");
     }));
+#ifdef __wasip2__
+    int result = 1;
+    boost::asio::co_spawn(
+        context,
+        [&]() -> boost::asio::awaitable<void> {
+            auto token = boost::asio::as_tuple(boost::asio::use_awaitable);
+            auto [handshake_error] = co_await stream.async_handshake(argv[1], "/", token);
+            if (handshake_error) {
+                co_return;
+            }
+            stream.text(true);
+            auto [write_error, written] = co_await stream.async_write(
+                boost::asio::buffer(argv[2], std::strlen(argv[2])), token);
+            if (write_error) {
+                result = 2;
+                co_return;
+            }
+            beast::flat_buffer reply;
+            auto [read_error, received] = co_await stream.async_read(reply, token);
+            if (read_error) {
+                result = 3;
+                co_return;
+            }
+            const auto output = boost::beast::buffers_to_string(reply.data());
+            static_cast<void>(std::fprintf(stderr, "%s\n", output.c_str()));
+            auto [close_error] = co_await stream.async_close(websocket::close_code::normal, token);
+            result = close_error ? 4 : 0;
+        },
+        [&](const std::exception_ptr& error) {
+            if (error) {
+                result = 5;
+            }
+        });
+    context.run();  // lint-run: drive supplied-channel readiness and protocol completions
+    return result;
+#else
     boost::system::error_code error;
     stream.handshake(argv[1], "/", error);
     if (error) {
@@ -50,4 +91,5 @@ int main(int argc, const char* const* argv) {
     static_cast<void>(std::fprintf(stderr, "%s\n", output.c_str()));
     stream.close(websocket::close_code::normal, error);
     return error ? 4 : 0;
+#endif
 }

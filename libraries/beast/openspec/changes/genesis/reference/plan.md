@@ -94,15 +94,17 @@
 
 - [x] Reconcile all 53 executable targets, support sources and snippet harnesses against the pinned upstream source.
 - [x] Build/run native oracle and every promised target/variant/backend counterpart with exact adaptation diffs and evidence.
-- [ ] Resolve WASIp2 socket/TLS and stackful coroutine prerequisites in their owning libraries; never hide blocked rows.
+- [ ] Resolve stackful coroutine prerequisites in their owning libraries; never hide blocked rows. WASIp2 sockets/TLS are platform-unavailable because guest sockets follow Asio's declared targets.
 - [x] Publish the Diataxis guide with compiled examples and observed outputs, plus independent feature and application matrices.
 - [x] Run local documented validation, perform independent review and fix regressions. Report any runtime/platform still unverified before publication.
 
 ## Current acceptance gates
 
-The implementation and application accounting above are committed. This does not close
-WASIp2 raw sockets/guest TLS, unverified stackful Wasm backends, formal proposal acceptance,
-or the final CI/release gate. `../tasks.md` and `STATUS.md` retain the exact pending items.
+The implementation and application accounting above are committed. Unverified stackful Wasm
+backends, formal proposal acceptance and the final CI/release gate remain open. The owner's
+2026-11-03 scope decision removes a WASIp2 socket/TLS port as a requirement while retaining
+portable HTTP, host HTTP and supplied stdin/stdout. The submission state is `proposed`;
+`../tasks.md` and `STATUS.md` retain the exact pending items.
 The verification and initial implementation sections below preserve the earlier intake
 chronology; `source/` is refreshed to the current commit named in `STATUS.md`.
 
