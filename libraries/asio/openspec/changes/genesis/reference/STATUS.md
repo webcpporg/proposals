@@ -3,7 +3,7 @@
 ## Current committed snapshot
 
 - Asio: `dad1aefbe99f8a2cae4e2e3389779106a24cf3dc`.
-- Superproject: `e80ffabb9cc3223f71f07696d3d6a5e806a24f20`.
+- Superproject: `15e2f44d2bdff0602b8e761a5a9c89b98c3a5d97`.
 - `reference/source/`: 182 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, WASIp3 networking/TLS/Cobalt and the approved
   single-thread WASIp2 core below. Optional P2 TLS/Cobalt/thread targets remain unsupported.
@@ -11,6 +11,14 @@
   the earlier run `41597577370` passed for root `55a72c0` only.
 
 ## WASIp2 follow-up verified and committed, 2026-11-03
+
+The final documentation-only root commit is `15e2f44d2bdff0602b8e761a5a9c89b98c3a5d97`; implementation
+remains root `e80ffab`, Asio `dad1aef` and Beast `ab95e84`. A later fresh Emscripten
+Release regression passed 271 B2 test targets, covering the default suites and
+Asio Asyncify/Cobalt lanes with EH on/off. This is Node-based execution, not a
+fresh complete browser run. Full lint compilation-database preparation passed
+with 1,419 commands, including P2 aggregate EH twins. The focused clang-tidy scope
+remains the 20 configurations below; database generation is not a full tidy run.
 
 The owner approved both the Asio pollable core and supplied-stream WebSocket work.
 The local implementation commits are Asio `dad1aef`, Beast `ab95e84` and superproject
