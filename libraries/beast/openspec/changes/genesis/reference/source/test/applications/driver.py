@@ -20,6 +20,7 @@ import socketserver
 import ssl
 import struct
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -159,13 +160,25 @@ class TcpPeer(socketserver.ThreadingTCPServer):
 
     def __init__(self, address, context=None):
         self.context = context
+        self.accepted = threading.Event()
+        self.accepted_at = 0.0
         self.exchanges = []
         super().__init__(address, Peer)
 
     def get_request(self):
         peer, address = super().get_request()
-        if self.context:
-            peer = self.context.wrap_socket(peer, server_side=True)
+        if not self.accepted.is_set():
+            self.accepted_at = time.monotonic()
+            self.accepted.set()
+        # Acceptance ends startup before TLS starts. A stalled handshake must
+        # neither consume startup allowance nor block fixture shutdown forever.
+        peer.settimeout(5)
+        try:
+            if self.context:
+                peer = self.context.wrap_socket(peer, server_side=True)
+        except OSError:
+            peer.close()
+            raise
         return peer, address
 
 
@@ -393,6 +406,63 @@ def drive_server(row, executable, directory, environment, command_prefix):
             "shutdown": "driver terminated and reaped listener"}
 
 
+def run_connected_client(command, directory, environment, server, startup_budget: float = 15,
+                         protocol_budget: float = 5):
+    server.accepted.clear()
+    server.accepted_at = 0.0
+    started = time.monotonic()
+    phase = "startup"
+    budget = startup_budget
+    process = subprocess.Popen(command, cwd=directory, env=environment,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        while not server.accepted.is_set():
+            remaining = started + startup_budget - time.monotonic()
+            if remaining <= 0:
+                # Acceptance may have been recorded while this supervisor was
+                # descheduled, even before the peer publishes its Event.
+                if server.accepted_at:
+                    break
+                raise subprocess.TimeoutExpired(command, startup_budget)
+            try:
+                stdout, stderr = process.communicate(timeout=min(remaining, 0.05))
+            except subprocess.TimeoutExpired:
+                continue
+            if not server.accepted.is_set():
+                raise RuntimeError(
+                    f"client exited before peer acceptance: status {process.returncode}; "
+                    f"stdout={stdout!r}; stderr={stderr!r}")
+        if server.accepted_at > started + startup_budget:
+            raise subprocess.TimeoutExpired(command, startup_budget)
+        phase = "protocol"
+        budget = protocol_budget
+        remaining = server.accepted_at + protocol_budget - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(command, protocol_budget)
+        stdout, stderr = process.communicate(timeout=remaining)
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    except subprocess.TimeoutExpired as error:
+        process.kill()
+        stdout, stderr = process.communicate(timeout=3)
+        raise TimeoutError(
+            f"client {phase} timed out after {budget} seconds; "
+            f"command={command!r}; stdout={stdout!r}; stderr={stderr!r}") from error
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.communicate(timeout=3)
+        finished = time.monotonic()
+        accepted = server.accepted_at if server.accepted.is_set() else None
+        # Diagnostic timing is excluded from the observable application result.
+        # Oracle comparison must still compare every request and response byte.
+        print("client timing: " + json.dumps({
+            "startup_seconds": (accepted or finished) - started,
+            "startup_budget_seconds": startup_budget,
+            "protocol_seconds": finished - accepted if accepted else None,
+            "protocol_budget_seconds": protocol_budget,
+        }, sort_keys=True), file=sys.stderr)
+
+
 def drive_client(row, executable, directory, environment, command_prefix):
     path = directory / "peer.sock" if row["local_socket"] else None
     context = tls_context(directory, server=True) if row["tls"] else None
@@ -418,8 +488,12 @@ def drive_client(row, executable, directory, environment, command_prefix):
         for arguments in variants:
             command = command_prefix + application_command(
                 executable, arguments, directory, environment)
-            result = subprocess.run(command, cwd=directory, env=environment,
-                                    capture_output=True, timeout=8)
+            if executable.suffix == ".wasm":
+                result = run_connected_client(command, directory, environment,
+                                              cast(TcpPeer, server))
+            else:
+                result = subprocess.run(command, cwd=directory, env=environment,
+                                        capture_output=True, timeout=8)
             print(result.stdout.decode(errors="replace"), end="")
             print(result.stderr.decode(errors="replace"), end="")
             assert result.returncode == 0, (name, result.returncode, result.stderr)

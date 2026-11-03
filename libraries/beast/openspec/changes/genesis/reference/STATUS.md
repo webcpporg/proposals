@@ -7,14 +7,14 @@ The original 53-application inventory and all target requirements remain in scop
 ## Current committed snapshot
 
 - Repository: [webcpporg/beast](https://github.com/webcpporg/beast).
-- Commit: [`adeb202693d927d8865e2102aeee97c4911ff40b`](https://github.com/webcpporg/beast/commit/adeb202693d927d8865e2102aeee97c4911ff40b).
+- Commit: [`0a881969d2be2e635d2f89a61f258a8d80a4d393`](https://github.com/webcpporg/beast/commit/0a881969d2be2e635d2f89a61f258a8d80a4d393).
 - `source/` is an exact `git archive` of that commit: 773 tracked files, with
   every file's Git blob identity and executable mode checked against the commit.
   No uncommitted implementation files or build artifacts are included.
 - The superproject candidate registers the published library and its shared prerequisites
   in [pull request 7](https://github.com/webcpporg/webcpp/pull/7).
-- Final candidate CI [41590629467](https://github.com/webcpporg/webcpp/actions/runs/41590629467)
-  targets superproject commit `adb5fa32658b73f45ea44c25b3af55bb0b19de60`;
+- Final candidate CI [41594383436](https://github.com/webcpporg/webcpp/actions/runs/41594383436)
+  targets superproject commit `5bb4825ee8889f52149829141926dbb6f7f669f9`;
   its result is pending.
   Earlier candidate runs [41587540931](https://github.com/webcpporg/webcpp/actions/runs/41587540931)
   and [41587845453](https://github.com/webcpporg/webcpp/actions/runs/41587845453)
@@ -28,6 +28,20 @@ The original 53-application inventory and all target requirements remain in scop
   modes and four native protocol checks. The new CI also explicitly expands browser
   contracts across both exception modes and ERROR/IGNORE policies: 56 test executions
   plus eight tutorial executions. All 39 CI planner tests passed.
+- Run [41590629467](https://github.com/webcpporg/webcpp/actions/runs/41590629467)
+  exposed nine WASIp3 TLS client timeouts under the old eight-second total wall limit.
+  Six affected clients reproduced that timeout locally under cold-cache CPU contention,
+  before accepting any TCP connection. The fixture now separates at most 15 seconds
+  of process startup from five seconds of protocol and process completion, starting
+  at real TCP acceptance before TLS. The same six contended clients passed with
+  startup times of 9.98-14.61 seconds and protocol times of 0.055-0.104 seconds.
+  Nineteen additional exception-off, cooperative, HTTP-method and native executions
+  passed. Six real-process/socket regression methods cover slow startup, stalled
+  protocol and TLS handshake, missing connections, early exit and supervisor
+  descheduling. Independent review reproduced and verified the acceptance timestamp
+  boundary correction; all six methods and ten inventory tests pass. The final source
+  also passed two actual Wasmtime TLS checks. The previous full run remains available
+  for its complete diagnostics; only the new candidate can establish the merge gate.
 
 The reference snapshot will be refreshed if further reviewed implementation commits land.
 This status does not turn publication of source into formal proposal acceptance or release.
