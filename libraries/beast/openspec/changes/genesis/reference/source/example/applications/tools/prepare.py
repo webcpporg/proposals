@@ -183,7 +183,10 @@ def prepare(formatter):
 
 
 def prepare_jam(manifest):
-    lines = [JAM_NOTICE, "import webcpp ;\nwebcpp.targets native ;\n",
+    lines = [JAM_NOTICE,
+             "# Fixtures read the environment fixed by their launching driver.\n"
+             "project : requirements <toolset>msvc:<define>_CRT_SECURE_NO_WARNINGS ;\n\n",
+             "import webcpp ;\nwebcpp.targets native ;\n",
              "webcpp.original python3 ;\n"]
     targets = []
     for row in manifest["applications"]:

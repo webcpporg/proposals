@@ -7,15 +7,18 @@ The original 53-application inventory and all target requirements remain in scop
 ## Current committed snapshot
 
 - Repository: [webcpporg/beast](https://github.com/webcpporg/beast).
-- Commit: [`0a881969d2be2e635d2f89a61f258a8d80a4d393`](https://github.com/webcpporg/beast/commit/0a881969d2be2e635d2f89a61f258a8d80a4d393).
+- Commit: [`c1738586d8b7b0f4f24ad528840433bf100cdf57`](https://github.com/webcpporg/beast/commit/c1738586d8b7b0f4f24ad528840433bf100cdf57).
 - `source/` is an exact `git archive` of that commit: 773 tracked files, with
   every file's Git blob identity and executable mode checked against the commit.
   No uncommitted implementation files or build artifacts are included.
 - The superproject candidate registers the published library and its shared prerequisites
   in [pull request 7](https://github.com/webcpporg/webcpp/pull/7).
-- Final candidate CI [41594383436](https://github.com/webcpporg/webcpp/actions/runs/41594383436)
-  targets superproject commit `5bb4825ee8889f52149829141926dbb6f7f669f9`;
-  its result is pending.
+- The current superproject candidate is `55a72c056de1e6522e1fc6dbc3ee2b9ef3715327`.
+  Focused Windows verification [41596986983](https://github.com/webcpporg/webcpp/actions/runs/41596986983)
+  runs MSVC 14.3 and 14.5 on that exact source tree plus a diagnostic-only workflow.
+  A complete final-candidate run remains required before merging.
+  Run [41594383436](https://github.com/webcpporg/webcpp/actions/runs/41594383436)
+  was cancelled after the preceding run exposed shared Windows build defects.
   Earlier candidate runs [41587540931](https://github.com/webcpporg/webcpp/actions/runs/41587540931)
   and [41587845453](https://github.com/webcpporg/webcpp/actions/runs/41587845453)
   were cancelled because they preceded later reviewed corrections. They do not establish
@@ -42,6 +45,21 @@ The original 53-application inventory and all target requirements remain in scop
   boundary correction; all six methods and ten inventory tests pass. The final source
   also passed two actual Wasmtime TLS checks. The previous full run remains available
   for its complete diagnostics; only the new candidate can establish the merge gate.
+
+
+- The same earlier full run exposed 13 failures on each MSVC version. The shared
+  include ordering selected the original Boost headers before the checked Asio/Cobalt
+  overlays. Quoting only the external path restores the overlays' precedence while
+  retaining external warning suppression for the same Boost root. A real no-exceptions
+  compile using the emitted search order fails with the old ordering and passes with
+  the correction, including paths with spaces and compiled Cobalt sources. Additional
+  corrections protect the TLS factory from Windows' `max` macro, use upstream's static
+  Context export definition for MASM, enable extended COFF sections for Beast tests,
+  and suppress CRT deprecation diagnostics only in controlled application fixtures.
+  Seven affected native tests passed a fresh `b2 -a` run; all three Context assembly
+  sources failed without the definition and passed LLVM MASM with it. The Beast socket
+  and documentation-snippet tests, build regressions, generator inventory, static
+  analysis and independent review passed. Actual Windows results remain pending.
 
 The reference snapshot will be refreshed if further reviewed implementation commits land.
 This status does not turn publication of source into formal proposal acceptance or release.

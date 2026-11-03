@@ -4,7 +4,9 @@
 # accompanying file LICENSE_1_0.txt or copy at
 # https://www.boost.org/LICENSE_1_0.txt)
 
-project : requirements <library>/webcpp/beast//beast ;
+# Socket contract tests need extended COFF sections for their many handlers.
+project : requirements <library>/webcpp/beast//beast
+  <toolset>msvc:<cxxflags>/bigobj ;
 
 import webcpp ;
 import feature ;
