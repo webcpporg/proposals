@@ -1,6 +1,6 @@
 ## Why
 
-The companion library draft `libraries/wasi/openspec/changes/wasm-bindgen/` evolves wasi into
+The companion library proposal `libraries/wasi/openspec/changes/wasm-bindgen/` evolves wasi into
 wasm and adds `webcpp-wasm-bindgen`. A consumer needs the generator installed with webcpp,
 including when the application target is Emscripten or WASI and cannot execute on the build
 machine. Library-only rules do not define that superproject responsibility.
@@ -25,15 +25,15 @@ machine. Library-only rules do not define that superproject responsibility.
 ### Modified Capabilities
 
 None. The new capability adds the host-tool contract and a coordinated identity migration;
-the existing organization requirements are reconciled before acceptance, as design.md states.
+the existing organization requirements are reconciled before implementation, as design.md states.
 
 ## Impact
 
-- **Kind:** organization build and installation change, paired with the wasm library draft.
+- **Kind:** organization build and installation change, paired with the wasm library proposal.
 - **Implementation:** not started; intended implementation in https://github.com/webcpporg/webcpp
   with generator sources in the library repository, currently https://github.com/webcpporg/wasi.
-- **Status:** draft. Host/target selection syntax and backend/tool dependency policy are open.
-- **Other proposals:** the library's `wasm-bindgen` draft owns generated API and BDK behaviour;
+- **Status:** accepted on 2026-11-03 by the owner. Host/target selection syntax and backend/tool dependency policy are open.
+- **Other proposals:** the library's `wasm-bindgen` proposal owns generated API and BDK behaviour;
   this change owns superproject integration. No rename, installation or runtime code is made here.
 - **Policy impact:** compiled backend/tool dependencies and any non-C tool implementation need
-  explicit reconciliation with current project rules before acceptance.
+  explicit reconciliation with current project rules before implementation.

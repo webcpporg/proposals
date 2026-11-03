@@ -1,0 +1,786 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+#
+# webcpp, the superproject: it finds the installed Boost and checks its
+# version, sets what every library shares, registers each library of libs/
+# as /webcpp/<name>, declares the aggregates test, example, doc and
+# install, and lists the targets and the lanes the libraries declare
+# (declared-targets, declared-lanes).
+import boost ;
+import errors ;
+import feature ;
+import modules ;
+import notfile ;
+import numbers ;
+import os ;
+import package ;
+import path ;
+import type ;
+
+# The rules the libraries' test and example Jamfiles declare their programs
+# with, which import it as webcpp.
+import tools/webcpp ;
+import tools/webcpp-wasi ;
+import tools/webcpp-openssl ;
+import tools/webcpp-ca-certificates ;
+
+# A shell with CPATH (Homebrew sets it) puts its headers before the
+# configured Boost, and the compiler would use them without a word.
+for local variable in CPATH CPLUS_INCLUDE_PATH C_INCLUDE_PATH
+{
+    if [ os.environ $(variable) ]
+    {
+        errors.user-error "$(variable) is set; unset it, or the compiler reads"
+            "headers from it before the configured Boost" ;
+    }
+}
+
+# wasm32-wasip2 is no system b2 knows. It is registered after the toolsets
+# of user-config.jam have loaded gcc.jam, which computes as it loads the
+# systems that get Unix link options (--start-group, -Bstatic, rpath), which
+# wasm-component-ld rejects.
+# tag::wasi-os[]
+if ! wasi in [ feature.values <target-os> ]
+{
+    feature.extend target-os : wasi ;
+}
+type.set-generated-target-suffix EXE : <target-os>wasi : wasm ;
+# end::wasi-os[]
+
+# /boost is the `using boost` of user-config.jam, else the Boost tree that
+# BOOST_ROOT names, else Boost on the compiler's default include path (b2's
+# contrib/boost.jam).
+boost.use-project ;
+
+# The directory that holds boost/version.hpp for /boost//headers, as
+# boost.use-project chose it: the <include> of `using boost`, else its
+# <root>, else BOOST_ROOT, both a Boost tree. Nothing when Boost is left to
+# the compiler's default include path. It is read from the boost module,
+# where use-project keeps it: the /boost project of a tree is loaded only
+# after this Jamroot.
+rule boost-include ( )
+{
+    local version = [ modules.peek boost : .initialized ] ;
+    local options = [ modules.peek boost : .boost.$(version) ] ;
+    local directory = [ $(options).get <include> ] ;
+    directory ?= [ $(options).get <root> ] ;
+    directory ?= [ modules.peek : BOOST_ROOT ] ;
+    return $(directory) ;
+}
+
+.boost-include = [ boost-include ] ;
+if $(.boost-include)
+{
+    path-constant WEBCPP_BOOST_HEADERS : $(.boost-include) ;
+}
+
+# The lines of the file header that define macro, `#define <macro> <value>`,
+# one text without its last end of line, then the search's exit status: 0
+# when it found one, 1 when none, and grep's 2 when the header cannot be
+# read. Boost's BOOST_VERSION, config's WEBCPP_VERSION. b2 runs a SHELL
+# command with cmd.exe on Windows, where findstr does what grep does
+# elsewhere; no Windows lane runs the release targets, so WEBCPP_VERSION's
+# findstr is read by none. SHELL takes each option as an argument of its own.
+local rule define-line ( header : macro )
+{
+    if [ os.name ] = NT
+    {
+        local native = [ path.native [ path.make $(header) ] ] ;
+        return [ SHELL "findstr /B /C:\"#define $(macro) \" \"$(native)\""
+            : strip-eol : exit-status ] ;
+    }
+    return [ SHELL "grep \"^#define $(macro) \" \"$(header)\""
+        : strip-eol : exit-status ] ;
+}
+
+# The version the boost/version.hpp under directory defines, as its
+# BOOST_VERSION and as a name: 108000 1.80.0. Nothing when there is no such
+# file, or when its version cannot be read.
+rule boost-version ( directory )
+{
+    local header = $(directory)/boost/version.hpp ;
+    # Native: path.make gives a Windows path a leading slash, /D:/a/boost, which
+    # path.exists, a call on the file system, does not read.
+    if [ path.exists [ path.native $(header) ] ]
+    {
+        local line = [ define-line $(header) : BOOST_VERSION ] ;
+        line = $(line[1]) ;
+        local digits = [ MATCH "BOOST_VERSION +(([0-9]+)([0-9][0-9][0-9])([0-9][0-9]))" : $(line) ] ;
+        if $(digits)
+        {
+            local minor = [ MATCH "^0*([0-9]+)$" : $(digits[3]) ] ;
+            local patch = [ MATCH "^0*([0-9]+)$" : $(digits[4]) ] ;
+            return $(digits[1]) $(digits[2]).$(minor).$(patch) ;
+        }
+    }
+}
+
+# Where package managers install Boost, in the order the advice of
+# boost-unusable prefers them.
+.boost-prefixes = /opt/homebrew/opt/boost /usr/local/opt/boost /opt/local /usr/local /usr ;
+
+# The first of .boost-prefixes that holds Boost 1.92 or newer, and that
+# Boost's version: /opt/homebrew/opt/boost 1.92.0. Nothing when none does.
+rule boost-installed ( )
+{
+    for local prefix in $(.boost-prefixes)
+    {
+        local version = [ boost-version $(prefix)/include ] ;
+        if $(version) && ! [ numbers.less $(version[1]) 109200 ]
+        {
+            return $(prefix) $(version[2]) ;
+        }
+    }
+}
+
+# The failure of the configuration check: it stops the build, saying what
+# was found and the `using boost` line that fixes it, for the user-config.jam
+# that b2 read.
+rule boost-unusable ( properties * )
+{
+    local status ;
+    if ! $(.boost-include)
+    {
+        status = "Boost 1.92 or newer was not found: no `using boost` names its"
+            "location, and none is on the compiler's default include path" ;
+    }
+    else if ! [ path.exists [ path.native $(.boost-include)/boost/version.hpp ] ]
+    {
+        status = "Boost 1.92 or newer was not found:"
+            "$(.boost-include)/boost/version.hpp does not exist" ;
+    }
+    else if [ numbers.less $(.boost-found[1]) 109200 ]
+    {
+        status = "Boost 1.92 or newer is required, and Boost $(.boost-found[2])"
+            "was found in $(.boost-include)" ;
+    }
+    else
+    {
+        errors.user-error "Boost $(.boost-found[2]) was found in"
+            "$(.boost-include), but a program that includes it does not"
+            "compile with these properties; bin/config.log says why" ;
+    }
+    local config = [ modules.binding user-config ] ;
+    config ?= user-config.jam ;
+    local installed = [ boost-installed ] ;
+    local prefix = $(installed[1]) ;
+    local advice = "Boost $(installed[2]) is installed in $(prefix): configure"
+        "it in $(config) with this line, in place of any other `using boost`:" ;
+    if ! $(prefix)
+    {
+        prefix = /path/to/boost ;
+        advice = "Install Boost 1.92 or newer, and configure it in $(config)"
+            "with this line, where /path/to/boost is where it is installed, in"
+            "place of any other `using boost`:" ;
+    }
+    errors.user-error $(status)
+        : $(advice)
+        : "    using boost : 1.92 : <include>$(prefix)/include <library>$(prefix)/lib ;" ;
+}
+
+# The configuration check: tools/test/boost_version.cpp compiles only against
+# Boost 1.92 or newer. b2 caches the answer in bin/project-cache.jam by the
+# check's name and the target's properties, so the name holds Boost's
+# directory and the version found there: another Boost is checked again, and
+# so is another version in the same directory (Homebrew points opt/boost at
+# the keg of each version).
+.boost-check-name = "Boost 1.92 or newer" ;
+if $(.boost-include)
+{
+    .boost-found = [ boost-version $(.boost-include) ] ;
+    .boost-check-name = "$(.boost-check-name) in $(.boost-include)" ;
+}
+if $(.boost-found)
+{
+    .boost-check-name = "$(.boost-check-name) ($(.boost-found[2]))" ;
+}
+.boost-check = [ check-target-builds /webcpp//boost_version $(.boost-check-name)
+    : : <conditional>@boost-unusable ] ;
+
+# Some targets leave the check out of their requirements: the check's own
+# target, which evaluates the project's requirements too and would wait on
+# itself; declared-targets and declared-lanes, which read only Jamfiles, for
+# a CI job that installs no Boost; and the targets that compile nothing, such
+# as the documentation's and the oracle's Node packages. The feature marks
+# them; free and incidental, it changes neither a target's properties nor its
+# path.
+feature.feature webcpp-boost-check : : free incidental ;
+
+# The check's answer is cached by the version it read, so a Boost whose
+# version cannot be read stops the build even when it compiles: a version
+# changed in place would reuse the answer. It also proves on every system
+# that the version is read there, cmd.exe's findstr included.
+rule boost-check ( properties * )
+{
+    if ! <webcpp-boost-check>off in $(properties)
+    {
+        if $(.boost-include) && ! $(.boost-found)
+            && [ path.exists [ path.native $(.boost-include)/boost/version.hpp ] ]
+        {
+            errors.user-error "Boost 1.92 or newer is required, and the version of the"
+                "Boost in $(.boost-include) cannot be read: its boost/version.hpp has no"
+                "line `#define BOOST_VERSION <number>`" ;
+        }
+        return $(.boost-check) ;
+    }
+}
+
+project /webcpp
+  : requirements
+      <cxxstd>20
+      <warnings>extra
+      <warnings-as-errors>on
+      <implicit-dependency>/boost//headers
+      <library>/boost//headers
+      # Boost's headers are system ones, so that their warnings are not ours,
+      # and Boost's directory keeps its place, searched before the compiler's
+      # own. GCC searches a -isystem directory before its own, and takes a
+      # directory given both ways for a system one. Clang searches a -I
+      # directory before its own, and Apple's searches /usr/local/include
+      # before every -isystem one, so clang and emcc keep the -I and mark the
+      # headers that <boost/...> names. Quoted, as b2 quotes its own -I, so
+      # that a path that holds a space builds: the shell removes the quotes,
+      # and so does cl from the response file b2 writes the options to. The
+      # prefix is quoted too, since b2 drops a slash that ends a property.
+      <toolset>gcc:<cxxflags>"-isystem\"$(.boost-include)\""
+      <toolset>clang:<cxxflags>"--system-header-prefix=\"boost/\""
+      <toolset>emscripten:<cxxflags>"--system-header-prefix=\"boost/\""
+      <toolset>msvc:<cxxflags>"\"/external:I$(.boost-include)\""
+      <toolset>msvc:<cxxflags>"/external:W0"
+      # Boost.Container's auto-link (reached through Boost.JSON) would ask
+      # for a compiled library on MSVC.
+      <toolset>msvc:<define>BOOST_ALL_NO_LIB
+      <toolset>msvc,<exception-handling>off:<define>_HAS_EXCEPTIONS=0
+      <target-os>windows:<define>_WIN32_WINNT=0x0A00
+      # The toolsets clang-wasip2 and clang-wasip3 (user-config.jam) build
+      # for wasm32-wasip2 and wasm32-wasip3, which have no shared libraries.
+      # tag::wasi-target[]
+      <toolset>clang-wasip2:<target-os>wasi
+      <toolset>clang-wasip3:<target-os>wasi
+      <target-os>wasi:<link>static
+      # end::wasi-target[]
+      # b2's emscripten builds wasm32 (browsers do not all run memory64, and
+      # an address-model=64 request would add -sMEMORY64=1), without pthreads
+      # (they need cross-origin isolation in a page), and static.
+      # tag::emscripten-target[]
+      <toolset>emscripten:<address-model>32
+      <toolset>emscripten:<threading>single
+      <toolset>emscripten:<link>static
+      # end::emscripten-target[]
+      # Every WASI target builds with exceptions, as native does: whether a
+      # program uses them is its developer's choice. They are encoded as the
+      # standard exception handling of WebAssembly (exnref): the clang of
+      # wasi-sdk 34 emits the legacy encoding by default, which wasmtime 47
+      # refuses to run ("legacy_exceptions feature required"). The runtime is
+      # libunwind. A user's exception-handling=off builds with -fno-exceptions
+      # alone, and webcpp.jam links tools/throw_exception.cpp.
+      # tag::wasi-exceptions[]
+      <toolset>clang-wasip2,<exception-handling>on:<cxxflags>"-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false"
+      <toolset>clang-wasip2,<exception-handling>on:<linkflags>"-fwasm-exceptions -lunwind"
+      <toolset>clang-wasip3,<exception-handling>on:<cxxflags>"-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false"
+      <toolset>clang-wasip3,<exception-handling>on:<linkflags>"-fwasm-exceptions -lunwind"
+      # end::wasi-exceptions[]
+      <conditional>@boost-check
+  : default-build <variant>debug
+  : build-dir bin
+  ;
+
+# The check compiles this again each time it runs: the object's path is the
+# same for every Boost, and installed headers keep their package's dates, so
+# another Boost is often older than the object and would leave it up to date.
+obj boost_version : tools/test/boost_version.cpp
+  : <webcpp-boost-check>off ;
+always boost_version ;
+
+# The handler of a program built without exceptions, which webcpp.jam links
+# as /webcpp//throw_exception. Compiled once per variant: the program's
+# <exception-handling>off reaches it, and Boost.Config then defines
+# BOOST_NO_EXCEPTIONS, which its definitions need.
+obj throw_exception : tools/throw_exception.cpp ;
+
+# Boost.JSON's definitions, tools/boost_json.cpp, for a header-only build on
+# every target: a library that needs Boost.JSON puts
+# <library>/webcpp//boost_json in its main target's usage requirements.
+# Static, and built once per variant: the program's own features, such as
+# <exception-handling>off, reach it, as they reach the handler.
+lib boost_json : tools/boost_json.cpp : <link>static ;
+
+# The projects in the directories that pattern matches, each named
+# ./<directory>: b2 takes a directory for the project in it, and a bare doc
+# would name the alias doc itself.
+rule projects ( pattern )
+{
+    local directories = [ glob $(pattern) ] ;
+    return ./$(directories) ;
+}
+
+# Headers are installed under <prefix>/include, --prefix=/usr/local by
+# default, or under --includedir.
+.package-paths = [ package.paths webcpp ] ;
+.includedir = [ $(.package-paths).includedir ] ;
+
+path-constant WEBCPP_ROOT : . ;
+
+# The sources of the compiled Boost libraries that webcpp builds for every
+# target (tools/boost/Jamfile), as /webcpp//boost_json is built from
+# Boost.JSON's headers: a tree of Boost's source archive, at least its
+# boost/version.hpp and the libs/<library>/src of each library built. It is
+# -sBOOST_SOURCE=<dir> on the command line, which wins, else BOOST_SOURCE as
+# a user-config.jam's modules.poke or the environment gives it, else
+# .local/boost-source, which `bash tools/ci/actions/boost/install.sh source
+# .local/boost-source` fills. Its version must be the configured Boost's.
+# Both are checked only when a target uses a compiled Boost library.
+#
+# b2 makes every -s of the command line and every variable of the
+# environment a global variable, which a user-config.jam loaded after them
+# may replace: only ARGV tells the command line apart, and nothing tells
+# user-config.jam's value from the environment's.
+rule boost-source-on-command-line ( )
+{
+    local given previous ;
+    for local word in [ modules.peek : ARGV ]
+    {
+        given += [ MATCH "^-sBOOST_SOURCE=(.+)$" : $(word) ] ;
+        if $(previous) = -s
+        {
+            given += [ MATCH "^BOOST_SOURCE=(.+)$" : $(word) ] ;
+        }
+        previous = $(word) ;
+    }
+    return $(given) ;
+}
+
+.boost-source-local = [ path.join [ path.root [ path.make $(WEBCPP_ROOT) ] [ path.pwd ] ]
+    .local/boost-source ] ;
+.boost-source-given = [ boost-source-on-command-line ] ;
+.boost-source-origin = "-sBOOST_SOURCE=$(.boost-source-given[-1])" ;
+if ! $(.boost-source-given)
+{
+    # b2 splits an environment variable's value at each space; joined again,
+    # it is the value as the environment gave it.
+    .boost-source-given = [ modules.peek : BOOST_SOURCE ] ;
+    .boost-source-given = $(.boost-source-given:J=" ") ;
+    .boost-source-origin = "BOOST_SOURCE (user-config.jam or the environment), $(.boost-source-given[-1])," ;
+}
+.boost-source = $(.boost-source-local) ;
+if $(.boost-source-given)
+{
+    .boost-source-given = $(.boost-source-given[-1]) ;
+    .boost-source = [ path.root [ path.make $(.boost-source-given) ] [ path.pwd ] ] ;
+}
+path-constant WEBCPP_BOOST_SOURCE : [ path.native $(.boost-source) ] ;
+
+# The check of a compiled Boost library's alias: the tree holds a
+# boost/version.hpp, of the configured Boost's version, which the build
+# knows only when a `using boost` or BOOST_ROOT names Boost's directory.
+rule boost-source-usable ( properties * )
+{
+    local shown = [ path.native $(.boost-source) ] ;
+    local version = [ boost-version $(.boost-source) ] ;
+    if ! $(version)
+    {
+        local looked = "no -sBOOST_SOURCE=<dir> was given, and $(shown) holds no boost/version.hpp" ;
+        if $(.boost-source-given)
+        {
+            looked = "$(.boost-source-origin) holds no boost/version.hpp" ;
+        }
+        errors.user-error "Boost's sources, which a compiled Boost library of /webcpp is built"
+            "from, were not found: $(looked). Fill .local/boost-source with `bash"
+            "tools/ci/actions/boost/install.sh source .local/boost-source`, or give"
+            "-sBOOST_SOURCE=<dir>." ;
+    }
+    if ! $(.boost-found)
+    {
+        local config = [ modules.binding user-config ] ;
+        config ?= user-config.jam ;
+        local prefix = [ boost-installed ] ;
+        prefix = $(prefix[1]) ;
+        prefix ?= /path/to/boost ;
+        errors.user-error "$(shown) holds Boost $(version[2])'s sources, and the configured"
+            "Boost's version is unknown: Boost is on the compiler's default include path,"
+            "whose boost/version.hpp the build does not read, and a compiled Boost library is"
+            "built from the sources of the configured Boost's version. Name Boost's directory"
+            "in $(config) with this line, in place of any other `using boost`:"
+            : "    using boost : 1.92 : <include>$(prefix)/include <library>$(prefix)/lib ;" ;
+    }
+    if $(version[1]) != $(.boost-found[1])
+    {
+        errors.user-error "$(shown) holds Boost $(version[2])'s sources, and the configured"
+            "Boost in $(.boost-include) is $(.boost-found[2]): a compiled Boost library is"
+            "built from the sources of the configured Boost's version" ;
+    }
+}
+
+# Boost's compiled libraries, built from those sources (tools/boost/Jamfile).
+use-project /webcpp/boost-libraries : tools/boost ;
+
+# Boost.URL, Boost.Charconv, Boost.Locale and Boost.Cobalt, compiled: a library
+# that needs one puts <library>/webcpp//boost_url, boost_charconv, boost_locale
+# or boost_cobalt in its main target's usage requirements, as one that needs
+# Boost.JSON does with boost_json. Each alias checks the sources before anything
+# is built; what Boost.Locale gives on each target is the table of
+# CODING-GUIDELINES.md chapter 10.
+for local name in boost_url boost_charconv boost_locale boost_cobalt boost_cobalt_io_ssl
+{
+    alias $(name) : tools/boost//$(name) : <conditional>@boost-source-usable ;
+}
+
+# What every test and example of a library links (tools/webcpp.jam): the
+# header webcpp/test/exit_status.hpp on every target, and on emscripten the
+# pre-js that fails a test under node whose main did not finish, and stops
+# one past its bound (tools/node-test/node-pre.js). Quoted, as the Boost
+# directory is, so that a path that holds a space builds. The pre-js is also a
+# dependency of every program that links it, so that an edit of it rebuilds
+# them in an incremental build, recompiled and relinked, since a dependency
+# reaches every target of a program (b2 does not read a link flag's file as a
+# source).
+alias node-test : : : : <include>tools/node-test/include
+  <toolset>emscripten:<linkflags>"--pre-js \"$(WEBCPP_ROOT)/tools/node-test/node-pre.js\""
+  <toolset>emscripten:<dependency>$(WEBCPP_ROOT)/tools/node-test/node-pre.js ;
+
+# The emsdk a library's reference is read with, for Emscripten's target, as
+# its em++ compiles (tools/doc/doc.jam): a reference puts
+# <library>/webcpp//emscripten-reference in its requirements when one of the
+# library's headers builds only on emscripten, since Emscripten's own
+# headers, <emscripten/val.h> among them, hold only for wasm32's types. Its
+# usage requirements give the reference the emsdk (<webcpp-emsdk>), whose
+# em++ says how it compiles and whose clang++ reads the headers. The emsdk is
+# -sWEBCPP_EMSDK=<dir> on the command line, else .local/emsdk: never the
+# environment's EMSDK, which emsdk_env.sh exports and b2 would read as
+# -sEMSDK. It must be Emscripten 6.0.11, the version
+# tools/ci/actions/emsdk/install.sh pins, as its
+# upstream/emscripten/emscripten-version.txt says. When its em++ or its
+# clang++ is not there, or the version is another, the build stops, naming
+# why, only when a target uses it.
+.emscripten-version = 6.0.11 ;
+.emsdk-local = [ path.join [ path.root [ path.make $(WEBCPP_ROOT) ] [ path.pwd ] ]
+    .local/emsdk ] ;
+.emsdk-given = [ MATCH "^-sWEBCPP_EMSDK=(.+)$" : [ modules.peek : ARGV ] ] ;
+.emsdk = $(.emsdk-local) ;
+if $(.emsdk-given)
+{
+    .emsdk-given = $(.emsdk-given[-1]) ;
+    .emsdk = [ path.root [ path.make $(.emsdk-given) ] [ path.pwd ] ] ;
+}
+
+# The text of the emsdk's emscripten-version.txt, "6.0.11" with its quotes,
+# or nothing when it has none.
+local rule emscripten-version-text ( )
+{
+    local file = [ path.native $(.emsdk)/upstream/emscripten/emscripten-version.txt ] ;
+    if ! [ path.exists [ path.native $(file) ] ]
+    {
+        return ;
+    }
+    if [ os.name ] = NT
+    {
+        return [ SHELL "type \"$(file)\"" : strip-eol ] ;
+    }
+    return [ SHELL "cat \"$(file)\"" : strip-eol ] ;
+}
+
+rule emsdk-found ( properties * )
+{
+    local linked = [ path.native $(.emsdk-local) ] ;
+    for local tool in upstream/emscripten/em++ upstream/bin/clang++
+    {
+        if ! [ path.exists [ path.native $(.emsdk)/$(tool) ] ]
+        {
+            local looked = "no -sWEBCPP_EMSDK=<dir> was given, and $(linked) holds none" ;
+            if $(.emsdk-given)
+            {
+                looked = "-sWEBCPP_EMSDK=$(.emsdk-given) holds none" ;
+            }
+            errors.user-error "The emsdk, whose em++ and clang++ read a reference for"
+                "Emscripten's target (/webcpp//emscripten-reference), was not found: its"
+                "$(tool) is not there: $(looked). Give the emsdk's directory with"
+                "-sWEBCPP_EMSDK=<dir>, or link it at $(linked)." ;
+        }
+    }
+    local text = [ emscripten-version-text ] ;
+    local version = [ MATCH "^\"?([^\"]*)\"?$" : $(text) ] ;
+    if $(version) != $(.emscripten-version)
+    {
+        local file = [ path.native $(.emsdk)/upstream/emscripten/emscripten-version.txt ] ;
+        version ?= "no version" ;
+        errors.user-error "$(file) names Emscripten $(version), and webcpp pins"
+            "$(.emscripten-version) (tools/ci/actions/emsdk/install.sh): install"
+            "emsdk $(.emscripten-version), and link it at $(linked) or give it with"
+            "-sWEBCPP_EMSDK=<dir>." ;
+    }
+}
+
+alias emscripten-reference : : <conditional>@emsdk-found
+  : : <webcpp-emsdk>$(.emsdk) ;
+
+# The documentation toolchain's own targets, tools/doc/Jamfile.
+use-project /webcpp/doc-tools : tools/doc ;
+
+# The third-party code the libraries and their tests use, each a submodule
+# under third_party/libs/ (third_party/Jamfile).
+use-project /webcpp/third_party : third_party ;
+
+# The files under directory, at any depth, without its directories, which
+# glob-tree-ex returns too, and without hidden files such as .DS_Store.
+rule files-under ( directory )
+{
+    local files ;
+    for local entry in [ glob-tree-ex $(directory) : * : .* ]
+    {
+        if [ CHECK_IF_FILE $(WEBCPP_ROOT)/$(entry) ]
+        {
+            files += $(entry) ;
+        }
+    }
+    return $(files) ;
+}
+
+# A library is a directory of libs/ with a build.jam (a submodule not
+# checked out has none), registered as /webcpp/<name>. Its test, example and
+# doc directories join the aggregates, and every file of its
+# include/webcpp/** the installation, which keeps their tree, with its
+# licence files beside its headers, in include/webcpp/<name>/:
+# LICENSE_1_0.txt, and the original's LICENSE-<ORIGIN>.txt of a port that
+# derives from its code, so that an installed copy keeps both notices.
+for local build in [ glob libs/*/build.jam ]
+{
+    local library = $(build:D) ;
+    local name = $(library:B) ;
+    use-project /webcpp/$(name) : $(library) ;
+    build-project $(library) ;
+    .test += [ projects $(library)/test ] ;
+    .example += [ projects $(library)/example ] ;
+    .doc += [ projects $(library)/doc ] ;
+    install install-$(name)
+      : [ files-under $(library)/include/webcpp ]
+      : <location>$(.includedir) <install-source-root>$(library)/include ;
+    install install-$(name)-licences
+      : [ glob $(library)/LICENSE_1_0.txt $(library)/LICENSE-*.txt ]
+      : <location>$(.includedir)/webcpp/$(name) ;
+    .install += install-$(name) install-$(name)-licences ;
+}
+
+# Keep the generated trust header usable outside this source checkout, along
+# with the exact certificate source and notices of the embedded snapshot.
+install install-ca-certificates : third_party//ca_certificates-header
+    : <location>$(.includedir) ;
+install install-ca-certificates-notices
+    : third_party/ca_certificates/LICENSE-MPL-2.0.txt
+      third_party/ca_certificates/README.md third_party/ca_certificates/cacert.pem
+      third_party/ca_certificates/manifest.json
+    : <location>$(.includedir)/webcpp/ca_certificates ;
+.install += install-ca-certificates install-ca-certificates-notices ;
+
+# The site, site/ (webcpporg/webcpporg.github.io), when it is checked out:
+# a project like a user's, whose pages b2 site renders with the site's npm
+# scripts and lays out with every library's page and the report into
+# bin/site/, and b2 site-serve serves (tools/site/site.jam, which says what
+# each target does and what options they take).
+if [ glob site/Jamfile ]
+{
+    import tools/site/site ;
+    use-project /webcpp/site : site ;
+    make site-declared.txt : : @site%write-declared : <webcpp-boost-check>off ;
+    make libraries.json : site-declared.txt : @site%write-catalogue : <webcpp-boost-check>off ;
+    always site-declared.txt libraries.json ;
+    # site-pages lays bin/site/ out, indexes it and checks its links
+    # (site.assemble); site adds no step of its own, but depends on
+    # valid-html too, which must run after site-pages, never beside it, since
+    # it reads the bin/site/ that step writes: valid-html depends on
+    # site-pages itself (tools/site/site.jam), so the two stay ordered
+    # however site's own dependencies are listed.
+    notfile site-pages : @site%assemble : libraries.json /webcpp/site//pages
+      : [ site.requirements ] <webcpp-boost-check>off ;
+    alias site : site-pages /webcpp/site//valid-html : <webcpp-boost-check>off ;
+    notfile site-serve : @site%serve
+      : : <dependency>site <dependency>/webcpp/site//node-modules <webcpp-boost-check>off ;
+    if site-serve in [ modules.peek : ARGV ]
+    {
+        ECHO "Serving bin/site at" [ site.address ] ;
+    }
+}
+else
+{
+    notfile site : @site-missing : : <webcpp-boost-check>off ;
+    notfile site-serve : @site-missing : : <webcpp-boost-check>off ;
+}
+
+# b2 site without the site checked out.
+rule site-missing ( targets * : sources * : properties * )
+{
+    errors.user-error "site/, the site's repository (webcpporg/webcpporg.github.io), is not"
+        "checked out, and b2 site builds its pages: git submodule update --init site" ;
+}
+
+alias test : $(.test) ;
+alias example : $(.example) ;
+alias doc : [ projects doc ] $(.doc) ;
+alias install : $(.install) ;
+
+# The test and example directories of every library, absolute, in b2's form.
+rule library-directories ( )
+{
+    local root = [ path.make $(WEBCPP_ROOT) ] ;
+    local directories ;
+    for local directory in $(.test) $(.example)
+    {
+        directories += [ path.root [ path.make $(directory) ] $(root) ] ;
+    }
+    return $(directories) ;
+}
+
+# `b2 declared-targets` prints each pair "<library> <target>" that a program
+# of a library's test or example Jamfiles declares, one per line, sorted: the
+# lanes CI runs for each library. With -d0, b2 prints nothing else.
+rule declared-targets ( targets * : sources * : properties * )
+{
+    for local pair in [ webcpp.declared [ library-directories ] ]
+    {
+        ECHO $(pair) ;
+    }
+}
+notfile declared-targets : @declared-targets : : <webcpp-boost-check>off ;
+
+# `b2 declared-lanes` prints each line "<library> <lane> <directory> <kind>"
+# that a library's test or example Jamfiles declare with webcpp.lane, sorted:
+# a library's own lanes, such as its oracle's, which CI runs as
+# `b2 -a <directory>//<lane>`. A lane that names the targets it runs on is a
+# line "<library> <lane> <directory> <target> <kind>" per target, which CI
+# runs with that target's toolset and reports as a lane. The kind, original
+# or programs, says whether the lane runs the original's language, for which
+# CI installs Node. It reads only Jamfiles too, and needs neither Boost nor
+# Node.
+rule declared-lanes ( targets * : sources * : properties * )
+{
+    for local lane in [ webcpp.lanes [ library-directories ] ]
+    {
+        ECHO $(lane) ;
+    }
+}
+notfile declared-lanes : @declared-lanes : : <webcpp-boost-check>off ;
+
+# A lane builds and runs one library's tests and examples for one target,
+# from scratch, and writes what b2 built and ran, which
+# tools/report/report.py turns into the test matrix:
+#
+#     b2 -a --dump-tests --out-xml=<lane>.xml toolset=<toolset> \
+#         libs/<library>/test libs/<library>/example
+#     python3 tools/report/report.py --lane <lane>=<lane>.xml ... --out <dir>
+#
+# A wasip2 or wasip3 lane adds testing.launcher=wasmtime. --dump-tests lists
+# every test, those the lane skips included. With --out-xml, b2 exits 0 even
+# when a test fails: the report's exit status is the verdict.
+
+# webcpp's version, which libs/config/include/webcpp/version.hpp writes, the
+# one place it is written: its WEBCPP_VERSION and its name, 100 0.1.0. Only
+# the release targets read it, so that a checkout without libs/config (a
+# submodule not checked out, the scratch copies of the tools' tests) builds
+# everything else; they stop, naming the header, when it is not there, cannot
+# be read, defines the macro twice or has no line
+# `#define WEBCPP_VERSION <number>`, the number alone, in decimal, without a
+# leading zero, which C++ reads as octal: as tools/release/release.py reads it.
+rule webcpp-version ( )
+{
+    local header = [ path.native [ path.join [ path.make $(WEBCPP_ROOT) ]
+        libs/config/include/webcpp/version.hpp ] ] ;
+    if ! [ CHECK_IF_FILE $(header) ]
+    {
+        errors.user-error "webcpp's version is read from $(header), which does not"
+            "exist: check out libs/config" ;
+    }
+    local found = [ define-line $(header) : WEBCPP_VERSION ] ;
+    if ! ( $(found[2]) in 0 1 )
+    {
+        errors.user-error "$(header) cannot be read" ;
+    }
+    if [ MATCH "^(#define WEBCPP_VERSION .*#define WEBCPP_VERSION )" : $(found[1]) ]
+    {
+        errors.user-error "$(header) defines WEBCPP_VERSION twice" ;
+    }
+    local number = [ MATCH "^#define WEBCPP_VERSION +(0|[1-9][0-9]*) *$" : $(found[1]) ] ;
+    if ! $(number)
+    {
+        errors.user-error "$(header) has no line `#define WEBCPP_VERSION <number>`,"
+            "the number in decimal, without a leading zero" ;
+    }
+    # major, minor (three digits) and patch (two), each without its zeros.
+    local parts = [ MATCH "^([0-9]*)([0-9][0-9][0-9])([0-9][0-9])$" : 00000$(number) ] ;
+    local name ;
+    for local part in $(parts)
+    {
+        name += [ MATCH "^0*([0-9]+)$" : $(part) ] ;
+    }
+    return $(number) $(name:J=.) ;
+}
+
+# The release tooling, tools/release/release.py (AGENTS.md chapter 5), run
+# only when named: check-release, what a tag needs; whats-new, the skeleton
+# of a version's What's new; dist, its archive. No release target is named
+# release-<word>, which b2 reads as the variant release (AGENTS.md
+# chapter 6).
+if [ os.name ] = NT { .python = python ; } else { .python = python3 ; }
+
+rule release-tool ( targets * : sources * : properties * )
+{
+    local version = [ webcpp-version ] ;
+    PYTHON on $(targets) = $(.python) ;
+    SCRIPT on $(targets) = [ path.native [ path.join [ path.make $(WEBCPP_ROOT) ]
+        tools/release/release.py ] ] ;
+    ROOT on $(targets) = $(WEBCPP_ROOT) ;
+    VERSION on $(targets) = $(version[2]) ;
+}
+
+rule check-release ( targets * : sources * : properties * )
+{
+    release-tool $(targets) : $(sources) : $(properties) ;
+}
+
+actions check-release
+{
+    "$(PYTHON)" "$(SCRIPT)" check --root "$(ROOT)" --version "$(VERSION)"
+}
+
+notfile check-release : @check-release : : <webcpp-boost-check>off ;
+
+rule whats-new ( targets * : sources * : properties * )
+{
+    release-tool $(targets) : $(sources) : $(properties) ;
+}
+
+actions whats-new
+{
+    "$(PYTHON)" "$(SCRIPT)" whats-new --root "$(ROOT)" --version "$(VERSION)"
+}
+
+notfile whats-new : @whats-new : : <webcpp-boost-check>off ;
+
+# `b2 dist` builds every page, the index's and each library's, then writes
+# bin/dist/webcpp-<version>.tar.gz and its sha256sum file, the same bytes
+# wherever and whenever the same commits and pages are archived, with any
+# CPython of 3.9 or later linked to zlib: dist refuses one linked to zlib-ng
+# or any other deflate.
+rule dist ( targets * : sources * : properties * )
+{
+    release-tool $(targets) : $(sources) : $(properties) ;
+    OUT on $(targets) = [ path.native [ path.join [ path.make $(WEBCPP_ROOT) ]
+        bin/dist ] ] ;
+}
+
+actions dist
+{
+    "$(PYTHON)" "$(SCRIPT)" dist --root "$(ROOT)" --version "$(VERSION)" --out "$(OUT)"
+}
+
+notfile dist : @dist : : <dependency>doc <webcpp-boost-check>off ;
+
+explicit boost_version throw_exception boost_json boost_url boost_charconv
+    boost_locale boost_cobalt boost_cobalt_io_ssl node-test emscripten-reference test example doc install $(.install)
+    declared-targets declared-lanes site site-serve check-release whats-new
+    dist ;
+if [ glob site/Jamfile ]
+{
+    explicit site-declared.txt libraries.json site-pages ;
+}

@@ -5,7 +5,7 @@ webcpp:
   title: "organization: build and install the wasm bindings generator as a host tool"
   kind: organization
   port_of: null
-  status: draft
+  status: accepted
   release: null
   implementation: https://github.com/webcpporg/webcpp
-  decided: null
+  decided: 2026-11-03

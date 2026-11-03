@@ -1,0 +1,1331 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+#
+# The rules a library's test and example Jamfiles declare their programs
+# with, in place of b2's run, exe and compile:
+#
+#     import webcpp ;
+#     webcpp.targets native wasip2 wasip3 ;
+#     webcpp.run name : sources + : requirements * : targets * ;
+#     webcpp.run-fail name : sources + : requirements * : targets * ;
+#     webcpp.compile name : sources + : requirements * : targets * ;
+#     webcpp.compile-fail name : sources + : requirements * : targets * ;
+#     webcpp.compile-diagnostic name : sources + : requirements * : targets * ;
+#     webcpp.boost-test name : sources + : requirements * ;
+#     webcpp.example source : requirements * : targets * ;
+#     webcpp.headers-alone library : include-root : only * : requirements *
+#       : targets * ;
+#     webcpp.link name : sources + : requirements * : targets * ;
+#     webcpp.data directories + ;  (requirements: a run's data on WASI)
+#
+# the rules of a program a page loads, on emscripten alone, in both
+# suspension variants, its manifest and the table of their sizes:
+#
+#     webcpp.variants name : sources + : requirements * ;
+#     webcpp.size-table name : variants + ;
+#
+# the rule with which any test or example Jamfile of a library declares one
+# of its own lanes, which `b2 declared-lanes` lists, once per target it
+# runs on:
+#
+#     webcpp.lane name : b2-targets + : targets * ;
+#
+# and the rule of a driven test, tools/drive/drive.jam's, which a script of
+# the original's language runs over a linked program, in an own lane:
+#
+#     webcpp.drive name : sources + : requirements * : script : arguments *
+#       : targets * ;
+#
+# and the rule of a library's generated files, tools/generated/generated.jam's,
+# which runs a Python generator and compares what it writes with the
+# committed files:
+#
+#     webcpp.generated name : script : arguments * : outputs + ;
+#
+# the rules of the documentation, tools/doc/doc.jam's, with which a library's
+# doc Jamfile declares its page and its reference, and the superproject's
+# doc/Jamfile its index page:
+#
+#     webcpp.doc library : page ;
+#     webcpp.reference library : requirements * : also-checked * ;
+#     webcpp.index page ;
+#
+# and the rules of the oracle, tools/oracle/oracle.jam's, with which a
+# library's test/oracle/Jamfile runs its original over its twins and cases:
+#
+#     webcpp.original word + ;
+#     webcpp.twins examples : twins : suffix : extra-words * ;
+#     webcpp.cases name : script : cases : expected ;
+#
+# and the rules of a WebAssembly component, tools/component/component.jam's,
+# with which a library's build.jam declares the C bindings of a world, and
+# its test and example Jamfiles an HTTP component that wasmtime serves:
+#
+#     webcpp.wit-bindings name : world-file : world : rename : version
+#       : wit-bindgen-argument * ;
+#     webcpp.serve source : requirements * : targets * ;
+#     webcpp.serve-script name : script : stem : targets * ;
+#
+# A target is what a program is built for: emscripten (b2's toolset
+# emscripten), wasip2 and wasip3 (the clang toolsets of user-config.jam
+# whose versions are wasip2 and wasip3), and native (any other toolset). A
+# program is built for its own targets, else for those of its Jamfile's
+# webcpp.targets, else for native only. For any other target, b2 skips it
+# without a word. On emscripten, b2's toolset runs a program with node
+# itself, and a build that also gives testing.launcher stops, naming it.
+import alias ;
+import common ;
+import errors ;
+import feature ;
+import make ;
+import modules ;
+import numbers ;
+import os ;
+import path ;
+import project ;
+import regex ;
+import sequence ;
+import set ;
+import targets ;
+import testing ;
+import toolset ;
+
+# A program's targets, which filter reads. Free, so that a program's
+# targets play no part in its build directory.
+feature.feature webcpp-targets : : free incidental ;
+
+# The header a translation unit of headers-alone includes, as
+# webcpp/<library>/<name>.hpp.
+feature.feature webcpp-include : : free incidental ;
+
+# The lane an own lane's alias is, <directory>/<name>, which lane-target
+# reads.
+feature.feature webcpp-lane : : free incidental ;
+
+# The program a manifest of webcpp.variants is of, <directory>/<name>, which
+# variants-request reads.
+feature.feature webcpp-variants : : free incidental ;
+
+# webcpp-require-external=on: a library webcpp does not build that is not
+# found stops the build (external-found), as the CI asks, rather than leave
+# the library that needs it out. Incidental, so that it plays no part in a
+# build directory, and propagated, so that it reaches each library's alias.
+feature.feature webcpp-require-external : on : optional incidental propagated ;
+
+# What a test that reads the host's files at run time gets under wasmtime:
+# each value is wasmtime's option --dir="<directory>", which preopens that
+# directory of the host at the same path in the program, and webcpp.data
+# writes it, on WASI alone. testing.jam's capture-output, the action of
+# webcpp.run and webcpp.run-fail, puts the values after testing.launcher's
+# own words, so that the command is `wasmtime --dir="<directory>" <program>`.
+# Natively and on emscripten (-sNODERAWFS=1) a program reads the host's
+# files already.
+feature.feature webcpp-data : : free incidental ;
+toolset.flags testing.capture-output LAUNCHER : <webcpp-data> : unchecked ;
+
+# The suspension variant of a program on emscripten (AGENTS.md chapter 4):
+# jspi, JavaScript Promise Integration, the default, with WebAssembly
+# exceptions; or asyncify, Emscripten's Asyncify, which traps with
+# WebAssembly exceptions and so composes JavaScript-based ones.
+# Composite, since b2 takes only free features from usage requirements;
+# propagated, so that every library a program uses is built for its
+# variant. A non-default value builds in a directory of its own.
+# tag::suspend[]
+feature.feature webcpp-suspend : jspi asyncify : propagated composite ;
+feature.compose <webcpp-suspend>asyncify : <exception-handling-method>js ;
+# end::suspend[]
+
+# What links tools/throw_exception.cpp, the handler Boost calls in place of
+# a throw, into a program a user builds with exception-handling=off, on any
+# target. Every library supports a build without exceptions; webcpp builds
+# none without RTTI.
+.handler = <exception-handling>off:<source>/webcpp//throw_exception ;
+
+# What a program that node runs on emscripten links with: webcpp.run's,
+# webcpp.run-fail's and webcpp.example's. Without it, node gives the program
+# an empty file system of Emscripten's own, so that a test would read its
+# input file, or an example its standard input, as empty, and pass or fail
+# for the wrong reason. A program of webcpp.link, which a browser runs, never
+# gets it, nor does one a driver runs (webcpp.drive).
+.node-raw-fs = <toolset>emscripten:<linkflags>-sNODERAWFS=1 ;
+
+# What every test and example links (Jamroot's node-test): no library's
+# Jamfile can leave it out, and one that links -sJSPI or -sASYNCIFY gets it
+# with the rest. The rules that only compile take it too, for its header: a
+# test's main ends with webcpp::test::exit_status.
+.node-test = <library>/webcpp//node-test ;
+
+if [ os.name ] = NT { .python = python ; } else { .python = python3 ; }
+
+# This directory, absolute, and the superproject's, its parent: the root
+# every path this module and webcpp-oracle record is relative to.
+.tools = [ path.parent [ path.root [ path.make [ modules.binding $(__name__) ] ] [ path.pwd ] ] ] ;
+.root = [ path.parent $(.tools) ] ;
+
+# The example runner, beside this file, as an absolute native path: the
+# action that runs it starts in the directory b2 was started in.
+.runner = [ path.native [ path.join $(.tools) example/run_example.py ] ] ;
+
+# The script that writes a page program's manifest and the table of sizes,
+# as the runner is.
+.variants-script = [ path.native [ path.join $(.tools) variants/variants.py ] ] ;
+
+# The Boost.Test framework of webcpp.boost-test, beside this file, as a plain
+# file of /webcpp, this file's own project, by its location relative to the
+# superproject: a suite's obj gets it the way throw_exception and boost_json
+# below are got, by a project and a path, never by an absolute path or one
+# joined to the suite's own location, which a resolved symlink in root
+# (TMPDIR on macOS) would then disagree with.
+local .tools-relative = [ path.relative-to $(.root) $(.tools) ] ;
+.framework = /webcpp//$(.tools-relative)/boost_test_runner.cpp ;
+
+# The arguments a Boost.Test suite of webcpp.boost-test is run with.
+.boost-test-arguments = --log_level=error --color_output=no ;
+
+# The targets and the target of a toolset, tools/target.jam, loaded as the
+# module webcpp-target, which tools/component/component.jam loads too.
+modules.load webcpp-target : target.jam : [ path.native $(.tools) ] ;
+import webcpp-target ;
+.known = [ webcpp-target.known ] ;
+
+# The documentation's rules, loaded as the module webcpp-doc: b2 has a
+# module named doc of its own, the one of --help, which an import of
+# tools/doc/doc would find in its place.
+modules.load webcpp-doc : doc.jam : [ path.native [ path.join $(.tools) doc ] ] ;
+import webcpp-doc ;
+
+# The oracle's rules, loaded as the module webcpp-oracle, as the
+# documentation's are.
+modules.load webcpp-oracle : oracle.jam : [ path.native [ path.join $(.tools) oracle ] ] ;
+import webcpp-oracle ;
+
+# The rules of a WebAssembly component, loaded as the module
+# webcpp-component, as the documentation's are.
+modules.load webcpp-component : component.jam
+  : [ path.native [ path.join $(.tools) component ] ] ;
+import webcpp-component ;
+
+# The rule of a driven test, loaded as the module webcpp-drive, as the
+# documentation's are.
+modules.load webcpp-drive : drive.jam : [ path.native [ path.join $(.tools) drive ] ] ;
+import webcpp-drive ;
+
+# The rule of generated files, loaded as the module webcpp-generated, as the
+# documentation's are.
+modules.load webcpp-generated : generated.jam
+  : [ path.native [ path.join $(.tools) generated ] ] ;
+import webcpp-generated ;
+
+.nl = "\n" ;
+
+# The conditional requirement of every program: <build>no when the toolset
+# builds for a target that is not among the program's. It reads only
+# <toolset> and its version, which the build request sets. A condition on
+# <target-os>, which the Jamroot derives from the toolset, would keep b2's
+# evaluation of conditional requirements from settling: <build>no replaces
+# every other conditional result, <target-os>wasi among them (measured in
+# xstate-cpp).
+#
+# On emscripten, b2's toolset runs a program's JavaScript with the node it
+# found itself, and a testing.launcher would come before it: the command
+# would be `node "node" x.js`, which fails. A build that gives one stops.
+rule filter ( properties * )
+{
+    local target = [ webcpp-target.target-of $(properties) ] ;
+    if $(target) = emscripten && [ feature.get-values <testing.launcher> : $(properties) ]
+    {
+        errors.user-error "webcpp: b2's emscripten toolset runs a program with node itself;"
+            "give no testing.launcher on emscripten" ;
+    }
+    if ! $(target) in [ feature.get-values <webcpp-targets> : $(properties) ]
+    {
+        return <build>no ;
+    }
+}
+
+# Fails, naming context, when any of targets is not a known one.
+local rule check ( context : targets * )
+{
+    for local target in $(targets)
+    {
+        if ! $(target) in $(.known)
+        {
+            errors.user-error "$(context): $(target) is not a target; the targets are"
+                "$(.known:J= )" ;
+        }
+    }
+}
+
+# The project module of the Jamfile being loaded.
+local rule jamfile ( )
+{
+    local current = [ project.current ] ;
+    return [ $(current).project-module ] ;
+}
+
+# Where the Jamfile being loaded is: its project; its directory, absolute in
+# b2's form; that directory relative to the superproject; the Jamfile
+# itself, relative to the superproject; and the superproject's directory.
+local rule where ( )
+{
+    local current = [ project.current ] ;
+    local jamfile = [ $(current).project-module ] ;
+    local location = [ path.root [ project.attribute $(jamfile) location ] [ path.pwd ] ] ;
+    local file = [ path.root [ path.make [ modules.binding $(jamfile) ] ] [ path.pwd ] ] ;
+    return $(current) $(location) [ path.relative-to $(.root) $(location) ]
+        [ path.relative-to $(.root) $(file) ] $(.root) ;
+}
+
+# The library of the Jamfile being loaded: the directory of libs/ that holds
+# it. A Jamfile outside libs/ is named by its directory, relative to the
+# superproject.
+local rule library-of ( )
+{
+    local found = [ where ] ;
+    local library = [ MATCH "^libs/([^/]+)" : $(found[3]) ] ;
+    return $(library:E=$(found[3])) ;
+}
+
+# Declares the targets of every program its Jamfile declares after it
+# without targets of its own.
+rule targets ( targets + )
+{
+    local jamfile = [ jamfile ] ;
+    check webcpp.targets : $(targets) ;
+    if $(.programs.$(jamfile))
+    {
+        errors.user-error "webcpp.targets must come before the first program of its Jamfile" ;
+    }
+    if $(.targets.$(jamfile))
+    {
+        errors.user-error "webcpp.targets is called twice in the same Jamfile" ;
+    }
+    .targets.$(jamfile) = $(targets) ;
+}
+
+# The requirements that build programs of kind, named names, only for
+# targets, else for their Jamfile's, else for native. Each pair <library>
+# <target> is recorded for declared, and each program as "<kind> <name>
+# <target>..." for programs: kind is the rule that declares it, run,
+# run-fail, compile, compile-fail, compile-diagnostic, boost-test, example,
+# headers-alone, serve, link or drive.
+local rule program ( kind : names + : targets * )
+{
+    local jamfile = [ jamfile ] ;
+    check "a program's targets" : $(targets) ;
+    targets ?= $(.targets.$(jamfile)) ;
+    targets ?= native ;
+    .programs.$(jamfile) = true ;
+    local library = [ library-of ] ;
+    .declared += "$(library) $(targets)" ;
+    .recorded.$(library) += "$(kind) $(names) $(targets:J= )" ;
+    # Qualified by its module, so that it resolves whatever names the
+    # Jamfile imported this module's rules under.
+    return <webcpp-targets>$(targets) <conditional>@webcpp%filter ;
+}
+
+# A test that passes when its program, built from sources, exits with 0.
+rule run ( name : sources + : requirements * : targets * )
+{
+    node-runnable webcpp.run $(name) : $(requirements) ;
+    testing.run $(sources) : : : $(requirements) [ program run : $(name) : $(targets) ]
+        $(.handler) $(.node-raw-fs) $(.node-test) : $(name) ;
+}
+
+# A Boost.Test suite, built from sources and the header-only framework of
+# tools/boost_test_runner.cpp, which passes when every case does. It is built
+# and run natively only, whatever its Jamfile's webcpp.targets says. The
+# framework is one object of each suite, which names the module
+# BOOST_TEST_MODULE=name with - as _ (a hyphen in a macro's replacement would
+# read as a subtraction), and is compiled with exceptions on whatever the
+# build asks for: built without them, a failed BOOST_TEST_REQUIRE of
+# Boost.Test 1.92 never ends the run, and GCC rejects the unguarded try of
+# unit_test_main.ipp. --log_level=error makes a failure print its case and
+# its check, and --color_output=no keeps out of b2's output and the report's
+# pages the terminal's escape sequences, which Boost.Test writes even to a
+# file.
+rule boost-test ( name : sources + : requirements * )
+{
+    local only = [ program boost-test : $(name) : native ] ;
+    local identifier = [ regex.replace $(name) "-" "_" ] ;
+    local framework = <define>BOOST_TEST_MODULE=$(identifier) <exception-handling>on ;
+    local current = [ project.current ] ;
+    obj $(name)-framework : $(.framework) : $(requirements) $(framework) $(only) ;
+    $(current).mark-target-as-explicit $(name)-framework ;
+    testing.run $(sources) $(name)-framework : $(.boost-test-arguments)
+        : : $(requirements) $(only) $(.handler) : $(name) ;
+}
+
+# A test that passes when its program, built from sources, exits with a
+# status other than 0.
+rule run-fail ( name : sources + : requirements * : targets * )
+{
+    node-runnable webcpp.run-fail $(name) : $(requirements) ;
+    testing.run-fail $(sources) : : : $(requirements) [ program run-fail : $(name) : $(targets) ]
+        $(.handler) $(.node-raw-fs) $(.node-test) : $(name) ;
+}
+
+# The requirements, or usage requirements, that give a program of webcpp.run
+# or webcpp.run-fail the directories at run time, each absolute, as a
+# path-constant gives it: the program reads them at the same path on every
+# target. Quoted whole, for a path that holds a space; a path that holds ",
+# $ or a backquote, which the shell reads inside double quotes, is refused.
+rule data ( directories + )
+{
+    local result ;
+    for local directory in $(directories)
+    {
+        if ! [ path.is-rooted [ path.make $(directory) ] ]
+        {
+            errors.user-error "webcpp.data: $(directory) is not absolute; give the directory"
+                "as a path-constant gives it" ;
+        }
+        local read = [ MATCH "([\"$`])" : $(directory) ] ;
+        if $(read)
+        {
+            errors.user-error "webcpp.data: $(directory) holds a character the shell would"
+                "read: $(read[1]); give a directory whose path holds no \", $ or `" ;
+        }
+        result += <target-os>wasi:<webcpp-data>"--dir=\"$(directory)\"" ;
+    }
+    return $(result) ;
+}
+
+# Stops the build, naming the flag and the program, when the requirements
+# of a program node runs (run, run-fail, example), or its Jamfile's, link
+# -sMODULARIZE or -sEXPORT_ES6, under a condition or not. Either wraps the
+# program in a factory that node never calls: the program, its pre-js among
+# it, would never run, and its test would pass. A page's program, which
+# webcpp.link links, may take them. Read from the declaration, since b2
+# evaluates a conditional requirement before it adds the free requirements;
+# a library's usage requirements are not read.
+local rule node-runnable ( kind name : requirements * )
+{
+    local jamfile = [ jamfile ] ;
+    local inherited = [ project.attribute $(jamfile) requirements ] ;
+    for local property in $(requirements) [ $(inherited).raw ]
+    {
+        # A value may hold several flags, "-sJSPI -sMODULARIZE".
+        local value = [ MATCH "<linkflags>(.*)$" : $(property) ] ;
+        for local flag in [ regex.split-list $(value) : "[ 	
+]+" ]
+        {
+            local found = [ MATCH "^-s(MODULARIZE|EXPORT_ES6)(=(.*))?$" : $(flag) ] ;
+            if $(found) && $(found[3]) != 0
+            {
+                local place = [ where ] ;
+                errors.user-error "webcpp: $(flag) makes node load the program without running"
+                    "it, and $(kind) $(name) in $(place[4]) runs it under node; a page's program,"
+                    "which webcpp.link links, may take it" ;
+            }
+        }
+    }
+}
+
+# A test that passes when its program, built from sources, links, which it
+# never runs: a program for a browser, which node refuses to run, or one that
+# needs the network. The explicit target <name>-program is the same program,
+# an exe of the same sources and requirements, for a target that needs its
+# files, such as a page that loads it. Each source of a program an example
+# Jamfile links is recorded for linked-of: the library's page shows its code.
+rule link ( name : sources + : requirements * : targets * )
+{
+    local only = [ program link : $(name) : $(targets) ] ;
+    testing.link $(sources) : $(requirements) $(only) $(.handler) : $(name) ;
+    exe $(name)-program : $(sources) : $(requirements) $(only) $(.handler) ;
+    local found = [ where ] ;
+    $(found[1]).mark-target-as-explicit $(name)-program ;
+    local library = [ MATCH "^libs/([^/]+)/example(/.*)?$" : $(found[3]) ] ;
+    if $(library)
+    {
+        for local source in $(sources)
+        {
+            if $(source:S) = .cpp
+            {
+                .linked.$(library[1]) += [ path.native [ path.root [ path.make $(source) ]
+                    $(found[2]) ] ] ;
+            }
+        }
+    }
+}
+
+# The name of a program on emscripten, Boost's way: its tags joined by '-',
+# the toolset's version (60 for Emscripten 6.0.11, which common.jam knows by
+# its version alone), d for a debug build, and the variant:
+# page-60-d-jspi.js. Other targets, and other toolsets, keep their names.
+rule suspend-tag ( name : type ? : property-set )
+{
+    if $(type) = EXE && [ $(property-set).get <toolset> ] = emscripten
+    {
+        return [ common.format-name <base> <toolset> <threading> <runtime>
+            <property:webcpp-suspend> : $(name) : $(type) : $(property-set) ] ;
+    }
+}
+
+# A program a page loads, in both suspension variants, and its manifest:
+# the explicit executable <name>, on emscripten alone, linked as an ES
+# module whose factory a page calls (-sMODULARIZE -sEXPORT_ES6), named
+# Boost's way; and the explicit <name>.variants.json, beside the jspi
+# artifact, which names each variant's script relative to itself and the
+# size of its .wasm, which webcpp-asio-loader.mjs reads. Never run by
+# node: no -sNODERAWFS=1. The manifest builds both variants itself, so a
+# build that asks for one of them is refused (variants-request).
+# A page program is a finished executable, not a link dependency. Its
+# library usage requirements have already been consumed by its own link.
+# Exporting them would make a driver or a manifest consumer link those
+# sources again, combining objects from incompatible suspension variants.
+class variant-program : typed-target
+{
+    import property-set ;
+
+    rule __init__ ( name : project : sources * : requirements *
+        : default-build * : usage-requirements * )
+    {
+        typed-target.__init__ $(name) : $(project) : EXE : $(sources)
+          : $(requirements) : $(default-build) : $(usage-requirements) ;
+    }
+
+    rule compute-usage-requirements ( subvariant )
+    {
+        return [ property-set.empty ] ;
+    }
+}
+
+rule variants ( name : sources + : requirements * )
+{
+    local only = <webcpp-targets>emscripten <conditional>@webcpp%filter ;
+    targets.create-metatarget variant-program : [ project.current ]
+      : $(name) : $(sources)
+      : $(requirements) $(only) $(.handler) <tag>@webcpp%suspend-tag
+        <linkflags>-sMODULARIZE <linkflags>-sEXPORT_ES6 ;
+    local found = [ where ] ;
+    local key = $(found[3])/$(name) ;
+    .variants-shown.$(key) = "webcpp.variants $(name) in $(found[4])" ;
+    make $(name).variants.json
+      : $(name)/<webcpp-suspend>jspi $(name)/<webcpp-suspend>asyncify
+      : @webcpp%write-variants
+      : $(only) <webcpp-variants>$(key) <conditional>@webcpp%variants-request ;
+    $(found[1]).mark-target-as-explicit $(name) $(name).variants.json ;
+}
+
+# The conditional requirement of a manifest of webcpp.variants: a build on
+# emscripten that asks for JavaScript exceptions, by webcpp-suspend=asyncify
+# or exception-handling=on-js, stops, naming the program. Its jspi
+# variant would keep them, since a property a source names replaces a
+# request's value but cannot take back an optional one such as
+# exception-handling-method, and the manifest and the size table would give
+# a JSPI program linked with JavaScript exceptions, in a directory of its
+# own, as the jspi artifact. The lanes ask for a manifest without either.
+rule variants-request ( properties * )
+{
+    if [ webcpp-target.target-of $(properties) ] = emscripten
+      && <exception-handling-method>js in $(properties)
+    {
+        local key = [ feature.get-values <webcpp-variants> : $(properties) ] ;
+        errors.user-error "$(.variants-shown.$(key)) builds both suspension variants itself, and"
+            "this build asks for JavaScript exceptions, which its jspi variant would be linked"
+            "with: give neither webcpp-suspend=asyncify nor exception-handling=on-js" ;
+    }
+}
+
+rule write-variants ( targets * : sources * : properties * )
+{
+    PYTHON on $(targets) = $(.python) ;
+    SCRIPT on $(targets) = $(.variants-script) ;
+}
+
+actions write-variants
+{
+    "$(PYTHON)" "$(SCRIPT)" manifest --out "$(<)" --jspi "$(>[1])" --asyncify "$(>[2])"
+}
+
+# The sizes of the variants of each program webcpp.variants declared in this
+# Jamfile under the names variants: the explicit <name>.sizes.md, a Markdown
+# table the build also prints, and which the CI keeps from an own lane's job
+# (.github/workflows/library.yml, the artifact sizes-<lane>).
+rule size-table ( name : variants + )
+{
+    make $(name).sizes.md : $(variants).variants.json : @webcpp%write-size-table
+      : <webcpp-targets>emscripten <conditional>@webcpp%filter ;
+    local found = [ where ] ;
+    $(found[1]).mark-target-as-explicit $(name).sizes.md ;
+}
+
+rule write-size-table ( targets * : sources * : properties * )
+{
+    PYTHON on $(targets) = $(.python) ;
+    SCRIPT on $(targets) = $(.variants-script) ;
+    # A project's libraries can append source objects to this make target.
+    # Only variant manifests are table inputs.
+    local manifests ;
+    for local source in $(sources)
+    {
+        if $(source:S) = .json
+        {
+            manifests += $(source) ;
+        }
+    }
+    MANIFESTS on $(targets) = $(manifests) ;
+}
+
+actions write-size-table bind MANIFESTS
+{
+    "$(PYTHON)" "$(SCRIPT)" table --out "$(<)" "$(MANIFESTS)"
+}
+
+# A test that passes when sources compile, which builds no program.
+rule compile ( name : sources + : requirements * : targets * )
+{
+    testing.compile $(sources) : $(requirements) [ program compile : $(name) : $(targets) ]
+        $(.node-test) : $(name) ;
+}
+
+# A test that passes when sources do not compile.
+rule compile-fail ( name : sources + : requirements * : targets * )
+{
+    testing.compile-fail $(sources) : $(requirements)
+        [ program compile-fail : $(name) : $(targets) ] $(.node-test) : $(name) ;
+}
+
+# A test that passes when sources stop with the errors they state, in
+# clang's -verify comments: `// expected-error@<file>:* {{<message>}}` for
+# an error of a header they include, `// expected-error@+1 {{<message>}}` for
+# one of the next line. clang's -verify makes the compile succeed only when
+# every stated error appears; an error that is not stated, and a note, are
+# ignored (-verify-ignore-unexpected=error,note), so that a header's
+# #error may be followed by what the rest of the header then fails on. A
+# compile-fail test passes on any error, the wrong one included; this one
+# only on the one it states. -verify is clang's: on a toolset other than
+# b2's clang (native clang, clang-wasip2, clang-wasip3), the test is
+# skipped, as a program is for a target it does not declare, rather than
+# refused, which would turn red every lane of gcc or msvc for a declaration
+# that holds; the report shows it there as not built.
+rule compile-diagnostic ( name : sources + : requirements * : targets * )
+{
+    testing.compile $(sources)
+      : $(requirements) <cxxflags>"-Xclang -verify -Xclang -verify-ignore-unexpected=error,note"
+        <conditional>@webcpp%clang-only [ program compile-diagnostic : $(name) : $(targets) ]
+        $(.node-test)
+      : $(name) ;
+}
+
+# The conditional requirement of compile-diagnostic: <build>no on a toolset
+# other than clang, read from <toolset> alone.
+rule clang-only ( properties * )
+{
+    if [ feature.get-values <toolset> : $(properties) ] != clang
+    {
+        return <build>no ;
+    }
+}
+
+# An example: the program built from source, run (through testing.launcher
+# for a wasm build) with the <stem>.input beside source as its standard
+# input, or an empty one when there is none, and its standard output
+# compared with the <stem>.expected beside source, by
+# tools/example/run_example.py. The target <stem>.output, which holds that
+# output, exists only when the two are equal.
+rule example ( source : requirements * : targets * )
+{
+    local name = $(source:B) ;
+    local only = [ program example : $(name) : $(targets) ] ;
+    node-runnable webcpp.example $(name) : $(requirements) ;
+    exe $(name) : $(source) : $(requirements) $(only) $(.handler) $(.node-raw-fs)
+        $(.node-test) ;
+    local found = [ where ] ;
+    local input ;
+    if [ path.glob $(found[2]) : $(source:S=.input) ]
+    {
+        input = $(source:S=.input) ;
+    }
+    # The program's main target can generate more than the executable, which
+    # it lists first: MSVC's debug link adds the .pdb after the .exe. So the
+    # action reads the program as the first source. Library source usage
+    # can also append objects, so run-and-compare finds both the expected
+    # output and the optional input by suffix, not by position. The input
+    # is a source of the output, so editing it runs the example again.
+    make $(name).output : $(name) $(input) $(source:S=.expected) : @webcpp%run-and-compare
+        : $(requirements) $(only) ;
+    # testing.launcher is a free feature: it plays no part in the target's
+    # build directory, so a .output left over from one launcher reads as up
+    # to date under another and the comparison is silently skipped. Always
+    # running it again closes that gap.
+    local current = [ project.current ] ;
+    $(current).mark-target-as-always $(name).output ;
+}
+
+rule run-and-compare ( targets * : sources * : properties * )
+{
+    PYTHON on $(targets) = $(.python) ;
+    RUNNER on $(targets) = $(.runner) ;
+    # A word made only of a reference to an empty variable disappears whole,
+    # quotes included, so a native build (no testing.launcher) would turn
+    # `--launcher "$(LAUNCHER)"` into a bare `--launcher`. LAUNCHER_ARGS is
+    # instead empty, or the two words `--launcher <value>` together. The
+    # value is quoted, so that a launcher whose path holds a space reaches
+    # the runner as one argument. On emscripten, where no testing.launcher is
+    # given (filter), the program's JavaScript runs with node, as b2's
+    # toolset runs a test's.
+    local launcher = [ feature.get-values <testing.launcher> : $(properties) ] ;
+    if [ webcpp-target.target-of $(properties) ] = emscripten
+    {
+        launcher = node ;
+    }
+    if $(launcher)
+    {
+        LAUNCHER_ARGS on $(targets) = --launcher \"$(launcher)\" ;
+    }
+    else
+    {
+        LAUNCHER_ARGS on $(targets) = ;
+    }
+    # The example's input, the source whose suffix is .input, or nothing.
+    # The action binds it to its path, and its word `--input="$(INPUT)"`,
+    # which holds a reference to it, disappears whole when it is empty.
+    local input ;
+    local expected ;
+    for local source in $(sources)
+    {
+        if $(source:S) = .input
+        {
+            input = $(source) ;
+        }
+        if $(source:S) = .expected
+        {
+            expected = $(source) ;
+        }
+    }
+    INPUT on $(targets) = $(input) ;
+    EXPECTED on $(targets) = $(expected) ;
+}
+
+actions run-and-compare bind INPUT EXPECTED
+{
+    "$(PYTHON)" "$(RUNNER)" $(LAUNCHER_ARGS) --input="$(INPUT)" --expected "$(EXPECTED)" --output "$(<)" -- "$(>[1])"
+}
+
+# A test per public header of library, each a translation unit that only
+# includes it, as <webcpp/...>, and compiles: a header that leans on an
+# include it does not make itself fails here, naming it. The headers are
+# webcpp/<library>.hpp and every .hpp under webcpp/<library>/, in
+# include-root; a translation unit is compiled against the library's main
+# target, /webcpp/<library>//<library>, and named alone-<path>, with the
+# header's path under webcpp/ written with dashes: alone-xactor-scheduler
+# for webcpp/xactor/scheduler.hpp.
+#
+# only restricts the call to the public headers that match one of its globs,
+# each relative to <include-root>/webcpp/ (wasi/http/response.hpp, wasi/*.hpp),
+# and a glob that matches none is an error naming it; without only, the call
+# takes every public header. requirements are added to each translation unit,
+# such as the bindings and the macro a header that builds only for WASI
+# needs, and targets replace the Jamfile's for them. A library may call it
+# several times, in one Jamfile or several, each for headers of its own: a
+# header that two calls take is an error naming it and both Jamfiles. A
+# header no call takes is found by tools/lint/compile_commands.py, which
+# needs a translation unit of each.
+rule headers-alone ( library : include-root : only * : requirements * : targets * )
+{
+    local current = [ project.current ] ;
+    local found = [ where ] ;
+    local root = [ path.make $(include-root) ] ;
+    local headers =
+        [ project.glob-internal-ex $(current) : $(root)/webcpp : $(library).hpp : : glob ]
+        [ project.glob-internal-ex $(current) : $(root)/webcpp/$(library) : *.hpp : : glob-tree ] ;
+    if ! $(headers)
+    {
+        errors.user-error "webcpp.headers-alone: $(include-root) holds neither"
+            "webcpp/$(library).hpp nor a header under webcpp/$(library)/" ;
+    }
+    if $(only)
+    {
+        local taken ;
+        for local glob in $(only)
+        {
+            local matched = [ set.intersection $(headers) : [ project.glob-internal-ex $(current)
+                : $(root)/webcpp : $(glob) : : glob ] ] ;
+            if ! $(matched)
+            {
+                errors.user-error "webcpp.headers-alone $(library): $(glob) matches no public"
+                    "header under $(include-root)/webcpp/, webcpp/$(library).hpp or a header"
+                    "under webcpp/$(library)/" ;
+            }
+            taken += $(matched) ;
+        }
+        headers = [ sequence.unique $(taken) ] ;
+    }
+    local included ;
+    local names ;
+    for local header in $(headers)
+    {
+        local path = [ path.relative-to $(root) $(header) ] ;
+        if $(.alone.$(library).$(path))
+        {
+            errors.user-error "webcpp.headers-alone $(library): $(path) is taken by two calls, in"
+                "$(.alone.$(library).$(path)) and in $(found[4]); a header compiles alone once" ;
+        }
+        .alone.$(library).$(path) = $(found[4]) ;
+        local stem = [ MATCH "^webcpp/(.*)[.]hpp$" : $(path) ] ;
+        local dashed = [ regex.replace $(stem) "/" "-" ] ;
+        included += $(path) ;
+        names += alone-$(dashed) ;
+    }
+    local only-targets = [ program headers-alone : $(names) : $(targets) ] ;
+    for local index in [ numbers.range 1 [ sequence.length $(names) ] ]
+    {
+        local name = $(names[$(index)]) ;
+        make $(name).cpp : : @webcpp%write-include : <webcpp-include>$(included[$(index)]) ;
+        $(current).mark-target-as-explicit $(name).cpp ;
+        testing.compile $(name).cpp : <library>/webcpp/$(library)//$(library) $(requirements)
+            $(only-targets) : $(name) ;
+    }
+}
+
+rule write-include ( targets * : sources * : properties * )
+{
+    HEADER on $(targets) = [ feature.get-values <webcpp-include> : $(properties) ] ;
+}
+
+# Writes the file through b2 itself, which works under every shell.
+actions write-include
+{
+    @($(STDOUT):E=#include <$(HEADER)>$(.nl)) > "$(<)"
+}
+
+# The pairs "<library> <target>" that the programs of the Jamfiles under
+# directories (absolute, in b2's form) declare, at any depth, sorted and
+# unique. It loads those Jamfiles, which a build loads only once it reaches
+# them.
+rule declared ( directories * )
+{
+    load-jamfiles $(directories) ;
+    return [ sequence.unique $(.declared) ] ;
+}
+
+# Loads the Jamfiles under directories (absolute, in b2's form), at any
+# depth, which a build loads only once it reaches them.
+local rule load-jamfiles ( directories * )
+{
+    local names = [ modules.peek project : JAMFILE ] ;
+    for local jamfile in [ path.glob-tree $(directories) : $(names) ]
+    {
+        project.load $(jamfile:D) ;
+    }
+}
+
+# webcpp.lane <name> : <b2-target> + : <target> * ; one of a library's own
+# lanes, such as its oracle's, or its served tests': the explicit alias <name>
+# over b2-targets, each a main target of this Jamfile, which the lane makes
+# explicit too, so that the library's ordinary lanes never build them. A lane
+# that names no target is recorded as "<library> <name> <directory> <kind>" for
+# lanes, and the CI runs it with Clang 18, its exit status its verdict; a lane
+# that names targets as one line "<library> <name> <directory> <target> <kind>"
+# per target, which the CI runs as that target's lane runs, and reports; a build
+# of it for another target stops, naming the toolset to give. Its kind, which
+# lanes computes once every Jamfile is loaded, says what the CI sets up for it
+# beside its target's toolset: original when one of b2-targets runs the
+# original's language (the twins, cases, node-modules or update-expected of the
+# oracle's rules, or a driven test), else programs. The kind reads only the
+# names the lane gives itself: a lane over an alias of the oracle's targets is
+# of the kind programs. It is no kind of a program's, which program records.
+# Each target is one of its Jamfile's webcpp.targets, which must come before it
+# (native when there are none). A lane-only program, served or driven, is named
+# by such a lane on every target it is built for, which lanes checks. Only a
+# Jamfile under the library's test or example directory, which lanes loads, may
+# declare one. The alias compiles nothing, so it leaves the Jamroot's check of
+# Boost, and the libraries its project's requirements name, whose targets would
+# run it, to the targets it names.
+rule lane ( name : b2-targets + : targets * )
+{
+    local found = [ where ] ;
+    local jamfile = [ jamfile ] ;
+    local library = [ MATCH "^libs/([^/]+)/(test|example)(/.*)?$" : $(found[3]) ] ;
+    if ! $(library)
+    {
+        errors.user-error "webcpp.lane is declared in $(found[4]), which is not a test or an"
+            "example Jamfile of a library: only one under libs/<library>/test or"
+            "libs/<library>/example declares a lane, so that b2 declared-lanes finds it" ;
+    }
+    check "webcpp.lane $(name)" : $(targets) ;
+    local declared = $(.targets.$(jamfile)) ;
+    declared ?= native ;
+    for local target in $(targets)
+    {
+        if ! $(target) in $(declared)
+        {
+            errors.user-error "webcpp.lane $(name) in $(found[4]): $(target) is not among the"
+                "targets its Jamfile declares, $(declared:J= ): a lane runs on targets that"
+                "webcpp.targets declares before it" ;
+        }
+    }
+    for local b2-target in $(b2-targets)
+    {
+        if [ MATCH "([/<>])" : $(b2-target) ]
+        {
+            errors.user-error "webcpp.lane $(name) in $(found[4]): $(b2-target) is not a target"
+                "of its own Jamfile, which the lane would leave in the library's ordinary"
+                "lanes; a lane names main targets of the Jamfile that declares it" ;
+        }
+    }
+    local key = $(found[3])/$(name) ;
+    local requirements = [ $(found[1]).get requirements ] ;
+    local libraries = [ $(requirements).get <library> ] ;
+    local unchecked = <webcpp-boost-check>off -<library>$(libraries) ;
+    if $(targets)
+    {
+        .lane-targets.$(key) = $(targets) ;
+        .lane-shown.$(key) = "webcpp.lane $(name) in $(found[4])" ;
+        alias $(name) : $(b2-targets)
+          : <webcpp-lane>$(key) <conditional>@webcpp%lane-target $(unchecked) ;
+    }
+    else
+    {
+        alias $(name) : $(b2-targets) : $(unchecked) ;
+    }
+    $(found[1]).mark-target-as-explicit $(name) $(b2-targets) ;
+    .lane-keys += $(key) ;
+    .lane-line.$(key) = "$(library[1]) $(name) $(found[3])" ;
+    .lane-directory.$(key) = $(found[3]) ;
+    .lane-programs.$(key) = $(b2-targets) ;
+    for local b2-target in $(b2-targets)
+    {
+        .laned.$(found[3])/$(b2-target) += $(targets) ;
+    }
+}
+
+# Records that the targets names of the Jamfile of found run the original's
+# language, which makes a lane that names one of the kind original.
+local rule runs-original ( found + : names + )
+{
+    for local name in $(names)
+    {
+        .runs-original.$(found[3])/$(name) = true ;
+    }
+}
+
+# The kind of the lane key, as lanes prints it: original when one of its
+# programs runs the original's language, else programs.
+local rule lane-kind ( key )
+{
+    for local program in $(.lane-programs.$(key))
+    {
+        if $(.runs-original.$(.lane-directory.$(key))/$(program))
+        {
+            return original ;
+        }
+    }
+    return programs ;
+}
+
+# What a lane is built with on each target, as a message names it.
+.toolset-of.native = "a native toolset" ;
+.toolset-of.emscripten = toolset=emscripten ;
+.toolset-of.wasip2 = toolset=clang-wasip2 ;
+.toolset-of.wasip3 = toolset=clang-wasip3 ;
+
+# The conditional requirement of a lane that names its targets: a build for
+# another target, which would build none of its programs, or those it also
+# builds there, and read green, stops, naming the lane, its targets and the
+# toolset to give.
+rule lane-target ( properties * )
+{
+    local key = [ feature.get-values <webcpp-lane> : $(properties) ] ;
+    local target = [ webcpp-target.target-of $(properties) ] ;
+    local targets = $(.lane-targets.$(key)) ;
+    if ! $(target) in $(targets)
+    {
+        local launcher ;
+        if [ set.intersection $(targets) : wasip2 wasip3 ]
+        {
+            launcher = ", with testing.launcher=wasmtime" ;
+        }
+        local toolsets = $(.toolset-of.$(targets)) ;
+        errors.user-error "$(.lane-shown.$(key)) runs on $(targets:J= ), and this build is for"
+            "$(target): give $(toolsets:J= or )$(launcher)" ;
+    }
+}
+
+# The lines "<library> <name> <directory> [<target>] <kind>" of the lanes
+# that the Jamfiles under directories (absolute, in b2's form) declare, at
+# any depth, sorted. Every lane-only program there, served (webcpp.serve,
+# webcpp.serve-script) or driven (webcpp.drive), must run in an own lane of
+# its Jamfile on every target it is built for, or the listing stops naming
+# it: the ordinary lanes leave such programs to their own lanes, so one that
+# no lane runs would be tested nowhere.
+rule lanes ( directories * )
+{
+    load-jamfiles $(directories) ;
+    for local program in $(.lane-only-programs)
+    {
+        if ! $(.laned.$(program))
+        {
+            errors.user-error "$(.lane-only-shown.$(program)) is in no own lane; name it in a"
+                "webcpp.lane that names its targets" ;
+        }
+        local dropped = [ set.difference $(.lane-only-on.$(program)) : $(.laned.$(program)) ] ;
+        if $(dropped)
+        {
+            errors.user-error "$(.lane-only-shown.$(program)) is built for $(dropped:J= ), which"
+                "no own lane that names it runs on; name $(dropped:J= ) in one of its lanes" ;
+        }
+    }
+    local lines ;
+    for local key in $(.lane-keys)
+    {
+        local kind = [ lane-kind $(key) ] ;
+        local targets = $(.lane-targets.$(key)) ;
+        if $(targets)
+        {
+            lines += "$(.lane-line.$(key)) "$(targets)" $(kind)" ;
+        }
+        else
+        {
+            lines += "$(.lane-line.$(key)) $(kind)" ;
+        }
+    }
+    return [ sequence.unique $(lines) ] ;
+}
+
+# Records the lane-only program <directory>/<name>, shown as shown, built on
+# the targets on, which lanes checks.
+local rule lane-only-program ( found + : name : shown : on + )
+{
+    .lane-only-programs += $(found[3])/$(name) ;
+    .lane-only-shown.$(found[3])/$(name) = "$(shown) in $(found[4])" ;
+    .lane-only-on.$(found[3])/$(name) = $(on) ;
+}
+
+# The test and example directories of library, absolute, in b2's form.
+local rule directories-of ( library )
+{
+    return $(.root)/libs/$(library)/test $(.root)/libs/$(library)/example ;
+}
+
+# The programs that the test and example Jamfiles of library declare, each
+# "<kind> <name> <target>..." as program records it, which
+# tools/doc/counts.py counts for the library's page. It loads those
+# Jamfiles.
+rule programs-of ( library )
+{
+    load-jamfiles [ directories-of $(library) ] ;
+    return $(.recorded.$(library)) ;
+}
+
+# The source of each program that the example Jamfiles of library link and
+# never run (webcpp.link), absolute and as the system writes it, which
+# tools/doc/doc.jam gives doc-check.py: the page shows each one's code. It
+# loads those Jamfiles.
+rule linked-of ( library )
+{
+    load-jamfiles [ directories-of $(library) ] ;
+    return $(.linked.$(library)) ;
+}
+
+# What the oracle of library declares with webcpp.twins: its examples and
+# twins directories, absolute and as the system writes them, and the
+# twins' suffix; nothing when it declares none. It loads the library's test
+# and example Jamfiles, the oracle's among them, as declared-lanes does.
+rule twins-of ( library )
+{
+    load-jamfiles [ directories-of $(library) ] ;
+    return [ webcpp-oracle.twins-of $(library) ] ;
+}
+
+# A library's page, libs/<library>/doc/html/index.html, from page and the
+# sections it includes, with the library's reference (tools/doc/doc.jam).
+rule doc ( library : page )
+{
+    webcpp-doc.doc $(library) : $(page) ;
+}
+
+# The target reference of a library's doc project, its API reference from
+# MrDocs, strict, read with the library's target and requirements, its Doc
+# Comments also checked with also-checked, the requirements of the other
+# branch of headers that branch by target (tools/doc/doc.jam).
+rule reference ( library : requirements * : also-checked * )
+{
+    webcpp-doc.reference $(library) : $(requirements) : $(also-checked) ;
+}
+
+# The superproject's index page, doc/html/index.html, which lists every
+# library (tools/doc/doc.jam).
+rule index ( page )
+{
+    webcpp-doc.index $(page) ;
+}
+
+# How a program of the original's language runs, and the target node-modules
+# (tools/oracle/oracle.jam). Each oracle rule is told where its Jamfile is.
+rule original ( words + : directory ? )
+{
+    local found = [ where ] ;
+    webcpp-oracle.original $(found) : $(words) : $(directory) ;
+    runs-original $(found) : node-modules update-expected ;
+}
+
+# The target twins, which runs every twin of examples on the original and
+# compares what it prints (tools/oracle/oracle.jam).
+rule twins ( examples : twins : suffix : extra * )
+{
+    local found = [ where ] ;
+    webcpp-oracle.twins $(found) : $(examples) : $(twins) : $(suffix) : $(extra) ;
+    runs-original $(found) : twins ;
+}
+
+# The target cases-<name>, which runs script on the original over cases and
+# compares what it writes with expected (tools/oracle/oracle.jam).
+rule cases ( name : script : cases : expected )
+{
+    local found = [ where ] ;
+    webcpp-oracle.cases $(found) : $(name) : $(script) : $(cases) : $(expected) ;
+    runs-original $(found) : cases-$(name) ;
+}
+
+# The C bindings that wit-bindgen generates for the world of world-file,
+# for the WASI version version, p2 or p3: the target name, which adds them
+# on that version's toolset only, and the explicit target name-headers,
+# which adds their directory on any toolset
+# (tools/component/component.jam).
+rule wit-bindings ( name : world-file : world : rename : version : arguments * )
+{
+    webcpp-component.wit-bindings [ where ] : $(name) : $(world-file) : $(world) : $(rename)
+        : $(version) : $(arguments) ;
+}
+
+# An HTTP component built from source, served by wasmtime and checked, a test
+# of b2's: the program <stem>-component and the test <stem>, which passes
+# when the transcript of the answers to <stem>.requests equals <stem>.expected
+# (tools/component/component.jam). It is built for its own targets, which
+# may be only wasip2 and wasip3, else for those of its Jamfile that are.
+rule serve ( source : requirements * : targets * )
+{
+    local found = [ where ] ;
+    local jamfile = [ jamfile ] ;
+    local served = [ webcpp-component.served-targets $(found) : "webcpp.serve $(source)"
+        : $(targets) : $(.targets.$(jamfile)) ] ;
+    lane-only-program $(found) : $(source:B) : "webcpp.serve $(source)" : $(served) ;
+    webcpp-component.serve $(found) : $(source) : $(requirements) $(.handler)
+        : [ program serve : $(source:B) : $(served) ] ;
+}
+
+# An HTTP component that a shell script builds, served by wasmtime and checked
+# as webcpp.serve's is: the test name, which passes when the transcript of the
+# answers to <stem>.requests equals <stem>.expected
+# (tools/component/component.jam).
+rule serve-script ( name : script : stem : targets * )
+{
+    local found = [ where ] ;
+    local jamfile = [ jamfile ] ;
+    local served = [ webcpp-component.served-targets $(found) : "webcpp.serve-script $(name)"
+        : $(targets) : $(.targets.$(jamfile)) ] ;
+    lane-only-program $(found) : $(name) : "webcpp.serve-script $(name)" : $(served) ;
+    webcpp-component.serve-script $(found) : $(name) : $(script) : $(stem)
+        : [ program serve : $(name) : $(served) ] ;
+}
+
+# A test that builds a program from sources and runs `<original words>
+# <script> <arguments> <program>`, passing when that exits with 0: the
+# original's words are the Jamfile's webcpp.original, which must come before
+# it, and the program is the linked program's path, its JavaScript on
+# emscripten (tools/drive/drive.jam). It runs in an own lane on every target
+# it is built for, which lanes checks.
+rule drive ( name : sources + : requirements * : script : arguments * : targets * )
+{
+    local found = [ where ] ;
+    local jamfile = [ jamfile ] ;
+    local original = [ webcpp-oracle.original-of "drive $(name)" : $(found) ] ;
+    local built-for = $(targets) ;
+    built-for ?= $(.targets.$(jamfile)) ;
+    built-for ?= native ;
+    local only = [ program drive : $(name) : $(targets) ] ;
+    lane-only-program $(found) : $(name) : "webcpp.drive $(name)" : $(built-for) ;
+    runs-original $(found) : $(name) ;
+    # A program the test links gets the handler of a build without exceptions.
+    # Sources that are all targets of other projects (js//module) are linked
+    # there, with their own requirements: a handler linked here would make the
+    # program the script gets one that is not that module.
+    local handler = $(.handler) ;
+    local prebuilt = true ;
+    for local source in $(sources)
+    {
+        if ! [ MATCH "(//)" : $(source) ]
+        {
+            prebuilt = ;
+        }
+    }
+    if $(prebuilt)
+    {
+        handler = ;
+    }
+    webcpp-drive.drive $(found) : $(name) : $(sources) : $(requirements) $(handler)
+        : $(script) : $(arguments) : $(original) : $(only) ;
+}
+
+# The superproject's root, this file's directory's parent, and the
+# directory of .local/ that a library webcpp does not build is installed
+# in, by hand or by the CI's actions.
+.root = [ path.parent [ path.parent [ path.make [ modules.binding $(__name__) ] ] ] ] ;
+
+local rule local-root ( directory )
+{
+    return [ path.join [ path.root $(.root) [ path.pwd ] ] .local $(directory) ] ;
+}
+
+# The directory -s<variable>=<dir> gives on b2's command line, the last one,
+# made absolute against b2's working directory, where a relative one was
+# written: the check and the compiler, which runs from the library's
+# directory, read the same one. Nothing when none is given. The environment
+# is never read: b2 makes each of its variables a global one as -s does,
+# and a stale variable of a shell would replace .local/ without a word, as
+# AGENTS.md says of the emsdk.
+local rule given ( variable )
+{
+    local values = [ MATCH "^-s$(variable)=(.+)$" : [ modules.peek : ARGV ] ] ;
+    if $(values)
+    {
+        return [ path.root [ path.make $(values[-1]) ] [ path.pwd ] ] ;
+    }
+}
+
+# What was looked for and not found, for a library of the given variable,
+# directory and header on target, or nothing when it is there: the -s
+# directory, else .local/<directory>, else, natively outside Windows,
+# /usr/include or /usr/local/include, where a system install is legitimate.
+# A -s that names a directory without the header stops the build, naming it.
+# path.exists, b2's builtin, asks the system about the path as it is written,
+# so it is given each path in the system's form: on Windows b2's own form,
+# /D:/a/..., names no file.
+local rule missing ( library variable directory header : target )
+{
+    local root = [ given $(variable) ] ;
+    if $(root)
+    {
+        if ! [ path.exists [ path.native $(root)/include/$(header) ] ]
+        {
+            local named = [ path.native $(root) ] ;
+            errors.user-error "-s$(variable)=$(named) holds no include/$(header): give"
+                "the directory of $(library)'s include/ and lib/, or no -s$(variable)"
+                "to look for $(library) in $(.root)/.local/$(directory), else on the"
+                "system." ;
+        }
+        return ;
+    }
+    local installed = [ local-root $(directory) ] ;
+    if [ path.exists [ path.native $(installed)/include/$(header) ] ]
+    {
+        return ;
+    }
+    local systems ;
+    if $(target) = native && [ os.name ] != NT
+    {
+        systems = /usr/include /usr/local/include ;
+        for local system-include in $(systems)
+        {
+            if [ path.exists [ path.native $(system-include)/$(header) ] ]
+            {
+                return ;
+            }
+        }
+    }
+    local native = [ path.native $(installed) ] ;
+    local looked = "-s$(variable)=<dir> was not given, and $(native)/include holds no $(header)" ;
+    if $(systems)
+    {
+        looked = "$(looked), nor does $(systems[1]) or $(systems[2])" ;
+    }
+    return $(looked) ;
+}
+
+# webcpp.external <owner> : <library> : <variable> : <directory> : <header>
+#   : <target> ; in a library's build.jam: owner, the library of libs/, needs
+# library, which webcpp does not build, on target, native or emscripten,
+# found by its header. It returns the directory its lib targets search:
+# -s<variable>=<dir>, absolute, else .local/<directory> when that holds
+# include/<header>, else nothing, the system's directories.
+rule external ( owner : library : variable : directory : header : target )
+{
+    .external.$(owner).$(target) += $(library) ;
+    .external.$(owner).$(library).$(target) = $(variable) $(directory) $(header) ;
+    local root = [ given $(variable) ] ;
+    if $(root)
+    {
+        return [ path.native $(root) ] ;
+    }
+    root = [ local-root $(directory) ] ;
+    if [ path.exists [ path.native $(root)/include/$(header) ] ]
+    {
+        return [ path.native $(root) ] ;
+    }
+}
+
+# For the <conditional> of a target of owner: nothing when each of
+# libraries that owner declared on the target's target (emscripten for b2's
+# emscripten toolset, else native) is there. When one is not, owner is left
+# out: its targets get <build>no, and the build says so once per owner and
+# library, naming where it looked and how to give it; with
+# <webcpp-require-external>on, as the CI and the lint build, the build stops
+# instead, so that no lane skips owner without a word.
+rule external-found ( owner : libraries + : properties * )
+{
+    local target = native ;
+    if <toolset>emscripten in $(properties)
+    {
+        target = emscripten ;
+    }
+    for local library in $(libraries)
+    {
+        local declared = $(.external.$(owner).$(library).$(target)) ;
+        if ! $(declared)
+        {
+            continue ;
+        }
+        local looked = [ missing $(library) $(declared) : $(target) ] ;
+        if ! $(looked)
+        {
+            continue ;
+        }
+        local installed = [ path.native [ local-root $(declared[2]) ] ] ;
+        if <webcpp-require-external>on in $(properties)
+        {
+            errors.user-error "$(owner) needs $(library), which was not found, and the build"
+                "requires it (webcpp-require-external=on): $(looked). Give"
+                "-s$(declared[1])=<dir>, the directory of its include/ and lib/, or"
+                "install it in $(installed)." ;
+        }
+        if ! $(.left-out.$(owner).$(library))
+        {
+            .left-out.$(owner).$(library) = true ;
+            ECHO "webcpp: $(owner) is left out: $(library) was not found: $(looked). Give"
+                "-s$(declared[1])=<dir>, the directory of its include/ and lib/, or install it"
+                "in $(installed), as libs/$(owner)/README.md says." ;
+        }
+        return <build>no ;
+    }
+}
+
+# Why owner's page is left out of a native build, which parses its headers
+# with the native libraries it declared: "<library> was not found" for the
+# first of them that is not there, or nothing. The index's table names such
+# a library without a link (tools/doc/doc.jam).
+rule left-out ( owner )
+{
+    for local library in $(.external.$(owner).native)
+    {
+        local declared = $(.external.$(owner).$(library).native) ;
+        if [ missing $(library) $(declared) : native ]
+        {
+            return "$(library) was not found" ;
+        }
+    }
+}
+
+# The explicit target generated-<name>, which runs the Python generator
+# script with arguments and compares what it writes with the committed
+# outputs, and update-generated, their only writer
+# (tools/generated/generated.jam).
+rule generated ( name : script : arguments * : outputs + )
+{
+    webcpp-generated.generated [ where ] : $(name) : $(script) : $(arguments) : $(outputs) ;
+}

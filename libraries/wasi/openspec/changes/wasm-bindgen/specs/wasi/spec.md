@@ -33,7 +33,7 @@ The library SHALL provide `<webcpp/wasm.hpp>` and common configuration under
 WASI guest bindings or a required optional execution engine. Guest-only entrypoints SHALL be
 included explicitly through headers under `<webcpp/wasm/wasi/...>`. Engine integration SHALL
 have explicit include/link boundaries. Existing portable request/response types SHALL remain
-usable without the guest ABI, with exact paths finalized against `redesign` before acceptance.
+usable without the guest ABI, with exact paths finalized against `redesign` before implementation.
 
 #### Scenario: Each header compiles alone
 - **WHEN** every public header is compiled as the only include on each target it declares

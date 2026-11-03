@@ -1,10 +1,10 @@
-## 1. Resolve the draft and measure the first profile
+## 1. Resolve the proposal and measure the first profile
 
 - [ ] 1.1 Inventory existing wasi and the accepted redesign; write a coordinated migration table.
 - [ ] 1.2 Spike one WIT resource and string/result operation on native and in a real browser.
 - [ ] 1.3 Select pinned tool/backend versions, type profile, dependency policies and async model.
 - [ ] 1.4 Measure static conversion separately and record its supported features and limitations.
-- [ ] 1.5 Resolve design questions O1-O8 and record acceptance before implementation.
+- [ ] 1.5 Resolve design questions O1-O8 and record implementation decisions before coding.
 
 ## 2. Migrate wasi to wasm
 
@@ -43,4 +43,4 @@
 - [ ] 6.1 Publish installation, generation, migration and BDK walkthroughs from tested examples.
 - [ ] 6.2 Publish the measured support matrix and distinguish bindings from static packaging.
 - [ ] 6.3 Run clean declared lanes, tool/build tests, strict docs, lint and installed consumers.
-- [ ] 6.4 Add reference code, exact measurements and resumable STATUS before acceptance.
+- [ ] 6.4 Add reference code, exact measurements and resumable STATUS before implementation.

@@ -1,3 +1,9 @@
+## Acceptance
+
+The owner accepted this proposal and requested its merge on 2026-11-03. Acceptance covers the
+proposed direction and scope. Remaining backend, version and migration choices are implementation
+gates; no runtime compatibility, implementation completion or policy exception is claimed.
+
 ## Context
 
 The owner wants generic infrastructure that turns a foreign Wasm library into a usable C++
@@ -8,7 +14,7 @@ and its executable installed by the superproject's `b2 install`.
 
 The repository's accepted `redesign` introduces `wasi::p2` and `wasi::p3`, a plain-function
 entrypoint and target selection. It is not yet reflected in the published source examined for
-this draft. This proposal changes their enclosing namespace, not those accepted decisions.
+this proposal. This proposal changes their enclosing namespace, not those accepted decisions.
 
 The current BDK Wasm project uses `wasm32-unknown-unknown`, wasm-bindgen and JavaScript bindings.
 It is not a WIT component merely because its payload is Wasm. WIT describes component
@@ -45,7 +51,7 @@ The public namespace is `webcpp::wasm`; WASI lives at `webcpp::wasm::wasi`. Use
 `webcpp::wasm::component` for component-specific support. Reserve `wat` for actual text-format
 operations if those are added; do not create empty namespaces to reserve possible features.
 
-Keep the proposal under the existing `libraries/wasi` OpenSpec root while it is a draft. This
+Keep the proposal under the existing `libraries/wasi` OpenSpec root until its coordinated migration. This
 retains its relationship with the genesis and accepted redesign. A later history-preserving
 proposal-root migration must update metadata and links coherently, without rewriting archived
 reference material or introducing a second genesis for the same library.
@@ -64,8 +70,8 @@ compiled code. Existing allocation and exception policies apply to the new suppo
 
 ### D3. Proposed first contract: WIT components
 
-WIT-first is the architectural recommendation of this draft, not a previously approved owner
-choice. It requires explicit acceptance (O8). A component carries machine-readable interface types. The generator may consume those types
+The owner accepted the proposed WIT-first scope on 2026-11-03. It requires a new BDK
+wrapper/component rather than direct consumption of the published wasm-bindgen package (O8). A component carries machine-readable interface types. The generator may consume those types
 from the component, or an explicitly supplied WIT world checked against that component.
 Supported records, strings, lists, results and resources must have documented C++ mappings.
 Unsupported types or features fail generation with actionable diagnostics before partial output
@@ -73,7 +79,7 @@ is published. WIT alone describes an interface; it does not supply the implement
 
 A raw `.wasm` or wasm-bindgen package needs a distinct supported ABI. Do not infer compatibility
 from its extension or TypeScript declarations. Support for such packages is a possible later
-frontend, not an implicit promise of this draft.
+frontend, not an implicit promise of this proposal.
 
 ### D4. Separate the host generator, generated API and execution support
 
@@ -155,7 +161,7 @@ to every dependency. Installation must not quietly download mutable toolchains o
 - BDK's dependencies may need imports or features unavailable in one backend. Begin with the
   deterministic wallet subset and record unsupported imports rather than granting broad access.
 - Execution engines may allocate outside the C++ allocator policy. Document and resolve this
-  dependency boundary before acceptance, rather than asserting complete allocator control.
+  dependency boundary before implementation, rather than asserting complete allocator control.
 
 ## Migration Plan
 
@@ -168,8 +174,8 @@ to every dependency. Installation must not quietly download mutable toolchains o
    target-only includes and portable aggregate header checks.
 4. Add the host generator and install plumbing, with a minimal component fixture before BDK.
 5. Add backend support and the BDK wrapper/example, then test installed consumers on both hosts.
-6. Publish a migration table and measured support matrix. Keep this proposal draft until the
-   open questions and dependency/rule conflicts have concrete resolutions.
+6. Publish a migration table and measured support matrix. Resolve the remaining implementation questions and dependency/rule conflicts before coding
+   the affected integration; acceptance does not authorize silently relaxing project rules.
 
 ## Open Questions
 
@@ -188,8 +194,8 @@ to every dependency. Installation must not quietly download mutable toolchains o
 - **O7. Proposal migration:** when and how should `libraries/wasi` become `libraries/wasm`
   without rewriting historical proposal artifacts or invalidating the accepted redesign?
 
-- **O8. Input contract:** confirm the proposed WIT-first scope versus prioritizing consumption
-  of existing wasm-bindgen packages. WIT-first requires a new Rust wrapper/component for BDK.
+- **O8. Input contract (resolved 2026-11-03):** the owner accepted WIT-first and the new Rust
+  wrapper/component for BDK. Direct wasm-bindgen package consumption remains a later frontend.
 
 ## References
 

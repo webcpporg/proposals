@@ -47,12 +47,12 @@ Execution, interface binding and implementation of WASI are separate responsibil
 - **Kind:** evolution of a library of webcpp's own, with optional external backend dependencies.
 - **Implementation:** not started. The existing implementation is at
   https://github.com/webcpporg/wasi; its intended renamed destination is
-  https://github.com/webcpporg/wasm. No repository rename is performed by this draft.
-- **Status:** draft. Architecture and acceptance criteria are recorded; backend selection,
+  https://github.com/webcpporg/wasm. No repository rename is performed by this proposal.
+- **Status:** accepted on 2026-11-03 by the owner. Architecture and acceptance criteria are recorded; backend selection,
   compatibility policy, exact CLI and supported type profile remain to be measured and decided.
 - **Breaking changes:** repository, submodule path, headers, namespaces, macros, build targets
   and documentation addresses need a coordinated migration.
 - **Other proposals:** `organization/openspec/changes/wasm-tools/` owns installation and host
-  tool build rules. The accepted `redesign` remains accepted; this draft does not supersede it.
+  tool build rules. The accepted `redesign` remains accepted; this proposal does not supersede it.
 - **Dependencies:** a Rust toolchain for the BDK example, a component toolchain and optional
   execution backends. Exact versions, licensing and build integration are implementation gates.

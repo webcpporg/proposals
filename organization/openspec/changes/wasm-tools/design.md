@@ -1,3 +1,9 @@
+## Acceptance
+
+The owner accepted this proposal and requested its merge on 2026-11-03. Acceptance covers the
+proposed direction and scope. Remaining backend, version and migration choices are implementation
+gates; no runtime compatibility, implementation completion or policy exception is claimed.
+
 ## Context
 
 The owner requested that the generator source live in the renamed wasm library and that the
@@ -10,7 +16,7 @@ interface and runtime behaviour; this companion owns registration, build and ins
 **Goals:** install a usable host generator, preserve cross compilation, support staged prefixes,
 keep library headers portable and prove the installed consumer path outside the checkout.
 
-**Non-Goals:** implement the generator in this draft, choose an unmeasured backend, bundle mutable
+**Non-Goals:** implement the generator in this proposal, choose an unmeasured backend, bundle mutable
 toolchains, install example-specific Bitcoin APIs or silently relax dependency policies.
 
 ## Decisions
@@ -39,7 +45,7 @@ Rename `libs/wasi` to `libs/wasm` with a relative repository URL, preserving lib
 Update library discovery, build target paths, CI selection, docs/site metadata and live links.
 Preserve existing WASI test coverage. Do not rewrite archived proposal sources or historical
 release records. Resolve the proposal-root migration and documentation redirects with the
-library draft before the repository rename is executed.
+library proposal before the repository rename is executed.
 
 ### D4. Build dependencies and generated files
 
@@ -61,7 +67,7 @@ output; it does not instantiate nested components inside a WASI guest. The suppo
 ## Risks / Trade-offs
 
 - Tool dependencies may exceed current C dependency rules: resolve with an explicit proposal
-  amendment and pinned source builds before acceptance.
+  amendment and pinned source builds before implementation.
 - Existing install targets may need extension: inspect them and add failing tests before
   implementation rather than assuming a current install contract that has not been measured.
 - Jco/Wasmtime or another backend can require deployment assets beyond installed C++ headers:
