@@ -10,10 +10,11 @@ integration commits. The original 53-application inventory remains in scope.
 - Published commit: `7d41654d750061ecf4b1bac873cd66af28cf8a09`.
 - `source/` is an exact `git archive` of that commit: 774 tracked files, with
   every Git blob identity and executable mode checked against the commit.
-- Published superproject candidate: `ad092876333dac2cd310cff58a7bc8fe64636bdf`.
+- Published superproject candidate: `d7a6614516facca397a60e8c3192c3328ebcfc46`.
+- Local superproject follow-up: `52c1120778b28402c9b6fdf77f1def72eae6cbd3`, not yet pushed.
 - [Superproject pull request 7](https://github.com/webcpporg/webcpp/pull/7) carries
-  the completed Asio capabilities. The Beast documentation correction and final
-  lint fixes are being verified for a follow-up candidate.
+  the completed Asio capabilities. Windows/WASI driven-test fixes are committed
+  locally; generated-header preparation and final CI remain in progress.
 - Full CI [41597577370](https://github.com/webcpporg/webcpp/actions/runs/41597577370)
   passed for root `55a72c056de1e6522e1fc6dbc3ee2b9ef3715327` only. It does not
   establish a green result for the current local tree.
@@ -34,6 +35,14 @@ The missing Trystero and WASI dependency commits are now published. Asio's
 library CI still selects the superproject's old main, which lacks the new P2
 build project. Current-candidate root CI and the post-integration library CI
 remain required. These failures are not passing validation evidence.
+
+The current root run is
+[41686583077](https://github.com/webcpporg/webcpp/actions/runs/41686583077), on the
+published parent above. It found stale build fixtures, a Windows Asio test
+expectation, Windows runner portability failures, empty WASIp3 TLS fixture
+executables and lint timeouts. Local corrections are being validated; the
+partial passing XML reports do not establish a green final candidate. The Beast
+source export and 571/216/432 matrix remain unchanged.
 
 ## Earlier WASIp2 follow-up, 2026-11-03
 

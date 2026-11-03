@@ -10,9 +10,13 @@ webcpp.original python3 ;
 
 # These are the real OpenSSL/Cobalt fixtures, now part of recurring CI rather
 # than executables requiring a manual request. Both thread profiles are kept.
+# MSVC's shared CRT forces B2 threading=multi. S fixtures select its static CRT
+# so the provider actually configures no-threads.
 local tests ;
 for local threading in single multi
 {
+    local runtime ;
+    if $(threading) = single { runtime = <toolset>msvc:<runtime-link>static ; }
     for local exceptions in "on" "off"
     {
         local targets = native wasip3 ;
@@ -31,7 +35,7 @@ for local threading in single multi
             local name = $(mode)-$(threading)-$(exceptions) ;
             webcpp.drive $(name) : ../../../../tools/openssl/test//$(source)
               : <threading>$(threading) <exception-handling>$(exceptions)
-                <webcpp-drive-timeout>180
+                $(runtime) <webcpp-drive-timeout>180
               : driver.py : $(mode) : $(targets) ;
             tests += $(name) ;
         }
@@ -49,9 +53,11 @@ webcpp.lane tls-integration : $(tests) entropy entropy-threads : native wasip3 ;
 # The opt-in feature isolates the upstream suite from ordinary consumer builds.
 for local threading in single multi
 {
+    local runtime ;
+    if $(threading) = single { runtime = <toolset>msvc:<runtime-link>static ; }
     webcpp.drive upstream-$(threading) : ../../../../tools/openssl/test//tls_client
       : <variant>release <threading>$(threading) <exception-handling>on
-        <webcpp-openssl-tests>on <webcpp-drive-timeout>180
+        $(runtime) <webcpp-openssl-tests>on <webcpp-drive-timeout>180
       : driver.py : client : native ;
 }
 webcpp.lane openssl-upstream : upstream-single upstream-multi : native ;

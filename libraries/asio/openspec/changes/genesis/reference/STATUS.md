@@ -2,9 +2,9 @@
 
 ## Current committed snapshot
 
-- Asio: `70e6f5f2839e1ab0535ffea1e5da5a10a185178a`.
+- Asio: `4199a45f0625ecb5a9319a5b9eb28dbd1e0a48a9`.
 - Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
-- Superproject publication candidate: `31982c6c3b82cdf0c354b60758a5352cdaface18`.
+- Superproject publication candidate: `52c1120778b28402c9b6fdf77f1def72eae6cbd3`.
 - `reference/source/`: 208 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, explicit browser pthread execution and
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
@@ -60,6 +60,32 @@ available locally; the updated Windows test still requires remote confirmation.
 
 The partial report from this run passed all tests and examples in 25 other lanes,
 including GCC 15 and Apple Clang. This partial result is not a complete CI verdict.
+
+## Driven-test and lint follow-up, 2026-11-03
+
+The candidate above is committed locally and not yet pushed. The same remote run
+also exposed the IOCP assertion in MSVC 14.5, POSIX-only signal imports in the
+Windows TLS runner, and empty WASIp3 TLS executables. The shared driven-test
+runner now uses Windows Job Objects, preserves 32-bit exit codes and checks
+nested-job cleanup while the surrounding job remains alive. Ten local driver
+cases and twelve server cases pass; the two Windows-only cases require the next
+remote Windows run. Both Windows compiler jobs now run those actual regressions.
+
+The B2 generator now retains an existing executable when its producer also returns
+symbols or component metadata. The old generator reproduced the WASIp3
+`undefined_weak:main` trap in a real consumer; the correction passes with both
+exception modes. All seventeen WASIp3 TLS integration fixtures passed a fresh
+build under Wasmtime 50.0.1, and their XML report passed. MSVC graph regressions
+also prove that each actual fixture is linked and that single-threaded OpenSSL
+uses the static CRT, rather than silently selecting the multi-threaded profile.
+Independent review accepted these corrections.
+
+Actual remote XML reports confirm sixty-seven other lanes passing. These are
+partial results from the older candidate, not the final CI gate. Four lint shards
+hit the sixty-minute limit; cold profiling found that header preparation also
+built OpenSSL archives and ran optional upstream tests. A separate generated-header
+action is being validated locally. Full consumers must retain their archive builds
+and upstream tests, and no final lint or CI result is claimed for that change yet.
 
 ## Capability completion, 2026-11-03
 
