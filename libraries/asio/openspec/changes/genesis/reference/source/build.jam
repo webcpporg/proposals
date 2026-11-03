@@ -12,7 +12,6 @@ project /webcpp/asio ;
 
 import feature ;
 import numbers ;
-import errors ;
 import webcpp ;
 import webcpp-target ;
 
@@ -64,14 +63,13 @@ rule asyncify-stack ( properties * )
 # emscripten by asio's usage requirements below.
 obj browser-src : src/browser_src.cpp : <include>include <library>/boost//headers
   <library>/webcpp/config//config
-  <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS ;
+  <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS ;
 explicit browser-src ;
 
-# On emscripten Asio needs BOOST_ASIO_DISABLE_THREADS: without it,
-# <boost/asio/io_context.hpp> stops at "Only Windows and POSIX are
-# supported!" (<boost/asio/detail/signal_blocker.hpp>, line 27 in Boost
-# 1.92). Its inline namespace differs with and without threads, so a
-# translation unit that missed the define fails at link. The browser's
+# Single-thread Emscripten needs BOOST_ASIO_DISABLE_THREADS. A pthread build
+# supplies the POSIX thread implementation instead. Boost's inline namespace
+# differs with and without threads, so every translation unit must agree.
+# The browser's
 # values reach C++ through embind: -lembind, a free feature, which a usage
 # requirement keeps.
 #
@@ -92,10 +90,11 @@ alias asio : : : : <include>include <library>/boost//headers
   <toolset>clang-wasip2:<library>/webcpp/asio-wasip2//headers
   <toolset>clang-wasip2:<source>/webcpp/asio-wasip2//pollable
   <toolset>clang-wasip3:<library>/webcpp/asio-wasip3//headers
-  <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS
+  <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS
   <toolset>emscripten:<linkflags>-lembind
   <toolset>emscripten:<linkflags>-Wl,--export=emscripten_stack_get_current
   <toolset>emscripten:<linkflags>-Wl,--export=_emscripten_stack_restore
+  <toolset>emscripten,<threading>multi:<linkflags>-Wl,--wrap=__syscall_poll
   <toolset>emscripten:<source>browser-src
   <toolset>emscripten,<webcpp-suspend>jspi:<linkflags>-sJSPI
   <toolset>emscripten,<webcpp-suspend>asyncify:<linkflags>-sASYNCIFY
@@ -103,16 +102,7 @@ alias asio : : : : <include>include <library>/boost//headers
   <toolset>emscripten:<tag>@webcpp%suspend-tag ;
 # end::asio[]
 
-# WASIp3 uses the checked Cobalt/Asio overlays.
-# The Cobalt integration is not validated on WASIp2.
-rule cobalt-platform ( properties * )
-{
-    if [ webcpp-target.target-of $(properties) ] = wasip2
-    {
-        errors.user-error "webcpp::asio: Cobalt requires native, Emscripten or WASIp3." ;
-    }
-}
-
+# WASIp2 and WASIp3 use the same checked Cobalt capability overlays.
 # Cobalt's entry point, with webcpp's bounded application event loop.
 # tag::cobalt[]
 lib cobalt-main : src/cobalt_main.cpp
@@ -120,41 +110,31 @@ lib cobalt-main : src/cobalt_main.cpp
 explicit cobalt-main ;
 # The checked common Cobalt patch supplies the promise member required even
 # when a compiler builds the coroutine without exception handling.
-alias cobalt : : <conditional>@cobalt-platform : : <library>asio <library>cobalt-main <library>/webcpp//boost_cobalt ;
+alias cobalt : : : : <library>asio <library>cobalt-main <library>/webcpp//boost_cobalt ;
 # end::cobalt[]
 
 # tag::openssl[]
-rule openssl-required ( properties * )
-{
-    if [ webcpp-target.target-of $(properties) ] = wasip2
-    {
-        errors.user-error "webcpp::asio: OpenSSL requires native or WASIp3; WASIp2 is not supported." ;
-    }
-}
-
 rule openssl-linked ( properties * )
 {
-    if [ webcpp-target.target-of $(properties) ] in native wasip3
+    if [ webcpp-target.target-of $(properties) ] in native wasip2 wasip3
     {
         return <library>/webcpp/third_party//openssl
             <define>WEBCPP_ASIO_HAS_OPENSSL=1 ;
     }
 }
 
-# Refused on WebAssembly: every source of a program built for emscripten
+# Refused on Emscripten: every source of a program built for emscripten
 # that names it stops at the forced include, whose message says what to
 # write. Quoted, as the Jamroot quotes Boost's directory, for a path that
 # holds a space.
 path-constant WEBCPP_ASIO_ROOT : . ;
-alias openssl : : <conditional>@openssl-required
-  : : <conditional>@openssl-linked
+alias openssl : : : : <conditional>@openssl-linked
     <toolset>emscripten:<cflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\""
     <toolset>emscripten:<cxxflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\"" ;
 # end::openssl[]
 
 # Browser tests exercise the settings adapter without linking OpenSSL.
-alias openssl-tests : : <conditional>@openssl-required
-  : : <conditional>@openssl-linked ;
+alias openssl-tests : : : : <conditional>@openssl-linked ;
 explicit openssl-tests ;
 
 # An explicit portable trust policy, separate from the raw OpenSSL context.

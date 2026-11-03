@@ -14,7 +14,7 @@ Constraints every decision below works within, from the superproject's rulebook 
 - header-only C++20, namespace `webcpp::asio`, headers under `<webcpp/asio/...>`, internals in
   `detail`, macros `WEBCPP_ASIO_*`, include guards `WEBCPP_ASIO_<HEADER>_HPP`, the b2 target
   `/webcpp/asio//asio`, the error category `webcpp.asio`;
-- the library is built for native, Emscripten and WASIp3; every test runs on each
+- the library is built for native, Emscripten and WASIp2/P3; every test runs on each
   target its Jamfile names, with exceptions on and off, in both suspension variants;
 - errors as values (`boost::system::error_code`); an API that throws sits behind
   `WEBCPP_ASIO_NO_EXCEPTIONS` and raises through `boost::throw_exception`;
@@ -45,13 +45,13 @@ Constraints every decision below works within, from the superproject's rulebook 
 
 **Non-Goals:**
 
-- WASIp2 guest TLS, Cobalt and multi-thread execution until independently integrated and verified; portable WASI host APIs remain separate.
+- WASIp2 multi-thread execution without an SDK/runtime profile; portable WASI host APIs remain separate.
 - WebSocket and HTTP clients (webcpp::beast), WebRTC (webcpp::webrtc), relay transports and the b2
   feature that enables one, trystero's migration, and offering the additions upstream to
   Boost.Asio.
 - Polling the page from C++, running the run family from a JavaScript event, or blocking the
   page's thread without suspending.
-- A thread pool: the page has no threads (`BOOST_ASIO_DISABLE_THREADS`).
+- Implicit workers in a single-thread browser build. Explicit pthread builds retain their separate environment and affinity requirements.
 
 ## Decisions
 
@@ -220,9 +220,9 @@ fails the same way, so only webcpp::beast's browser streams accept it and Beast'
 code runs unchanged. A resolver that failed like the sockets was rejected: every Beast client
 would change a line.
 
-### D15. Explicit source-built TLS on native and WASIp3
+### D15. Explicit source-built TLS on native and WASI
 
-`<webcpp/asio/ssl.hpp>` is Boost's SSL interface on native and WASIp3. The program explicitly
+`<webcpp/asio/ssl.hpp>` is Boost's SSL interface on native and WASIp2/P3. The program explicitly
 selects `/webcpp/asio//openssl` or `//tls`, backed by `/webcpp/third_party//openssl` and a
 matching generated header/archive pair. The latter includes verified, replaceable embedded
 CA data. Emscripten retains the browser TLS settings adapter and refuses guest OpenSSL.
@@ -295,7 +295,31 @@ libc select/poll translation for timers, TCP and UDP. Forward asynchronous DNS
 uses native address-stream pollables, with deferred initiation, cancellation and
 associated executor/allocator semantics. The generic pollable descriptor bridge
 is isolated and pinned to SDK 34.0's private libc ABI. P2 single-thread execution
-supports both exception modes; multi-thread, guest TLS and Cobalt remain rejected
-until independently verified. Host HTTP and supplied streams remain separate
+supports both exception modes; the follow-up below adds verified guest TLS and
+Cobalt. Multi-thread execution remains unavailable with the pinned SDK. Host HTTP and supplied streams remain separate
 capabilities. This amendment does not declare every Beast P2 socket application
 validated or restore the removed proposal tasks without their own evidence.
+
+
+### Capability completion approved on 2026-11-03
+
+The owner approved completing WebCPP-owned gaps and leaving SDK/host limits
+explicitly documented and guarded. P2 receives the shared source-built OpenSSL,
+CA and Cobalt/SSL targets in both exception modes. WASI UDP gains connected gather
+send and scatter receive without weakening datagram boundaries. P3 asynchronous
+forward DNS uses native subtasks/waitables in both thread profiles, with a checked
+private libc descriptor bridge, deferred initiation and cancellation.
+
+Explicit Emscripten pthread builds retain the selected JSPI/Asyncify mechanism.
+Contexts run only on their creation thread; cross-thread posting and an explicit
+main-runtime executor provide handoff without sharing JavaScript values across
+threads. The main-thread poll adapter preserves ordinary application main/DOM
+behavior rather than implicitly proxying main to a worker. Page isolation and
+engine support remain external requirements.
+
+`config.hpp` owns derived 0/1 capabilities. Optional provider selection is
+separate, and explicit application requirements reject compiler-visible unsupported
+combinations. Target-specific headers explain missing facilities. Runtime grants,
+peer identities and host-blocking imports cannot be diagnosed by preprocessing.
+No SDK upgrade, upstream Cobalt issue 287 repair or new Beast application-corpus
+claim is implied by this amendment. Fresh publication gates remain necessary.

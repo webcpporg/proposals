@@ -236,7 +236,8 @@ All of them are of 2026-10-11, as `R`.
 ## Approved WASIp2 follow-up, 2026-11-03
 
 - [x] P2.1 Implement the single-thread pollable core for timers and TCP/UDP; explicitly
-  reject unsupported multi-thread, Cobalt and guest TLS targets.
+  reject unsupported multi-thread targets. The initial Cobalt/guest TLS exclusions
+  are superseded by the capability-completion extension below.
 - [x] P2.2 Implement deferred forward async DNS with pollables, cancellation and handler
   associations; pin and verify the private wasi-libc descriptor ABI.
 - [x] P2.3 Implement supplied CLI streams with partial I/O, readiness, cancellation,
@@ -246,3 +247,17 @@ All of them are of 2026-10-11, as `R`.
 - [x] P2.5 Commit local native/P3/P2 regressions, focused lint and rendered documentation;
   export the exact committed reference tree. See reference/STATUS.md for scope and counts.
 - [ ] P2.6 Complete fresh remote CI and the existing integration gates for the current tree.
+
+
+## Approved capability completion, 2026-11-03
+
+- [x] C1 Complete WASI connected UDP gather and scatter receive, native P3 asynchronous
+  DNS, and cancellation/resource-lifetime regressions.
+- [x] C2 Enable the shared source-built OpenSSL/CAs and Cobalt/SSL targets on P2 with
+  both exception profiles; retain the pinned SDK thread restriction.
+- [x] C3 Enable explicit browser pthread execution and main-thread handoff, test both
+  suspension mechanisms and document dependency-only counterexamples.
+- [x] C4 Centralize derived capability macros and explicit requirement/header guards,
+  update Diataxis/AsciiDoc/MrDocs documentation and the target/variant matrix.
+- [x] C5 Complete local reviews/checks and commit/export the exact candidate. Publication
+  gates remain separate; this extension does not claim new remote CI or a merge.

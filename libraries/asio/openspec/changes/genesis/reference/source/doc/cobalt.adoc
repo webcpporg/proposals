@@ -15,7 +15,7 @@ The default turn contains at most 100 handlers, configurable with
 interrupted, and a yield offers the browser an opportunity to run rather
 than promising a timer deadline or a rendered frame.
 
-The Cobalt target supports WASIp3 with the single-thread and cooperative
+The Cobalt target supports WASIp2 single-thread and WASIp3 single-thread/cooperative
 profiles in <<asio-capabilities>>. Its checked private Boost overlay removes
 unavailable local-socket, serial-port and process-signal dependencies from IP
 networking. The same thread and exception settings reach the application and
@@ -85,9 +85,10 @@ Include `<boost/cobalt/io/ssl.hpp>` and add
 `<library>/webcpp/asio//cobalt_ssl` to the program's requirements. This optional
 target combines the Cobalt runner, the compiled SSL wrapper, source-built
 OpenSSL and embedded CAs. It supports native Clang/GCC on macOS/Linux and the
-three available WASIp3 profiles in <<asio-feature-cobalt-wasip3>>. The local
-native validation uses macOS; it does not establish Linux runtime coverage.
-Browser, WASIp2 and the unavailable cooperative/EH-on runtime are refused.
+WASIp2 single-thread profile with EH on/off, and the three available WASIp3
+profiles in <<asio-feature-cobalt-wasip3>>. The local native validation uses
+macOS; it does not establish Linux runtime coverage. Browser OpenSSL and the
+unavailable WASIp3 cooperative/EH-on runtime are refused.
 
 [listing]
 ----
@@ -190,7 +191,7 @@ For shutdown, the peer first observes `close_notify` but does not send its own.
 Closing its TCP socket produces `stream_truncated`; cancelling the pending
 shutdown produces `operation_aborted`. Both paths clear `secure()`, block further
 application I/O, and make a second shutdown return `no_protocol_option`.
-These checks run with TLS 1.2 and 1.3 in the supported native/WASIp3 profiles.
+These checks run with TLS 1.2 and 1.3 in the supported native/WASIp2/WASIp3 profiles.
 Select one case with `--client-arg=read_some`, `write_some`, `read`, `write`,
 `shutdown_error` or `shutdown_cancel` when diagnosing a failure.
 
@@ -230,13 +231,13 @@ Boost change may require updating this adapter. Linking Cobalt's original
 runner instead is a fallback with its original behavior, without webcpp's
 turn limit; the two runners must not be linked together.
 
-On WASIp3, the runner omits the POSIX signal headers, registration and cleanup,
+On WASIp2/P3, the runner omits the POSIX signal headers, registration and cleanup,
 and initializes the promise's `signal_set` pointer to null. This removes its
 dependency on `SIGINT` and `SIGTERM`; it does not remove Asio's internal
 `cancellation_signal` or Cobalt's coroutine cancellation machinery. Native and
 Emscripten builds keep the existing process-signal integration.
 
-A WASIp3 host cannot request graceful shutdown through this automatic signal
+A WASI host cannot request graceful shutdown through this automatic signal
 bridge. An application needs an explicit host/component shutdown protocol that
 requests cancellation on its executor and lets pending operations finish their
 cleanup. Calling `io_context::stop()` alone does not do that, and forcibly
@@ -257,7 +258,7 @@ that a timer followed by `co_return 7` exits with exactly 7. With Emscripten's
 default `EXIT_RUNTIME=0`, a debug Asyncify build may print its runtime-retained
 notice after `std::exit`; the integration does not force runtime shutdown.
 
-The WASIp3 runner returns the coroutine's result to wasi-libc. In wasi-sdk 34.0,
+The WASI runner returns the coroutine's result to wasi-libc. In wasi-sdk 34.0,
 the command startup code reduces that integer to success or failure before
 returning through `wasi:cli/run`. In the local runner probe, `co_return 7`
 therefore produces host exit status 1, while `co_return 0` produces 0. This

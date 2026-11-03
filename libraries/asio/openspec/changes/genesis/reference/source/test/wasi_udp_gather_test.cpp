@@ -119,7 +119,7 @@ void test_gather() {
     };
     check_sends(context, sender, receiver, pieces, "HEADER:Hello");
 
-#ifdef __wasip3__
+#if defined(__wasip2__) || defined(__wasip3__)
     // Gather the original sequence, before Asio's 64-entry iovec adapter.
     std::array<asio::const_buffer, 80> many{};
     many.fill(asio::buffer("x", 1));
@@ -139,7 +139,7 @@ void test_gather() {
     const std::array<asio::const_buffer, 3> empty{};
     check_sends(context, sender, receiver, empty, "");
 
-#ifdef __wasip3__
+#if defined(__wasip2__) || defined(__wasip3__)
     boost::system::error_code error;
     const auto before = context_allocations.calls;
     BOOST_TEST_EQ(sender.send_to(pieces, receiver.local_endpoint(), 0, error), 12U);
@@ -212,7 +212,7 @@ void test_gather() {
 #endif
 }
 
-#ifdef __wasip3__
+#if defined(__wasip2__) || defined(__wasip3__)
 void test_shutdown() {
     allocation_counts allocations;
     int completions = 0;
@@ -236,7 +236,7 @@ void test_shutdown() {
 
 int main() {
     test_gather();
-#ifdef __wasip3__
+#if defined(__wasip2__) || defined(__wasip3__)
     test_shutdown();
 #endif
     return webcpp::test::exit_status(boost::report_errors());

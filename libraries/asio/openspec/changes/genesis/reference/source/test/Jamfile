@@ -64,8 +64,12 @@ webcpp.headers-alone asio : ../include : asio.hpp asio/basic_datagram_socket.hpp
   asio/io_context.hpp asio/steady_timer.hpp asio/system_timer.hpp asio/ip/*.hpp ;
 # The browser's headers name Emscripten's own, and compile on emscripten
 # alone.
-webcpp.headers-alone asio : ../include : asio/browser/*.hpp asio/detail/browser_*.hpp
+webcpp.headers-alone asio : ../include : asio/browser/async_await.hpp
+  asio/browser/async_wait_event.hpp asio/browser/bridge.hpp asio/browser/error.hpp
+  asio/browser/src.hpp asio/browser/transport.hpp asio/detail/browser_*.hpp
   asio/detail/post_completion.hpp asio/detail/flag_scope.hpp : : emscripten ;
+webcpp.headers-alone asio : ../include : asio/browser/main_thread_context.hpp
+  : <threading>multi : emscripten ;
 
 # config.hpp follows the collection exception setting and preserves a
 # developer definition that disables this library alone.
@@ -323,3 +327,6 @@ webcpp.compile-fail openssl_named_c_on_emscripten : openssl_named_c_test.c
 build-project tls ;
 
 build-project wasip2 ;
+build-project capabilities ;
+build-project capability_wasi ;
+build-project wasip2_tls_cobalt ;

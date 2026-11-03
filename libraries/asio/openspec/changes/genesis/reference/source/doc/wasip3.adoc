@@ -111,11 +111,12 @@ python3 tools/test/cobalt_wasip3_test.py
 ports, tests timer and socket cancellation, scatter/gather TCP, and TCP EOF.
 `wasi_core_threads` adds a cross-thread post into a reactor with a pending timer
 and two runners sharing a context. `wasi_contract` checks empty datagrams,
-unsupported vectored UDP receive without consuming data, IPv6 numeric scopes, socket
+vectored UDP receive with datagram truncation, IPv6 numeric scopes, socket
 option errors and resolver behavior. `wasi_coroutine` waits for a timer using
 Boost.Asio's `co_spawn` and `awaitable` with result-based error handling.
 The existing run-family and timer tests also run on WASIp3.
-`wasi_udp_gather` checks synchronous and asynchronous multi-buffer `send_to`,
+`wasi_udp_gather` and `capability_wasi/datagrams` check synchronous and asynchronous
+multi-buffer sends and receives,
 including complete sequences beyond 64 buffers, allocation routing, empty
 datagrams, oversized input and release of storage before completion.
 

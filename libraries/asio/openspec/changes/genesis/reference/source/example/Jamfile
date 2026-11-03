@@ -8,7 +8,7 @@ project : requirements <library>/webcpp/asio//asio ;
 
 import webcpp ;
 
-webcpp.targets native emscripten wasip3 ;
+webcpp.targets native emscripten wasip2 wasip3 ;
 
 webcpp.example asio_quick_start.cpp ;
 webcpp.example asio_turn_limit.cpp : : native emscripten ;
@@ -17,8 +17,9 @@ webcpp.example asio_promise.cpp : : emscripten ;
 webcpp.example asio_event.cpp : : emscripten ;
 webcpp.example asio_sockets.cpp : : emscripten ;
 webcpp.example asio_resolver.cpp : : emscripten ;
-webcpp.example asio_cobalt.cpp : <library>/webcpp/asio//cobalt : native emscripten wasip3 ;
-webcpp.example asio_tls_client.cpp : <library>/webcpp/asio//tls : native wasip3 ;
+webcpp.example asio_cobalt.cpp : <library>/webcpp/asio//cobalt : native emscripten wasip2 wasip3 ;
+webcpp.example asio_tls_client.cpp : <library>/webcpp/asio//tls : native wasip2 wasip3 ;
+webcpp.example asio_capabilities.cpp : : native wasip2 wasip3 ;
 
 # A page needs the completion helper header, but not the Node harness.
 webcpp.variants page-asio_quick_start : asio_quick_start.cpp

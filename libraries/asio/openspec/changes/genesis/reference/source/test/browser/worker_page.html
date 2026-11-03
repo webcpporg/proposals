@@ -1,0 +1,47 @@
+<!--
+Copyright (c) 2026 WebCpp.org
+
+Distributed under the Boost Software License, Version 1.0. (See
+accompanying file LICENSE_1_0.txt or copy at
+https://www.boost.org/LICENSE_1_0.txt)
+
+An isolated page for the pthread executor and handoff tests.
+-->
+<!doctype html>
+<meta charset="utf-8">
+<title>asio browser workers</title>
+<body>
+<script>
+const report = (window.report = {lines: [], variant: new URLSearchParams(location.search).get('variant'), error: null,
+    isolated: crossOriginIsolated, status: null, warnings: [], polls: []})
+window.Module = {
+    preRun: [() => {
+        if (new URLSearchParams(location.search).get('script').includes('worker_return')) return
+        if (typeof doPollAsync !== 'function') throw new Error('missing pinned SDK doPollAsync')
+        const original = doPollAsync
+        doPollAsync = (descriptors, count, timeout) => {
+            report.polls.push({worker: !!PThread.currentProxiedOperationCallerThread, timeout})
+            return original(descriptors, count, timeout)
+        }
+    }],
+    print: line => report.lines.push({line, at: performance.now()}),
+    printErr: line => {
+        const cobalt = new URLSearchParams(location.search).get('script').includes('cobalt')
+        const joinNotice = 'Blocking on the main thread is very dangerous, see ' +
+            'https://emscripten.org/docs/porting/pthreads.html#blocking-on-the-main-browser-thread'
+        const exitNotice = 'program exited (with status: 0), but keepRuntimeAlive() is set ' +
+            '(counter=0) due to an async operation, so halting execution but not exiting the ' +
+            'runtime or preventing further async execution (you can use emscripten_force_exit, ' +
+            'if you want to force a true shutdown)'
+        const asyncifyExit = report.variant === 'asyncify' && report.status === 0 && line === exitNotice
+        if (cobalt && (line === joinNotice || asyncifyExit)) report.warnings.push(line)
+        else if (line !== 'No errors detected.') report.error = [report.error, line].filter(Boolean).join('\n')
+    },
+    webcppTestFinished: status => { report.status = status },
+    onAbort: reason => { report.error = String(reason) }
+}
+addEventListener('error', event => { report.error = event.message })
+const script = document.createElement('script')
+script.src = new URLSearchParams(location.search).get('script')
+document.body.appendChild(script)
+</script>

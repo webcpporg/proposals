@@ -1,0 +1,49 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project : requirements <library>/webcpp/asio//asio ;
+import webcpp ;
+webcpp.targets native wasip2 wasip3 emscripten ;
+
+webcpp.compile capabilities : capabilities_test.cpp ;
+webcpp.compile config : ../config_test.cpp ;
+webcpp.compile-fail forged_capability : requirements_test.cpp
+  : <define>WEBCPP_ASIO_HAS_SOCKET_BACKEND=1 ;
+webcpp.compile-diagnostic forged_diagnostic : diagnostics_test.cpp
+  : <define>WEBCPP_TEST_FORGED <define>WEBCPP_ASIO_HAS_SOCKET_BACKEND=1 ;
+
+webcpp.compile-diagnostic missing_tls : diagnostics_test.cpp
+  : <define>WEBCPP_TEST_REQUIRE_TLS <define>WEBCPP_ASIO_REQUIRE_OPENSSL=1
+  : native wasip2 wasip3 ;
+webcpp.compile-diagnostic disabled_tls : diagnostics_test.cpp
+  : <define>WEBCPP_TEST_DISABLED_TLS <define>WEBCPP_ASIO_HAS_OPENSSL=0
+  : native wasip2 wasip3 ;
+webcpp.compile-diagnostic browser_header : diagnostics_test.cpp
+  : <define>WEBCPP_TEST_BROWSER_HEADER : native wasip2 wasip3 ;
+webcpp.compile-diagnostic worker_header : diagnostics_test.cpp
+  : <threading>single <define>WEBCPP_TEST_WORKER_HEADER ;
+webcpp.compile-diagnostic stdio_header : diagnostics_test.cpp
+  : <define>WEBCPP_TEST_STDIO_HEADER : native wasip3 ;
+
+webcpp.compile-fail require_THREADS : requirements_test.cpp
+  : <threading>single <define>WEBCPP_ASIO_REQUIRE_THREADS=1 : wasip2 wasip3 ;
+for local requirement in LOCAL_SOCKETS SIGNALS SERIAL_PORT REVERSE_DNS
+{
+    webcpp.compile-fail require_$(requirement) : requirements_test.cpp
+      : <define>WEBCPP_ASIO_REQUIRE_$(requirement)=1
+      : wasip2 wasip3 ;
+}
+webcpp.compile require_socket : requirements_test.cpp
+  : <define>WEBCPP_ASIO_REQUIRE_SOCKET_BACKEND=1 : native wasip2 wasip3 ;
+webcpp.compile-fail browser_requires_socket : requirements_test.cpp
+  : <define>WEBCPP_ASIO_REQUIRE_SOCKET_BACKEND=1 : emscripten ;
+webcpp.compile-fail browser_requires_tls : requirements_test.cpp
+  : <define>WEBCPP_ASIO_REQUIRE_OPENSSL=1 : emscripten ;
+webcpp.compile-fail browser_requires_stdio : diagnostics_test.cpp
+  : <define>WEBCPP_TEST_STDIO_HEADER : emscripten ;
+
+# Includes alone must not ban a browser transport chosen at runtime.
+webcpp.compile portable_browser : portable_browser_test.cpp : : emscripten ;

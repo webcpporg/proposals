@@ -1,6 +1,6 @@
 ## Purpose
 
-webcpp::asio is a header-only C++20 wrapper over Boost.Asio, for native, Emscripten and WASIp3 targets.
+webcpp::asio is a header-only C++20 wrapper over Boost.Asio, for native, Emscripten and WASIp2/P3 targets.
 Natively it is Boost.Asio itself; compiled with Emscripten it is still Boost's own `io_context`,
 whose `run` suspends into the browser's event loop, and it adds only what Boost lacks there: the
 configuration Asio needs to build, a reactor made at construction, a limit on the handlers one
@@ -19,8 +19,8 @@ The library SHALL be header-only C++20 in namespace `webcpp::asio`, with public 
 - **WHEN** each of `asio.hpp`, `asio/config.hpp`, `asio/io_context.hpp`, `asio/steady_timer.hpp`, `asio/system_timer.hpp` and `asio/basic_waitable_timer.hpp` is compiled alone with `-std=c++20` and Boost 1.92's headers
 - **THEN** each compiles (`-fsyntax-only` exit 0), and `test/Jamfile` declares `webcpp.headers-alone` for them on both targets and for `asio/browser/*.hpp` and `asio/detail/*.hpp` on Emscripten alone
 
-### Requirement: Library: Native, Emscripten and WASIp3 targets
-The library SHALL declare `webcpp.targets native emscripten wasip2 wasip3`. Its WASIp3 backend SHALL use checked, version-pinned Boost overlays for timers, TCP and UDP. Its WASIp2 core SHALL support timers, TCP, UDP and pollable-based asynchronous forward DNS in the single-thread profile with exceptions on or off. Unsupported P2 thread, Cobalt and guest TLS build targets SHALL be rejected explicitly. Libraries using Asio's socket reactor MUST follow these targets; portable messages and host APIs without that reactor may support additional targets independently.
+### Requirement: Library: Native, Emscripten and WASI targets
+The library SHALL declare `webcpp.targets native emscripten wasip2 wasip3`. Its WASIp3 backend SHALL use checked, version-pinned Boost overlays for timers, TCP and UDP. Its WASIp2 core SHALL support timers, TCP, UDP and pollable-based asynchronous forward DNS in the single-thread profile with exceptions on or off. P2 SHALL also support the shared source-built OpenSSL, embedded/replacement CAs, Cobalt and its SSL wrapper in both exception modes. Unsupported P2 thread build targets SHALL be rejected explicitly. Libraries using Asio's socket reactor MUST follow these targets; portable messages and host APIs without that reactor may support additional targets independently.
 
 #### Scenario: The target declarations match the backend
 - **WHEN** the test and example Jamfiles are read
@@ -81,18 +81,18 @@ Every source file SHALL open with the notice "Copyright (c) 2026 WebCpp.org" and
 - **THEN** its calls of `boost::asio::io_context::run_one()` carry `// lint-run: step 4, the one wait` and `// lint-run: step 4 alone`, and its `using` declarations of Boost's `run`, `run_for` and `run_one` carry `// lint-run: Boost's own, natively`
 
 ### Requirement: Build: One target gives a program everything on every target
-`build.jam` SHALL declare `project /webcpp/asio` and an alias `asio` whose usage requirements are `<include>include` and `<library>/boost//headers` on every target and, on Emscripten, `<define>BOOST_ASIO_DISABLE_THREADS`, `<linkflags>-lembind`, `<source>browser-src`, the link flags of the program's suspension variant, the conditional `asyncify-stack` and `<tag>@webcpp%suspend-tag`; a program MUST reach the library through `/webcpp/asio//asio`.
+`build.jam` SHALL declare `project /webcpp/asio` and an alias `asio` whose usage requirements are `<include>include` and `<library>/boost//headers` on every target and, on single-thread Emscripten, `<define>BOOST_ASIO_DISABLE_THREADS`, `<linkflags>-lembind`, `<source>browser-src`, the link flags of the program's suspension variant, the conditional `asyncify-stack` and `<tag>@webcpp%suspend-tag`; a program MUST reach the library through `/webcpp/asio//asio`.
 
 #### Scenario: A program names one target
 - **WHEN** a Jamfile writes `exe app : app.cpp /webcpp/asio//asio ;` and is built with `toolset=emscripten`
 - **THEN** the program compiles with `BOOST_ASIO_DISABLE_THREADS`, links embind and `browser-src`, and its name carries the variant
 
-### Requirement: Build: Boost.Asio is built without threads on Emscripten
-On Emscripten the usage requirements SHALL define `BOOST_ASIO_DISABLE_THREADS`, because without it Asio decides it has threads under any `__GNUC__` outside Linux and `<boost/asio/io_context.hpp>` stops at "Only Windows and POSIX are supported!"; since Asio's inline namespace differs with and without threads, a translation unit that missed the define MUST fail at link and never silently.
+### Requirement: Build: Emscripten thread profiles agree
+Single-thread Emscripten usage requirements SHALL define `BOOST_ASIO_DISABLE_THREADS`. Explicit pthread builds SHALL retain Boost thread support and the selected suspension mechanism. The application and all compiled dependencies MUST use the same thread profile; the build MUST NOT silently replace a multi-thread request with single-thread execution.
 
 #### Scenario: Every translation unit of a program shares the define
 - **WHEN** `build.jam`'s `alias asio` and `obj browser-src` are read
-- **THEN** both carry `<toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS`
+- **THEN** both carry the same single-thread conditional `BOOST_ASIO_DISABLE_THREADS` requirement
 
 ### Requirement: Build: The browser's JavaScript is compiled once and linked into every program
 `build.jam` SHALL declare the explicit object `browser-src` from `src/browser_src.cpp`, whose only content is `#include <webcpp/asio/browser/src.hpp>`, and the usage requirements MUST link it into every program on Emscripten, so that the JavaScript functions asio calls and the export the bridge delivers through exist exactly once; a program built otherwise includes `browser/src.hpp` in exactly one source file.
@@ -634,7 +634,7 @@ A program that runs a self-posting handler for one second on a `webcpp::asio::io
 - **THEN** it prints `max_handlers_per_turn: 250` and `handlers run: 5000`
 
 ### Requirement: Cobalt: Boost.Cobalt's sources are compiled but main.cpp and io/ssl.cpp
-The superproject SHALL provide the static target `/webcpp//boost_cobalt`, every `.cpp` of Boost.Cobalt's `src/`, `src/detail/` and `src/io/` but `main.cpp` (whose `run_main` webcpp defines) and `io/ssl.cpp` (departure 3: it needs OpenSSL), with `BOOST_COBALT_SOURCE`, `BOOST_COBALT_IO_SOURCE` and, on Emscripten, `BOOST_ASIO_DISABLE_THREADS`, from `-sBOOST_COBALT_SOURCE=<dir>` or `.local/boost-cobalt` (never the environment); a build that uses it and finds neither MUST stop, naming both places.
+The superproject SHALL provide the static target `/webcpp//boost_cobalt`, every `.cpp` of Boost.Cobalt's `src/`, `src/detail/` and `src/io/` but `main.cpp` (whose `run_main` webcpp defines) and `io/ssl.cpp` (departure 3: it needs OpenSSL), with `BOOST_COBALT_SOURCE`, `BOOST_COBALT_IO_SOURCE` and, on single-thread Emscripten, `BOOST_ASIO_DISABLE_THREADS`, from `-sBOOST_COBALT_SOURCE=<dir>` or `.local/boost-cobalt` (never the environment); a build that uses it and finds neither MUST stop, naming both places.
 
 #### Scenario: Sources found and left out
 - **WHEN** `jamroot_test.py` builds `/webcpp//boost_cobalt` with a directory holding `channel.cpp`, `main.cpp`, `detail/util.cpp`, `io/sleep.cpp` and `io/ssl.cpp`
@@ -787,7 +787,7 @@ Reverse resolution (`resolve(endpoint, ec)`, `async_resolve(endpoint, ...)`) SHA
 - **THEN** the error is `operation_not_supported`
 
 ### Requirement: Ssl: Boost's ssl natively and a record on Emscripten
-`<webcpp/asio/ssl.hpp>`, which the convenience header leaves out, SHALL define `namespace ssl = boost::asio::ssl;` in `webcpp::asio` natively and on WASIp3 (needing source-built OpenSSL 3) and on Emscripten a record of the program's TLS settings (`context`, `stream_base`, `verify_*`, `host_name_verification`) that links no library and that only webcpp::beast's browser streams read; without `WEBCPP_ASIO_HAS_OPENSSL` on those guest TLS targets the header MUST stop with a message telling the program to add `/webcpp/asio//openssl` beside `/webcpp/asio//asio`.
+`<webcpp/asio/ssl.hpp>`, which the convenience header leaves out, SHALL define `namespace ssl = boost::asio::ssl;` in `webcpp::asio` natively and on WASIp2/P3 (needing source-built OpenSSL 3) and on Emscripten a record of the program's TLS settings (`context`, `stream_base`, `verify_*`, `host_name_verification`) that links no library and that only webcpp::beast's browser streams read; without `WEBCPP_ASIO_HAS_OPENSSL` on those guest TLS targets the header MUST stop with a message telling the program to add `/webcpp/asio//openssl` beside `/webcpp/asio//asio`.
 
 #### Scenario: Natively without OpenSSL
 - **WHEN** a native program includes `<webcpp/asio/ssl.hpp>` without naming `/webcpp/asio//openssl` (`ssl_without_openssl_test`)
@@ -836,3 +836,59 @@ verify its SDK/libc revision and copied declaration hashes before building.
 - **GIVEN** a deferred asynchronous operation and an intervening cancellation
 - **WHEN** the application later initiates that operation
 - **THEN** the earlier cancellation does not cancel the newly initiated operation
+
+
+### Requirement: WASI datagram sequences and asynchronous forward lookup
+WASIp2/P3 SHALL preserve one datagram per connected or unconnected send and receive
+for scalar and multiple-buffer sequences. Gather/scatter scratch SHALL use the
+context allocator synchronously and the associated handler allocator asynchronously,
+and SHALL be released before completion. Truncation and cancellation SHALL retain
+normal datagram behavior. P3 SHALL use native asynchronous lookup and waitables in
+both supported thread profiles without blocking initiation or polling DNS on timers.
+
+#### Scenario: Pending lookup leaves timer progress available
+- **WHEN** a P3 host lookup remains pending while an unrelated timer expires
+- **THEN** the timer completes before the lookup and cancellation releases the pending host resources through the normal completion channel
+
+#### Scenario: Connected UDP uses the complete buffer sequence
+- **WHEN** a WASI UDP socket sends several buffers on an established peer association
+- **THEN** exactly one datagram contains the concatenated bytes and scatter receive preserves ordering and truncation
+
+### Requirement: Target capability diagnostics
+The library SHALL expose read-only numeric capability macros from `config.hpp`.
+It SHALL distinguish platform availability from optional dependency selection.
+Explicit `WEBCPP_ASIO_REQUIRE_*` requirements and feature-header target guards SHALL
+reject known-invalid compilation with a useful alternative. Runtime-only host
+permissions and transport selection SHALL retain runtime errors and documentation.
+
+#### Scenario: An application requires raw sockets in a browser
+- **WHEN** it sets `WEBCPP_ASIO_REQUIRE_SOCKET_BACKEND=1` before the first library include on Emscripten
+- **THEN** compilation explains that a browser transport or native/WASI target is required
+
+#### Scenario: A consumer attempts to forge a capability
+- **WHEN** it predefines a derived `WEBCPP_ASIO_HAS_*` capability
+- **THEN** config.hpp rejects the override instead of advertising unverified support
+
+#### Scenario: Runtime permissions are absent
+- **WHEN** a supported WASI backend is compiled but the host denies a required network permission
+- **THEN** the operation reports a runtime error and the capability macro does not falsely guarantee access
+
+
+### Requirement: Explicit browser pthread execution
+The Emscripten target SHALL support explicit pthread builds with JSPI or Asyncify
+and either exception setting when the pinned host supports that profile. A browser
+io_context SHALL run only on its constructing thread and SHALL accept cross-thread
+posting. A main-thread executor SHALL deliver nonsuspending DOM callbacks and
+preserve context/handler allocation and safe queued-operation cleanup.
+
+#### Scenario: A worker timer completes on the DOM thread
+- **WHEN** a worker timer uses the main-thread executor as its associated executor
+- **THEN** completion runs on the actual browser main thread and can post ordinary C++ data back to wake the worker
+
+#### Scenario: A page cannot provide isolated shared memory
+- **WHEN** the deployment lacks the browser's required isolation or shared-memory support
+- **THEN** documentation identifies the hosting requirement without claiming that a compiler macro proves it
+
+#### Scenario: A queued callback destroys its main-thread context
+- **WHEN** a running main-thread callback destroys its context while other callbacks remain queued
+- **THEN** remaining callbacks are discarded without accessing the destroyed context or invoking user functions

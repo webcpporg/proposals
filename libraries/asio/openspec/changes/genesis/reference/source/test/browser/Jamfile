@@ -40,3 +40,45 @@ webcpp.drive browser_loader : .//page_program
   : run.mjs : --mode loader ;
 
 webcpp.lane browser : loader_node browser_idle browser_render browser_loader : emscripten ;
+
+# The threaded profile retains the selected suspension mechanism. A pool starts
+# browser workers before a handler needs them. Applications choose its size.
+webcpp.drive browser_workers : worker_program.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//asio
+    <library>/webcpp//node-test <linkflags>-sPTHREAD_POOL_SIZE=1
+  : run.mjs : --mode workers ;
+
+# Assertions normally diagnose invalid runner affinity. This executable observes
+# the same guard's release-build result without terminating the test process.
+webcpp.drive browser_worker_affinity : worker_program.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//asio
+    <library>/webcpp//node-test <linkflags>-sPTHREAD_POOL_SIZE=1
+    <define>BOOST_DISABLE_ASSERTS <define>WEBCPP_TEST_WORKER_AFFINITY
+  : run.mjs : --mode workers ;
+
+webcpp.drive browser_worker_main : main_profile_program.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//asio
+    <library>/webcpp//node-test
+  : run.mjs : --mode workers ;
+
+webcpp.drive browser_worker_cobalt : ../cobalt_thread_test.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//cobalt
+    <library>/webcpp//node-test <linkflags>-sPTHREAD_POOL_SIZE=1
+  : run.mjs : --mode workers ;
+
+webcpp.lane browser-workers : browser_workers browser_worker_affinity
+  browser_worker_main browser_worker_cobalt : emscripten ;
+
+# This dependency-only probe is compiled for header/tooling coverage. Run its
+# JSPI and Asyncify artifacts explicitly to characterize pthread return values.
+webcpp.compile browser_pthread_return_probe : probes/pthread_return.cpp
+  : <threading>multi : emscripten ;
+
+# A test-only trampoline catches the deliberate C++ exception before it crosses
+# the SDK's callback boundary. Its queue and notification remain the real SDK's.
+webcpp.drive browser_worker_move_failure : move_failure_program.cpp
+  : <threading>multi <exception-handling>on <webcpp-drive-timeout>60
+    <library>/webcpp/asio//asio <library>/webcpp//node-test
+    <linkflags>-Wl,--wrap=emscripten_proxy_async
+  : run.mjs : --mode workers ;
+webcpp.lane browser-worker-exceptions : browser_worker_move_failure : emscripten ;

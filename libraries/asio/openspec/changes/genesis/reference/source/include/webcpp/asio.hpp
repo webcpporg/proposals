@@ -29,6 +29,9 @@
 #include <webcpp/asio/browser/async_wait_event.hpp>
 #include <webcpp/asio/browser/bridge.hpp>
 #include <webcpp/asio/browser/error.hpp>
+#if WEBCPP_ASIO_HAS_BROWSER_WORKERS
+#include <webcpp/asio/browser/main_thread_context.hpp>
+#endif
 #endif
 
 #endif  // WEBCPP_ASIO_HPP

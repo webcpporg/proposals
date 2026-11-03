@@ -133,12 +133,8 @@ cobalt::main co_main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     io::resolver resolver(exec);
     const auto [resolve_error, endpoints] = co_await cobalt::as_tuple(
         resolver.resolve("127.0.0.1", "443", io::resolver::flags::numeric_host));
-#if defined(__wasip3__) && !defined(BOOST_ASIO_HAS_THREADS)
-    BOOST_TEST(resolve_error == boost::asio::error::operation_not_supported);
-#else
     BOOST_TEST(!resolve_error);
     BOOST_TEST(!endpoints.empty());
-#endif
     watchdog.cancel();
     std::puts("cobalt: compiled I/O, task, TCP, UDP, cancellation, EOF and resolver checked");
     co_return webcpp::test::exit_status(boost::report_errors());

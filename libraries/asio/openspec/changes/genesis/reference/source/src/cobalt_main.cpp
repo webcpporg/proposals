@@ -16,7 +16,7 @@
 
 #include <cstdlib>
 
-#ifndef __wasip3__
+#if !defined(WEBCPP_TARGET_WASIP2) && !defined(WEBCPP_TARGET_WASIP3)
 #include <boost/asio/signal_set.hpp>  // lint-world: preserves Cobalt's signal cancellation
 #include <csignal>
 #endif
@@ -30,7 +30,7 @@ namespace boost::cobalt::detail {
 // Match Boost's non-static promise interface even when no signal set needs cleanup.
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 auto main_promise::final_suspend() noexcept -> std::suspend_never {
-#ifndef __wasip3__
+#if !defined(WEBCPP_TARGET_WASIP2) && !defined(WEBCPP_TARGET_WASIP3)
     system::error_code ec;
     if (signal_set != nullptr) {
         // Preserve Boost's nonthrowing cleanup; the return duplicates ec.
@@ -50,8 +50,8 @@ int main_promise::run_main(::boost::cobalt::main mn) {
         mn.promise->exec.emplace(ctx.get_executor());
         mn.promise->exec_ = mn.promise->exec->get_executor();
         const auto coroutine = std::coroutine_handle<main_promise>::from_promise(*mn.promise);
-#ifdef __wasip3__
-        // WASIp3 has no POSIX process-signal delivery. wasi-libc's optional signal
+#if defined(WEBCPP_TARGET_WASIP2) || defined(WEBCPP_TARGET_WASIP3)
+        // WASI has no POSIX process-signal delivery. wasi-libc's optional signal
         // emulation does not provide host SIGINT/SIGTERM notifications. Omit that
         // bridge, including its headers and final-suspend cleanup, but retain
         // Cobalt's internal cancellation signal. Host-requested graceful shutdown

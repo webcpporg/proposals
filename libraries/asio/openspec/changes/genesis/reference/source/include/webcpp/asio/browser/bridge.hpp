@@ -9,6 +9,11 @@
 
 #include <webcpp/asio/config.hpp>
 
+#if !WEBCPP_ASIO_HAS_BROWSER_BRIDGE
+#error \
+    "webcpp::asio::browser::bridge requires the Emscripten browser bridge; use native/WASI Asio completion operations on this target"
+#else
+
 #include <webcpp/asio/detail/browser_imports.hpp>
 
 #include <emscripten/val.h>
@@ -258,4 +263,5 @@ private:
 
 }  // namespace webcpp::asio::browser
 
+#endif  // WEBCPP_ASIO_HAS_BROWSER_BRIDGE
 #endif  // WEBCPP_ASIO_BROWSER_BRIDGE_HPP

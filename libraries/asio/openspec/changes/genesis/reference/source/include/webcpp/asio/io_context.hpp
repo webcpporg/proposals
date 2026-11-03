@@ -17,6 +17,10 @@
 
 #include <boost/asio/steady_timer.hpp>  // lint-world: the unarmed timer that makes the reactor
 #include <boost/assert.hpp>
+#ifdef __EMSCRIPTEN_PTHREADS__
+#include <emscripten/threading.h>
+#include <pthread.h>
+#endif
 #endif
 
 #include <chrono>
@@ -41,6 +45,10 @@ struct io_context_options {
  and yields to it after every turn of max_handlers_per_turn handlers.
 
  Natively and on WASIp3 it uses Boost's run family, and its options change nothing.
+ In a threaded browser build each context and its JavaScript bridge stay on their
+ constructing thread. Other threads post through its executor; the run family
+ rejects a runner on another thread. Multiple simultaneous runners of one browser
+ context are unsupported because JavaScript values are thread-local.
 
  @see "The run family", in the guide.
 */
@@ -114,10 +122,10 @@ public:
     // limit, and run_one so that the whole run family is this class's; hence the exemption from
     // bugprone-derived-method-shadowing-base-method.
     //
-    // Each of the six is called on main's stack alone: one called while another runs, from a
-    // handler or from a JavaScript event while run waits, or while the bridge delivers an event,
-    // asserts and returns 0 having run nothing. Each admits once, first, and then calls only
-    // private code that admits nothing (run_until_unchecked, compose, drain) or Boost's own,
+    // Each of the six is called on a suspension-enabled entry stack alone: one called while another
+    // runs, from a handler or from a JavaScript event while run waits, or while the bridge delivers
+    // an event, asserts and returns 0 having run nothing. Each admits once, first, and then calls
+    // only private code that admits nothing (run_until_unchecked, compose, drain) or Boost's own,
     // never another public member, whose admission would refuse the call its caller flagged.
 
     /**
@@ -227,9 +235,19 @@ private:
      Tip: not noexcept, since whether the bridge delivers is read from JavaScript.
     */
     [[nodiscard]] bool admitted() const {
+#ifdef __EMSCRIPTEN_PTHREADS__
+        // The bridge owns thread-local JavaScript handles. Check affinity before reading one.
+        const bool owner = pthread_equal(owner_, pthread_self()) != 0;
+        BOOST_ASSERT_MSG(owner,
+                         "webcpp::asio: a threaded browser io_context runs only on the thread "
+                         "that constructed it; post through its executor from other threads");
+        if (!owner) {
+            return false;
+        }
+#endif
         const bool allowed = !running_ && !bridge_.delivering();
         BOOST_ASSERT_MSG(allowed,
-                         "webcpp::asio: the run family is called on main's stack alone, "
+                         "webcpp::asio: the run family is called on its entry stack alone, "
                          "never from a handler or a browser event");
         return allowed;
     }
@@ -316,6 +334,10 @@ private:
     boost::asio::steady_timer reactor_{*this};  // lint-world: never armed
     // The bridge whose deliveries the run family refuses to run inside, looked up once.
     browser::bridge& bridge_ = boost::asio::use_service<browser::bridge>(*this);
+#ifdef __EMSCRIPTEN_PTHREADS__
+    // The context and its JavaScript bridge stay on their creating thread.
+    pthread_t owner_ = pthread_self();
+#endif
     // Whether a call of the run family is active on this context.
     bool running_ = false;
 #endif

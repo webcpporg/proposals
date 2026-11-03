@@ -26,6 +26,6 @@
 #endif
 
 #if !defined(WEBCPP_TARGET_NATIVE) && !defined(WEBCPP_TARGET_EMSCRIPTEN) && \
-    !defined(WEBCPP_TARGET_WASIP3)
+    !defined(WEBCPP_TARGET_WASIP2) && !defined(WEBCPP_TARGET_WASIP3)
 #error "Asio must expose the collection target configuration"
 #endif

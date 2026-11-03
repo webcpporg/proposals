@@ -64,6 +64,8 @@ None.
   the superproject submodule `libs/asio`, under BSL-1.0.
 - **Implementation:** tasks 1-21, the later WASIp3/TLS increments and the approved
   single-thread WASIp2 core/supplied-stream increment are implemented locally.
+  The approved capability extension adds P2 TLS/Cobalt, native asynchronous P3 DNS,
+  complete WASI UDP sequences, browser pthread handoff and compile-time guards.
   The repository was created on 2026-11-03 UTC and the owner-authorized superproject
   integration is commit `2ba5116`. Tasks 22/23 close the documentation, conformance,
   complete-branch review and final CI gates. `reference/STATUS.md` distinguishes tested

@@ -2,13 +2,72 @@
 
 ## Current committed snapshot
 
-- Asio: `dad1aefbe99f8a2cae4e2e3389779106a24cf3dc`.
-- Superproject: `15e2f44d2bdff0602b8e761a5a9c89b98c3a5d97`.
-- `reference/source/`: 182 tracked files, exported from the Asio commit above.
-- Scope: native/browser functionality, WASIp3 networking/TLS/Cobalt and the approved
-  single-thread WASIp2 core below. Optional P2 TLS/Cobalt/thread targets remain unsupported.
+- Asio: `9455076a56ece86204229c455fe64b7ed5fbf530`.
+- Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
+- Superproject evidence/review record: `ad092876333dac2cd310cff58a7bc8fe64636bdf`.
+- `reference/source/`: 206 tracked files, exported from the Asio commit above.
+- Scope: native/browser functionality, explicit browser pthread execution and
+  main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
+  sequences, native P3 async DNS and central compile-time capability diagnostics.
+  P2 multiple threads and P3 cooperative exceptions remain SDK restrictions.
 - Publication gates: the current local candidate needs fresh remote CI and integration;
   the earlier run `41597577370` passed for root `55a72c0` only.
+
+## Capability completion, 2026-11-03
+
+The owner requested completing WebCPP-owned gaps while documenting SDK/environment
+restrictions and diagnosing unsupported compile-visible combinations. The committed
+candidate above implements those extensions. Its exact 206-file reference export
+was verified against every Git blob and executable mode. No remote CI, push, merge
+or release ran for this increment. The final whole-candidate review and its scoped
+fix re-review are complete; every finding is addressed with no new breakage.
+
+Final local Release runs passed 105 native, 66 P2, 117 P3 and 233 Emscripten B2 test
+targets with exceptions on/off, plus the applicable example output comparisons.
+The Emscripten count covers Node JSPI/Asyncify execution; real browser validation
+is recorded separately. Initial broad WASI builds omitted the runtime launcher;
+those runtime failures are not evidence. Corrected commands executed the freshly
+built artifacts through the pinned Wasmtime launcher and passed.
+
+Separate P2 TLS/Cobalt checks passed both exception profiles, including real TLS
+trust/identity, embedded/replacement CAs, transfer, handshake and shutdown errors
+and cancellation. Native/P3 TLS controls passed. The registered P2 TLS own lane
+passed all 16 driver runs. Host entropy failure is fail-closed; distinct generated
+keys test wiring and do not measure entropy strength.
+
+P3 async forward DNS uses the native async host import with a checked libc
+descriptor bridge, without a worker or polling interval. Tests cover deferred
+start, unrelated timer progress, pending cancellation, allocation and two-runner
+cooperative lifetime. Connected UDP gathers/scatters the complete sequence while
+preserving one-datagram semantics, truncation and cancellation.
+
+Real Chrome passed explicit pthread JSPI/Asyncify profiles with exceptions on/off,
+including main-thread handoff, worker affinity, reentrant context destruction and
+allocation cleanup. The raw Asyncify pthread-return probe remains a documented SDK
+counterexample, not a passing test. The default browser profile remains single
+threaded and the per-turn handler budget remains 100.
+
+Focused clang-tidy, owned Python/text/format checks, overlay/source-build tests,
+MrDocs and rendered guide checks passed. This is not a full repository lint claim.
+Complete lint database generation passed with 1,451 commands and materialized
+headers; it is not a full tidy run. The local release check also passed.
+Visual screenshot review remains unverified after blank local screenshots and a
+browser file-URL refusal. Runtime network grants, page isolation, host-blocking
+imports and trust/hostname errors cannot be inferred from target macros.
+
+Task-specific reviews approved the changes after public regressions fixed transient
+UDP send retries, canonical empty-result cleanup, cooperative DNS cancellation
+lifetime and browser reentrant destruction/throwing moves. The root verification
+record names exact commands and chronology limits. The historical entries below
+describe earlier candidates and do not override this current scope.
+
+The final review also corrected recurring test planning: both worker lanes now
+provision Chrome, worker requests cover JSPI/Asyncify and both EH modes, the
+throwing-move fixture covers only EH-on in both variants, and P2 TLS requests both
+EH modes. All 41 matrix-tool tests passed. Local B2 XML verified 34 actual driver
+configurations. The guide's P2 command now names the explicit TLS lane, and stale
+DNS/profile-count statements are corrected. These are local planning and graph
+checks, not a remote CI run. The scoped re-review accepted the complete fix wave.
 
 ## WASIp2 follow-up verified and committed, 2026-11-03
 

@@ -5,7 +5,7 @@
 // https://www.boost.org/LICENSE_1_0.txt)
 
 // The real browser checks: idle waits, animation opportunities and variant loading.
-// node run.mjs --mode <idle|render|loader> <program>
+// node run.mjs --mode <idle|render|loader|workers> <program>
 // CHROME names the browser; on macOS the newest cached Playwright headless shell is used.
 // Each invocation owns its loopback server, Chrome process and temporary profile.
 import assert from 'node:assert/strict'
@@ -19,10 +19,11 @@ import {setTimeout as delay} from 'node:timers/promises'
 import {fileURLToPath} from 'node:url'
 
 const args = process.argv.slice(2)
-assert.equal(args.length, 3, 'usage: run.mjs --mode <idle|render|loader> <program>')
+assert.equal(args.length, 3, 'usage: run.mjs --mode <idle|render|loader|workers> <program>')
 assert.equal(args[0], '--mode')
 const mode = args[1]
-assert.ok(['idle', 'render', 'loader'].includes(mode), `unknown mode ${mode}`)
+assert.ok(['idle', 'render', 'loader', 'workers'].includes(mode), `unknown mode ${mode}`)
+const workerVariant = args[2].includes('asyncify') ? 'asyncify' : 'jspi'
 const here = dirname(fileURLToPath(import.meta.url))
 const build = dirname(resolve(args[2]))
 const findChrome = () => {
@@ -76,7 +77,9 @@ const startServer = async () => {
                 return
             }
             const content = readFileSync(file)
-            response.writeHead(200, {'Content-Type': types[extname(file)] ?? 'application/octet-stream'})
+            response.writeHead(200, {'Content-Type': types[extname(file)] ?? 'application/octet-stream',
+                'Cross-Origin-Opener-Policy': 'same-origin',
+                'Cross-Origin-Embedder-Policy': 'require-corp'})
                 .end(content)
         } catch {
             response.writeHead(404).end()
@@ -215,10 +218,12 @@ const openPage = async (devtools, base, program, variant) => {
         await send('Page.addScriptToEvaluateOnNewDocument', {source: 'delete WebAssembly.Suspending'})
     }
     const observer = mode === 'idle' ? observeIdle : observeTurns
-    if (mode !== 'loader') {
+    if (mode !== 'loader' && mode !== 'workers') {
         await send('Page.addScriptToEvaluateOnNewDocument', {source: `(${observer.toString()})()`})
     }
-    await send('Page.navigate', {url: `${base}/page.html?manifest=/build/${program}.variants.json`})
+    await send('Page.navigate', {url: mode === 'workers'
+        ? `${base}/worker_page.html?script=/build/${program}&variant=${variant}`
+        : `${base}/page.html?manifest=/build/${program}.variants.json`})
     const snapshot = async () => {
         const result = await send('Runtime.evaluate', {
             expression: '({report: window.report, timers: window.timers, turns: window.turns})',
@@ -278,13 +283,26 @@ const renderStats = ({report, turns}, limited) => {
 try {
     const base = await startServer()
     const devtools = await startChrome()
-    for (const variant of ['jspi', 'asyncify']) {
+    for (const variant of mode === 'workers' ? [workerVariant] : ['jspi', 'asyncify']) {
         const programs = mode === 'render' ? ['render_program', 'render_unlimited_program']
-            : [mode === 'idle' ? 'idle_program' : 'page_program']
+            : [mode === 'workers' ? resolve(args[2]).split(sep).at(-1)
+                : mode === 'idle' ? 'idle_program' : 'page_program']
         for (const program of programs) {
             const page = await openPage(devtools, base, program, variant)
             try {
-                if (mode === 'loader') {
+                if (mode === 'workers') {
+                    const {report} = await page.waitFor(/^(worker .* complete|cobalt: thread coroutine completed and joined)$/)
+                    assert.equal(report.status, 0, JSON.stringify(report))
+                    assert.equal(report.isolated, true)
+                    if (!program.includes('cobalt') && !program.includes('worker_return') &&
+                        !program.includes('move_failure')) {
+                        const worker = !program.includes('_main-')
+                        assert.ok(report.polls.some(poll => poll.worker === worker && poll.timeout > 0),
+                            `missing ${worker ? 'original worker proxy' : 'main adapter'} wait: ${JSON.stringify(report.polls)}`)
+                    }
+                    console.log(`workers ${variant}: ${program} completed with status 0`)
+                    for (const warning of report.warnings) console.log(`SDK notice: ${warning}`)
+                } else if (mode === 'loader') {
                     const {report} = await page.waitFor(/^ran 3 handlers$/)
                     assert.deepEqual(report.lines.map(entry => entry.line), ['ran 3 handlers'])
                     console.log(`loader ${variant}: ran 3 handlers`)

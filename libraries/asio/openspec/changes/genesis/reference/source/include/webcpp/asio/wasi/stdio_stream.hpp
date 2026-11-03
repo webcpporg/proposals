@@ -97,8 +97,9 @@ public:
     @param stream Channel to close. */
 void beast_close_socket(stdio_stream& stream);
 }  // namespace webcpp::asio::wasi
-#elif !defined(__wasip2__)
-#error "webcpp::asio::wasi::stdio_stream currently requires WASIp2"
+#elif !WEBCPP_ASIO_HAS_WASI_STDIO
+#error \
+    "webcpp::asio::wasi::stdio_stream requires WASIp2 CLI streams; use a supplied stream or native descriptor adapter on other targets"
 #else
 #include <wasi/wasip2.h>
 #include <algorithm>

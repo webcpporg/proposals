@@ -9,6 +9,11 @@
 
 #include <webcpp/asio/config.hpp>
 
+#if !WEBCPP_ASIO_HAS_BROWSER_BRIDGE
+#error \
+    "webcpp::asio::browser::transport requires the Emscripten browser bridge; use native/WASI Asio operations on this target"
+#else
+
 #include <boost/asio/append.hpp>       // lint-world: preserve completion associations
 #include <boost/asio/error.hpp>        // lint-world: unsupported browser operations
 #include <boost/asio/socket_base.hpp>  // lint-world: socket flags
@@ -366,4 +371,5 @@ private:
 
 }  // namespace webcpp::asio::browser
 
+#endif  // WEBCPP_ASIO_HAS_BROWSER_BRIDGE
 #endif  // WEBCPP_ASIO_BROWSER_TRANSPORT_HPP

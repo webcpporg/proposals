@@ -21,10 +21,11 @@ lacks there, the configuration Asio needs to build, what wakes `run` from a
 browser event, and a limit on the handlers one turn runs, so that the page
 keeps rendering.
 
-WASIp2 provides single-threaded timers, TCP/UDP, pollable-driven forward DNS and
-supplied CLI streams. See <<asio-wasip2>> for its explicit limitations.
-WASIp3 additionally provides timers, TCP/UDP and optional source-built TLS, with
-single-thread and experimental cooperative-thread profiles. See <<asio-capabilities>> for their
+WASIp2 provides single-threaded timers, TCP/UDP, pollable-driven forward DNS,
+supplied CLI streams, Cobalt and optional source-built TLS.
+See <<asio-wasip2>> for its explicit limitations.
+WASIp3 provides timers, TCP/UDP, waitable-driven forward DNS, Cobalt and the same
+optional TLS provider, with single-thread and experimental cooperative-thread profiles. See <<asio-capabilities>> for their
 limits and the features available in each target variant.
 
 [#asio-reading]

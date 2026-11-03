@@ -9,8 +9,9 @@
 
 Use `/webcpp/asio//asio` with `toolset=clang-wasip2` and `threading=single`.
 This profile uses Boost 1.92, wasi-sdk 34.0 and Wasmtime 50.0.1. Both exception
-modes are supported for the core, timers, TCP/UDP and asynchronous forward DNS.
-It does not enable Cobalt, guest TLS or multiple application threads.
+modes are supported for the core, timers, TCP/UDP, asynchronous forward DNS,
+Cobalt and source-built OpenSSL. Multiple application threads remain unavailable
+with the pinned SDK profile.
 
 Configure the compiler using the project's wasi-sdk user-configuration example.
 Then run the local consumers from the superproject root:
@@ -19,9 +20,21 @@ Then run the local consumers from the superproject root:
 ----
 b2 -a toolset=clang-wasip2 variant=release threading=single \
   exception-handling=on,off testing.launcher=tools/boost/asio-wasip2/run.sh \
-  libs/asio/test/wasip2
+  libs/asio/test/wasip2 libs/asio/test/capability_wasi
 b2 -a toolset=clang-wasip2 variant=release exception-handling=on,off \
   libs/asio/test/wasip2//supplied-stream libs/asio/test/wasip2//scheduler-idle
+----
+
+Add `/webcpp/asio//cobalt` for Cobalt, `//tls` for OpenSSL with embedded or
+replacement trust roots, or `//cobalt_ssl` for Cobalt's SSL wrapper. These targets
+share the same source-built provider as native and WASIp3 programs. Run their
+real peer, trust, transfer/shutdown and cancellation consumers with:
+
+[source,bash]
+----
+b2 -a toolset=clang-wasip2 variant=release exception-handling=on,off \
+  testing.launcher=tools/boost/asio-wasip2/run.sh \
+  libs/asio/test/wasip2_tls_cobalt libs/asio/test/wasip2_tls_cobalt//wasip2-tls
 ----
 
 The first command exercises timers, the run/poll family, TCP and UDP exchanges,
@@ -105,16 +118,17 @@ cancellation deadline requires a host/channel whose write imports remain nonbloc
 [#asio-wasip2-errors]
 === Unsupported operations and build profiles
 
-`threading=multi`, `/webcpp/asio//cobalt`, `//openssl`, `//tls` and `//cobalt_ssl`
-are rejected by this P2 build integration. This does not claim that those features
-are impossible in a future port. POSIX signals, Unix-domain sockets, serial ports
-and CPU-parallel threads are not provided by this profile.
+`threading=multi` is rejected: SDK 34.0 has no supported P2 pthread runtime
+profile. POSIX signals, Unix-domain sockets and serial ports are absent from the
+host interfaces used here. Use the capability guards in <<asio-capability-guards>>
+for compiler-visible requirements. Cobalt's known no-EH pending-task move issue
+remains an upstream limitation, as on native and P3; see <<asio-feature-errors>>.
 
 Unsupported socket operations retain error-code overloads. Tested examples include
-`linger`, `at_mark` and UDP receive into multiple nonempty buffers, which return
-`operation_not_supported`. A rejected receive does not consume its datagram.
-UDP `send_to` can gather multiple buffers into one datagram; connected UDP
-`send` does not support multiple nonempty buffers. TCP retains partial I/O semantics.
+`linger` and `at_mark`, which return `operation_not_supported`.
+UDP `send_to` and connected `send` gather multiple buffers into one datagram;
+receive scatters one datagram across the destination buffers. Asynchronous forms
+retain handler allocation and cancellation. TCP retains partial I/O semantics.
 Numeric IPv6 scope identifiers work; named interfaces are rejected with
 `invalid_argument`. Host permission denial is a runtime error, distinct from an
 unsupported build profile. Prefer error-code/completion-handler paths for recovery,
