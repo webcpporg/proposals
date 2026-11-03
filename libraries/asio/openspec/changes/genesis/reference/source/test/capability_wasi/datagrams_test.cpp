@@ -196,7 +196,14 @@ void datagram_boundaries() {
     BOOST_TEST_EQ(context_counts.allocations, before);
     int rejected = 0;
     sender.async_send(oversized, [&](boost::system::error_code ec, std::size_t size) {
+#ifdef BOOST_ASIO_HAS_IOCP
+        // Upstream forwards the IOCP error, observed as ERROR_INVALID_USER_BUFFER for this send.
+        const boost::system::error_code invalid_buffer(ERROR_INVALID_USER_BUFFER,
+                                                       boost::system::system_category());
+        BOOST_TEST(ec == asio::error::message_size || ec == invalid_buffer);
+#else
         BOOST_TEST_EQ(ec, asio::error::message_size);
+#endif
         BOOST_TEST_EQ(size, 0U);
         ++rejected;
     });

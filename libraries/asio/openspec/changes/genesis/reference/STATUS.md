@@ -2,9 +2,9 @@
 
 ## Current committed snapshot
 
-- Asio: `059f64c4c6aa316e351b10aca1f31ca810b446e6`.
+- Asio: `70e6f5f2839e1ab0535ffea1e5da5a10a185178a`.
 - Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
-- Superproject publication candidate: `d7a6614516facca397a60e8c3192c3328ebcfc46`.
+- Superproject publication candidate: `31982c6c3b82cdf0c354b60758a5352cdaface18`.
 - `reference/source/`: 208 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, explicit browser pthread execution and
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
@@ -39,9 +39,27 @@ The public B2 startup target passed both exception profiles. The cause of Chrome
 historical startup delay remains unknown; D-Bus/fontconfig warnings also occur
 in successful runs and are not diagnosed as the cause.
 
-Independent reviews accepted both fixes. The current source and superproject
-commits are published for root CI run 41686583077, which tests `d7a6614`. Remote green results and main
-integration remain gates; no formal approval or merge is claimed yet.
+Independent reviews accepted both fixes. Root CI run 41686583077 tests the
+published superproject `d7a6614` with Asio `059f64c`; it does not test the newer
+local candidate above. Remote green results and main integration remain gates;
+no formal approval or merge is claimed yet.
+
+That run identified two stale build fixtures: the Windows allocator overlay
+fixture omitted Config, and the Cobalt SSL guard fixture still rejected P2.
+Both are corrected in the local candidate. Their exact cases and neighboring
+checks passed, with scoped type checking and independent review.
+
+The Windows MSVC 14.3 XML also exposed a failed oversized UDP assertion despite
+the job reporting success. Native Boost.Asio forwarded IOCP's system error 1784
+instead of `message_size` for the asynchronous send. The test now accepts only
+that exact additional error under IOCP; synchronous and WASI expectations remain
+strict. Zero bytes, deferred single completion and no received datagram remain
+required. Fresh native/P2/P3 tests passed with and without exceptions, scoped
+lint passed, and independent review accepted the change. No Windows runtime was
+available locally; the updated Windows test still requires remote confirmation.
+
+The partial report from this run passed all tests and examples in 25 other lanes,
+including GCC 15 and Apple Clang. This partial result is not a complete CI verdict.
 
 ## Capability completion, 2026-11-03
 
