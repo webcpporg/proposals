@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-03
+webcpp:
+  library: wasi
+  title: "wasm: evolve wasi into WebAssembly integration and generate C++ bindings"
+  kind: own
+  port_of: null
+  status: draft
+  release: null
+  implementation: https://github.com/webcpporg/wasi
+  decided: null

@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-03
+webcpp:
+  library: organization
+  title: "organization: build and install the wasm bindings generator as a host tool"
+  kind: organization
+  port_of: null
+  status: draft
+  release: null
+  implementation: https://github.com/webcpporg/webcpp
+  decided: null
