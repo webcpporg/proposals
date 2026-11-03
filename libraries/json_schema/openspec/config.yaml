@@ -5,5 +5,6 @@ context: |
   a superproject of header-only C++20 libraries for native, WASI (wasip2,
   wasip3) and Emscripten targets, each library a repository of its own under
   libs/<name>, licensed BSL-1.0, "Copyright (c) 2026 WebCpp.org".
-  The superproject's AGENTS.md is the rulebook every library follows.
+  The superproject's CODING-GUIDELINES.md holds the rules every library follows
+  and the decisions of webcpp's design; its AGENTS.md says how to work in the tree.
   Everything is written in English; never the em dash, use a plain dash.

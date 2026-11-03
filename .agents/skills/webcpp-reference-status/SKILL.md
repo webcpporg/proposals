@@ -28,4 +28,5 @@ Then read each `.openspec.yaml` (status, decided), the first unchecked tasks and
 ## Rules
 - A box is checked only for work done and committed.
 - Recorded patches and archived material are history: never edit them to change what they record.
-- A repository made from `reference/source/` starts from one import commit (superproject `AGENTS.md`, chapter 11).
+- A repository made from `reference/source/` starts from one import commit (superproject
+  `CODING-GUIDELINES.md`, chapter 2).
