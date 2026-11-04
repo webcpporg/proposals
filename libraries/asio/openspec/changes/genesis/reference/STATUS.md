@@ -4,7 +4,7 @@
 
 - Asio: `4199a45f0625ecb5a9319a5b9eb28dbd1e0a48a9`.
 - Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
-- Superproject publication candidate: `3d2a5d8eb833f837045d5bb8528ea3d0f3976e41`.
+- Published superproject candidate: `d473d654f53e5dcde5446d22d0016bd977303d8b`.
 - `reference/source/`: 208 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, explicit browser pthread execution and
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
@@ -108,10 +108,21 @@ candidate includes the earlier Windows/WASI corrections and two further fixes:
   Twelve launcher regressions passed, including real runtime completion and
   interruption of an infinite loop on both targets.
 
-One native Trystero multiroom interop failure remains under investigation.
-Local follow-up commits have not yet been pushed. Final full lint, the new
-candidate's remote CI and main integration remain gates. These local results
-are not a green verdict for the published candidate.
+The native Trystero follow-up now passes all 29 interoperability scenarios.
+A controlled real browser/native reproduction demonstrated frames arriving
+before a receiver was installed; bounded allocator-aware retention repairs
+that handoff. This does not prove the precise ordering in the historical CI
+failure. The correction and its timer/lifetime regressions passed independent
+review and are published as Trystero `9b7879515461dcfdc3f32f287db822b977654b84`.
+
+The last full local lint found three Trystero test-fixture style defects and
+an obsolete Beast host-TLS helper. Focused checks pass for all four fixes;
+Pyright passed over all 135 repository Python sources. The actual Beast TLS
+lanes passed 28 driver executions and 88 cases across P2/P3 and EH on/off.
+Full local documentation and the 21-page, 11-library site passed, as did the
+prepared 0.1.0 release check. The candidate above and all dependency commits
+are published. Its new complete remote lint/CI and main integration remain
+gates; no release tag or green final remote verdict is claimed.
 
 ## Capability completion, 2026-11-03
 

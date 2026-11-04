@@ -14,7 +14,6 @@ import json
 import os
 import shutil
 import ssl
-import subprocess
 import sys
 import tempfile
 import threading
@@ -25,6 +24,7 @@ import trust
 ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "tools/component"))
 import serve
+from process_tree import start_tree
 
 
 class Peer(http.server.BaseHTTPRequestHandler):
@@ -60,10 +60,7 @@ class Peer(http.server.BaseHTTPRequestHandler):
 
 def start(fixture: str, component: Path, root: str, identity: list[str]) -> serve.Server:
     profile = "p3" if "wasip3" in str(component) else "p2"
-    process = subprocess.Popen(
-        [sys.executable, "-c", serve.KEEPER, fixture, profile, str(component), root, *identity],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        start_new_session=True)
+    process = start_tree([fixture, profile, str(component), root, *identity], capture=True)
     server = serve.Server(process)
 
     def read_errors() -> None:

@@ -7,15 +7,14 @@ integration commits. The original 53-application inventory remains in scope.
 ## Current committed snapshot
 
 - Repository: [webcpporg/beast](https://github.com/webcpporg/beast).
-- Published commit: `7d41654d750061ecf4b1bac873cd66af28cf8a09`.
+- Published commit: `2fbe865883f43ddcbe95232507f4be9b3f125023`.
 - `source/` is an exact `git archive` of that commit: 774 tracked files, with
   every Git blob identity and executable mode checked against the commit.
-- Published superproject candidate: `d7a6614516facca397a60e8c3192c3328ebcfc46`.
-- Local superproject follow-up: `3d2a5d8eb833f837045d5bb8528ea3d0f3976e41`, not yet pushed.
+- Published superproject candidate: `d473d654f53e5dcde5446d22d0016bd977303d8b`.
 - [Superproject pull request 7](https://github.com/webcpporg/webcpp/pull/7) carries
   the completed Asio capabilities. Windows/WASI driven-test fixes are committed
-  locally; generated-header preparation passed its local regressions. Final CI
-  and a native Trystero interop correction remain in progress.
+  locally; generated-header preparation passed its local regressions. Native
+  Trystero interoperability passed all 29 scenarios. Final remote CI remains a gate.
 - Full CI [41597577370](https://github.com/webcpporg/webcpp/actions/runs/41597577370)
   passed for root `55a72c056de1e6522e1fc6dbc3ee2b9ef3715327` only. It does not
   establish a green result for the current local tree.
@@ -39,15 +38,33 @@ remain required. These failures are not passing validation evidence.
 
 The completed root run
 [41686583077](https://github.com/webcpporg/webcpp/actions/runs/41686583077), on the
-published parent above, failed. It found stale build fixtures, a Windows Asio
+earlier root `d7a6614`, failed. It found stale build fixtures, a Windows Asio
 test expectation, Windows runner portability failures, empty WASIp3 TLS fixture
 executables, lint timeouts, five global P2 workload interrupts and one native
-Trystero multiroom interop failure. Local corrections passed for every group
-except the Trystero failure, which remains under investigation. The provider
+Trystero multiroom interop failure. Local corrections passed for every group.
+Trystero now preserves bounded native frames until a receiver is installed. The provider
 split preserves exactly the same compilation database and passed native upstream
 and P2/P3 TLS tests. All five unchanged P2 document workloads passed with the
 corrected finite launcher budget. These results do not establish a green final
-candidate. The Beast source export and 571/216/432 matrix remain unchanged.
+candidate. The 571/216/432 matrix remains unchanged.
+
+## Final local candidate, 2026-11-04
+
+The host TLS test driver still called the removed `serve.KEEPER` helper after
+the portable process-runner change. The actual P2 lane reproduced that error.
+The driver now uses `process_tree.start_tree` and the existing shared cleanup.
+Fresh P2/P3 builds passed 28 driver executions and 88 TLS cases with exceptions
+on/off, including mutual TLS. Their XML report, focused Pyright and independent
+review passed. The local TLS peer used Python with OpenSSL, matching CI;
+Apple Python's LibreSSL emits a different missing-client-certificate alert.
+The assertions were not weakened for that exploratory environment.
+
+The last full local lint found three Trystero test-fixture style defects and
+the obsolete Beast helper. All four findings have focused passing checks;
+Pyright passed over all 135 repository Python sources. The final candidate still
+requires a new complete remote lint and CI verdict. Full local documentation,
+the site with 21 pages and 11 libraries, and the prepared 0.1.0 release check
+passed. No release tag or main integration is claimed.
 
 ## Earlier WASIp2 follow-up, 2026-11-03
 
