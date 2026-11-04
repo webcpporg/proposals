@@ -104,9 +104,12 @@ def generate(formatter):
             threading = "multi" if mode in ("threaded", "cooperative") else "single"
             exceptions = "on" if mode == "checked" else "off"
             context = " <library>/webcpp//boost_context" if row["stackful"] else ""
+            compile_budget = ("    <toolset>clang-wasip3:<webcpp-drive-timeout>90\n"
+                              if "wasip3" in targets else "")
             lines.append(f"webcpp.drive {name} : {sources}\n"
                          f"  : <library>/webcpp/beast//{library}{context}\n"
                          f"    <exception-handling>{exceptions}\n"
+                         f"{compile_budget}"
                          f"    <include>../../../example/applications/{variant}\n"
                          f"    <include>../../../example/applications <threading>{threading}\n"
                          "    <define>BOOST_ASIO_HAS_CO_AWAIT=1\n"

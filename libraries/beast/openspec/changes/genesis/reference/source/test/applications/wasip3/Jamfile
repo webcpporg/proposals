@@ -12,6 +12,7 @@ webcpp.targets wasip3 ;
 webcpp.original python3 : .. ;
 webcpp.drive advanced-server : ../../../example/applications/wasip3/advanced/server/advanced_server.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -19,6 +20,7 @@ webcpp.drive advanced-server : ../../../example/applications/wasip3/advanced/ser
   : ../driver.py : advanced-server : wasip3 ;
 webcpp.drive advanced-server-flex : ../../../example/applications/wasip3/advanced/server-flex/advanced_server_flex.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -26,6 +28,7 @@ webcpp.drive advanced-server-flex : ../../../example/applications/wasip3/advance
   : ../driver.py : advanced-server-flex : wasip3 ;
 webcpp.drive advanced-server-flex-awaitable : ../../../example/applications/wasip3/advanced/server-flex-awaitable/advanced_server_flex_awaitable.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -33,6 +36,7 @@ webcpp.drive advanced-server-flex-awaitable : ../../../example/applications/wasi
   : ../driver.py : advanced-server-flex-awaitable : wasip3 ;
 webcpp.drive doc-ssl-client : ../../../example/applications/wasip3/doc/ssl/client.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -40,6 +44,7 @@ webcpp.drive doc-ssl-client : ../../../example/applications/wasip3/doc/ssl/clien
   : ../driver.py : doc-ssl-client : wasip3 ;
 webcpp.drive doc-ssl-server : ../../../example/applications/wasip3/doc/ssl/server.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -47,6 +52,7 @@ webcpp.drive doc-ssl-server : ../../../example/applications/wasip3/doc/ssl/serve
   : ../driver.py : doc-ssl-server : wasip3 ;
 webcpp.drive echo-op : ../../../example/applications/wasip3/echo-op/echo_op.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -54,6 +60,7 @@ webcpp.drive echo-op : ../../../example/applications/wasip3/echo-op/echo_op.cpp
   : ../driver.py : echo-op : wasip3 ;
 webcpp.drive http-client-async : ../../../example/applications/wasip3/http/client/async/http_client_async.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -61,6 +68,7 @@ webcpp.drive http-client-async : ../../../example/applications/wasip3/http/clien
   : ../driver.py : http-client-async : wasip3 ;
 webcpp.drive http-client-async-ssl : ../../../example/applications/wasip3/http/client/async-ssl/http_client_async_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -68,6 +76,7 @@ webcpp.drive http-client-async-ssl : ../../../example/applications/wasip3/http/c
   : ../driver.py : http-client-async-ssl : wasip3 ;
 webcpp.drive http-client-async-ssl-system-executor : ../../../example/applications/wasip3/http/client/async-ssl-system-executor/http_client_async_ssl_system_executor.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -75,6 +84,7 @@ webcpp.drive http-client-async-ssl-system-executor : ../../../example/applicatio
   : ../driver.py : http-client-async-ssl-system-executor : wasip3 ;
 webcpp.drive http-client-awaitable : ../../../example/applications/wasip3/http/client/awaitable/http_client_awaitable.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -82,6 +92,7 @@ webcpp.drive http-client-awaitable : ../../../example/applications/wasip3/http/c
   : ../driver.py : http-client-awaitable : wasip3 ;
 webcpp.drive http-client-awaitable-ssl : ../../../example/applications/wasip3/http/client/awaitable-ssl/http_client_awaitable_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -89,6 +100,7 @@ webcpp.drive http-client-awaitable-ssl : ../../../example/applications/wasip3/ht
   : ../driver.py : http-client-awaitable-ssl : wasip3 ;
 webcpp.drive json_client : ../../../example/applications/wasip3/http/client/body/json_client.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -96,6 +108,7 @@ webcpp.drive json_client : ../../../example/applications/wasip3/http/client/body
   : ../driver.py : json_client : wasip3 ;
 webcpp.drive http-crawl : ../../../example/applications/wasip3/http/client/crawl/http_crawl.cpp ../../../example/applications/wasip3/http/client/crawl/urls_large_data.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -103,6 +116,7 @@ webcpp.drive http-crawl : ../../../example/applications/wasip3/http/client/crawl
   : ../driver.py : http-crawl : wasip3 ;
 webcpp.drive http-client-methods : ../../../example/applications/wasip3/http/client/methods/http_client_methods.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -110,6 +124,7 @@ webcpp.drive http-client-methods : ../../../example/applications/wasip3/http/cli
   : ../driver.py : http-client-methods : wasip3 ;
 webcpp.drive http-client-sync : ../../../example/applications/wasip3/http/client/sync/http_client_sync.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -117,6 +132,7 @@ webcpp.drive http-client-sync : ../../../example/applications/wasip3/http/client
   : ../driver.py : http-client-sync : wasip3 ;
 webcpp.drive http-client-sync-ssl : ../../../example/applications/wasip3/http/client/sync-ssl/http_client_sync_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -124,6 +140,7 @@ webcpp.drive http-client-sync-ssl : ../../../example/applications/wasip3/http/cl
   : ../driver.py : http-client-sync-ssl : wasip3 ;
 webcpp.drive http-server-async : ../../../example/applications/wasip3/http/server/async/http_server_async.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -131,6 +148,7 @@ webcpp.drive http-server-async : ../../../example/applications/wasip3/http/serve
   : ../driver.py : http-server-async : wasip3 ;
 webcpp.drive http-server-async-ssl : ../../../example/applications/wasip3/http/server/async-ssl/http_server_async_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -138,6 +156,7 @@ webcpp.drive http-server-async-ssl : ../../../example/applications/wasip3/http/s
   : ../driver.py : http-server-async-ssl : wasip3 ;
 webcpp.drive http-server-awaitable : ../../../example/applications/wasip3/http/server/awaitable/http_server_awaitable.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -145,6 +164,7 @@ webcpp.drive http-server-awaitable : ../../../example/applications/wasip3/http/s
   : ../driver.py : http-server-awaitable : wasip3 ;
 webcpp.drive http-server-fast : ../../../example/applications/wasip3/http/server/fast/http_server_fast.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -152,6 +172,7 @@ webcpp.drive http-server-fast : ../../../example/applications/wasip3/http/server
   : ../driver.py : http-server-fast : wasip3 ;
 webcpp.drive http-server-flex : ../../../example/applications/wasip3/http/server/flex/http_server_flex.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -159,6 +180,7 @@ webcpp.drive http-server-flex : ../../../example/applications/wasip3/http/server
   : ../driver.py : http-server-flex : wasip3 ;
 webcpp.drive http-server-small : ../../../example/applications/wasip3/http/server/small/http_server_small.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -166,6 +188,7 @@ webcpp.drive http-server-small : ../../../example/applications/wasip3/http/serve
   : ../driver.py : http-server-small : wasip3 ;
 webcpp.drive http-server-stackless : ../../../example/applications/wasip3/http/server/stackless/http_server_stackless.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -173,6 +196,7 @@ webcpp.drive http-server-stackless : ../../../example/applications/wasip3/http/s
   : ../driver.py : http-server-stackless : wasip3 ;
 webcpp.drive http-server-stackless-ssl : ../../../example/applications/wasip3/http/server/stackless-ssl/http_server_stackless_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -180,6 +204,7 @@ webcpp.drive http-server-stackless-ssl : ../../../example/applications/wasip3/ht
   : ../driver.py : http-server-stackless-ssl : wasip3 ;
 webcpp.drive http-server-sync : ../../../example/applications/wasip3/http/server/sync/http_server_sync.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -187,6 +212,7 @@ webcpp.drive http-server-sync : ../../../example/applications/wasip3/http/server
   : ../driver.py : http-server-sync : wasip3 ;
 webcpp.drive http-server-sync-ssl : ../../../example/applications/wasip3/http/server/sync-ssl/http_server_sync_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -194,6 +220,7 @@ webcpp.drive http-server-sync-ssl : ../../../example/applications/wasip3/http/se
   : ../driver.py : http-server-sync-ssl : wasip3 ;
 webcpp.drive websocket-client-async : ../../../example/applications/wasip3/websocket/client/async/websocket_client_async.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -201,6 +228,7 @@ webcpp.drive websocket-client-async : ../../../example/applications/wasip3/webso
   : ../driver.py : websocket-client-async : wasip3 ;
 webcpp.drive websocket-client-async-ssl : ../../../example/applications/wasip3/websocket/client/async-ssl/websocket_client_async_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -208,6 +236,7 @@ webcpp.drive websocket-client-async-ssl : ../../../example/applications/wasip3/w
   : ../driver.py : websocket-client-async-ssl : wasip3 ;
 webcpp.drive websocket-client-async-ssl-system-executor : ../../../example/applications/wasip3/websocket/client/async-ssl-system-executor/websocket_client_async_ssl_system_executor.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -215,6 +244,7 @@ webcpp.drive websocket-client-async-ssl-system-executor : ../../../example/appli
   : ../driver.py : websocket-client-async-ssl-system-executor : wasip3 ;
 webcpp.drive websocket-client-awaitable : ../../../example/applications/wasip3/websocket/client/awaitable/websocket_client_awaitable.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -222,6 +252,7 @@ webcpp.drive websocket-client-awaitable : ../../../example/applications/wasip3/w
   : ../driver.py : websocket-client-awaitable : wasip3 ;
 webcpp.drive websocket-client-sync : ../../../example/applications/wasip3/websocket/client/sync/websocket_client_sync.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -229,6 +260,7 @@ webcpp.drive websocket-client-sync : ../../../example/applications/wasip3/websoc
   : ../driver.py : websocket-client-sync : wasip3 ;
 webcpp.drive websocket-client-sync-ssl : ../../../example/applications/wasip3/websocket/client/sync-ssl/websocket_client_sync_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -236,6 +268,7 @@ webcpp.drive websocket-client-sync-ssl : ../../../example/applications/wasip3/we
   : ../driver.py : websocket-client-sync-ssl : wasip3 ;
 webcpp.drive websocket-server-async : ../../../example/applications/wasip3/websocket/server/async/websocket_server_async.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -243,6 +276,7 @@ webcpp.drive websocket-server-async : ../../../example/applications/wasip3/webso
   : ../driver.py : websocket-server-async : wasip3 ;
 webcpp.drive websocket-server-async-ssl : ../../../example/applications/wasip3/websocket/server/async-ssl/websocket_server_async_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -250,6 +284,7 @@ webcpp.drive websocket-server-async-ssl : ../../../example/applications/wasip3/w
   : ../driver.py : websocket-server-async-ssl : wasip3 ;
 webcpp.drive websocket-server-awaitable : ../../../example/applications/wasip3/websocket/server/awaitable/websocket_server_awaitable.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -257,6 +292,7 @@ webcpp.drive websocket-server-awaitable : ../../../example/applications/wasip3/w
   : ../driver.py : websocket-server-awaitable : wasip3 ;
 webcpp.drive websocket-chat-multi : ../../../example/applications/wasip3/websocket/server/chat-multi/http_session.cpp ../../../example/applications/wasip3/websocket/server/chat-multi/listener.cpp ../../../example/applications/wasip3/websocket/server/chat-multi/main.cpp ../../../example/applications/wasip3/websocket/server/chat-multi/shared_state.cpp ../../../example/applications/wasip3/websocket/server/chat-multi/websocket_session.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -264,6 +300,7 @@ webcpp.drive websocket-chat-multi : ../../../example/applications/wasip3/websock
   : ../driver.py : websocket-chat-multi : wasip3 ;
 webcpp.drive websocket-server-stackless : ../../../example/applications/wasip3/websocket/server/stackless/websocket_server_stackless.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -271,6 +308,7 @@ webcpp.drive websocket-server-stackless : ../../../example/applications/wasip3/w
   : ../driver.py : websocket-server-stackless : wasip3 ;
 webcpp.drive websocket-server-stackless-ssl : ../../../example/applications/wasip3/websocket/server/stackless-ssl/websocket_server_stackless_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -278,6 +316,7 @@ webcpp.drive websocket-server-stackless-ssl : ../../../example/applications/wasi
   : ../driver.py : websocket-server-stackless-ssl : wasip3 ;
 webcpp.drive websocket-server-sync : ../../../example/applications/wasip3/websocket/server/sync/websocket_server_sync.cpp
   : <library>/webcpp/beast//sockets <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -285,6 +324,7 @@ webcpp.drive websocket-server-sync : ../../../example/applications/wasip3/websoc
   : ../driver.py : websocket-server-sync : wasip3 ;
 webcpp.drive websocket-server-sync-ssl : ../../../example/applications/wasip3/websocket/server/sync-ssl/websocket_server_sync_ssl.cpp
   : <library>/webcpp/beast//tls <exception-handling>on
+    <webcpp-drive-timeout>90
     <include>../../../example/applications/wasip3
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1

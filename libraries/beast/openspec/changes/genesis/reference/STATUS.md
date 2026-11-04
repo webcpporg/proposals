@@ -7,10 +7,10 @@ integration commits. The original 53-application inventory remains in scope.
 ## Current committed snapshot
 
 - Repository: [webcpporg/beast](https://github.com/webcpporg/beast).
-- Published commit: `2fbe865883f43ddcbe95232507f4be9b3f125023`.
+- Published commit: `31af69150d61776e7699cb89125f79d103e11ac8`.
 - `source/` is an exact `git archive` of that commit: 774 tracked files, with
   every Git blob identity and executable mode checked against the commit.
-- Published superproject candidate: `d473d654f53e5dcde5446d22d0016bd977303d8b`.
+- Published superproject candidate: `44a2ee02a4adf70112270ddb4b3fe5f5cbe93176`.
 - [Superproject pull request 7](https://github.com/webcpporg/webcpp/pull/7) carries
   the completed Asio capabilities. Windows/WASI driven-test fixes are committed
   locally; generated-header preparation passed its local regressions. Native
@@ -65,6 +65,41 @@ Pyright passed over all 135 repository Python sources. The final candidate still
 requires a new complete remote lint and CI verdict. Full local documentation,
 the site with 21 pages and 11 libraries, and the prepared 0.1.0 release check
 passed. No release tag or main integration is claimed.
+
+## Current CI follow-up, 2026-11-04
+
+The corrected parent candidate is being validated by
+[CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144).
+No green verdict or merge is claimed for that candidate yet.
+
+Root run [41793433211](https://github.com/webcpporg/webcpp/actions/runs/41793433211)
+found a stale OpenSSL header-stage test assertion and a missing libdatachannel
+header variant during lint. Both corrections passed their focused tests and independent review. The header
+preparation also isolates the full-build OpenSSL proof and MSVC PDB dependencies.
+Complete remote checks must pass on the new candidate.
+Its downloaded XML reports also found two WASIp3 flex-awaitable server failures:
+cold Wasmtime compilation consumed the listener readiness allowance. A real Linux
+component reproduced the timeout under a constrained CPU budget; that experimental
+budget is not asserted to be the historical runner's quota.
+
+Beast commit `31af691` separates compilation into a bounded 60-second phase, then
+retains the 15-second guest readiness and five-second protocol deadlines. Only the
+artifact created in the current private temporary directory is loaded, with the
+same engine features and epoch instrumentation for compilation and execution.
+Fresh B2 runs passed eight targets across cooperative WASIp3, ordinary WASIp3 and
+native control lanes; the actual Linux component passed under the same constrained
+CPU budget. Driver regressions, inventory checks, focused lint, documentation and
+independent review passed. This fixes the test harness without changing application
+or library code. Complete remote CI on the integrated candidate remains required.
+
+The final report of all 78 downloaded lanes identified eight failed executions:
+the two Beast cases above, four Windows TLS-driver argument failures and two
+Trystero allocation-test failures. The Windows driver now quotes its diagnostic
+label for cmd.exe. Trystero checks queued payload allocation by address instead
+of mistaking a deque map allocation for a frame. These corrections passed focused
+regressions and independent reviews. Root `44a2ee0` includes all corrections and
+passed the prepared release check and Pyright over all 136 repository Python files.
+A new full remote run must validate this exact candidate before integration.
 
 ## Earlier WASIp2 follow-up, 2026-11-03
 

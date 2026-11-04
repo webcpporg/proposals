@@ -205,5 +205,91 @@ class ClientBudgetTest(unittest.TestCase):
             self.run_client("import sys; sys.stderr.write('deliberate failure'); sys.exit(7)")
 
 
+class ServerCompilationTest(unittest.TestCase):
+    def run_server(self, compile_delay: float = 0, compiler_failure=False, stalled=False):
+        with tempfile.TemporaryDirectory(prefix="beast-server-compile-") as temporary:
+            directory = Path(temporary)
+            (directory / "index.html").write_bytes(driver.PAYLOAD)
+            executable = directory / "server.wasm"
+            executable.write_text(
+                "import http.server, socket, sys, threading\n"
+                "port = int(sys.argv[2])\n" +
+                ("peer = socket.socket()\n"
+                 "peer.bind(('127.0.0.1', port))\n"
+                 "peer.listen()\n"
+                 "connection, address = peer.accept()\n"
+                 "threading.Event().wait(30)\n" if stalled else
+                 "http.server.HTTPServer(('127.0.0.1', port), "
+                 "http.server.SimpleHTTPRequestHandler).serve_forever()\n"))
+            runtime = directory / "runtime.py"
+            # Model the compiler boundary, then execute an actual HTTP server.
+            # Compilation is intentionally slower than the readiness deadline.
+            runtime.write_text(
+                "import pathlib, runpy, shutil, sys, threading\n"
+                "arguments = sys.argv[1:]\n"
+                "if arguments[0] == 'compile':\n"
+                f"    threading.Event().wait({compile_delay!r})\n"
+                f"    if {compiler_failure!r}:\n"
+                "        print('deliberate compiler failure', file=sys.stderr)\n"
+                "        sys.exit(7)\n"
+                "    destination = arguments[arguments.index('-o') + 1]\n"
+                "    shutil.copyfile(arguments[-1], destination)\n"
+                "    sys.exit(0)\n"
+                "module = next(index for index, value in enumerate(arguments) "
+                "if value.endswith(('.wasm', '.cwasm')))\n"
+                "if arguments[module].endswith('.wasm'):\n"
+                f"    threading.Event().wait({compile_delay!r})\n"
+                "else:\n"
+                "    assert '--allow-precompiled' in arguments\n"
+                "pathlib.Path('guest-started').touch()\n"
+                "sys.argv = arguments[module:]\n"
+                "runpy.run_path(sys.argv[0], run_name='__main__')\n")
+            row = next(row for row in driver.inventory.load()["applications"]
+                       if row["id"] == "http-server-sync")
+            real_connect = driver.connect
+            real_popen = driver.subprocess.Popen
+
+            def runtime_popen(command, *args, **kwargs):
+                # Windows cannot execute a Python script through its shebang.
+                # Keep real child processes, changing only this fixture's launcher.
+                if command[0] == str(runtime):
+                    command = [sys.executable, *command]
+                return real_popen(command, *args, **kwargs)
+
+            def bounded_connect(port, path, context, deadline, process):
+                peer = real_connect(port, path, context, 0.75, process)
+                peer.settimeout(0.25)
+                return peer
+
+            output = io.StringIO()
+            started = time.monotonic()
+            with patch.dict(os.environ, {"WASMTIME": str(runtime)}), \
+                    patch.object(driver.subprocess, "Popen", runtime_popen), \
+                    patch.object(driver, "connect", bounded_connect), \
+                    contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                try:
+                    return driver.drive_server(row, executable, directory, os.environ.copy(), [])
+                except TimeoutError:
+                    if stalled:
+                        self.assertLess(time.monotonic() - started, 5)
+                    raise
+                except RuntimeError:
+                    self.assertFalse((directory / "guest-started").exists())
+                    raise
+
+    def test_compilation_does_not_consume_listener_readiness(self):
+        result = self.run_server(compile_delay=1.5)
+        self.assertEqual(result["exchanges"], [{"status": 200,
+                                              "body": "beast-application-fixture\n"}])
+
+    def test_compiler_failure_preserves_diagnostic_without_starting_guest(self):
+        with self.assertRaisesRegex(RuntimeError, "status 7.*deliberate compiler failure"):
+            self.run_server(compiler_failure=True)
+
+    def test_ready_listener_cannot_spend_unused_startup_budget(self):
+        with self.assertRaises(TimeoutError):
+            self.run_server(stalled=True)
+
+
 if __name__ == "__main__":
     unittest.main()

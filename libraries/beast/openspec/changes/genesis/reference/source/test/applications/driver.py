@@ -31,6 +31,33 @@ import inventory
 
 PAYLOAD = b"beast-application-fixture\n"
 WEBSOCKET_PAYLOAD = b"Beast fixture echo"
+WASMTIME_ENGINE_OPTIONS = ["-W", "component-model-async=y",
+                          "-W", "component-model-threading=y",
+                          "-W", "epoch-interruption=y"]
+
+
+def compile_application(runtime, executable, directory):
+    compiled = directory / f"{executable.stem}.cwasm"
+    if compiled.exists():
+        return compiled
+    command = [str(runtime), "compile", *WASMTIME_ENGINE_OPTIONS,
+               "-o", str(compiled), str(executable)]
+    started = time.monotonic()
+    try:
+        result = subprocess.run(command, cwd=directory, capture_output=True, timeout=60)
+    except subprocess.TimeoutExpired as error:
+        raise TimeoutError(
+            f"application compilation timed out after 60 seconds; command={command!r}; "
+            f"stdout={error.stdout!r}; stderr={error.stderr!r}") from error
+    print("application compilation: " + json.dumps({
+        "command": command, "seconds": time.monotonic() - started,
+        "budget_seconds": 60, "status": result.returncode,
+    }, sort_keys=True), file=sys.stderr)
+    if result.returncode:
+        raise RuntimeError(
+            f"application compilation failed: status {result.returncode}; "
+            f"command={command!r}; stdout={result.stdout!r}; stderr={result.stderr!r}")
+    return compiled
 
 
 def receive_exact(peer, count):
@@ -230,7 +257,7 @@ def tls_context(directory, server=False):
     return context
 
 
-def connect(port, path=None, context=None, deadline=5, process=None):
+def connect(port, path=None, context=None, deadline: float = 5, process=None):
     until = time.monotonic() + deadline
     while True:
         if process is not None and process.poll() is not None:
@@ -282,9 +309,13 @@ def application_command(executable, arguments, directory, environment):
     if executable.suffix != ".wasm":
         return command
     runtime = os.environ.get("WASMTIME", "wasmtime")
-    prefix = [str(runtime), "run", "-S", "p3", "-S", "inherit-network=y", "-S", "tcp=y",
-              "-S", "allow-ip-name-lookup=y", "-W", "component-model-async=y",
-              "-W", "component-model-threading=y", "-W", "timeout=15s",
+    # Compile once in this invocation's private fixture directory, before any
+    # guest startup/protocol clock. Only this locally produced artifact is trusted.
+    compiled = compile_application(runtime, executable, directory)
+    command = [str(compiled), *arguments]
+    prefix = [str(runtime), "run", "--allow-precompiled", *WASMTIME_ENGINE_OPTIONS,
+              "-S", "p3", "-S", "inherit-network=y", "-S", "tcp=y",
+              "-S", "allow-ip-name-lookup=y", "-W", "timeout=15s",
               "--dir", str(directory), "--dir", f"{directory}::."]
     for key, value in environment.items():
         if key.startswith("WEBCPP_BEAST_FIXTURE_"):
@@ -305,8 +336,8 @@ def drive_server(row, executable, directory, environment, command_prefix):
         executable, server_arguments(row, port, directory, path), directory, environment)
     process = subprocess.Popen(command, cwd=directory, env=environment,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # Wasmtime compiles the component before it can listen. Keep that startup
-    # allowance separate from each five-second protocol exchange.
+    # Compilation has finished. Bound guest startup independently of each
+    # five-second protocol exchange, even on a cold Wasmtime installation.
     startup_budget = 15 if executable.suffix == ".wasm" else 5
     startup_started = time.monotonic()
     result = []

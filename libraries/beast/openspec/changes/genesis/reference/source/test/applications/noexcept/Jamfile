@@ -29,6 +29,7 @@ webcpp.drive threaded-advanced-server : ../../../example/applications/noexcept-n
 webcpp.drive single-advanced-server : ../../../example/applications/noexcept-single/advanced/server/advanced_server.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -37,6 +38,7 @@ webcpp.drive single-advanced-server : ../../../example/applications/noexcept-sin
 webcpp.drive cooperative-advanced-server : ../../../example/applications/noexcept-single/advanced/server/advanced_server.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -61,6 +63,7 @@ webcpp.drive threaded-advanced-server-flex : ../../../example/applications/noexc
 webcpp.drive single-advanced-server-flex : ../../../example/applications/noexcept-single/advanced/server-flex/advanced_server_flex.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -69,6 +72,7 @@ webcpp.drive single-advanced-server-flex : ../../../example/applications/noexcep
 webcpp.drive cooperative-advanced-server-flex : ../../../example/applications/noexcept-single/advanced/server-flex/advanced_server_flex.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -93,6 +97,7 @@ webcpp.drive threaded-advanced-server-flex-awaitable : ../../../example/applicat
 webcpp.drive single-advanced-server-flex-awaitable : ../../../example/applications/noexcept-single/advanced/server-flex-awaitable/advanced_server_flex_awaitable.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -101,6 +106,7 @@ webcpp.drive single-advanced-server-flex-awaitable : ../../../example/applicatio
 webcpp.drive cooperative-advanced-server-flex-awaitable : ../../../example/applications/noexcept-single/advanced/server-flex-awaitable/advanced_server_flex_awaitable.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -125,6 +131,7 @@ webcpp.drive threaded-doc-ssl-client : ../../../example/applications/noexcept-na
 webcpp.drive single-doc-ssl-client : ../../../example/applications/noexcept-single/doc/ssl/client.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -133,6 +140,7 @@ webcpp.drive single-doc-ssl-client : ../../../example/applications/noexcept-sing
 webcpp.drive cooperative-doc-ssl-client : ../../../example/applications/noexcept-single/doc/ssl/client.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -157,6 +165,7 @@ webcpp.drive threaded-doc-ssl-server : ../../../example/applications/noexcept-na
 webcpp.drive single-doc-ssl-server : ../../../example/applications/noexcept-single/doc/ssl/server.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -165,6 +174,7 @@ webcpp.drive single-doc-ssl-server : ../../../example/applications/noexcept-sing
 webcpp.drive cooperative-doc-ssl-server : ../../../example/applications/noexcept-single/doc/ssl/server.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -189,6 +199,7 @@ webcpp.drive threaded-echo-op : ../../../example/applications/noexcept-native/ec
 webcpp.drive single-echo-op : ../../../example/applications/noexcept-single/echo-op/echo_op.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -197,6 +208,7 @@ webcpp.drive single-echo-op : ../../../example/applications/noexcept-single/echo
 webcpp.drive cooperative-echo-op : ../../../example/applications/noexcept-single/echo-op/echo_op.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -221,6 +233,7 @@ webcpp.drive threaded-http-client-async : ../../../example/applications/noexcept
 webcpp.drive single-http-client-async : ../../../example/applications/noexcept-single/http/client/async/http_client_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -229,6 +242,7 @@ webcpp.drive single-http-client-async : ../../../example/applications/noexcept-s
 webcpp.drive cooperative-http-client-async : ../../../example/applications/noexcept-single/http/client/async/http_client_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -277,6 +291,7 @@ webcpp.drive threaded-http-client-async-ssl : ../../../example/applications/noex
 webcpp.drive single-http-client-async-ssl : ../../../example/applications/noexcept-single/http/client/async-ssl/http_client_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -285,6 +300,7 @@ webcpp.drive single-http-client-async-ssl : ../../../example/applications/noexce
 webcpp.drive cooperative-http-client-async-ssl : ../../../example/applications/noexcept-single/http/client/async-ssl/http_client_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -309,6 +325,7 @@ webcpp.drive threaded-http-client-async-ssl-system-executor : ../../../example/a
 webcpp.drive single-http-client-async-ssl-system-executor : ../../../example/applications/noexcept-single/http/client/async-ssl-system-executor/http_client_async_ssl_system_executor.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -317,6 +334,7 @@ webcpp.drive single-http-client-async-ssl-system-executor : ../../../example/app
 webcpp.drive cooperative-http-client-async-ssl-system-executor : ../../../example/applications/noexcept-single/http/client/async-ssl-system-executor/http_client_async_ssl_system_executor.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -341,6 +359,7 @@ webcpp.drive threaded-http-client-awaitable : ../../../example/applications/noex
 webcpp.drive single-http-client-awaitable : ../../../example/applications/noexcept-single/http/client/awaitable/http_client_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -349,6 +368,7 @@ webcpp.drive single-http-client-awaitable : ../../../example/applications/noexce
 webcpp.drive cooperative-http-client-awaitable : ../../../example/applications/noexcept-single/http/client/awaitable/http_client_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -373,6 +393,7 @@ webcpp.drive threaded-http-client-awaitable-ssl : ../../../example/applications/
 webcpp.drive single-http-client-awaitable-ssl : ../../../example/applications/noexcept-single/http/client/awaitable-ssl/http_client_awaitable_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -381,6 +402,7 @@ webcpp.drive single-http-client-awaitable-ssl : ../../../example/applications/no
 webcpp.drive cooperative-http-client-awaitable-ssl : ../../../example/applications/noexcept-single/http/client/awaitable-ssl/http_client_awaitable_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -405,6 +427,7 @@ webcpp.drive threaded-json_client : ../../../example/applications/noexcept-nativ
 webcpp.drive single-json_client : ../../../example/applications/noexcept-single/http/client/body/json_client.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -413,6 +436,7 @@ webcpp.drive single-json_client : ../../../example/applications/noexcept-single/
 webcpp.drive cooperative-json_client : ../../../example/applications/noexcept-single/http/client/body/json_client.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -453,6 +477,7 @@ webcpp.drive threaded-http-crawl : ../../../example/applications/noexcept-native
 webcpp.drive single-http-crawl : ../../../example/applications/noexcept-single/http/client/crawl/http_crawl.cpp ../../../example/applications/noexcept-single/http/client/crawl/urls_large_data.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -461,6 +486,7 @@ webcpp.drive single-http-crawl : ../../../example/applications/noexcept-single/h
 webcpp.drive cooperative-http-crawl : ../../../example/applications/noexcept-single/http/client/crawl/http_crawl.cpp ../../../example/applications/noexcept-single/http/client/crawl/urls_large_data.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -485,6 +511,7 @@ webcpp.drive threaded-http-client-methods : ../../../example/applications/noexce
 webcpp.drive single-http-client-methods : ../../../example/applications/noexcept-single/http/client/methods/http_client_methods.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -493,6 +520,7 @@ webcpp.drive single-http-client-methods : ../../../example/applications/noexcept
 webcpp.drive cooperative-http-client-methods : ../../../example/applications/noexcept-single/http/client/methods/http_client_methods.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -517,6 +545,7 @@ webcpp.drive threaded-http-client-sync : ../../../example/applications/noexcept-
 webcpp.drive single-http-client-sync : ../../../example/applications/noexcept-single/http/client/sync/http_client_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -525,6 +554,7 @@ webcpp.drive single-http-client-sync : ../../../example/applications/noexcept-si
 webcpp.drive cooperative-http-client-sync : ../../../example/applications/noexcept-single/http/client/sync/http_client_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -549,6 +579,7 @@ webcpp.drive threaded-http-client-sync-ssl : ../../../example/applications/noexc
 webcpp.drive single-http-client-sync-ssl : ../../../example/applications/noexcept-single/http/client/sync-ssl/http_client_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -557,6 +588,7 @@ webcpp.drive single-http-client-sync-ssl : ../../../example/applications/noexcep
 webcpp.drive cooperative-http-client-sync-ssl : ../../../example/applications/noexcept-single/http/client/sync-ssl/http_client_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -581,6 +613,7 @@ webcpp.drive threaded-http-server-async : ../../../example/applications/noexcept
 webcpp.drive single-http-server-async : ../../../example/applications/noexcept-single/http/server/async/http_server_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -589,6 +622,7 @@ webcpp.drive single-http-server-async : ../../../example/applications/noexcept-s
 webcpp.drive cooperative-http-server-async : ../../../example/applications/noexcept-single/http/server/async/http_server_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -637,6 +671,7 @@ webcpp.drive threaded-http-server-async-ssl : ../../../example/applications/noex
 webcpp.drive single-http-server-async-ssl : ../../../example/applications/noexcept-single/http/server/async-ssl/http_server_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -645,6 +680,7 @@ webcpp.drive single-http-server-async-ssl : ../../../example/applications/noexce
 webcpp.drive cooperative-http-server-async-ssl : ../../../example/applications/noexcept-single/http/server/async-ssl/http_server_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -669,6 +705,7 @@ webcpp.drive threaded-http-server-awaitable : ../../../example/applications/noex
 webcpp.drive single-http-server-awaitable : ../../../example/applications/noexcept-single/http/server/awaitable/http_server_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -677,6 +714,7 @@ webcpp.drive single-http-server-awaitable : ../../../example/applications/noexce
 webcpp.drive cooperative-http-server-awaitable : ../../../example/applications/noexcept-single/http/server/awaitable/http_server_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -717,6 +755,7 @@ webcpp.drive threaded-http-server-fast : ../../../example/applications/noexcept-
 webcpp.drive single-http-server-fast : ../../../example/applications/noexcept-single/http/server/fast/http_server_fast.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -725,6 +764,7 @@ webcpp.drive single-http-server-fast : ../../../example/applications/noexcept-si
 webcpp.drive cooperative-http-server-fast : ../../../example/applications/noexcept-single/http/server/fast/http_server_fast.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -749,6 +789,7 @@ webcpp.drive threaded-http-server-flex : ../../../example/applications/noexcept-
 webcpp.drive single-http-server-flex : ../../../example/applications/noexcept-single/http/server/flex/http_server_flex.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -757,6 +798,7 @@ webcpp.drive single-http-server-flex : ../../../example/applications/noexcept-si
 webcpp.drive cooperative-http-server-flex : ../../../example/applications/noexcept-single/http/server/flex/http_server_flex.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -781,6 +823,7 @@ webcpp.drive threaded-http-server-small : ../../../example/applications/noexcept
 webcpp.drive single-http-server-small : ../../../example/applications/noexcept-single/http/server/small/http_server_small.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -789,6 +832,7 @@ webcpp.drive single-http-server-small : ../../../example/applications/noexcept-s
 webcpp.drive cooperative-http-server-small : ../../../example/applications/noexcept-single/http/server/small/http_server_small.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -813,6 +857,7 @@ webcpp.drive threaded-http-server-stackless : ../../../example/applications/noex
 webcpp.drive single-http-server-stackless : ../../../example/applications/noexcept-single/http/server/stackless/http_server_stackless.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -821,6 +866,7 @@ webcpp.drive single-http-server-stackless : ../../../example/applications/noexce
 webcpp.drive cooperative-http-server-stackless : ../../../example/applications/noexcept-single/http/server/stackless/http_server_stackless.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -845,6 +891,7 @@ webcpp.drive threaded-http-server-stackless-ssl : ../../../example/applications/
 webcpp.drive single-http-server-stackless-ssl : ../../../example/applications/noexcept-single/http/server/stackless-ssl/http_server_stackless_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -853,6 +900,7 @@ webcpp.drive single-http-server-stackless-ssl : ../../../example/applications/no
 webcpp.drive cooperative-http-server-stackless-ssl : ../../../example/applications/noexcept-single/http/server/stackless-ssl/http_server_stackless_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -877,6 +925,7 @@ webcpp.drive threaded-http-server-sync : ../../../example/applications/noexcept-
 webcpp.drive single-http-server-sync : ../../../example/applications/noexcept-single/http/server/sync/http_server_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -885,6 +934,7 @@ webcpp.drive single-http-server-sync : ../../../example/applications/noexcept-si
 webcpp.drive cooperative-http-server-sync : ../../../example/applications/noexcept-single/http/server/sync/http_server_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -909,6 +959,7 @@ webcpp.drive threaded-http-server-sync-ssl : ../../../example/applications/noexc
 webcpp.drive single-http-server-sync-ssl : ../../../example/applications/noexcept-single/http/server/sync-ssl/http_server_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -917,6 +968,7 @@ webcpp.drive single-http-server-sync-ssl : ../../../example/applications/noexcep
 webcpp.drive cooperative-http-server-sync-ssl : ../../../example/applications/noexcept-single/http/server/sync-ssl/http_server_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -941,6 +993,7 @@ webcpp.drive threaded-websocket-client-async : ../../../example/applications/noe
 webcpp.drive single-websocket-client-async : ../../../example/applications/noexcept-single/websocket/client/async/websocket_client_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -949,6 +1002,7 @@ webcpp.drive single-websocket-client-async : ../../../example/applications/noexc
 webcpp.drive cooperative-websocket-client-async : ../../../example/applications/noexcept-single/websocket/client/async/websocket_client_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -997,6 +1051,7 @@ webcpp.drive threaded-websocket-client-async-ssl : ../../../example/applications
 webcpp.drive single-websocket-client-async-ssl : ../../../example/applications/noexcept-single/websocket/client/async-ssl/websocket_client_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1005,6 +1060,7 @@ webcpp.drive single-websocket-client-async-ssl : ../../../example/applications/n
 webcpp.drive cooperative-websocket-client-async-ssl : ../../../example/applications/noexcept-single/websocket/client/async-ssl/websocket_client_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1029,6 +1085,7 @@ webcpp.drive threaded-websocket-client-async-ssl-system-executor : ../../../exam
 webcpp.drive single-websocket-client-async-ssl-system-executor : ../../../example/applications/noexcept-single/websocket/client/async-ssl-system-executor/websocket_client_async_ssl_system_executor.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1037,6 +1094,7 @@ webcpp.drive single-websocket-client-async-ssl-system-executor : ../../../exampl
 webcpp.drive cooperative-websocket-client-async-ssl-system-executor : ../../../example/applications/noexcept-single/websocket/client/async-ssl-system-executor/websocket_client_async_ssl_system_executor.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1061,6 +1119,7 @@ webcpp.drive threaded-websocket-client-awaitable : ../../../example/applications
 webcpp.drive single-websocket-client-awaitable : ../../../example/applications/noexcept-single/websocket/client/awaitable/websocket_client_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1069,6 +1128,7 @@ webcpp.drive single-websocket-client-awaitable : ../../../example/applications/n
 webcpp.drive cooperative-websocket-client-awaitable : ../../../example/applications/noexcept-single/websocket/client/awaitable/websocket_client_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1109,6 +1169,7 @@ webcpp.drive threaded-websocket-client-sync : ../../../example/applications/noex
 webcpp.drive single-websocket-client-sync : ../../../example/applications/noexcept-single/websocket/client/sync/websocket_client_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1117,6 +1178,7 @@ webcpp.drive single-websocket-client-sync : ../../../example/applications/noexce
 webcpp.drive cooperative-websocket-client-sync : ../../../example/applications/noexcept-single/websocket/client/sync/websocket_client_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1141,6 +1203,7 @@ webcpp.drive threaded-websocket-client-sync-ssl : ../../../example/applications/
 webcpp.drive single-websocket-client-sync-ssl : ../../../example/applications/noexcept-single/websocket/client/sync-ssl/websocket_client_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1149,6 +1212,7 @@ webcpp.drive single-websocket-client-sync-ssl : ../../../example/applications/no
 webcpp.drive cooperative-websocket-client-sync-ssl : ../../../example/applications/noexcept-single/websocket/client/sync-ssl/websocket_client_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1173,6 +1237,7 @@ webcpp.drive threaded-websocket-server-async : ../../../example/applications/noe
 webcpp.drive single-websocket-server-async : ../../../example/applications/noexcept-single/websocket/server/async/websocket_server_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1181,6 +1246,7 @@ webcpp.drive single-websocket-server-async : ../../../example/applications/noexc
 webcpp.drive cooperative-websocket-server-async : ../../../example/applications/noexcept-single/websocket/server/async/websocket_server_async.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1229,6 +1295,7 @@ webcpp.drive threaded-websocket-server-async-ssl : ../../../example/applications
 webcpp.drive single-websocket-server-async-ssl : ../../../example/applications/noexcept-single/websocket/server/async-ssl/websocket_server_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1237,6 +1304,7 @@ webcpp.drive single-websocket-server-async-ssl : ../../../example/applications/n
 webcpp.drive cooperative-websocket-server-async-ssl : ../../../example/applications/noexcept-single/websocket/server/async-ssl/websocket_server_async_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1261,6 +1329,7 @@ webcpp.drive threaded-websocket-server-awaitable : ../../../example/applications
 webcpp.drive single-websocket-server-awaitable : ../../../example/applications/noexcept-single/websocket/server/awaitable/websocket_server_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1269,6 +1338,7 @@ webcpp.drive single-websocket-server-awaitable : ../../../example/applications/n
 webcpp.drive cooperative-websocket-server-awaitable : ../../../example/applications/noexcept-single/websocket/server/awaitable/websocket_server_awaitable.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1293,6 +1363,7 @@ webcpp.drive threaded-websocket-chat-multi : ../../../example/applications/noexc
 webcpp.drive single-websocket-chat-multi : ../../../example/applications/noexcept-single/websocket/server/chat-multi/http_session.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/listener.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/main.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/shared_state.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/websocket_session.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1301,6 +1372,7 @@ webcpp.drive single-websocket-chat-multi : ../../../example/applications/noexcep
 webcpp.drive cooperative-websocket-chat-multi : ../../../example/applications/noexcept-single/websocket/server/chat-multi/http_session.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/listener.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/main.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/shared_state.cpp ../../../example/applications/noexcept-single/websocket/server/chat-multi/websocket_session.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1349,6 +1421,7 @@ webcpp.drive threaded-websocket-server-stackless : ../../../example/applications
 webcpp.drive single-websocket-server-stackless : ../../../example/applications/noexcept-single/websocket/server/stackless/websocket_server_stackless.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1357,6 +1430,7 @@ webcpp.drive single-websocket-server-stackless : ../../../example/applications/n
 webcpp.drive cooperative-websocket-server-stackless : ../../../example/applications/noexcept-single/websocket/server/stackless/websocket_server_stackless.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1381,6 +1455,7 @@ webcpp.drive threaded-websocket-server-stackless-ssl : ../../../example/applicat
 webcpp.drive single-websocket-server-stackless-ssl : ../../../example/applications/noexcept-single/websocket/server/stackless-ssl/websocket_server_stackless_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1389,6 +1464,7 @@ webcpp.drive single-websocket-server-stackless-ssl : ../../../example/applicatio
 webcpp.drive cooperative-websocket-server-stackless-ssl : ../../../example/applications/noexcept-single/websocket/server/stackless-ssl/websocket_server_stackless_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1413,6 +1489,7 @@ webcpp.drive threaded-websocket-server-sync : ../../../example/applications/noex
 webcpp.drive single-websocket-server-sync : ../../../example/applications/noexcept-single/websocket/server/sync/websocket_server_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1421,6 +1498,7 @@ webcpp.drive single-websocket-server-sync : ../../../example/applications/noexce
 webcpp.drive cooperative-websocket-server-sync : ../../../example/applications/noexcept-single/websocket/server/sync/websocket_server_sync.cpp
   : <library>/webcpp/beast//sockets
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1445,6 +1523,7 @@ webcpp.drive threaded-websocket-server-sync-ssl : ../../../example/applications/
 webcpp.drive single-websocket-server-sync-ssl : ../../../example/applications/noexcept-single/websocket/server/sync-ssl/websocket_server_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>single
     <define>BOOST_ASIO_HAS_CO_AWAIT=1
@@ -1453,6 +1532,7 @@ webcpp.drive single-websocket-server-sync-ssl : ../../../example/applications/no
 webcpp.drive cooperative-websocket-server-sync-ssl : ../../../example/applications/noexcept-single/websocket/server/sync-ssl/websocket_server_sync_ssl.cpp
   : <library>/webcpp/beast//tls
     <exception-handling>off
+    <toolset>clang-wasip3:<webcpp-drive-timeout>90
     <include>../../../example/applications/noexcept-single
     <include>../../../example/applications <threading>multi
     <define>BOOST_ASIO_HAS_CO_AWAIT=1

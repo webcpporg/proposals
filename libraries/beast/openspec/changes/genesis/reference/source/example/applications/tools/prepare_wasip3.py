@@ -127,6 +127,7 @@ def generate(formatter):
         library = "tls" if row["tls"] else "sockets"
         lines.append(f"webcpp.drive {row['id']} : {sources}\n"
                      f"  : <library>/webcpp/beast//{library} <exception-handling>on\n"
+                     "    <webcpp-drive-timeout>90\n"
                      "    <include>../../../example/applications/wasip3\n"
                      "    <include>../../../example/applications <threading>single\n"
                      "    <define>BOOST_ASIO_HAS_CO_AWAIT=1\n"

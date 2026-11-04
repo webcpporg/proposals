@@ -4,7 +4,7 @@
 
 - Asio: `4199a45f0625ecb5a9319a5b9eb28dbd1e0a48a9`.
 - Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
-- Published superproject candidate: `d473d654f53e5dcde5446d22d0016bd977303d8b`.
+- Published superproject candidate: `44a2ee02a4adf70112270ddb4b3fe5f5cbe93176`.
 - `reference/source/`: 208 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, explicit browser pthread execution and
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
@@ -12,6 +12,22 @@
   P2 multiple threads and P3 cooperative exceptions remain SDK restrictions.
 - Publication gates: the published candidate needs green remote CI and integration;
   the earlier run `41597577370` passed for root `55a72c0` only.
+
+## Current CI follow-up, 2026-11-04
+
+The corrected parent candidate is being validated by
+[CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144).
+No green verdict or merge is claimed for that candidate yet.
+
+Parent run [41793433211](https://github.com/webcpporg/webcpp/actions/runs/41793433211)
+finished with failures. It found a stale OpenSSL header-stage test assertion, missing generated
+libdatachannel headers during lint and two Beast server readiness failures caused by
+cold runtime compilation. All identified groups now have focused passing checks and independent review,
+including the Windows driver quoting and portable Trystero allocation witness.
+The corrected parent is clean and passes the prepared release check and Pyright
+on all 136 repository Python files.
+Asio remains at the committed snapshot above. Complete parent CI and a new library
+workflow using the integrated parent main remain publication gates.
 
 ## Publication verification, 2026-11-03
 
