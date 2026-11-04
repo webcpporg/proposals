@@ -44,7 +44,7 @@ struct io_context_options {
  Boost.Asio's io_context, whose run family on emscripten suspends into the browser's event loop
  and yields to it after every turn of max_handlers_per_turn handlers.
 
- Natively and on WASIp3 it uses Boost's run family, and its options change nothing.
+ Natively and on WASIp2/P3 it uses Boost's run family, and its options change nothing.
  In a threaded browser build each context and its JavaScript bridge stay on their
  constructing thread. Other threads post through its executor; the run family
  rejects a runner on another thread. Multiple simultaneous runners of one browser

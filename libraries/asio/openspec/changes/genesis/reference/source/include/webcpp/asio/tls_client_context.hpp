@@ -76,7 +76,7 @@ inline boost::system::error_code make_error_code(tls_context_error value) noexce
 /**
  Creates a verifying TLS client context trusting only the supplied authorities.
 
- Native and WASIp3 contexts require TLS 1.2 or newer and enable peer verification.
+ Native and WASIp2/P3 contexts require TLS 1.2 or newer and enable peer verification.
  Input consists of one or more PEM CA certificates separated only by whitespace.
  The certificates are copied into an independent OpenSSL store; input need not
  outlive this call. No system or bundled roots are added. No context is returned

@@ -2,22 +2,39 @@
 
 ## Current committed snapshot
 
-- Asio: `4199a45f0625ecb5a9319a5b9eb28dbd1e0a48a9`.
-- Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
-- Published superproject candidate: `44a2ee02a4adf70112270ddb4b3fe5f5cbe93176`.
+- Asio: `db4f7fc6afc516fdef057614cc971cdc39484099`.
+- Integrated superproject: `80a48ff989bfa301917936af5945de0149bffa08`, with Asio
+  `4199a45f0625ecb5a9319a5b9eb28dbd1e0a48a9`.
+- Documentation follow-up candidate: superproject
+  `d994334102d138e2847b7e8463fb1c06a859bd42`, with the current Asio snapshot.
 - `reference/source/`: 208 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, explicit browser pthread execution and
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
   sequences, native P3 async DNS and central compile-time capability diagnostics.
   P2 multiple threads and P3 cooperative exceptions remain SDK restrictions.
-- Publication gates: the published candidate needs green remote CI and integration;
-  the earlier run `41597577370` passed for root `55a72c0` only.
+- Publication gates: the documentation follow-up, individual library integration
+  and main CI/site publication remain pending. The implementation candidate passed
+  complete remote CI and was integrated; the records below identify both commits.
 
 ## Current CI follow-up, 2026-11-04
 
-The corrected parent candidate is being validated by
-[CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144).
-No green verdict or merge is claimed for that candidate yet.
+The corrected implementation candidate `44a2ee0` passed
+[CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144):
+all tests and examples built in 78 lanes, all eight tool-test and lint shards,
+documentation and site checks passed. [Root PR 7](https://github.com/webcpporg/webcpp/pull/7)
+merged it as `80a48ff` on 2026-11-04. Its tree is identical to the tested tree.
+The new [main CI 41814889451](https://github.com/webcpporg/webcpp/actions/runs/41814889451)
+is responsible for the main record and site publication.
+
+A real-browser review of that CI's site artifact confirmed that the Asio and Beast
+pages render and Asio's capabilities link navigates to its table. It found stale P2 omissions in
+Asio target summaries. Asio `db4f7fc` corrects four guide fragments and two API
+comments, including the existing generated P2 test count. No executable code
+changed. A focused independent review and a fresh `b2 -a libs/asio/doc` passed,
+including MrDocs, source and rendered-page checks; the clean root release check
+also passed. [Asio CI 41817278691](https://github.com/webcpporg/asio/actions/runs/41817278691)
+tests this new candidate with the integrated parent main. The earlier manual
+Asio run `41815054019` is superseded by this candidate.
 
 Parent run [41793433211](https://github.com/webcpporg/webcpp/actions/runs/41793433211)
 finished with failures. It found a stale OpenSSL header-stage test assertion, missing generated
@@ -26,8 +43,10 @@ cold runtime compilation. All identified groups now have focused passing checks 
 including the Windows driver quoting and portable Trystero allocation witness.
 The corrected parent is clean and passes the prepared release check and Pyright
 on all 136 repository Python files.
-Asio remains at the committed snapshot above. Complete parent CI and a new library
-workflow using the integrated parent main remain publication gates.
+Individual library integration, the documentation follow-up checks and main site
+publication remain gates. GitHub reported an active incident affecting Git operations,
+pull requests and Actions during this follow-up; incomplete runs are not failures
+or passing evidence. No release tag or completed archive is claimed.
 
 ## Publication verification, 2026-11-03
 

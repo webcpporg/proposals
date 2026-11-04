@@ -95,7 +95,7 @@ include::{examples}/asio_resolver.expected[]
 
 === Explanation: TLS settings
 
-Native and WASIp3 `ssl` names are Boost's, with OpenSSL explicitly linked as described
+Native and WASIp2/P3 `ssl` names are Boost's, with OpenSSL explicitly linked as described
 in <<asio-tls>>. In the browser, `ssl::context` records method, verification,
 options, additional roots and client-credential requests. It does not read
 files, parse certificates, implement TLS or execute verification callbacks.

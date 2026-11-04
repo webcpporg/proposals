@@ -1,8 +1,8 @@
 # webcpp::beast: implementation status
 
 Updated 2026-11-04. The owner approved submission with status `proposed`, with
-no formal acceptance date, release or tag. Published source is followed by local
-integration commits. The original 53-application inventory remains in scope.
+no formal acceptance date, release or tag. The source is integrated in the
+superproject. The original 53-application inventory remains in scope.
 
 ## Current committed snapshot
 
@@ -10,14 +10,16 @@ integration commits. The original 53-application inventory remains in scope.
 - Published commit: `31af69150d61776e7699cb89125f79d103e11ac8`.
 - `source/` is an exact `git archive` of that commit: 774 tracked files, with
   every Git blob identity and executable mode checked against the commit.
-- Published superproject candidate: `44a2ee02a4adf70112270ddb4b3fe5f5cbe93176`.
-- [Superproject pull request 7](https://github.com/webcpporg/webcpp/pull/7) carries
-  the completed Asio capabilities. Windows/WASI driven-test fixes are committed
-  locally; generated-header preparation passed its local regressions. Native
-  Trystero interoperability passed all 29 scenarios. Final remote CI remains a gate.
-- Full CI [41597577370](https://github.com/webcpporg/webcpp/actions/runs/41597577370)
-  passed for root `55a72c056de1e6522e1fc6dbc3ee2b9ef3715327` only. It does not
-  establish a green result for the current local tree.
+- Integrated superproject: `80a48ff989bfa301917936af5945de0149bffa08`, merged by
+  [superproject PR 7](https://github.com/webcpporg/webcpp/pull/7).
+- Full [CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144)
+  passed for candidate `44a2ee02a4adf70112270ddb4b3fe5f5cbe93176`: every test and
+  example built in 78 lanes, tools, lint, documentation and site. The merge has
+  exactly the same tree. This does not change the 571/216/432 compatibility matrix.
+- Beast `main` now points at the published library commit and is the default branch.
+  Its first [main CI 41815132710](https://github.com/webcpporg/beast/actions/runs/41815132710)
+  and [root main CI 41814889451](https://github.com/webcpporg/webcpp/actions/runs/41814889451)
+  are in progress. The historical checkpoints below do not supersede this state.
 
 ## Publication checks, 2026-11-03
 
