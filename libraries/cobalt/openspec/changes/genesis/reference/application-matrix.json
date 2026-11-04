@@ -1,0 +1,4201 @@
+{
+  "schema_version": 1,
+  "phase": "proposal-planning",
+  "state_definition": "../design.md#d4-matrix-dimensions-and-evidence-states",
+  "evidence_scope": "No application builds or runs performed for this proposal",
+  "cells": [
+    {
+      "application": "channel",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "channel",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded producer/consumer page with actual channel operations; keep original finite case"
+    },
+    {
+      "application": "delay",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Validate input outside timed work; start/cancel and report actual timer result"
+    },
+    {
+      "application": "delay_op",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "delay_op",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Retain ready/initiate semantics; cover immediate and delayed completion/cancellation"
+    },
+    {
+      "application": "echo_server",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads",
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "echo_server",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled TCP peer and explicit shutdown; EH-off value-error counterpart; browser raw listener unavailable"
+    },
+    {
+      "application": "http",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "http",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled verified HTTPS peer; browser transport counterpart is separately identified"
+    },
+    {
+      "application": "outcome",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "outcome",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Keep the two real awaitables; UI repetition/progress is a bounded derivative"
+    },
+    {
+      "application": "python",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "python-nanobind-fixture-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "python-nanobind-fixture-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "python-nanobind-fixture-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "python-nanobind-fixture-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads",
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "python",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "matching-wasm-python-nanobind-runtime-not-provided",
+        "unchanged-python-script-module-name-mismatch"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve python.py baseline failure; separately patch the three references to the imported boost_cobalt_example_python name, pin optional native dependencies and validate the actual extension. No packaged Wasm Python runtime claimed.",
+      "known_source_defect_evidence": [
+        "python-script-check.json"
+      ]
+    },
+    {
+      "application": "signals",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "signals",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "UI event triggers real Signals2 operation; this is not POSIX signals"
+    },
+    {
+      "application": "spsc",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "spsc",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Bounded configurable workload, sequence checks, worker result storage and controlled stop"
+    },
+    {
+      "application": "thread",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads",
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Preserve request/response algorithms; EH-off value-error counterpart; worker UI handoff"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads",
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "explicit-worker-application-requires-multi-profile"
+      ],
+      "evidence": [],
+      "counterpart_status": "not-applicable",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "thread_pool",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Link core without runner; nonblocking browser host lifecycle; EH-off counterpart and task-move probe"
+    },
+    {
+      "application": "ticker",
+      "profile": "native-native-process-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "native-native-process-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "native-native-process-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "native-native-process-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-browser-chromium-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-single-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-single-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-single-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-single-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-multi-eh-on-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-jspi",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "emscripten-node-26.7.0-multi-eh-off-asyncify",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax",
+        "raw-browser-socket-semantics-unavailable-in-this-integration"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip2-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip2-wasmtime-50.0.1-multi-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-p2-pthreads",
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "implementation-missing",
+      "reasons": [
+        "independent-target-and-application-validation-not-implemented"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip3-wasmtime-50.0.1-single-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-on-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "sdk-runtime-blocked",
+      "reasons": [
+        "wasi-sdk-34.0-cooperative-eh"
+      ],
+      "evidence": [],
+      "counterpart_status": "sdk-runtime-blocked",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    },
+    {
+      "application": "ticker",
+      "profile": "wasip3-wasmtime-50.0.1-multi-cooperative-eh-off-not-applicable",
+      "source_form": "unchanged-upstream",
+      "status": "not-applicable",
+      "reasons": [
+        "unchanged-source-requires-exception-syntax"
+      ],
+      "evidence": [],
+      "counterpart_status": "implementation-missing",
+      "counterpart_scope": "Controlled market feed and server clients; full browser listener unavailable; client/routing counterpart separate"
+    }
+  ]
+}

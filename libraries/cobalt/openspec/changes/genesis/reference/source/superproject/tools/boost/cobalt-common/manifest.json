@@ -1,0 +1,17 @@
+{
+  "boost_version": 109200,
+  "files": {
+    "boost/cobalt/composition.hpp": {
+      "before": "4f89225430772cc39a82e37ec1b67069b342fa77423b3f6ad74edc3d8d1a77c5",
+      "after": "a4d22f4619cad58063473d0e86a31dfbbfd4856b57d59c22e1c18ec0ccfabe1b"
+    },
+    "boost/cobalt/detail/main.hpp": {
+      "before": "fbdcb0ca58d8a368b8e4ec680dc99bcdd6ce2a2c5375770e278dec1dec91afcb",
+      "after": "2a55b2e808068c0aaef80ab257f462ab9d61f7d3d59ef0ede23ed6b56046bdf5"
+    },
+    "boost/cobalt/detail/thread.hpp": {
+      "before": "e8dc12b4145c9903ac7f87dd50d87f4b3d742819ee653cdd84e84d92c3c8c37d",
+      "after": "670b2c403b2e75d70ade9dd95bfe34834ce49ea2c1f875559071fd6fd4a2812b"
+    }
+  }
+}

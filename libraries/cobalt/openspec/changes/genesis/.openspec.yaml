@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-04
+webcpp:
+  library: cobalt
+  title: "cobalt: existing Boost.Cobalt applications on native, browsers and WASIp2/P3"
+  kind: wrapper
+  port_of: null
+  status: proposed
+  release: null
+  implementation: https://github.com/webcpporg/cobalt
+  decided: null
