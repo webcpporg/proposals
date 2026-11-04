@@ -4,7 +4,7 @@
 
 - Asio: `4199a45f0625ecb5a9319a5b9eb28dbd1e0a48a9`.
 - Superproject implementation: `008a47b944c8175b2b00df2e410db87bd7b15e21`.
-- Superproject publication candidate: `52c1120778b28402c9b6fdf77f1def72eae6cbd3`.
+- Superproject publication candidate: `3d2a5d8eb833f837045d5bb8528ea3d0f3976e41`.
 - `reference/source/`: 208 tracked files, exported from the Asio commit above.
 - Scope: native/browser functionality, explicit browser pthread execution and
   main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
@@ -86,6 +86,32 @@ hit the sixty-minute limit; cold profiling found that header preparation also
 built OpenSSL archives and ran optional upstream tests. A separate generated-header
 action is being validated locally. Full consumers must retain their archive builds
 and upstream tests, and no final lint or CI result is claimed for that change yet.
+
+## Final report follow-up, 2026-11-04
+
+Root run 41686583077 finished with a failing consolidated report, two tools
+failures and five lint timeouts. Every lane artifact was inspected. The local
+candidate includes the earlier Windows/WASI corrections and two further fixes:
+
+- OpenSSL header generation has its own B2 action. Cold native header preparation
+  took 30 seconds; the former action spent 610 seconds building libraries and
+  running tests before failing a sandboxed bind. The corrected full cold database
+  preparation completed in 642 seconds. The old and new collectors produce
+  exactly the same 1,449 commands on the same snapshot, including their order.
+  Native upstream tests passed 347 files and 4,009 tests in each thread profile,
+  and verified the hashes of the archives consumed by the application. Fresh P2
+  and P3 entropy/TLS consumers passed their XML reports after the provider change.
+- The global P2 test launcher imposed a focused 60-second limit on large finite
+  document workloads. Five remote failures were runtime interrupts; four were
+  reproduced locally. P2 now follows P3's configurable finite 600-second default.
+  The five unchanged document programs passed fresh builds and their XML report.
+  Twelve launcher regressions passed, including real runtime completion and
+  interruption of an infinite loop on both targets.
+
+One native Trystero multiroom interop failure remains under investigation.
+Local follow-up commits have not yet been pushed. Final full lint, the new
+candidate's remote CI and main integration remain gates. These local results
+are not a green verdict for the published candidate.
 
 ## Capability completion, 2026-11-03
 

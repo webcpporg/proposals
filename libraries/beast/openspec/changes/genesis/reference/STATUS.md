@@ -1,6 +1,6 @@
 # webcpp::beast: implementation status
 
-Updated 2026-11-03. The owner approved submission with status `proposed`, with
+Updated 2026-11-04. The owner approved submission with status `proposed`, with
 no formal acceptance date, release or tag. Published source is followed by local
 integration commits. The original 53-application inventory remains in scope.
 
@@ -11,10 +11,11 @@ integration commits. The original 53-application inventory remains in scope.
 - `source/` is an exact `git archive` of that commit: 774 tracked files, with
   every Git blob identity and executable mode checked against the commit.
 - Published superproject candidate: `d7a6614516facca397a60e8c3192c3328ebcfc46`.
-- Local superproject follow-up: `52c1120778b28402c9b6fdf77f1def72eae6cbd3`, not yet pushed.
+- Local superproject follow-up: `3d2a5d8eb833f837045d5bb8528ea3d0f3976e41`, not yet pushed.
 - [Superproject pull request 7](https://github.com/webcpporg/webcpp/pull/7) carries
   the completed Asio capabilities. Windows/WASI driven-test fixes are committed
-  locally; generated-header preparation and final CI remain in progress.
+  locally; generated-header preparation passed its local regressions. Final CI
+  and a native Trystero interop correction remain in progress.
 - Full CI [41597577370](https://github.com/webcpporg/webcpp/actions/runs/41597577370)
   passed for root `55a72c056de1e6522e1fc6dbc3ee2b9ef3715327` only. It does not
   establish a green result for the current local tree.
@@ -36,13 +37,17 @@ library CI still selects the superproject's old main, which lacks the new P2
 build project. Current-candidate root CI and the post-integration library CI
 remain required. These failures are not passing validation evidence.
 
-The current root run is
+The completed root run
 [41686583077](https://github.com/webcpporg/webcpp/actions/runs/41686583077), on the
-published parent above. It found stale build fixtures, a Windows Asio test
-expectation, Windows runner portability failures, empty WASIp3 TLS fixture
-executables and lint timeouts. Local corrections are being validated; the
-partial passing XML reports do not establish a green final candidate. The Beast
-source export and 571/216/432 matrix remain unchanged.
+published parent above, failed. It found stale build fixtures, a Windows Asio
+test expectation, Windows runner portability failures, empty WASIp3 TLS fixture
+executables, lint timeouts, five global P2 workload interrupts and one native
+Trystero multiroom interop failure. Local corrections passed for every group
+except the Trystero failure, which remains under investigation. The provider
+split preserves exactly the same compilation database and passed native upstream
+and P2/P3 TLS tests. All five unchanged P2 document workloads passed with the
+corrected finite launcher budget. These results do not establish a green final
+candidate. The Beast source export and 571/216/432 matrix remain unchanged.
 
 ## Earlier WASIp2 follow-up, 2026-11-03
 
