@@ -1,9 +1,18 @@
 # Cobalt genesis status
 
-Updated 2026-11-04. Status is `proposed`, with `decided: null` and `release: null`.
-The proposal is prepared for review. It is not accepted, extracted, implemented or released.
-No production source was changed, repository created, CI started, or benchmark run as part
-of this proposal. All 26 implementation tasks remain unchecked.
+Updated 2026-11-06. Status is `implementing`, with `decided: 2026-11-06` and `release: null`.
+Rodrigo approved the proposal and requested execution in this session. Implementation has
+started with task 1.1's baseline in the existing isolated superproject checkout, on branch
+`work/cobalt-genesis`. The independent library is not yet extracted, implemented or released.
+All 26 implementation tasks remain unchecked until their evidence and work are committed.
+
+## Implementation authorization and baseline
+
+- Owner approval: "gostei, pode aprovar e executar", received on 2026-11-06.
+- Superproject starting commit: `d3a67959cbe52e6d972ef575be8870cc79da1312`.
+- Asio starting commit: `db4f7fc6afc516fdef057614cc971cdc39484099`, as pinned by the superproject.
+- Local execution record: `.superpowers/sdd/plan-reference/progress.md` in the superproject.
+- Historical exports below remain unchanged; fresh results will identify their actual inputs.
 
 ## Starting evidence
 
@@ -35,7 +44,7 @@ not an excuse to ban every no-EH or threaded application.
 
 | Tasks | State and next evidence |
 | --- | --- |
-| 1.1-1.3 | Not started: acceptance/implementation request, baseline commands, complete inventory check and versioned runtime probes |
+| 1.1-1.3 | In progress: owner approval recorded; collecting baseline commands before inventory and runtime probes |
 | 2.1-2.3 | Not started: independent target skeleton, extraction, compatibility aliases and graph/link isolation |
 | 3.1-3.3 | Not started: guards, runner/coroutine contracts and operation-specific EH evidence |
 | 4.1-4.3 | Not started: worker, Cobalt I/O and optional shared-provider TLS witnesses |
@@ -106,8 +115,8 @@ implementation. No product build, CI or performance result is implied.
 1. Read `../proposal.md`, `../design.md`, `../specs/cobalt/spec.md`, `applications.md`,
    `plan.md` and the current superproject rules. Keep the proposed defaults distinct from
    accepted decisions and read O1-O3 before choosing runtime fixtures or workload sizes.
-2. Wait for acceptance and an explicit implementation request. The next implementation
-   action is task 1.1's baseline, not editing the exported source or creating a repository.
+2. Acceptance and the implementation request were received on 2026-11-06. Resume at the
+   first incomplete task in the execution record; preserve the original source export.
 3. Verify the export hashes and rebase the baseline deliberately if implementation commits
    have changed. Record new provenance instead of silently carrying historical results.
 4. Complete tests-first extraction and validation in task order. The plan identifies files,

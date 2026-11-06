@@ -54,8 +54,9 @@ silently rewrite another root's specification or certify its implementation.
   superproject submodule `libs/cobalt`. No repository creation or extraction is performed by
   this proposal. `reference/source/` contains selected, unmodified upstream and existing
   integration files with per-file provenance, not a completed standalone library.
-- **Status:** `proposed`, ready for review; not accepted, implemented or released.
-  `decided` and `release` remain null. Every implementation task is unchecked.
+- **Status:** `implementing`. Rodrigo approved the proposal and requested execution on
+  2026-11-06. `decided` records that date; `release` remains null. Implementation tasks
+  are checked only after their work and verification are committed.
 - **Dependencies:** `webcpp::asio`, `webcpp::config`, matching Boost headers/sources and
   target toolchains. Optional TLS reuses the superproject provider. Application-only
   dependencies such as Beast, JSON, URL, Outcome and Python/nanobind are declared per example.
