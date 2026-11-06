@@ -5,7 +5,8 @@ Rodrigo approved the proposal and requested execution in this session. Implement
 started in the isolated superproject checkout on branch `work/cobalt-genesis`.
 The independent library has a local initial import at
 `b1310a886c3b21e04c4464350bcc34058e1d5709`. The full implementation is not complete or released.
-Tasks 1.1 and 1.2 are committed and checked; the remaining 24 tasks retain their final gates.
+Eight tasks are committed and checked: 1.1, 1.2, 4.1, 5.1, 5.4 and 6.1-6.3.
+The remaining 18 tasks retain their final gates.
 No remote publication or CI was performed for this implementation milestone.
 
 ## Implementation authorization and baseline
@@ -50,9 +51,12 @@ not an excuse to ban every no-EH or threaded application.
 | 1.3 | In progress: actual runtimes observed; complete feature/application result matrix pending |
 | 2.1-2.3 | In progress: canonical targets, runner, checked overlays, legacy aliases and migrated tests exist; coordinated Asio/root commits and combined-consumer closure pending |
 | 3.1-3.3 | In progress: configuration refusals, coroutine/composition/allocator/lifetime contracts, run(task) and bounded no-EH witnesses pass their current profiles; configured-budget and final matrix gates pending |
-| 4.1-4.3 | In progress: actual Chromium worker cancellation/handoff and native/P2/P3 TCP/UDP/DNS/TLS checks pass; descriptor coverage and combined-provider closure pending |
-| 5.1-5.4 | In progress: five unchanged portable examples passed 50 native/Node/WASI EH executions; their adaptations and the remaining seven applications are pending |
-| 6.1-6.3 | Not started: real C++ browser pages, runtime matrix and end-user/visual verification |
+| 4.1 | Complete: native S/M and P3 cooperative worker lifecycle; actual Chromium JSPI/Asyncify cancellation/handoff/join; separate raw Asyncify pthread-return limitation reproduced |
+| 4.2-4.3 | In progress: native/P2/P3 TCP/UDP/DNS/TLS checks pass; descriptor coverage and combined-provider closure pending |
+| 5.1 | Complete in `2180b8c`: five unchanged portable examples and finite counterparts passed native/Node/P2/P3 with EH on/off; values, immediate/pending paths and cancellation checked |
+| 5.2-5.3 | In progress: original native/Node thread and thread_pool results checked; adapted SPSC passed native/P3/Node/browser with a deterministic lost-wakeup control. Worker counterparts and network applications remain open |
+| 5.4 | Complete in `76aa165`: real CPython 3.14.7/nanobind 2.13.0 fixture; original NameError and generator/cancellation defects preserved; separately hashed binding/script counterpart passes six bounded value/error/cancel/lifetime checks. Wasm Python is not supplied or claimed |
+| 6.1-6.3 | Complete in `47a4552` and `78e32f0`: 12 actual Chromium tuples, shared compiled C++ sources, start/cancel/progress, duplicate/restart/stale-message/keyboard/unload checks, capability refusals and inspected wide/narrow captures. Exact module/source/asset hashes accompany observations |
 | 7.1-7.3 | Not started: Release workload/profile audit and raw size/performance/memory observations |
 | 8.1-8.2 | Not started: library guide/reference, ownership references, discovery and installation |
 | 9.1-9.2 | Not started: fresh complete candidate review, authorized CI and integration |

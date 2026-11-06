@@ -18,22 +18,22 @@
 
 ## 4. Threads, sockets and optional TLS
 
-- [ ] 4.1 Add Cobalt worker lifecycle, cross-thread handoff and cancellation witnesses; verify native B2 S and M, browser pthread tuples and P3 cooperative M-off independently, including versioned Asyncify return-value limits. (plan: 4.1)
+- [x] 4.1 Add Cobalt worker lifecycle, cross-thread handoff and cancellation witnesses; verify native B2 S and M, browser pthread tuples and P3 cooperative M-off independently, including versioned Asyncify return-value limits. (plan: 4.1)
 - [ ] 4.2 Exercise Cobalt TCP/UDP/DNS and optional files/pipes/descriptors through public targets; verify real peer traffic and cancellation on each feasible native/WASI profile while unsupported browser/host operations remain explicit. (plan: 4.2)
 - [ ] 4.3 Move Cobalt TLS witnesses to its ownership and retain shared fixture/provider utilities; verify TLS trust/hostname/state/cancel cases and one-provider combined consumers, with plain Cobalt staying TLS-free. (plan: 4.3)
 
 ## 5. Upstream application conformance
 
-- [ ] 5.1 Run unchanged channel, delay, delay_op, outcome and signals sources, then add explicit finite/UI adaptations; verify outputs, immediate/pending paths, cancellation and hashes for every feasible profile. (plan: 5.1)
+- [x] 5.1 Run unchanged channel, delay, delay_op, outcome and signals sources, then add explicit finite/UI adaptations; verify outputs, immediate/pending paths, cancellation and hashes for every feasible profile. (plan: 5.1)
 - [ ] 5.2 Run thread, thread_pool and spsc in both native B2 S/M and applicable Wasm worker profiles and create separate EH-off/browser lifecycle counterparts; verify worker execution, result ordering/checksums, pool join and cleanup, keeping B2 S distinct from thread-disabled execution and P3 cooperative execution distinct from CPU parallelism. (plan: 5.2)
 - [ ] 5.3 Run echo_server, http and ticker against controlled peers, classify every unavailable original cell, and implement feasible documented counterparts; verify protocol, partial I/O, failure and cancellation outcomes without relying on live external services. (plan: 5.3)
-- [ ] 5.4 Preserve the original python.py module-name failure, create a separately identified script correction and pin the optional native Python/nanobind fixture; verify the real corrected counterpart's generator/promise/error/cancel behavior and preserve explicit source defects and dependency blockers. (plan: 5.4)
+- [x] 5.4 Preserve the original python.py module-name failure, create a separately identified script correction and pin the optional native Python/nanobind fixture; verify the real corrected counterpart's generator/promise/error/cancel behavior and preserve explicit source defects and dependency blockers. (plan: 5.4)
 
 ## 6. Browser pages and E2E
 
-- [ ] 6.1 Build upstream-derived timer/custom-op, channel and Signals2 pages with real C++ start/cancel/progress/error state; verify actual browser JSPI/Asyncify, EH and S/M tuples and source-to-module identity. (plan: 6.1)
-- [ ] 6.2 Add Outcome and worker/SPSC demonstrations under feasible capabilities; verify missing-runtime diagnostics, actual worker handoff and bounded repeatable inputs rather than JavaScript substitutes. (plan: 6.2)
-- [ ] 6.3 Exercise keyboard/input validation, duplicate start, pending cancellation, completion races, restart, unload and stale events; inspect narrow/wide layouts and responsiveness and fix visible defects before recording browser evidence. (plan: 6.3)
+- [x] 6.1 Build upstream-derived timer/custom-op, channel and Signals2 pages with real C++ start/cancel/progress/error state; verify actual browser JSPI/Asyncify, EH and S/M tuples and source-to-module identity. (plan: 6.1)
+- [x] 6.2 Add Outcome and worker/SPSC demonstrations under feasible capabilities; verify missing-runtime diagnostics, actual worker handoff and bounded repeatable inputs rather than JavaScript substitutes. (plan: 6.2)
+- [x] 6.3 Exercise keyboard/input validation, duplicate start, pending cancellation, completion races, restart, unload and stale events; inspect narrow/wide layouts and responsiveness and fix visible defects before recording browser evidence. (plan: 6.3)
 
 ## 7. Release benchmark evidence
 
