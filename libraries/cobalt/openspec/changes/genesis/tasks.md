@@ -1,7 +1,7 @@
 ## 1. Acceptance, baseline and inventory
 
-- [ ] 1.1 After acceptance and an implementation request, freeze the working revisions and capture existing user-facing Cobalt build/run and dependency-graph baselines; verify old targets reproduce their documented behavior before edits. (plan: 1.1)
-- [ ] 1.2 Add a completeness/provenance check for every pinned example and benchmark source; verify all 12 examples, 5 benchmarks and 28 starting profiles are accounted for and that adding/removing a fixture source fails the check. (plan: 1.2)
+- [x] 1.1 After acceptance and an implementation request, freeze the working revisions and capture existing user-facing Cobalt build/run and dependency-graph baselines; verify old targets reproduce their documented behavior before edits. (plan: 1.1)
+- [x] 1.2 Add a completeness/provenance check for every pinned example and benchmark source; verify all 12 examples, 5 benchmarks and 28 starting profiles are accounted for and that adding/removing a fixture source fails the check. (plan: 1.2)
 - [ ] 1.3 Expand matrix rows to actual compiler/OS/browser/runtime lanes and reproduce each versioned SDK/runtime limitation; verify no blank or unsupported claim lacks a reason and no supported/tested cell lacks exact run evidence. (plan: 1.3)
 
 ## 2. Independent ownership and compatibility

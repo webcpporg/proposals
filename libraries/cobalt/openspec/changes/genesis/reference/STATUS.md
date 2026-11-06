@@ -2,9 +2,11 @@
 
 Updated 2026-11-06. Status is `implementing`, with `decided: 2026-11-06` and `release: null`.
 Rodrigo approved the proposal and requested execution in this session. Implementation has
-started with task 1.1's baseline in the existing isolated superproject checkout, on branch
-`work/cobalt-genesis`. The independent library is not yet extracted, implemented or released.
-All 26 implementation tasks remain unchecked until their evidence and work are committed.
+started in the isolated superproject checkout on branch `work/cobalt-genesis`.
+The independent library has a local initial import at
+`b1310a886c3b21e04c4464350bcc34058e1d5709`. The full implementation is not complete or released.
+Tasks 1.1 and 1.2 are committed and checked; the remaining 24 tasks retain their final gates.
+No remote publication or CI was performed for this implementation milestone.
 
 ## Implementation authorization and baseline
 
@@ -44,11 +46,12 @@ not an excuse to ban every no-EH or threaded application.
 
 | Tasks | State and next evidence |
 | --- | --- |
-| 1.1-1.3 | In progress: owner approval recorded; collecting baseline commands before inventory and runtime probes |
-| 2.1-2.3 | Not started: independent target skeleton, extraction, compatibility aliases and graph/link isolation |
-| 3.1-3.3 | Not started: guards, runner/coroutine contracts and operation-specific EH evidence |
-| 4.1-4.3 | Not started: worker, Cobalt I/O and optional shared-provider TLS witnesses |
-| 5.1-5.4 | Not started: every original example and separately identified counterpart |
+| 1.1-1.2 | Complete in local import `b1310a8`: 36 baseline artifacts archived and verified; 12 examples, 5 benchmarks, 3 support files and 28 starting profiles accounted for; six inventory regressions and archive roundtrip/tamper test passed |
+| 1.3 | In progress: actual runtimes observed; complete feature/application result matrix pending |
+| 2.1-2.3 | In progress: canonical targets, runner, checked overlays, legacy aliases and migrated tests exist; coordinated Asio/root commits and combined-consumer closure pending |
+| 3.1-3.3 | In progress: configuration refusals, coroutine/composition/allocator/lifetime contracts, run(task) and bounded no-EH witnesses pass their current profiles; configured-budget and final matrix gates pending |
+| 4.1-4.3 | In progress: actual Chromium worker cancellation/handoff and native/P2/P3 TCP/UDP/DNS/TLS checks pass; descriptor coverage and combined-provider closure pending |
+| 5.1-5.4 | In progress: five unchanged portable examples passed 50 native/Node/WASI EH executions; their adaptations and the remaining seven applications are pending |
 | 6.1-6.3 | Not started: real C++ browser pages, runtime matrix and end-user/visual verification |
 | 7.1-7.3 | Not started: Release workload/profile audit and raw size/performance/memory observations |
 | 8.1-8.2 | Not started: library guide/reference, ownership references, discovery and installation |
