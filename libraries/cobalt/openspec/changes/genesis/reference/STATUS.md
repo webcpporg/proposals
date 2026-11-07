@@ -1,0 +1,225 @@
+# Cobalt genesis status
+
+## Coordinated publication in progress, 2026-11-07
+
+The owner authorized publication and remote CI for the reviewed migration.
+The immutable library candidates are Asio `e7cf267b4ab43437a09ce68f40a3994ca63b9054`,
+Cobalt `36b9f2475aab1171e0898ab87d5b9630a8e04d71`, and Beast
+`6c53f854070a4eebd844f21c29692e938181f8f6`. Superproject commit
+`c411965` records those three revisions and the new public Cobalt submodule.
+All three candidate branches are published. No main integration is claimed.
+
+CI environment preparation is running at
+https://github.com/webcpporg/webcpp/actions/runs/42370588658 . The complete
+combined CI and library CI remain pending. The preceding local validation
+records remain evidence for their stated scope, not remote-CI certification.
+No release or proposal archival is part of this publication step. The release
+packaging check still rejects the prepared 0.1.0 freeze together with these
+libraries' Unreleased entries; reconcile that state in the release procedure.
+
+## Current local migration, 2026-11-07
+
+The owner-approved 2026-11-06 distribution contract is now implemented locally in
+the coordinated Asio/Cobalt/Beast candidate. Native equivalents are actual Boost
+types; Wasm selects explicitly shipped sources, without consumer patches or Boost
+include overlays. Cobalt's corrected native SSL wrapper is the approved exception.
+Direct compiler/CMake consumers passed from an extracted source archive, including
+custom executor/PMR settings, multiple translation units and optional TLS.
+
+This candidate remains uncommitted. The starting revisions are superproject
+`d3a67959cbe52e6d972ef575be8870cc79da1312`, Asio
+`db4f7fc6afc516fdef057614cc971cdc39484099`, Beast
+`31af69150d61776e7699cb89125f79d103e11ac8`, and local Cobalt
+`58701c7dd22777c84c17ac9bbeea6d517c0c7f38`. These hashes identify bases, not the
+edited tree. Dated evidence includes source snapshots and artifact hashes.
+Historical remote CI below does not certify this local candidate. No new remote
+CI, push, merge, repository publication or release is claimed.
+
+All 12 pinned original applications remain represented in 432 cells:
+181 passes, 17 controlled network counterparts, 29 dependency-unavailable,
+72 platform-unavailable, 32 profile-unavailable, 36 SDK/runtime-blocked,
+46 source-requires-exceptions and 19 upstream-defect. Seventeen feasible
+conformance jobs, 88 original browser observations and 32 HTTP/WSS browser
+counterpart observations passed. Original/namespace-migrated sources, controlled
+peers, finite counterparts and negative probes retain separate identities.
+
+The shared Release report audits 136 builds, 2,176 payload checks and 15,906
+runtime observations. It covers O2/O3/Os/Oz with LTO off/on, with runtime sampling
+at O3 without LTO. Memory counters, linear capacity and process RSS have distinct
+boundaries; unavailable browser CPU/RSS are not zero. The native comparison is
+explicitly for applications with an initialized reactor on macOS, not a universal
+Wasm speed claim. All five upstream benchmark source files remain classified;
+matched workloads do not conceal original compile defects.
+See `libs/cobalt/doc/application-matrix.adoc`, `doc/release-measurements.adoc`,
+`bench/results/2026-11-07/` and `test/applications/results/2026-11-07/`.
+
+Documentation and proposal records have been reconciled with the shipped-source
+contract. All three strict MrDocs/AsciiDoc builds passed again. A fresh independent
+whole-candidate review, followed by focused reviews of every correction, has no
+open findings. Local closure items 4 and 5 are complete: the lint covered 831
+translation units and 1,528 compilation commands. The complete run found two
+final style issues; both were corrected and their exact checks passed again.
+Its original exit status and diagnostics are retained, alongside the successful
+follow-ups, in `closure-lint-reconciled.json`. All other lint rules and the tooling
+regression suites passed. SDK 34 P2 pthread/P3 cooperative EH limits, versioned P3
+LTO diagnostics, Boost.Context restrictions and native Boost
+defects remain explicit, not passing support cells. The local execution ledger is
+`.superpowers/sdd/2026-11-06-portable-network-libraries/progress.md` in the
+superproject. New implementation boxes remain unchecked until coordinated commits;
+publication/CI is a separate step. No proposal is archived or marked implemented.
+
+## Historical records
+
+The following snapshots and task states describe their dates, not the migration above.
+
+
+## Owner-directed architecture revision, 2026-11-06
+
+The owner now requires native WebCPP Asio/Cobalt/Beast interfaces to use the actual
+Boost implementations, and Wasm adaptations to be shipped explicitly rather than
+applied by B2 during consumer builds. The public Cobalt entry becomes
+`webcpp::cobalt`; a requirement to keep application spelling `boost::cobalt` is
+superseded. Work proceeds Asio first, with coordinated Cobalt delivery and Beast
+verification. The superproject design and execution plan are
+`docs/superpowers/{specs,plans}/2026-11-06-portable-network-libraries.md`.
+
+The genesis design/spec/plan below describe the previous overlay architecture and
+must be reconciled during the migration. Their committed examples and observations
+remain baseline evidence, not certification of the new distribution. All original
+application, benchmark and Diataxis/AsciiDoc/MrDocs obligations remain in scope.
+No remote CI or publication is authorized by this revision.
+
+## Previous implementation milestone
+
+Updated 2026-11-06. Status is `implementing`, with `decided: 2026-11-06` and `release: null`.
+Rodrigo approved the proposal and requested execution in this session. Implementation has
+started in the isolated superproject checkout on branch `work/cobalt-genesis`.
+The independent library has a local initial import at
+`b1310a886c3b21e04c4464350bcc34058e1d5709`. The full implementation is not complete or released.
+Eight tasks are committed and checked: 1.1, 1.2, 4.1, 5.1, 5.4 and 6.1-6.3.
+The remaining 18 tasks retain their final gates.
+No remote publication or CI was performed for this implementation milestone.
+
+## Implementation authorization and baseline
+
+- Owner approval: "gostei, pode aprovar e executar", received on 2026-11-06.
+- Superproject starting commit: `d3a67959cbe52e6d972ef575be8870cc79da1312`.
+- Asio starting commit: `db4f7fc6afc516fdef057614cc971cdc39484099`, as pinned by the superproject.
+- Local execution record: `.superpowers/sdd/plan-reference/progress.md` in the superproject.
+- Historical exports below remain unchanged; fresh results will identify their actual inputs.
+
+## Starting evidence
+
+- `source/` contains 70 selected unmodified source files from exact commits. The export
+  records repository, revision, original path, mode and SHA-256 in `provenance.json`.
+  Its contextual README is not part of the export manifest.
+- Asio source baseline: `db4f7fc6afc516fdef057614cc971cdc39484099`.
+- Superproject source baseline: `d994334102d138e2847b7e8463fb1c06a859bd42`.
+- Boost.Cobalt 1.92.0 tag resolves to `8b1cecba91d0e868ee0947b40fb04e3594680297`.
+  The public tag archive supplied examples missing from the installed Boost source subset.
+  All 26 Cobalt `.cpp` files in that installed source subset were byte-compared with the
+  corresponding upstream commit files and matched; this verifies source identity, not execution.
+- `applications.json` inventories all 12 upstream C++ examples and the supporting files,
+  plus all 5 upstream benchmark sources. `applications.md` explains the required adaptations.
+- `profiles.json` defines 28 starting target/runtime/EH/thread/suspension tuples;
+  `application-matrix.json` expands all 336 application/profile cells. They are planning
+  classifications, not fresh conformance results; none is marked `supported-tested`.
+- `python-script-check.json` records the unchanged Python driver's module-name `NameError`
+  using a minimal import stub. This isolated script check does not load C++/nanobind or
+  provide application conformance evidence; the original exported script remains unchanged.
+
+Existing integration code demonstrates where implementation starts, not whether the
+independent library or every example works. Existing Asio status prose, historical size
+tables and remote CI outcomes have not been copied into this proposal as current evidence.
+The known issue-287 caution and SDK restrictions are bounded design inputs to reproduce,
+not an excuse to ban every no-EH or threaded application.
+
+## Task state
+
+| Tasks | State and next evidence |
+| --- | --- |
+| 1.1-1.2 | Complete in local import `b1310a8`: 36 baseline artifacts archived and verified; 12 examples, 5 benchmarks, 3 support files and 28 starting profiles accounted for; six inventory regressions and archive roundtrip/tamper test passed |
+| 1.3 | In progress: actual runtimes observed; complete feature/application result matrix pending |
+| 2.1-2.3 | In progress: canonical targets, runner, checked overlays, legacy aliases and migrated tests exist; coordinated Asio/root commits and combined-consumer closure pending |
+| 3.1-3.3 | In progress: configuration refusals, coroutine/composition/allocator/lifetime contracts, run(task) and bounded no-EH witnesses pass their current profiles; configured-budget and final matrix gates pending |
+| 4.1 | Complete: native S/M and P3 cooperative worker lifecycle; actual Chromium JSPI/Asyncify cancellation/handoff/join; separate raw Asyncify pthread-return limitation reproduced |
+| 4.2-4.3 | In progress: native/P2/P3 TCP/UDP/DNS/TLS checks pass; descriptor coverage and combined-provider closure pending |
+| 5.1 | Complete in `2180b8c`: five unchanged portable examples and finite counterparts passed native/Node/P2/P3 with EH on/off; values, immediate/pending paths and cancellation checked |
+| 5.2-5.3 | In progress: original native/Node thread and thread_pool results checked; adapted SPSC passed native/P3/Node/browser with a deterministic lost-wakeup control. Worker counterparts and network applications remain open |
+| 5.4 | Complete in `76aa165`: real CPython 3.14.7/nanobind 2.13.0 fixture; original NameError and generator/cancellation defects preserved; separately hashed binding/script counterpart passes six bounded value/error/cancel/lifetime checks. Wasm Python is not supplied or claimed |
+| 6.1-6.3 | Complete in `47a4552` and `78e32f0`: 12 actual Chromium tuples, shared compiled C++ sources, start/cancel/progress, duplicate/restart/stale-message/keyboard/unload checks, capability refusals and inspected wide/narrow captures. Exact module/source/asset hashes accompany observations |
+| 7.1-7.3 | Not started: Release workload/profile audit and raw size/performance/memory observations |
+| 8.1-8.2 | Not started: library guide/reference, ownership references, discovery and installation |
+| 9.1-9.2 | Not started: fresh complete candidate review, authorized CI and integration |
+
+## Proposal checks
+
+The following checks passed on 2026-11-04:
+
+- OpenSpec 1.10.0 `validate --all --strict --no-interactive`, from `libraries/cobalt/`:
+  one change passed, zero failed. `status --change genesis` reports all four planning
+  artifacts complete. This is planning completeness, not implementation completion.
+- Every one of the 70 exported files matched its SHA-256 and executable mode.
+- The inventory matched all 12 original C++ examples and 5 benchmark files/hashes;
+  28 unique profiles expanded into exactly 336 unique application/profile cells.
+- All 26 unchecked implementation tasks matched their detailed plan entries in order.
+- Scoped proposal metadata and forbidden-text checks passed; the working tree contained
+  only the new `libraries/cobalt/` proposal files from this work.
+
+The initial matrix contains 167 `implementation-missing`, 48 `sdk-runtime-blocked` and
+121 `not-applicable` original-source cells, with separate counterpart states. These counts
+describe planning classifications, not passed/failed tests. None has runtime evidence.
+
+Reproduce the scoped strict OpenSpec check from `libraries/cobalt/`:
+
+```sh
+OPENSPEC_TELEMETRY=0 openspec validate --all --strict --no-interactive
+OPENSPEC_TELEMETRY=0 openspec status --change genesis
+```
+
+Check reference bytes and inventory from this `reference/` directory:
+
+```python
+import hashlib
+import json
+from pathlib import Path
+
+root = Path('.')
+manifest = json.loads((root / 'provenance.json').read_text())
+for entry in manifest['files']:
+    source = root / entry['path']
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == entry['sha256']
+apps = json.loads((root / 'applications.json').read_text())['applications']
+profiles = json.loads((root / 'profiles.json').read_text())['profiles']
+cells = json.loads((root / 'application-matrix.json').read_text())['cells']
+assert {a['path'] for a in apps} == {
+    str(p.relative_to(root / 'source/upstream'))
+    for p in (root / 'source/upstream/example').glob('*.cpp')
+}
+assert len(apps) == 12 and len(profiles) == 28 and len(cells) == 336
+assert {(c['application'], c['profile']) for c in cells} == {
+    (a['id'], p['id']) for a in apps for p in profiles
+}
+assert all(c['status'] != 'supported-tested' and not c['evidence'] for c in cells)
+```
+
+Repository-wide index regeneration and checks belong to the integrating change:
+`python3 tools/proposals.py readme`, `python3 tools/proposals.py check` and
+`python3 tools/proposals_test.py`. These validate the proposal repository, not a Cobalt
+implementation. No product build, CI or performance result is implied.
+
+## How to resume
+
+1. Read `../proposal.md`, `../design.md`, `../specs/cobalt/spec.md`, `applications.md`,
+   `plan.md` and the current superproject rules. Keep the proposed defaults distinct from
+   accepted decisions and read O1-O3 before choosing runtime fixtures or workload sizes.
+2. Acceptance and the implementation request were received on 2026-11-06. Resume at the
+   first incomplete task in the execution record; preserve the original source export.
+3. Verify the export hashes and rebase the baseline deliberately if implementation commits
+   have changed. Record new provenance instead of silently carrying historical results.
+4. Complete tests-first extraction and validation in task order. The plan identifies files,
+   interfaces, steps and expected outputs for every task. Update only committed completed
+   tasks; keep unsupported and pending matrix cells explicit.
+5. Preserve Asio default 100, one shared TLS provider, the compatibility target names and
+   source forms. Require separate authorization for repository creation/publication and
+   implementation-stage CI where applicable; no release is authorized by this proposal.

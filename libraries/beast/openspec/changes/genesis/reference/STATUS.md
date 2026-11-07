@@ -1,4 +1,349 @@
-# webcpp::beast: where the work stands, and how to resume
+# webcpp::beast: implementation status
+
+## Coordinated publication in progress, 2026-11-07
+
+The owner authorized publication and remote CI for the reviewed migration.
+The immutable library candidates are Asio `e7cf267b4ab43437a09ce68f40a3994ca63b9054`,
+Cobalt `36b9f2475aab1171e0898ab87d5b9630a8e04d71`, and Beast
+`6c53f854070a4eebd844f21c29692e938181f8f6`. Superproject commit
+`c411965` records those three revisions and the new public Cobalt submodule.
+All three candidate branches are published. No main integration is claimed.
+
+CI environment preparation is running at
+https://github.com/webcpporg/webcpp/actions/runs/42370588658 . The complete
+combined CI and library CI remain pending. The preceding local validation
+records remain evidence for their stated scope, not remote-CI certification.
+No release or proposal archival is part of this publication step. The release
+packaging check still rejects the prepared 0.1.0 freeze together with these
+libraries' Unreleased entries; reconcile that state in the release procedure.
+
+## Current local migration, 2026-11-07
+
+The owner-approved 2026-11-06 distribution contract is now implemented locally in
+the coordinated Asio/Cobalt/Beast candidate. Native equivalents are actual Boost
+types; Wasm selects explicitly shipped sources, without consumer patches or Boost
+include overlays. Cobalt's corrected native SSL wrapper is the approved exception.
+Direct compiler/CMake consumers passed from an extracted source archive, including
+custom executor/PMR settings, multiple translation units and optional TLS.
+
+This candidate remains uncommitted. The starting revisions are superproject
+`d3a67959cbe52e6d972ef575be8870cc79da1312`, Asio
+`db4f7fc6afc516fdef057614cc971cdc39484099`, Beast
+`31af69150d61776e7699cb89125f79d103e11ac8`, and local Cobalt
+`58701c7dd22777c84c17ac9bbeea6d517c0c7f38`. These hashes identify bases, not the
+edited tree. Dated evidence includes source snapshots and artifact hashes.
+Historical remote CI below does not certify this local candidate. No new remote
+CI, push, merge, repository publication or release is claimed.
+
+The 53 pinned applications cover 1,855 cells across 35 profiles:
+843 passes, 816 platform-unavailable and 196 explicitly blocked, with zero
+planned or failed cells. Controlled native upstream peers and namespace
+counterparts both passed all 53 applications; these are endpoint adaptations,
+not claims of unchanged external services. Real page/worker browser coverage
+includes 256 successful observations. P2 supplied-stream WebSocket and P2/P3
+guest socket/TLS contracts retain separate evidence from host HTTP.
+See `libs/beast/doc/application-matrix.adoc` and the shared application evidence
+under `libs/cobalt/test/applications/results/2026-11-07/`. The shared Release
+HTTP parser workload measures in-memory parsing, not network/TLS throughput.
+
+Documentation and proposal records have been reconciled with the shipped-source
+contract. All three strict MrDocs/AsciiDoc builds passed again. A fresh independent
+whole-candidate review, followed by focused reviews of every correction, has no
+open findings. Local closure items 4 and 5 are complete: the lint covered 831
+translation units and 1,528 compilation commands. The complete run found two
+final style issues; both were corrected and their exact checks passed again.
+Its original exit status and diagnostics are retained, alongside the successful
+follow-ups, in `closure-lint-reconciled.json`. All other lint rules and the tooling
+regression suites passed. SDK 34 P2 pthread/P3 cooperative EH limits, versioned P3
+LTO diagnostics, Boost.Context restrictions and native Boost
+defects remain explicit, not passing support cells. The local execution ledger is
+`.superpowers/sdd/2026-11-06-portable-network-libraries/progress.md` in the
+superproject. New implementation boxes remain unchecked until coordinated commits;
+publication/CI is a separate step. No proposal is archived or marked implemented.
+
+## Historical records
+
+The following snapshots and task states describe their dates, not the migration above.
+
+
+Updated 2026-11-04. The owner approved submission with status `proposed`, with
+no formal acceptance date, release or tag. The source is integrated in the
+superproject. The original 53-application inventory remains in scope.
+
+## Current committed snapshot
+
+- Repository: [webcpporg/beast](https://github.com/webcpporg/beast).
+- Published commit: `31af69150d61776e7699cb89125f79d103e11ac8`.
+- `source/` is an exact `git archive` of that commit: 774 tracked files, with
+  every Git blob identity and executable mode checked against the commit.
+- Integrated superproject: `80a48ff989bfa301917936af5945de0149bffa08`, merged by
+  [superproject PR 7](https://github.com/webcpporg/webcpp/pull/7).
+- Full [CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144)
+  passed for candidate `44a2ee02a4adf70112270ddb4b3fe5f5cbe93176`: every test and
+  example built in 78 lanes, tools, lint, documentation and site. The merge has
+  exactly the same tree. This does not change the 571/216/432 compatibility matrix.
+- Beast `main` now points at the published library commit and is the default branch.
+  Its first [main CI 41815132710](https://github.com/webcpporg/beast/actions/runs/41815132710)
+  and [root main CI 41814889451](https://github.com/webcpporg/webcpp/actions/runs/41814889451)
+  are in progress. The historical checkpoints below do not supersede this state.
+
+## Publication checks, 2026-11-03
+
+Asio commit `9455076` supplies WASIp2 guest OpenSSL and Cobalt, along with the
+completed WASIp3 asynchronous resolver. Those Asio results do not establish
+Beast's separate P2 guest-socket application corpus or remove the existing
+WASIp3 fixture-resolver adaptations. The generated matrix preserves 571 passed,
+216 blocked and 432 platform-unavailable cells. The correction passed ten
+inventory tests and a fresh Beast MrDocs/rendered-documentation build.
+
+The owner authorized publishing and integration after green CI. The first new
+root run, [41675267321](https://github.com/webcpporg/webcpp/actions/runs/41675267321),
+failed during checkout because a pinned Trystero commit had not been pushed.
+The missing Trystero and WASI dependency commits are now published. Asio's
+library CI still selects the superproject's old main, which lacks the new P2
+build project. Current-candidate root CI and the post-integration library CI
+remain required. These failures are not passing validation evidence.
+
+The completed root run
+[41686583077](https://github.com/webcpporg/webcpp/actions/runs/41686583077), on the
+earlier root `d7a6614`, failed. It found stale build fixtures, a Windows Asio
+test expectation, Windows runner portability failures, empty WASIp3 TLS fixture
+executables, lint timeouts, five global P2 workload interrupts and one native
+Trystero multiroom interop failure. Local corrections passed for every group.
+Trystero now preserves bounded native frames until a receiver is installed. The provider
+split preserves exactly the same compilation database and passed native upstream
+and P2/P3 TLS tests. All five unchanged P2 document workloads passed with the
+corrected finite launcher budget. These results do not establish a green final
+candidate. The 571/216/432 matrix remains unchanged.
+
+## Final local candidate, 2026-11-04
+
+The host TLS test driver still called the removed `serve.KEEPER` helper after
+the portable process-runner change. The actual P2 lane reproduced that error.
+The driver now uses `process_tree.start_tree` and the existing shared cleanup.
+Fresh P2/P3 builds passed 28 driver executions and 88 TLS cases with exceptions
+on/off, including mutual TLS. Their XML report, focused Pyright and independent
+review passed. The local TLS peer used Python with OpenSSL, matching CI;
+Apple Python's LibreSSL emits a different missing-client-certificate alert.
+The assertions were not weakened for that exploratory environment.
+
+The last full local lint found three Trystero test-fixture style defects and
+the obsolete Beast helper. All four findings have focused passing checks;
+Pyright passed over all 135 repository Python sources. The final candidate still
+requires a new complete remote lint and CI verdict. Full local documentation,
+the site with 21 pages and 11 libraries, and the prepared 0.1.0 release check
+passed. No release tag or main integration is claimed.
+
+## Current CI follow-up, 2026-11-04
+
+The corrected parent candidate is being validated by
+[CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144).
+No green verdict or merge is claimed for that candidate yet.
+
+Root run [41793433211](https://github.com/webcpporg/webcpp/actions/runs/41793433211)
+found a stale OpenSSL header-stage test assertion and a missing libdatachannel
+header variant during lint. Both corrections passed their focused tests and independent review. The header
+preparation also isolates the full-build OpenSSL proof and MSVC PDB dependencies.
+Complete remote checks must pass on the new candidate.
+Its downloaded XML reports also found two WASIp3 flex-awaitable server failures:
+cold Wasmtime compilation consumed the listener readiness allowance. A real Linux
+component reproduced the timeout under a constrained CPU budget; that experimental
+budget is not asserted to be the historical runner's quota.
+
+Beast commit `31af691` separates compilation into a bounded 60-second phase, then
+retains the 15-second guest readiness and five-second protocol deadlines. Only the
+artifact created in the current private temporary directory is loaded, with the
+same engine features and epoch instrumentation for compilation and execution.
+Fresh B2 runs passed eight targets across cooperative WASIp3, ordinary WASIp3 and
+native control lanes; the actual Linux component passed under the same constrained
+CPU budget. Driver regressions, inventory checks, focused lint, documentation and
+independent review passed. This fixes the test harness without changing application
+or library code. Complete remote CI on the integrated candidate remains required.
+
+The final report of all 78 downloaded lanes identified eight failed executions:
+the two Beast cases above, four Windows TLS-driver argument failures and two
+Trystero allocation-test failures. The Windows driver now quotes its diagnostic
+label for cmd.exe. Trystero checks queued payload allocation by address instead
+of mistaking a deque map allocation for a frame. These corrections passed focused
+regressions and independent reviews. Root `44a2ee0` includes all corrections and
+passed the prepared release check and Pyright over all 136 repository Python files.
+A new full remote run must validate this exact candidate before integration.
+
+## Earlier WASIp2 follow-up, 2026-11-03
+
+The following subsection records the earlier core-only increment. Its TLS,
+Cobalt and publication limitations are superseded by the current snapshot above.
+
+The final documentation-only root commit is `15e2f44d2bdff0602b8e761a5a9c89b98c3a5d97`; implementation
+remains root `e80ffab`, Asio `dad1aef` and Beast `ab95e84`. A later fresh Emscripten
+Release regression passed 271 B2 test targets, covering the default suites and
+Asio Asyncify/Cobalt lanes with EH on/off. This is Node-based execution, not a
+fresh complete browser run. Full lint compilation-database preparation passed
+with 1,419 commands, including P2 aggregate EH twins. The focused clang-tidy scope
+remains the 20 configurations below; database generation is not a full tidy run.
+
+The owner approved both the Asio pollable core and supplied-stream WebSocket work.
+The local implementation commits are Asio `dad1aef`, Beast `ab95e84` and superproject
+`e80ffab`. Each library's `reference/source/` is exported from its exact committed
+tree, with every Git blob and executable mode verified. These new commits have not
+been pushed or tested by remote CI. The older green root run does not validate them.
+
+Fresh Release builds passed 138 native, 131 WASIp3 and 68 WASIp2 B2 test targets,
+including compile/header and runtime targets, with exceptions on/off. The selected
+scope covers the default suites and supplied-stream lanes; it is not a new complete
+all-platform CI run. Focused clang-tidy passed 20 translation-unit configurations.
+Formatting, text rules, Pyright, Asio/Beast MrDocs and rendered-guide checks passed.
+Build tests verify the public P2 target, explicit multi-thread/Cobalt/TLS rejection,
+pinned SDK/private-ABI refusal and unchanged P3 profile selection. Root
+`b2 check-release` passed after the implementation commits.
+
+One independent review found two defects, each reproduced before its correction:
+guard-only idle trapped on an empty poll list, and a valid 64-bit host write permit
+could narrow to zero on wasm32. Idle now waits on a clock pollable; the permit is
+clamped before narrowing. Added consumers cover readiness at registration and
+pending-write cancellation. A controlled ABI fixture supplies the large/zero
+permit; it does not claim every host's stdout import is nonblocking or preemptible.
+
+P2 core supports timers, TCP/UDP, forward asynchronous DNS and the supplied CLI
+stream in a single thread. DNS preserves deferred initiation and handler
+associations. P2 guest TLS, Cobalt and multiple threads remain explicitly rejected.
+Both supplied WebSocket roles pass with EH on/off. Their actual exchanges cover
+upgrade, text/binary frames, fragmentation, ping/pong, close, truncated input,
+consumer pause/resume and pending-read cancellation. The application matrix records
+571 passed, 216 blocked and 432 platform-unavailable cells. P2 raw-socket Beast
+application integration remains blocked despite the now-working Asio core.
+
+## Earlier integration evidence
+
+The following records explain fixes already present in the published baseline.
+They are historical evidence, not a rerun of the current local candidate.
+
+- Run [41588828531](https://github.com/webcpporg/webcpp/actions/runs/41588828531)
+  exposed a response-before-observation race in the HTTP test peer. The fix records
+  each complete request before transmitting its response. A deterministic real-TCP
+  regression failed for GET, HEAD and POST with the old ordering and passes with the
+  correction. The follow-up passed 56 P2/P3 host-client executions across both exception
+  modes and four native protocol checks. The new CI also explicitly expands browser
+  contracts across both exception modes and ERROR/IGNORE policies: 56 test executions
+  plus eight tutorial executions. All 39 CI planner tests passed.
+- Run [41590629467](https://github.com/webcpporg/webcpp/actions/runs/41590629467)
+  exposed nine WASIp3 TLS client timeouts under the old eight-second total wall limit.
+  Six affected clients reproduced that timeout locally under cold-cache CPU contention,
+  before accepting any TCP connection. The fixture now separates at most 15 seconds
+  of process startup from five seconds of protocol and process completion, starting
+  at real TCP acceptance before TLS. The same six contended clients passed with
+  startup times of 9.98-14.61 seconds and protocol times of 0.055-0.104 seconds.
+  Nineteen additional exception-off, cooperative, HTTP-method and native executions
+  passed. Six real-process/socket regression methods cover slow startup, stalled
+  protocol and TLS handshake, missing connections, early exit and supervisor
+  descheduling. Independent review reproduced and verified the acceptance timestamp
+  boundary correction; all six methods and ten inventory tests pass. The final source
+  also passed two actual Wasmtime TLS checks. The previous full run remains available
+  for its complete diagnostics; only the new candidate can establish the merge gate.
+
+
+- The same earlier full run exposed 13 failures on each MSVC version. The shared
+  include ordering selected the original Boost headers before the checked Asio/Cobalt
+  overlays. Quoting only the external path restores the overlays' precedence while
+  retaining external warning suppression for the same Boost root. A real no-exceptions
+  compile using the emitted search order fails with the old ordering and passes with
+  the correction, including paths with spaces and compiled Cobalt sources. Additional
+  corrections protect the TLS factory from Windows' `max` macro, use upstream's static
+  Context export definition for MASM, enable extended COFF sections for Beast tests,
+  and suppress CRT deprecation diagnostics only in controlled application fixtures.
+  Seven affected native tests passed a fresh `b2 -a` run; all three Context assembly
+  sources failed without the definition and passed LLVM MASM with it. The Beast socket
+  and documentation-snippet tests, build regressions, generator inventory, static
+  analysis and independent review passed. The later full baseline CI passed; fresh Windows results for the current local candidate remain pending.
+
+The reference snapshot will be refreshed if further reviewed implementation commits land.
+This status does not turn publication of source into formal proposal acceptance or release.
+
+## Implemented and measured
+
+The committed [verification guide](source/doc/verification.adoc),
+[application matrix](source/doc/application-matrix.adoc), and
+[browser differences](source/doc/browser-differences.adoc) contain the reproduction
+commands, adaptations and backend boundaries. Local evidence was collected with Boost
+1.92, native Clang 21 on macOS ARM64, wasi-sdk 34, Wasmtime 50.0.1, Emscripten 6.0.11,
+Node 26 and actual full Chrome. It does not imply Windows or Linux execution.
+
+| Workstream | Committed implementation and observed evidence |
+| --- | --- |
+| Portable/native interfaces | Upstream messages, parsers, serializers and buffers; explicit native/WASIp3 socket and TLS layers; real HTTP/WebSocket exchanges, constructor conversions and error-policy checks. Portable data builds cover native, WASIp2/P3 and Emscripten, with exceptions on/off. |
+| Browser transport | Browser WebSocket/fetch, synchronous suspension and completion-token APIs; URL/TLS intent, ERROR/IGNORE, deadlines, cancellation, destruction, response reuse and separate guest byte-stream adapters. Actual Chrome and Node exercise JSPI and Asyncify; Node is not a browser-policy substitute. |
+| Browser environment | All eight actual Chrome JSPI/Asyncify, ERROR/IGNORE and EH on/off combinations pass the HTTPS/WSS suspension probe: at least three timer and animation callbacks while the native peer withholds bytes, nested-entry rejection followed by successful outer operations, and mixed-content rejection with an HTTP-origin positive control. |
+| Browser ownership | Caller/associated allocator witnesses, queued-event generation checks, bounded ingress before executor dispatch, same-object reuse and cancelled-open regressions. O2 and O3 are settled in `../design.md`. |
+| WASI host HTTP | Independent P2/P3 worlds; reusable request/response/header/body/trailer ownership in webcpp::wasi; Beast client/server adapters, readiness-driven completion tokens, cancellation and failure after response commitment. Real hosted tests transfer 256 KiB messages and trailers. |
+| Supplied streams | Portable callback channels and explicit WASI/POSIX stdin/stdout counterparts with partial I/O, EOF, deadlines, cancellation and SIGPIPE handling. They do not claim Unix-domain addressing. P2 WebSocket counterparts now use asynchronous readiness-driven streams. |
+| Guest TLS | Real native/WASIp3 HTTP and WebSocket TLS scenarios: trust/hostname failures, cancellation, close, truncated shutdown and deadlines. Eight scenarios across TLS 1.2/1.3 and the supported thread/EH profiles produce 112 recorded scenario executions. |
+| Host TLS | Private process/profile CAs with normal verification. Six WASI HTTPS application counterparts plus the shared body/trailer contract produce 35 driver executions and 125 TLS attempts; trusted localhost succeeds and unknown issuers/wrong hostnames fail. The documentation client also exercises mutual TLS. Full Chrome uses disposable profile trust and explicit untrusted/wrong-host controls. |
+| Application corpus | Every upstream Jamfile/CMake executable is reconciled at Beast commit `7c1e061f91e2ef542217b76286c314d006c0c8fc`. Immutable upstream hashes, generated adaptations, observable native oracle comparisons, crawler report/concurrency/failure tests, chat and documentation snippets remain inspectable. |
+| Documentation | Diataxis AsciiDoc, compiled examples and MrDocs API comments. The final local Beast documentation build passed source checks, reference extraction and rendered HTML checks, updating 13 targets. |
+
+The application matrix retains **53 applications across 23 profiles**, or 1,219
+compile/run cells: **571 passed, 216 blocked and 432 platform-unavailable**.
+All four P2 supplied-stream WebSocket cells now have runtime evidence. The P06/P07
+raw-socket profiles retain 98 blocked cells because the Asio P2 core is now available
+but the Beast raw-socket application corpus is not integrated. The eight Unix-domain
+cells in those profiles remain unavailable. No cell is discarded from the denominator.
+
+The other 118 blocked cells comprise 53 WASIp3 cooperative EH-on cells without an SDK
+exception runtime, 27 WASIp3 socket cells without a verified Boost.Context backend,
+18 native EH-off cells requiring stack unwinding, 16 browser cells without a
+Boost.Context backend, and four browser documentation clients unable to select the
+upstream mutual-TLS identity. These are application/profile outcomes, not a count of
+unchanged-source ports or CI jobs. Native oracle normalization compares observable
+payload/status/mode results while excluding fixture addresses and elapsed time.
+Each adaptation and the host-blocking boundary remain explicit.
+
+## Remaining acceptance work
+
+- **0.5:** the owner-approved submission metadata and reference source are committed
+  as `proposed`. Acceptance remains a separate decision; `decided` and `release` are null.
+- Former **0A.3 and 0A.4** were removed by an earlier approved scope decision. The
+  subsequent P2 approval adds Asio core and supplied WebSocket support. Raw-socket
+  Beast guest-socket and guest-TLS applications remain blocked integration work,
+  even though Asio now supplies P2 guest OpenSSL and Cobalt.
+- **8.3:** complete final-candidate CI and release steps remain pending. Local checks
+  and published source do not close the gate. No tag or release publication is authorized.
+
+Other classified limitations remain visible even where the inventory/accounting task is
+complete: Boost.Context lacks a verified Wasm backend; WASIp3 cooperative EH-on lacks the
+SDK exception runtime; some original application DNS paths still use explicitly labelled local
+endpoint counterparts; Asio P2 forward async DNS now has its own pollable backend; host HTTP has no WebSocket upgrade stream; browsers have no raw
+listeners or Unix namespace; and standard-descriptor adaptation requires WASI or POSIX.
+No unbounded host write can be preempted by a guest cancellation callback.
+
+The final committed follow-up also distinguishes normal WebSocket closure in exception-off
+sync/SSL server counterparts: clean closure is recorded and the server continues accepting,
+while genuine read/accept/write failures retain the explicit failure path. The targeted
+normal-close and marker-evidence regressions passed. The complete final WASIp3 application
+rerun passed all 120 cases with an explicit successful exit. The final native application
+rerun passed all 247 cases with exit 0: 53 upstream oracle, 53 threaded port, 44 threaded
+exception-off, 53 single-thread exception-on and 44 single-thread exception-off executions.
+All eight exception-off synchronous WebSocket server cases observed normal closure inside
+the engine. Independent review of the frozen candidate reported no remaining findings;
+the earlier full CI subsequently passed. The new local candidate still needs fresh CI.
+
+
+## How to resume current work
+
+1. Read this record, `../tasks.md`, the current `../specs/beast/spec.md`, and the
+   committed verification/matrix documents under `source/doc/`.
+2. Review and commit any acceptance follow-up, then refresh `source/` with `git archive`
+   of that exact committed Beast tree and verify its blob identities. Check only
+   tasks whose full criterion is satisfied by committed work and measured evidence.
+3. Push the new candidate, run fresh superproject CI for pull request 7 and record
+   its exact commit and result. Fix any failed declared lane before claiming the gate complete.
+4. Keep the formal proposal decision and release/tag separate. Do not mark the proposal
+   `implemented`, archive it, or invent a release before those actions happen.
+5. Regenerate the proposal README, run proposal checks/tests, and run strict OpenSpec
+   validation. The historical intake below and `spec.md` remain unchanged.
+
+The historical intake below describes what was known on 2026-10-13, not this snapshot.
+
+## Historical intake record, 2026-10-13
 
 Written 2026-10-13, when this proposal took beast in as a specified library with nothing built.
 `spec.md` is the specification; `../tasks.md` is the checklist; `../design.md` the decisions.

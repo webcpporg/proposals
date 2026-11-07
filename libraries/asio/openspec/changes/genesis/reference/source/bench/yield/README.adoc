@@ -1,0 +1,112 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+= Manual browser-yield benchmark
+
+This benchmark measures the actual asio yield and callback-boundary gaps,
+not callback batch duration. See `../../doc/yield-cost.adoc` for methodology,
+results and limitations. It is a manual target, with no CI lane.
+
+== Build and run
+
+Run from the webcpp superproject root with its configured Emscripten toolset.
+The recorded session used `.local/review-b2` below, a machine-local wrapper
+around `b2 --user-config=.local/user-config.jam` which also clears compiler
+include-path environment overrides and selects the local Emscripten cache.
+On another configured checkout, substitute the corresponding `b2` command.
+Complete both builds before starting the browser; do not compile concurrently
+with measurement.
+
+[source,shell]
+----
+.local/review-b2 -j4 -d2 --build-dir=bin/yield-benchmark-on \
+  toolset=emscripten variant=release exception-handling=on \
+  cxxflags=-O3 linkflags=-O3 \
+  libs/asio/bench/yield//yield_program.variants.json
+
+.local/review-b2 -j4 -d2 --build-dir=bin/yield-benchmark-off \
+  toolset=emscripten variant=release exception-handling=off \
+  cxxflags=-O3 linkflags=-O3 \
+  libs/asio/bench/yield//yield_program.variants.json
+
+python3 -B libs/asio/bench/yield/make_cases.py bin .local/yield-cases.json
+node libs/asio/bench/yield/run.mjs \
+  .local/yield-cases.json .local/yield-results
+python3 -B libs/asio/bench/yield/analyze_test.py
+python3 -B libs/asio/bench/yield/analyze.py \
+  .local/yield-results .local/yield-summary
+----
+
+Node must support built-in WebSocket and fetch. Node 26.7 was used.
+Set `CHROME` to a Chrome executable if the macOS Playwright headless-shell
+cache is unavailable. The driver uses only a loopback HTTP server and browser
+control connection. It starts and terminates its own browser/profile, opens
+one fresh foreground page per case, runs cases sequentially and writes each
+result before starting the next. Progress goes to the terminal, with no polling
+timer in the measured page. Startup, HTTP requests and browser commands have
+deadlines. A case can contain up to 100,000 timing pairs.
+
+The {cpp} program accepts `mode limit samples work control`. Modes are `direct`,
+`chain`, `clock` and `sync`. `control=1` disables periodic yields in chain mode,
+while preserving the same number of callbacks and timing boundaries.
+The browser additionally supports the JavaScript-only `js-direct` control.
+`trace=1` installs the timestamp observer; its discarded warmup uses the same
+observer code. `isolate=1` enables COOP/COEP headers for the page. These options
+are specified by the generated case JSON, not by changing the production library.
+
+The page supports validation-only `delay_us=2000` in traced cases. It inserts
+a known busy wait into the observed message handler. Exclude such cases from
+the actual benchmark; the generated matrix never enables this option.
+A 256-sample validation of both variants located the delay in that segment.
+
+`analyze.py` validates completion, counts, checksum, clock correspondence,
+trace order and additive decomposition before producing CSV and JSON.
+It expects exactly the cases declared by the saved environment manifest.
+Do not run it with Python optimization (`-O`), which disables its assertions.
+Checksums transported as signed i32 values are compared as 32-bit bit patterns.
+Nearest-rank percentiles avoid interpolating nonexistent clock precision.
+Summary means/percentiles use independent-run medians; trace component means
+use arithmetic means so their sum matches the traced arithmetic mean.
+
+== Recorded run
+
+`results/2026-10-15/` contains `runs.csv`, `summary.json` and `build.json`.
+The first two are outputs of the analyzer; regenerate them from timestamp
+arrays rather than editing observations. Build metadata includes source and
+linked artifact SHA-256 hashes. The library baseline was `3817dc9`, and the
+superproject baseline was `8829e99`.
+
+The local raw archive is
+`../../.local/yield-benchmark-2026-10-15.tar.gz`, relative to the library
+root (`libs/asio`). It retains all timestamp arrays, case order, environment,
+validation controls, build logs and benchmark source. A sibling `.sha256`
+file identifies the archive. The archive is local and is not a tracked binary
+asset. Copy it with the report when sharing measurements outside this checkout.
+
+There are seven primary repetitions and three secondary-control repetitions.
+All 442 cases passed, totaling 970,139,132 operations and 9,429,856 pairs.
+Measurements are for this warmup protocol and browser/hardware combination.
+There is no assumption that 512 warmup yields establish universal steady state.
+The default turn limit remains 1,000; running this benchmark does not change it.
+
+== Plot the recorded observations
+
+The optional plotting tool needs Matplotlib and NumPy in a separate local
+Python environment. The recorded figures used Matplotlib 3.11.2 and NumPy 2.5.4.
+It does not rebuild or execute the benchmark:
+
+[source,shell]
+----
+python3 -B libs/asio/bench/yield/plot_results.py \
+  libs/asio/bench/yield/results/2026-10-15 \
+  libs/asio/bench/yield/results/2026-10-15/figures
+----
+
+The output contains four figures as PNG and SVG, a combined PDF, a flattened
+CSV preserving all 102 configuration summaries, and the renderer version.
+`runs.csv` retains the original 442 independent run summaries. Source observations
+are never modified. Labels in the figures distinguish measured gaps, derived
+amortization, observer overhead, whole-program controls and clock quantization.

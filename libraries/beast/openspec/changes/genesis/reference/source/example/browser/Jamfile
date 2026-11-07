@@ -1,0 +1,15 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project : requirements -<library>/webcpp/beast//beast ;
+import webcpp ;
+webcpp.targets emscripten ;
+webcpp.original node : ../../test/browser ;
+webcpp.variants client : client.cpp : <library>/webcpp/beast//browser ;
+webcpp.drive browser_tutorial : .//client
+  : <dependency>client.variants.json <webcpp-drive-timeout>120
+  : ../../test/browser/run.mjs : --program client --expected "browser tutorial: ok" ;
+webcpp.lane browser : browser_tutorial : emscripten ;

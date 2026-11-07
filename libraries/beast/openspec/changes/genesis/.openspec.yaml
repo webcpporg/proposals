@@ -2,10 +2,10 @@ schema: spec-driven
 created: 2026-10-10
 webcpp:
   library: beast
-  title: "beast: Boost.Beast natively, the browser's WebSocket and fetch on Emscripten"
+  title: "beast: existing Boost.Beast applications on WASIp2, WASIp3 and Emscripten"
   kind: wrapper
   port_of: null
-  status: draft
+  status: implementing
   release: null
-  implementation: null
-  decided: null
+  implementation: https://github.com/webcpporg/beast
+  decided: 2026-11-06

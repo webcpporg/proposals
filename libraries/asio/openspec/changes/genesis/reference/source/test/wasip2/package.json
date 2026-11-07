@@ -1,0 +1,7 @@
+{
+    "name": "webcpp-asio-wasip2-tests",
+    "version": "0.0.0",
+    "private": true,
+    "license": "BSL-1.0",
+    "description": "Local Python driver for WASIp2 supplied stream tests; no npm dependencies."
+}

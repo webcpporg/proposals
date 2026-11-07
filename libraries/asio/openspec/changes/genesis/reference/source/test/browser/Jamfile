@@ -1,0 +1,88 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+# Each driver receives the JSPI artifact beside its manifest. Node and
+# headless Chrome load both actual variants.
+# The parent test project links asio. The driver only consumes finished
+# programs; put that dependency on page_program instead.
+project : requirements -<library>/webcpp/asio//asio ;
+
+import webcpp ;
+
+webcpp.targets emscripten ;
+webcpp.original node ;
+
+# tag::page-variants[]
+webcpp.variants page_program : page_program.cpp : <library>/webcpp/asio//asio ;
+# end::page-variants[]
+webcpp.drive loader_node : .//page_program
+  : <dependency>page_program.variants.json <webcpp-drive-timeout>60
+  : loader_test.mjs ;
+
+webcpp.variants idle_program : idle_program.cpp : <library>/webcpp/asio//asio ;
+webcpp.variants render_program : render_program.cpp : <library>/webcpp/asio//asio ;
+webcpp.variants render_unlimited_program : render_unlimited_program.cpp
+  : <library>/webcpp/asio//asio ;
+
+# Chrome startup and the three-second idle observation fit within 120 s.
+webcpp.drive browser_idle : .//idle_program
+  : <dependency>idle_program.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --mode idle ;
+webcpp.drive browser_render : .//render_program
+  : <dependency>render_program.variants.json
+    <dependency>render_unlimited_program.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --mode render ;
+webcpp.drive browser_loader : .//page_program
+  : <dependency>page_program.variants.json <webcpp-drive-timeout>120
+  : run.mjs : --mode loader ;
+webcpp.drive browser_startup : .//page_program
+  : <dependency>page_program.variants.json <webcpp-drive-timeout>120
+  : startup_test.mjs ;
+
+webcpp.lane browser : loader_node browser_idle browser_render browser_loader
+  browser_startup : emscripten ;
+
+# The threaded profile retains the selected suspension mechanism. A pool starts
+# browser workers before a handler needs them. Applications choose its size.
+webcpp.drive browser_workers : worker_program.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//asio
+    <library>/webcpp//node-test <linkflags>-sPTHREAD_POOL_SIZE=1
+  : run.mjs : --mode workers ;
+
+# Assertions normally diagnose invalid runner affinity. This executable observes
+# the same guard's release-build result without terminating the test process.
+webcpp.drive browser_worker_affinity : worker_program.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//asio
+    <library>/webcpp//node-test <linkflags>-sPTHREAD_POOL_SIZE=1
+    <define>BOOST_DISABLE_ASSERTS <define>WEBCPP_TEST_WORKER_AFFINITY
+  : run.mjs : --mode workers ;
+
+webcpp.drive browser_worker_main : main_profile_program.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//asio
+    <library>/webcpp//node-test
+  : run.mjs : --mode workers ;
+
+webcpp.drive browser_worker_cobalt : ../cobalt_thread_test.cpp
+  : <threading>multi <webcpp-drive-timeout>60 <library>/webcpp/asio//cobalt
+    <library>/webcpp//node-test <linkflags>-sPTHREAD_POOL_SIZE=1
+  : run.mjs : --mode workers ;
+
+webcpp.lane browser-workers : browser_workers browser_worker_affinity
+  browser_worker_main browser_worker_cobalt : emscripten ;
+
+# This dependency-only probe is compiled for header/tooling coverage. Run its
+# JSPI and Asyncify artifacts explicitly to characterize pthread return values.
+webcpp.compile browser_pthread_return_probe : probes/pthread_return.cpp
+  : <threading>multi : emscripten ;
+
+# A test-only trampoline catches the deliberate C++ exception before it crosses
+# the SDK's callback boundary. Its queue and notification remain the real SDK's.
+webcpp.drive browser_worker_move_failure : move_failure_program.cpp
+  : <threading>multi <exception-handling>on <webcpp-drive-timeout>60
+    <library>/webcpp/asio//asio <library>/webcpp//node-test
+    <linkflags>-Wl,--wrap=emscripten_proxy_async
+  : run.mjs : --mode workers ;
+webcpp.lane browser-worker-exceptions : browser_worker_move_failure : emscripten ;

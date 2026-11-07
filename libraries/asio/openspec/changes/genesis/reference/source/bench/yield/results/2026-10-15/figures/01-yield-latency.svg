@@ -1,0 +1,1025 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1152pt" height="576pt" viewBox="0 0 1152 576" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-15T03:06:30.693620</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="01-yield-latency-figure_1">
+  <g id="01-yield-latency-patch_1">
+   <path d="M 0 576 
+L 1152 576 
+L 1152 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="01-yield-latency-axes_1">
+   <g id="01-yield-latency-patch_2">
+    <path d="M 80.64 483.84 
+L 541.44 483.84 
+L 541.44 109.44 
+L 80.64 109.44 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="01-yield-latency-matplotlib.axis_1">
+    <g id="01-yield-latency-xtick_1">
+     <g id="01-yield-latency-line2d_1">
+      <defs>
+       <path id="01-yield-latency-mb55dff9d97" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="101.585455" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_1">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="101.585455" y="499.197422" transform="rotate(-0 101.585455 499.197422)">1</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_2">
+     <g id="01-yield-latency-line2d_2">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="185.367273" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_2">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="185.367273" y="499.197422" transform="rotate(-0 185.367273 499.197422)">10</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_3">
+     <g id="01-yield-latency-line2d_3">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="269.149091" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_3">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="269.149091" y="499.197422" transform="rotate(-0 269.149091 499.197422)">100</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_4">
+     <g id="01-yield-latency-line2d_4">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="352.930909" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_4">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="352.930909" y="499.197422" transform="rotate(-0 352.930909 499.197422)">1,000</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_5">
+     <g id="01-yield-latency-line2d_5">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="436.712727" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_5">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="436.712727" y="499.197422" transform="rotate(-0 436.712727 499.197422)">5,000</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_6">
+     <g id="01-yield-latency-line2d_6">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="520.494545" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_6">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="520.494545" y="499.197422" transform="rotate(-0 520.494545 499.197422)">10,000</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_7">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="311.04" y="514.198281" transform="rotate(-0 311.04 514.198281)">Handlers per turn (tested settings)</text>
+    </g>
+   </g>
+   <g id="01-yield-latency-matplotlib.axis_2">
+    <g id="01-yield-latency-ytick_1">
+     <g id="01-yield-latency-line2d_7">
+      <path d="M 80.64 483.84 
+L 541.44 483.84 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_8">
+      <defs>
+       <path id="01-yield-latency-mb3ef16d08d" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_8">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="488.018711" transform="rotate(-0 73.64 488.018711)">0</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_2">
+     <g id="01-yield-latency-line2d_9">
+      <path d="M 80.64 437.04 
+L 541.44 437.04 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_10">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="437.04" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_9">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="441.218711" transform="rotate(-0 73.64 441.218711)">1</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_3">
+     <g id="01-yield-latency-line2d_11">
+      <path d="M 80.64 390.24 
+L 541.44 390.24 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_12">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="390.24" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_10">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="394.418711" transform="rotate(-0 73.64 394.418711)">2</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_4">
+     <g id="01-yield-latency-line2d_13">
+      <path d="M 80.64 343.44 
+L 541.44 343.44 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_14">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="343.44" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_11">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="347.618711" transform="rotate(-0 73.64 347.618711)">3</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_5">
+     <g id="01-yield-latency-line2d_15">
+      <path d="M 80.64 296.64 
+L 541.44 296.64 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_16">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="296.64" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_12">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="300.818711" transform="rotate(-0 73.64 300.818711)">4</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_6">
+     <g id="01-yield-latency-line2d_17">
+      <path d="M 80.64 249.84 
+L 541.44 249.84 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_18">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="249.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_13">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="254.018711" transform="rotate(-0 73.64 254.018711)">5</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_7">
+     <g id="01-yield-latency-line2d_19">
+      <path d="M 80.64 203.04 
+L 541.44 203.04 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_20">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="203.04" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_14">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="207.218711" transform="rotate(-0 73.64 207.218711)">6</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_8">
+     <g id="01-yield-latency-line2d_21">
+      <path d="M 80.64 156.24 
+L 541.44 156.24 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_22">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="156.24" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_15">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="160.418711" transform="rotate(-0 73.64 160.418711)">7</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_9">
+     <g id="01-yield-latency-line2d_23">
+      <path d="M 80.64 109.44 
+L 541.44 109.44 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_24">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="80.64" y="109.44" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_16">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="73.64" y="113.618711" transform="rotate(-0 73.64 113.618711)">8</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_17">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="59.998672" y="296.64" transform="rotate(-90 59.998672 296.64)">Microseconds per yield gap</text>
+    </g>
+   </g>
+   <g id="01-yield-latency-LineCollection_1">
+    <path d="M 101.585455 288.59976 
+L 101.585455 286.52184 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #2266a5; stroke-width: 2"/>
+    <path d="M 185.367273 292.9194 
+L 185.367273 285.876 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #2266a5; stroke-width: 2"/>
+    <path d="M 269.149091 278.861484 
+L 269.149091 273.377109 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #2266a5; stroke-width: 2"/>
+    <path d="M 352.930909 282.289219 
+L 352.930909 262.408359 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #2266a5; stroke-width: 2"/>
+    <path d="M 436.712727 265.379062 
+L 436.712727 238.185703 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #2266a5; stroke-width: 2"/>
+    <path d="M 520.494545 261.037266 
+L 520.494545 241.841953 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #2266a5; stroke-width: 2"/>
+   </g>
+   <g id="01-yield-latency-line2d_25">
+    <defs>
+     <path id="01-yield-latency-ma061a34f30" d="M 4 0 
+L -4 -0 
+" style="stroke: #2266a5"/>
+    </defs>
+    <g clip-path="url(#01-yield-latency-pdeff7fa412)">
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="101.585455" y="288.59976" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="185.367273" y="292.9194" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="269.149091" y="278.861484" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="352.930909" y="282.289219" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="436.712727" y="265.379062" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="520.494545" y="261.037266" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-line2d_26">
+    <g clip-path="url(#01-yield-latency-pdeff7fa412)">
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="101.585455" y="286.52184" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="185.367273" y="285.876" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="269.149091" y="273.377109" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="352.930909" y="262.408359" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="436.712727" y="238.185703" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-ma061a34f30" x="520.494545" y="241.841953" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-LineCollection_2">
+    <path d="M 101.585455 257.73984 
+L 101.585455 234.83592 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #c25c16; stroke-width: 2"/>
+    <path d="M 185.367273 257.5386 
+L 185.367273 248.6466 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #c25c16; stroke-width: 2"/>
+    <path d="M 269.149091 234.072422 
+L 269.149091 225.617344 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #c25c16; stroke-width: 2"/>
+    <path d="M 352.930909 221.504063 
+L 352.930909 207.564609 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #c25c16; stroke-width: 2"/>
+    <path d="M 436.712727 203.679844 
+L 436.712727 166.660313 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #c25c16; stroke-width: 2"/>
+    <path d="M 520.494545 177.857578 
+L 520.494545 149.750156 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #c25c16; stroke-width: 2"/>
+   </g>
+   <g id="01-yield-latency-line2d_27">
+    <defs>
+     <path id="01-yield-latency-m6cc13b9efb" d="M 4 0 
+L -4 -0 
+" style="stroke: #c25c16"/>
+    </defs>
+    <g clip-path="url(#01-yield-latency-pdeff7fa412)">
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="101.585455" y="257.73984" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="185.367273" y="257.5386" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="269.149091" y="234.072422" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="352.930909" y="221.504063" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="436.712727" y="203.679844" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="520.494545" y="177.857578" style="fill: #c25c16; stroke: #c25c16"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-line2d_28">
+    <g clip-path="url(#01-yield-latency-pdeff7fa412)">
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="101.585455" y="234.83592" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="185.367273" y="248.6466" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="269.149091" y="225.617344" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="352.930909" y="207.564609" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="436.712727" y="166.660313" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#01-yield-latency-m6cc13b9efb" x="520.494545" y="149.750156" style="fill: #c25c16; stroke: #c25c16"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-line2d_29">
+    <path d="M 101.585455 288.03114 
+L 185.367273 289.6434 
+L 269.149091 277.718906 
+L 352.930909 266.750156 
+L 436.712727 258.295078 
+L 520.494545 256.466953 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #2266a5; stroke-width: 2; stroke-linecap: square"/>
+    <defs>
+     <path id="01-yield-latency-mc401de1e24" d="M 0 3 
+C 0.795609 3 1.55874 2.683901 2.12132 2.12132 
+C 2.683901 1.55874 3 0.795609 3 0 
+C 3 -0.795609 2.683901 -1.55874 2.12132 -2.12132 
+C 1.55874 -2.683901 0.795609 -3 0 -3 
+C -0.795609 -3 -1.55874 -2.683901 -2.12132 -2.12132 
+C -2.683901 -1.55874 -3 -0.795609 -3 0 
+C -3 0.795609 -2.683901 1.55874 -2.12132 2.12132 
+C -1.55874 2.683901 -0.795609 3 0 3 
+z
+" style="stroke: #2266a5"/>
+    </defs>
+    <g clip-path="url(#01-yield-latency-pdeff7fa412)">
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="101.585455" y="288.03114" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="185.367273" y="289.6434" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="269.149091" y="277.718906" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="352.930909" y="266.750156" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="436.712727" y="258.295078" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="520.494545" y="256.466953" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-line2d_30">
+    <path d="M 101.585455 256.86 
+L 185.367273 250.7526 
+L 269.149091 228.588047 
+L 352.930909 215.562656 
+L 436.712727 184.256016 
+L 520.494545 159.576328 
+" clip-path="url(#01-yield-latency-pdeff7fa412)" style="fill: none; stroke: #c25c16; stroke-width: 2; stroke-linecap: square"/>
+    <defs>
+     <path id="01-yield-latency-m072e7729f0" d="M -3 3 
+L 3 3 
+L 3 -3 
+L -3 -3 
+z
+" style="stroke: #c25c16; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#01-yield-latency-pdeff7fa412)">
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="101.585455" y="256.86" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="185.367273" y="250.7526" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="269.149091" y="228.588047" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="352.930909" y="215.562656" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="436.712727" y="184.256016" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="520.494545" y="159.576328" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-patch_3">
+    <path d="M 80.64 483.84 
+L 80.64 109.44 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="01-yield-latency-patch_4">
+    <path d="M 80.64 483.84 
+L 541.44 483.84 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="01-yield-latency-text_18">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #2266a5" x="101.585455" y="306.59976" transform="rotate(-0 101.585455 306.59976)">4.18</text>
+   </g>
+   <g id="01-yield-latency-text_19">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #2266a5" x="185.367273" y="310.9194" transform="rotate(-0 185.367273 310.9194)">4.15</text>
+   </g>
+   <g id="01-yield-latency-text_20">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #2266a5" x="269.149091" y="296.861484" transform="rotate(-0 269.149091 296.861484)">4.40</text>
+   </g>
+   <g id="01-yield-latency-text_21">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #2266a5" x="352.930909" y="300.289219" transform="rotate(-0 352.930909 300.289219)">4.64</text>
+   </g>
+   <g id="01-yield-latency-text_22">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #2266a5" x="436.712727" y="283.379062" transform="rotate(-0 436.712727 283.379062)">4.82</text>
+   </g>
+   <g id="01-yield-latency-text_23">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #2266a5" x="520.494545" y="279.037266" transform="rotate(-0 520.494545 279.037266)">4.86</text>
+   </g>
+   <g id="01-yield-latency-text_24">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #c25c16" x="101.585455" y="226.83592" transform="rotate(-0 101.585455 226.83592)">4.85</text>
+   </g>
+   <g id="01-yield-latency-text_25">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #c25c16" x="185.367273" y="240.6466" transform="rotate(-0 185.367273 240.6466)">4.98</text>
+   </g>
+   <g id="01-yield-latency-text_26">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #c25c16" x="269.149091" y="217.617344" transform="rotate(-0 269.149091 217.617344)">5.45</text>
+   </g>
+   <g id="01-yield-latency-text_27">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #c25c16" x="352.930909" y="199.564609" transform="rotate(-0 352.930909 199.564609)">5.73</text>
+   </g>
+   <g id="01-yield-latency-text_28">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #c25c16" x="436.712727" y="158.660313" transform="rotate(-0 436.712727 158.660313)">6.40</text>
+   </g>
+   <g id="01-yield-latency-text_29">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #c25c16" x="520.494545" y="141.750156" transform="rotate(-0 520.494545 141.750156)">6.93</text>
+   </g>
+   <g id="01-yield-latency-text_30">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="80.64" y="96.44" transform="rotate(-0 80.64 96.44)">Measured boundary gap: excludes callback batch work</text>
+   </g>
+   <g id="01-yield-latency-legend_1">
+    <g id="01-yield-latency-LineCollection_3">
+     <path d="M 101.54 129.348281 
+L 101.54 118.348281 
+" style="fill: none; stroke: #2266a5; stroke-width: 2"/>
+    </g>
+    <g id="01-yield-latency-line2d_31">
+     <g>
+      <use xlink:href="#01-yield-latency-ma061a34f30" x="101.54" y="129.348281" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-line2d_32">
+     <g>
+      <use xlink:href="#01-yield-latency-ma061a34f30" x="101.54" y="118.348281" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-line2d_33">
+     <path d="M 90.54 123.848281 
+L 112.54 123.848281 
+" style="fill: none; stroke: #2266a5; stroke-width: 2; stroke-linecap: square"/>
+    </g>
+    <g id="01-yield-latency-line2d_34">
+     <g>
+      <use xlink:href="#01-yield-latency-mc401de1e24" x="101.54" y="123.848281" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_31">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start" x="121.34" y="127.698281" transform="rotate(-0 121.34 127.698281)">JSPI</text>
+    </g>
+    <g id="01-yield-latency-LineCollection_4">
+     <path d="M 101.54 145.849141 
+L 101.54 134.849141 
+" style="fill: none; stroke: #c25c16; stroke-width: 2"/>
+    </g>
+    <g id="01-yield-latency-line2d_35">
+     <g>
+      <use xlink:href="#01-yield-latency-m6cc13b9efb" x="101.54" y="145.849141" style="fill: #c25c16; stroke: #c25c16"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-line2d_36">
+     <g>
+      <use xlink:href="#01-yield-latency-m6cc13b9efb" x="101.54" y="134.849141" style="fill: #c25c16; stroke: #c25c16"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-line2d_37">
+     <path d="M 90.54 140.349141 
+L 112.54 140.349141 
+" style="fill: none; stroke: #c25c16; stroke-width: 2; stroke-linecap: square"/>
+    </g>
+    <g id="01-yield-latency-line2d_38">
+     <g>
+      <use xlink:href="#01-yield-latency-m072e7729f0" x="101.54" y="140.349141" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_32">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start" x="121.34" y="144.199141" transform="rotate(-0 121.34 144.199141)">ASYNCIFY</text>
+    </g>
+   </g>
+  </g>
+  <g id="01-yield-latency-axes_2">
+   <g id="01-yield-latency-patch_5">
+    <path d="M 656.64 483.84 
+L 1117.44 483.84 
+L 1117.44 109.44 
+L 656.64 109.44 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="01-yield-latency-matplotlib.axis_3">
+    <g id="01-yield-latency-xtick_7">
+     <g id="01-yield-latency-line2d_39">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="677.585455" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_33">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="677.585455" y="499.197422" transform="rotate(-0 677.585455 499.197422)">1</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_8">
+     <g id="01-yield-latency-line2d_40">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="761.367273" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_34">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="761.367273" y="499.197422" transform="rotate(-0 761.367273 499.197422)">10</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_9">
+     <g id="01-yield-latency-line2d_41">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="845.149091" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_35">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="845.149091" y="499.197422" transform="rotate(-0 845.149091 499.197422)">100</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_10">
+     <g id="01-yield-latency-line2d_42">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="928.930909" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_36">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="928.930909" y="499.197422" transform="rotate(-0 928.930909 499.197422)">1,000</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_11">
+     <g id="01-yield-latency-line2d_43">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="1012.712727" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_37">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1012.712727" y="499.197422" transform="rotate(-0 1012.712727 499.197422)">5,000</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-xtick_12">
+     <g id="01-yield-latency-line2d_44">
+      <g>
+       <use xlink:href="#01-yield-latency-mb55dff9d97" x="1096.494545" y="483.84" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_38">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1096.494545" y="499.197422" transform="rotate(-0 1096.494545 499.197422)">10,000</text>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_39">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="887.04" y="514.198281" transform="rotate(-0 887.04 514.198281)">Handlers per turn (tested settings)</text>
+    </g>
+   </g>
+   <g id="01-yield-latency-matplotlib.axis_4">
+    <g id="01-yield-latency-ytick_10">
+     <g id="01-yield-latency-line2d_45">
+      <path d="M 656.64 440.140221 
+L 1117.44 440.140221 
+" clip-path="url(#01-yield-latency-p5112fc15f0)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_46">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="656.64" y="440.140221" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_40">
+      <!-- $\mathdefault{10^{0}}$ -->
+      <g transform="translate(630.28 445.310221)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">0</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_11">
+     <g id="01-yield-latency-line2d_47">
+      <path d="M 656.64 355.033325 
+L 1117.44 355.033325 
+" clip-path="url(#01-yield-latency-p5112fc15f0)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_48">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="656.64" y="355.033325" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_41">
+      <!-- $\mathdefault{10^{1}}$ -->
+      <g transform="translate(630.28 360.148325)">
+       <text>
+        <tspan x="0" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.389063" style="font-size: 7.7px; font-family: 'DejaVu Sans'">1</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_12">
+     <g id="01-yield-latency-line2d_49">
+      <path d="M 656.64 269.926429 
+L 1117.44 269.926429 
+" clip-path="url(#01-yield-latency-p5112fc15f0)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_50">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="656.64" y="269.926429" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_42">
+      <!-- $\mathdefault{10^{2}}$ -->
+      <g transform="translate(630.28 275.096429)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">2</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_13">
+     <g id="01-yield-latency-line2d_51">
+      <path d="M 656.64 184.819533 
+L 1117.44 184.819533 
+" clip-path="url(#01-yield-latency-p5112fc15f0)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="01-yield-latency-line2d_52">
+      <g>
+       <use xlink:href="#01-yield-latency-mb3ef16d08d" x="656.64" y="184.819533" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="01-yield-latency-text_43">
+      <!-- $\mathdefault{10^{3}}$ -->
+      <g transform="translate(630.28 189.989533)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">3</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_14">
+     <g id="01-yield-latency-line2d_53">
+      <defs>
+       <path id="01-yield-latency-m9156bb6ce7" d="M 0 0 
+L -2 0 
+" style="stroke: #000000; stroke-width: 0.6"/>
+      </defs>
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="474.00766" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_15">
+     <g id="01-yield-latency-line2d_54">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="465.75995" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_16">
+     <g id="01-yield-latency-line2d_55">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="459.02108" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_17">
+     <g id="01-yield-latency-line2d_56">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="453.323446" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_18">
+     <g id="01-yield-latency-line2d_57">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="448.387932" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_19">
+     <g id="01-yield-latency-line2d_58">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="444.034499" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_20">
+     <g id="01-yield-latency-line2d_59">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="414.520493" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_21">
+     <g id="01-yield-latency-line2d_60">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="399.533912" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_22">
+     <g id="01-yield-latency-line2d_61">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="388.900764" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_23">
+     <g id="01-yield-latency-line2d_62">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="380.653054" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_24">
+     <g id="01-yield-latency-line2d_63">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="373.914184" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_25">
+     <g id="01-yield-latency-line2d_64">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="368.21655" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_26">
+     <g id="01-yield-latency-line2d_65">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="363.281036" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_27">
+     <g id="01-yield-latency-line2d_66">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="358.927603" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_28">
+     <g id="01-yield-latency-line2d_67">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="329.413597" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_29">
+     <g id="01-yield-latency-line2d_68">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="314.427016" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_30">
+     <g id="01-yield-latency-line2d_69">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="303.793868" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_31">
+     <g id="01-yield-latency-line2d_70">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="295.546158" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_32">
+     <g id="01-yield-latency-line2d_71">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="288.807288" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_33">
+     <g id="01-yield-latency-line2d_72">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="283.109654" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_34">
+     <g id="01-yield-latency-line2d_73">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="278.174139" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_35">
+     <g id="01-yield-latency-line2d_74">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="273.820707" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_36">
+     <g id="01-yield-latency-line2d_75">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="244.3067" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_37">
+     <g id="01-yield-latency-line2d_76">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="229.32012" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_38">
+     <g id="01-yield-latency-line2d_77">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="218.686972" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_39">
+     <g id="01-yield-latency-line2d_78">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="210.439261" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_40">
+     <g id="01-yield-latency-line2d_79">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="203.700391" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_41">
+     <g id="01-yield-latency-line2d_80">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="198.002758" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_42">
+     <g id="01-yield-latency-line2d_81">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="193.067243" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_43">
+     <g id="01-yield-latency-line2d_82">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="188.713811" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_44">
+     <g id="01-yield-latency-line2d_83">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="159.199804" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_45">
+     <g id="01-yield-latency-line2d_84">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="144.213224" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_46">
+     <g id="01-yield-latency-line2d_85">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="133.580076" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_47">
+     <g id="01-yield-latency-line2d_86">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="125.332365" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_48">
+     <g id="01-yield-latency-line2d_87">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="118.593495" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-ytick_49">
+     <g id="01-yield-latency-line2d_88">
+      <g>
+       <use xlink:href="#01-yield-latency-m9156bb6ce7" x="656.64" y="112.895862" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_44">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="623.637422" y="296.64" transform="rotate(-90 623.637422 296.64)">Nanoseconds per callback (log scale)</text>
+    </g>
+   </g>
+   <g id="01-yield-latency-line2d_89">
+    <path d="M 677.585455 131.918236 
+L 761.367273 217.330727 
+L 845.149091 300.234987 
+L 928.930909 383.425526 
+L 1012.712727 441.500468 
+L 1096.494545 466.821818 
+" clip-path="url(#01-yield-latency-p5112fc15f0)" style="fill: none; stroke: #2266a5; stroke-width: 2; stroke-linecap: square"/>
+    <g clip-path="url(#01-yield-latency-p5112fc15f0)">
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="677.585455" y="131.918236" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="761.367273" y="217.330727" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="845.149091" y="300.234987" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="928.930909" y="383.425526" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="1012.712727" y="441.500468" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#01-yield-latency-mc401de1e24" x="1096.494545" y="466.821818" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-line2d_90">
+    <path d="M 677.585455 126.458182 
+L 761.367273 210.583693 
+L 845.149091 292.333099 
+L 928.930909 375.600416 
+L 1012.712727 431.008019 
+L 1096.494545 453.701797 
+" clip-path="url(#01-yield-latency-p5112fc15f0)" style="fill: none; stroke: #c25c16; stroke-width: 2; stroke-linecap: square"/>
+    <g clip-path="url(#01-yield-latency-p5112fc15f0)">
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="677.585455" y="126.458182" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="761.367273" y="210.583693" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="845.149091" y="292.333099" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="928.930909" y="375.600416" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="1012.712727" y="431.008019" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#01-yield-latency-m072e7729f0" x="1096.494545" y="453.701797" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="01-yield-latency-patch_6">
+    <path d="M 656.64 483.84 
+L 656.64 109.44 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="01-yield-latency-patch_7">
+    <path d="M 656.64 483.84 
+L 1117.44 483.84 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="01-yield-latency-text_45">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="656.64" y="96.44" transform="rotate(-0 656.64 96.44)">Derived scheduling cost per callback</text>
+   </g>
+   <g id="01-yield-latency-legend_2">
+    <g id="01-yield-latency-line2d_91">
+     <path d="M 1023.312656 123.848281 
+L 1034.312656 123.848281 
+L 1045.312656 123.848281 
+" style="fill: none; stroke: #2266a5; stroke-width: 2; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#01-yield-latency-mc401de1e24" x="1034.312656" y="123.848281" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_46">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start" x="1054.112656" y="127.698281" transform="rotate(-0 1054.112656 127.698281)">JSPI</text>
+    </g>
+    <g id="01-yield-latency-line2d_92">
+     <path d="M 1023.312656 140.349141 
+L 1034.312656 140.349141 
+L 1045.312656 140.349141 
+" style="fill: none; stroke: #c25c16; stroke-width: 2; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#01-yield-latency-m072e7729f0" x="1034.312656" y="140.349141" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="01-yield-latency-text_47">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start" x="1054.112656" y="144.199141" transform="rotate(-0 1054.112656 144.199141)">ASYNCIFY</text>
+    </g>
+   </g>
+  </g>
+  <g id="01-yield-latency-text_48">
+   <text style="font-weight: 700; font-size: 21px; font-family: 'DejaVu Sans'; text-anchor: start" x="69.12" y="30.356719" transform="rotate(-0 69.12 30.356719)">Yield latency and turn limits</text>
+  </g>
+  <g id="01-yield-latency-text_49">
+   <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #475569" x="69.12" y="43.2" transform="rotate(-0 69.12 43.2)">Release -O3 | Exceptions enabled | Isolated page | Seven repetitions per setting</text>
+  </g>
+  <g id="01-yield-latency-text_50">
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(69.12 547.734551)">Dots: median of per-run means. Error bars: range of run means, not confidence intervals.</text>
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(69.12 558.537012)">Amortization = measured gap / turn limit. Gaps include small dispatcher return/reentry costs.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="01-yield-latency-pdeff7fa412">
+   <rect x="80.64" y="109.44" width="460.8" height="374.4"/>
+  </clipPath>
+  <clipPath id="01-yield-latency-p5112fc15f0">
+   <rect x="656.64" y="109.44" width="460.8" height="374.4"/>
+  </clipPath>
+ </defs>
+</svg>

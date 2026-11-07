@@ -9,7 +9,7 @@
 // nothing when no handler throws; a run called inside a catch block suspends and resumes there;
 // a handler's exception thrown after run suspended reaches main's catch, and the next run after
 // it is no nested call; and so does one thrown after the run family yielded to the browser,
-// 2,000 handlers having filled two turns of the default limit first.
+// 2,000 handlers having filled twenty turns of the default limit first.
 
 #include <webcpp/asio/io_context.hpp>
 #include <webcpp/asio/steady_timer.hpp>
@@ -95,7 +95,7 @@ void a_throw_after_a_yield_reaches_main() {
     BOOST_TEST(caught);
     BOOST_TEST_EQ(ran, 2000U);
 #ifdef __EMSCRIPTEN__
-    BOOST_TEST_EQ(yields.count(), 2);
+    BOOST_TEST_EQ(yields.count(), 20);
 #else
     BOOST_TEST_EQ(yields.count(), 0);
 #endif

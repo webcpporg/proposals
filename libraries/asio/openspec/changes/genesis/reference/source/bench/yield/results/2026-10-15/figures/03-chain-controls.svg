@@ -1,0 +1,1561 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1152pt" height="864pt" viewBox="0 0 1152 864" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-15T03:06:31.421396</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="03-chain-controls-figure_1">
+  <g id="03-chain-controls-patch_1">
+   <path d="M 0 864 
+L 1152 864 
+L 1152 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="03-chain-controls-axes_1">
+   <g id="03-chain-controls-patch_2">
+    <path d="M 92.16 373.552941 
+L 553.997838 373.552941 
+L 553.997838 129.6 
+L 92.16 129.6 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_1">
+    <g id="03-chain-controls-xtick_1">
+     <g id="03-chain-controls-line2d_1">
+      <defs>
+       <path id="03-chain-controls-mbd678f479f" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="113.152629" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_1">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="113.152629" y="388.910363" transform="rotate(-0 113.152629 388.910363)">1</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_2">
+     <g id="03-chain-controls-line2d_2">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="197.123145" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_2">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="197.123145" y="388.910363" transform="rotate(-0 197.123145 388.910363)">10</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_3">
+     <g id="03-chain-controls-line2d_3">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="281.093661" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_3">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="281.093661" y="388.910363" transform="rotate(-0 281.093661 388.910363)">100</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_4">
+     <g id="03-chain-controls-line2d_4">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="365.064177" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_4">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="365.064177" y="388.910363" transform="rotate(-0 365.064177 388.910363)">1,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_5">
+     <g id="03-chain-controls-line2d_5">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="449.034693" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_5">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="449.034693" y="388.910363" transform="rotate(-0 449.034693 388.910363)">5,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_6">
+     <g id="03-chain-controls-line2d_6">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="533.005209" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_6">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="533.005209" y="388.910363" transform="rotate(-0 533.005209 388.910363)">10,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_7">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="323.078919" y="403.911222" transform="rotate(-0 323.078919 403.911222)">Handlers per turn (tested settings)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_2">
+    <g id="03-chain-controls-ytick_1">
+     <g id="03-chain-controls-line2d_7">
+      <path d="M 92.16 373.552941 
+L 553.997838 373.552941 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_8">
+      <defs>
+       <path id="03-chain-controls-m967d5db204" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_8">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="85.16" y="377.731652" transform="rotate(-0 85.16 377.731652)">0</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_2">
+     <g id="03-chain-controls-line2d_9">
+      <path d="M 92.16 324.762353 
+L 553.997838 324.762353 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_10">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="324.762353" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_9">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="85.16" y="328.941064" transform="rotate(-0 85.16 328.941064)">2</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_3">
+     <g id="03-chain-controls-line2d_11">
+      <path d="M 92.16 275.971765 
+L 553.997838 275.971765 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_12">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="275.971765" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_10">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="85.16" y="280.150476" transform="rotate(-0 85.16 280.150476)">4</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_4">
+     <g id="03-chain-controls-line2d_13">
+      <path d="M 92.16 227.181176 
+L 553.997838 227.181176 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_14">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="227.181176" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_11">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="85.16" y="231.359887" transform="rotate(-0 85.16 231.359887)">6</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_5">
+     <g id="03-chain-controls-line2d_15">
+      <path d="M 92.16 178.390588 
+L 553.997838 178.390588 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_16">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="178.390588" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_12">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="85.16" y="182.569299" transform="rotate(-0 85.16 182.569299)">8</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_6">
+     <g id="03-chain-controls-line2d_17">
+      <path d="M 92.16 129.6 
+L 553.997838 129.6 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_18">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="129.6" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_13">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="85.16" y="133.778711" transform="rotate(-0 85.16 133.778711)">10</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_14">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="64.519922" y="251.576471" transform="rotate(-90 64.519922 251.576471)">Microseconds (median of run means)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_19">
+    <path d="M 113.152629 271.48425 
+L 197.123145 272.324668 
+L 281.093661 266.108824 
+L 365.064177 260.391176 
+L 449.034693 255.983824 
+L 533.005209 255.030882 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #2266a5; stroke-width: 1.8; stroke-linecap: square"/>
+    <defs>
+     <path id="03-chain-controls-m1fcee41bab" d="M 0 3 
+C 0.795609 3 1.55874 2.683901 2.12132 2.12132 
+C 2.683901 1.55874 3 0.795609 3 0 
+C 3 -0.795609 2.683901 -1.55874 2.12132 -2.12132 
+C 1.55874 -2.683901 0.795609 -3 0 -3 
+C -0.795609 -3 -1.55874 -2.683901 -2.12132 -2.12132 
+C -2.683901 -1.55874 -3 -0.795609 -3 0 
+C -3 0.795609 -2.683901 1.55874 -2.12132 2.12132 
+C -1.55874 2.683901 -0.795609 3 0 3 
+z
+" style="stroke: #2266a5"/>
+    </defs>
+    <g clip-path="url(#03-chain-controls-p250168e453)">
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="113.152629" y="271.48425" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="197.123145" y="272.324668" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="281.093661" y="266.108824" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="365.064177" y="260.391176" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="449.034693" y="255.983824" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="533.005209" y="255.030882" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_20">
+    <path d="M 113.152629 271.783093 
+L 197.123145 271.885553 
+L 281.093661 267.657353 
+L 365.064177 265.275 
+L 449.034693 260.272059 
+L 533.005209 245.739706 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #29805f; stroke-width: 1.8; stroke-linecap: square"/>
+    <defs>
+     <path id="03-chain-controls-ma6ea454487" d="M -3 3 
+L 3 3 
+L 3 -3 
+L -3 -3 
+z
+" style="stroke: #29805f; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#03-chain-controls-p250168e453)">
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="113.152629" y="271.783093" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="197.123145" y="271.885553" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="281.093661" y="267.657353" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="365.064177" y="265.275" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="449.034693" y="260.272059" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="533.005209" y="245.739706" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_21">
+    <path d="M 113.152629 270.771908 
+L 197.123145 273.068725 
+L 281.093661 265.513235 
+L 365.064177 263.488235 
+L 449.034693 255.507353 
+L 533.005209 244.072059 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #c25c16; stroke-width: 1.8; stroke-linecap: square"/>
+    <defs>
+     <path id="03-chain-controls-mdd2973ba1e" d="M 0 -3 
+L -3 3 
+L 3 3 
+z
+" style="stroke: #c25c16; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#03-chain-controls-p250168e453)">
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="113.152629" y="270.771908" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="197.123145" y="273.068725" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="281.093661" y="265.513235" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="365.064177" y="263.488235" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="449.034693" y="255.507353" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="533.005209" y="244.072059" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_22">
+    <path d="M 113.152629 248.360294 
+L 197.123145 245.977941 
+L 281.093661 246.216176 
+L 365.064177 241.927941 
+L 449.034693 236.925 
+L 533.005209 222.75 
+" clip-path="url(#03-chain-controls-p250168e453)" style="fill: none; stroke: #8960a5; stroke-width: 1.8; stroke-linecap: square"/>
+    <defs>
+     <path id="03-chain-controls-m7ed31d4c21" d="M -0 4.242641 
+L 4.242641 0 
+L 0 -4.242641 
+L -4.242641 -0 
+z
+" style="stroke: #8960a5; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#03-chain-controls-p250168e453)">
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="113.152629" y="248.360294" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="197.123145" y="245.977941" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="281.093661" y="246.216176" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="365.064177" y="241.927941" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="449.034693" y="236.925" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="533.005209" y="222.75" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-patch_3">
+    <path d="M 92.16 373.552941 
+L 92.16 129.6 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-patch_4">
+    <path d="M 92.16 373.552941 
+L 553.997838 373.552941 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-text_15">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="92.16" y="116.6" transform="rotate(-0 92.16 116.6)">JSPI: measured yield boundary gaps</text>
+   </g>
+   <g id="03-chain-controls-legend_1">
+    <g id="03-chain-controls-line2d_23">
+     <path d="M 100.26 141.388594 
+L 109.26 141.388594 
+L 118.26 141.388594 
+" style="fill: none; stroke: #2266a5; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-m1fcee41bab" x="109.26" y="141.388594" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_16">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="125.46" y="144.538594" transform="rotate(-0 125.46 144.538594)">EH on, untraced</text>
+    </g>
+    <g id="03-chain-controls-line2d_24">
+     <path d="M 100.26 154.889297 
+L 109.26 154.889297 
+L 118.26 154.889297 
+" style="fill: none; stroke: #29805f; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-ma6ea454487" x="109.26" y="154.889297" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_17">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="125.46" y="158.039297" transform="rotate(-0 125.46 158.039297)">EH off, untraced</text>
+    </g>
+    <g id="03-chain-controls-line2d_25">
+     <path d="M 100.26 168.39 
+L 109.26 168.39 
+L 118.26 168.39 
+" style="fill: none; stroke: #c25c16; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-mdd2973ba1e" x="109.26" y="168.39" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_18">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="125.46" y="171.54" transform="rotate(-0 125.46 171.54)">64 source-level LCG updates</text>
+    </g>
+    <g id="03-chain-controls-line2d_26">
+     <path d="M 100.26 181.890703 
+L 109.26 181.890703 
+L 118.26 181.890703 
+" style="fill: none; stroke: #8960a5; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-m7ed31d4c21" x="109.26" y="181.890703" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_19">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="125.46" y="185.040703" transform="rotate(-0 125.46 185.040703)">EH on, traced</text>
+    </g>
+   </g>
+  </g>
+  <g id="03-chain-controls-axes_2">
+   <g id="03-chain-controls-patch_5">
+    <path d="M 655.602162 373.552941 
+L 1117.44 373.552941 
+L 1117.44 129.6 
+L 655.602162 129.6 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_3">
+    <g id="03-chain-controls-xtick_7">
+     <g id="03-chain-controls-line2d_27">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="676.594791" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_20">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="676.594791" y="388.910363" transform="rotate(-0 676.594791 388.910363)">1</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_8">
+     <g id="03-chain-controls-line2d_28">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="760.565307" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_21">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="760.565307" y="388.910363" transform="rotate(-0 760.565307 388.910363)">10</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_9">
+     <g id="03-chain-controls-line2d_29">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="844.535823" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_22">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="844.535823" y="388.910363" transform="rotate(-0 844.535823 388.910363)">100</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_10">
+     <g id="03-chain-controls-line2d_30">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="928.506339" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_23">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="928.506339" y="388.910363" transform="rotate(-0 928.506339 388.910363)">1,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_11">
+     <g id="03-chain-controls-line2d_31">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="1012.476855" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_24">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1012.476855" y="388.910363" transform="rotate(-0 1012.476855 388.910363)">5,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_12">
+     <g id="03-chain-controls-line2d_32">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="1096.447371" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_25">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1096.447371" y="388.910363" transform="rotate(-0 1096.447371 388.910363)">10,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_26">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="886.521081" y="403.911222" transform="rotate(-0 886.521081 403.911222)">Handlers per turn (tested settings)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_4">
+    <g id="03-chain-controls-ytick_7">
+     <g id="03-chain-controls-line2d_33">
+      <path d="M 655.602162 373.552941 
+L 1117.44 373.552941 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_34">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="373.552941" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_27">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="648.602162" y="377.731652" transform="rotate(-0 648.602162 377.731652)">0</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_8">
+     <g id="03-chain-controls-line2d_35">
+      <path d="M 655.602162 324.762353 
+L 1117.44 324.762353 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_36">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="324.762353" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_28">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="648.602162" y="328.941064" transform="rotate(-0 648.602162 328.941064)">2</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_9">
+     <g id="03-chain-controls-line2d_37">
+      <path d="M 655.602162 275.971765 
+L 1117.44 275.971765 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_38">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="275.971765" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_29">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="648.602162" y="280.150476" transform="rotate(-0 648.602162 280.150476)">4</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_10">
+     <g id="03-chain-controls-line2d_39">
+      <path d="M 655.602162 227.181176 
+L 1117.44 227.181176 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_40">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="227.181176" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_30">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="648.602162" y="231.359887" transform="rotate(-0 648.602162 231.359887)">6</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_11">
+     <g id="03-chain-controls-line2d_41">
+      <path d="M 655.602162 178.390588 
+L 1117.44 178.390588 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_42">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="178.390588" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_31">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="648.602162" y="182.569299" transform="rotate(-0 648.602162 182.569299)">8</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_12">
+     <g id="03-chain-controls-line2d_43">
+      <path d="M 655.602162 129.6 
+L 1117.44 129.6 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_44">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="129.6" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_32">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end" x="648.602162" y="133.778711" transform="rotate(-0 648.602162 133.778711)">10</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_33">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="627.962084" y="251.576471" transform="rotate(-90 627.962084 251.576471)">Microseconds (median of run means)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_45">
+    <path d="M 676.594791 255.235765 
+L 760.565307 252.052179 
+L 844.535823 240.498529 
+L 928.506339 233.708824 
+L 1012.476855 217.389706 
+L 1096.447371 204.525 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #2266a5; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p7cc6032b7d)">
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="676.594791" y="255.235765" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="760.565307" y="252.052179" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="844.535823" y="240.498529" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="928.506339" y="233.708824" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="1012.476855" y="217.389706" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="1096.447371" y="204.525" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_46">
+    <path d="M 676.594791 265.592787 
+L 760.565307 261.846889 
+L 844.535823 255.745588 
+L 928.506339 253.005882 
+L 1012.476855 251.933824 
+L 1096.447371 240.022059 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #29805f; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p7cc6032b7d)">
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="676.594791" y="265.592787" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="760.565307" y="261.846889" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="844.535823" y="255.745588" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="928.506339" y="253.005882" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="1012.476855" y="251.933824" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="1096.447371" y="240.022059" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_47">
+    <path d="M 676.594791 254.922285 
+L 760.565307 251.32032 
+L 844.535823 237.997059 
+L 928.506339 230.611765 
+L 1012.476855 217.508824 
+L 1096.447371 205.716176 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #c25c16; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p7cc6032b7d)">
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="676.594791" y="254.922285" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="760.565307" y="251.32032" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="844.535823" y="237.997059" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="928.506339" y="230.611765" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="1012.476855" y="217.508824" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="1096.447371" y="205.716176" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_48">
+    <path d="M 676.594791 219.057353 
+L 760.565307 218.580882 
+L 844.535823 217.985294 
+L 928.506339 210.004412 
+L 1012.476855 188.563235 
+L 1096.447371 175.579412 
+" clip-path="url(#03-chain-controls-p7cc6032b7d)" style="fill: none; stroke: #8960a5; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p7cc6032b7d)">
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="676.594791" y="219.057353" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="760.565307" y="218.580882" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="844.535823" y="217.985294" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="928.506339" y="210.004412" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="1012.476855" y="188.563235" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-m7ed31d4c21" x="1096.447371" y="175.579412" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-patch_6">
+    <path d="M 655.602162 373.552941 
+L 655.602162 129.6 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-patch_7">
+    <path d="M 655.602162 373.552941 
+L 1117.44 373.552941 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-text_34">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="655.602162" y="116.6" transform="rotate(-0 655.602162 116.6)">ASYNCIFY: measured yield boundary gaps</text>
+   </g>
+   <g id="03-chain-controls-legend_2">
+    <g id="03-chain-controls-line2d_49">
+     <path d="M 663.702162 141.388594 
+L 672.702162 141.388594 
+L 681.702162 141.388594 
+" style="fill: none; stroke: #2266a5; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-m1fcee41bab" x="672.702162" y="141.388594" style="fill: #2266a5; stroke: #2266a5"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_35">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="688.902162" y="144.538594" transform="rotate(-0 688.902162 144.538594)">EH on, untraced</text>
+    </g>
+    <g id="03-chain-controls-line2d_50">
+     <path d="M 663.702162 154.889297 
+L 672.702162 154.889297 
+L 681.702162 154.889297 
+" style="fill: none; stroke: #29805f; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-ma6ea454487" x="672.702162" y="154.889297" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_36">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="688.902162" y="158.039297" transform="rotate(-0 688.902162 158.039297)">EH off, untraced</text>
+    </g>
+    <g id="03-chain-controls-line2d_51">
+     <path d="M 663.702162 168.39 
+L 672.702162 168.39 
+L 681.702162 168.39 
+" style="fill: none; stroke: #c25c16; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-mdd2973ba1e" x="672.702162" y="168.39" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_37">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="688.902162" y="171.54" transform="rotate(-0 688.902162 171.54)">64 source-level LCG updates</text>
+    </g>
+    <g id="03-chain-controls-line2d_52">
+     <path d="M 663.702162 181.890703 
+L 672.702162 181.890703 
+L 681.702162 181.890703 
+" style="fill: none; stroke: #8960a5; stroke-width: 1.8; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#03-chain-controls-m7ed31d4c21" x="672.702162" y="181.890703" style="fill: #8960a5; stroke: #8960a5; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_38">
+     <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="688.902162" y="185.040703" transform="rotate(-0 688.902162 185.040703)">EH on, traced</text>
+    </g>
+   </g>
+  </g>
+  <g id="03-chain-controls-axes_3">
+   <g id="03-chain-controls-patch_8">
+    <path d="M 92.16 751.68 
+L 553.997838 751.68 
+L 553.997838 507.727059 
+L 92.16 507.727059 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_5">
+    <g id="03-chain-controls-xtick_13">
+     <g id="03-chain-controls-line2d_53">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="113.152629" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_39">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="113.152629" y="767.037422" transform="rotate(-0 113.152629 767.037422)">1</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_14">
+     <g id="03-chain-controls-line2d_54">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="197.123145" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_40">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="197.123145" y="767.037422" transform="rotate(-0 197.123145 767.037422)">10</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_15">
+     <g id="03-chain-controls-line2d_55">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="281.093661" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_41">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="281.093661" y="767.037422" transform="rotate(-0 281.093661 767.037422)">100</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_16">
+     <g id="03-chain-controls-line2d_56">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="365.064177" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_42">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="365.064177" y="767.037422" transform="rotate(-0 365.064177 767.037422)">1,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_17">
+     <g id="03-chain-controls-line2d_57">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="449.034693" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_43">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="449.034693" y="767.037422" transform="rotate(-0 449.034693 767.037422)">5,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_18">
+     <g id="03-chain-controls-line2d_58">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="533.005209" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_44">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="533.005209" y="767.037422" transform="rotate(-0 533.005209 767.037422)">10,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_45">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="323.078919" y="782.038281" transform="rotate(-0 323.078919 782.038281)">Handlers per turn (tested settings)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_6">
+    <g id="03-chain-controls-ytick_13">
+     <g id="03-chain-controls-line2d_59">
+      <path d="M 92.16 710.380278 
+L 553.997838 710.380278 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_60">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="710.380278" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_46">
+      <!-- $\mathdefault{10^{0}}$ -->
+      <g transform="translate(65.8 715.550278)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">0</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_14">
+     <g id="03-chain-controls-line2d_61">
+      <path d="M 92.16 573.18557 
+L 553.997838 573.18557 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_62">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="92.16" y="573.18557" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_47">
+      <!-- $\mathdefault{10^{1}}$ -->
+      <g transform="translate(65.8 578.30057)">
+       <text>
+        <tspan x="0" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.389063" style="font-size: 7.7px; font-family: 'DejaVu Sans'">1</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_15">
+     <g id="03-chain-controls-line2d_63">
+      <defs>
+       <path id="03-chain-controls-mb461da4d4b" d="M 0 0 
+L -2 0 
+" style="stroke: #000000; stroke-width: 0.6"/>
+      </defs>
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="751.68" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_16">
+     <g id="03-chain-controls-line2d_64">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="740.816752" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_17">
+     <g id="03-chain-controls-line2d_65">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="731.632007" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_18">
+     <g id="03-chain-controls-line2d_66">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="723.675819" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_19">
+     <g id="03-chain-controls-line2d_67">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="716.657963" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_20">
+     <g id="03-chain-controls-line2d_68">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="669.080555" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_21">
+     <g id="03-chain-controls-line2d_69">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="644.921767" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_22">
+     <g id="03-chain-controls-line2d_70">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="627.780833" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_23">
+     <g id="03-chain-controls-line2d_71">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="614.485292" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_24">
+     <g id="03-chain-controls-line2d_72">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="603.622044" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_25">
+     <g id="03-chain-controls-line2d_73">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="594.437299" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_26">
+     <g id="03-chain-controls-line2d_74">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="586.481111" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_27">
+     <g id="03-chain-controls-line2d_75">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="579.463255" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_28">
+     <g id="03-chain-controls-line2d_76">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="531.885848" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_29">
+     <g id="03-chain-controls-line2d_77">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="92.16" y="507.727059" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_48">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="59.157422" y="629.703529" transform="rotate(-90 59.157422 629.703529)">Whole-run ratio (log scale)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-LineCollection_1">
+    <path d="M 113.152629 542.748405 
+L 113.152629 539.133941 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 197.123145 589.647563 
+L 197.123145 586.188507 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 281.093661 673.541923 
+L 281.093661 662.946616 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 365.064177 704.836056 
+L 365.064177 699.790811 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 449.034693 709.924296 
+L 449.034693 707.441134 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 533.005209 720.168298 
+L 533.005209 708.374728 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+   </g>
+   <g id="03-chain-controls-line2d_78">
+    <defs>
+     <path id="03-chain-controls-m48e082eb0d" d="M 3 0 
+L -3 -0 
+" style="stroke: #2266a5"/>
+    </defs>
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="113.152629" y="542.748405" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="197.123145" y="589.647563" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="281.093661" y="673.541923" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="365.064177" y="704.836056" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="449.034693" y="709.924296" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="533.005209" y="720.168298" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_79">
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="113.152629" y="539.133941" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="197.123145" y="586.188507" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="281.093661" y="662.946616" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="365.064177" y="699.790811" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="449.034693" y="707.441134" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="533.005209" y="708.374728" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-LineCollection_2">
+    <path d="M 113.152629 540.857922 
+L 113.152629 538.31617 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 197.123145 583.95547 
+L 197.123145 580.87013 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 281.093661 664.555124 
+L 281.093661 659.956553 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 365.064177 703.841642 
+L 365.064177 698.857198 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 449.034693 708.685696 
+L 449.034693 706.477158 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 533.005209 709.814707 
+L 533.005209 708.746309 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+   </g>
+   <g id="03-chain-controls-line2d_80">
+    <defs>
+     <path id="03-chain-controls-ma082eff2ac" d="M 3 0 
+L -3 -0 
+" style="stroke: #29805f"/>
+    </defs>
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="113.152629" y="540.857922" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="197.123145" y="583.95547" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="281.093661" y="664.555124" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="365.064177" y="703.841642" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="449.034693" y="708.685696" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="533.005209" y="709.814707" style="fill: #29805f; stroke: #29805f"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_81">
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="113.152629" y="538.31617" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="197.123145" y="580.87013" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="281.093661" y="659.956553" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="365.064177" y="698.857198" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="449.034693" y="706.477158" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="533.005209" y="708.746309" style="fill: #29805f; stroke: #29805f"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-LineCollection_3">
+    <path d="M 113.152629 544.1165 
+L 113.152629 540.680712 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 197.123145 589.678857 
+L 197.123145 588.640608 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 281.093661 667.631982 
+L 281.093661 665.486158 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 365.064177 704.669283 
+L 365.064177 701.669724 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 449.034693 710.335738 
+L 449.034693 708.53201 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 533.005209 710.29303 
+L 533.005209 708.925936 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+   </g>
+   <g id="03-chain-controls-line2d_82">
+    <defs>
+     <path id="03-chain-controls-m9425af8893" d="M 3 0 
+L -3 -0 
+" style="stroke: #c25c16"/>
+    </defs>
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-m9425af8893" x="113.152629" y="544.1165" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="197.123145" y="589.678857" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="281.093661" y="667.631982" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="365.064177" y="704.669283" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="449.034693" y="710.335738" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="533.005209" y="710.29303" style="fill: #c25c16; stroke: #c25c16"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_83">
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-m9425af8893" x="113.152629" y="540.680712" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="197.123145" y="588.640608" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="281.093661" y="665.486158" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="365.064177" y="701.669724" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="449.034693" y="708.53201" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="533.005209" y="708.925936" style="fill: #c25c16; stroke: #c25c16"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_84">
+    <path d="M 92.16 710.380278 
+L 553.997838 710.380278 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #687483"/>
+   </g>
+   <g id="03-chain-controls-line2d_85">
+    <path d="M 113.152629 540.561376 
+L 197.123145 588.937181 
+L 281.093661 666.344125 
+L 365.064177 702.264161 
+L 449.034693 708.442926 
+L 533.005209 709.784254 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #2266a5; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="113.152629" y="540.561376" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="197.123145" y="588.937181" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="281.093661" y="666.344125" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="365.064177" y="702.264161" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="449.034693" y="708.442926" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="533.005209" y="709.784254" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_86">
+    <path d="M 113.152629 540.288517 
+L 197.123145 582.022251 
+L 281.093661 662.842082 
+L 365.064177 700.336859 
+L 449.034693 707.931928 
+L 533.005209 708.932218 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #29805f; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="113.152629" y="540.288517" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="197.123145" y="582.022251" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="281.093661" y="662.842082" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="365.064177" y="700.336859" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="449.034693" y="707.931928" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="533.005209" y="708.932218" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_87">
+    <path d="M 113.152629 541.744424 
+L 197.123145 589.076568 
+L 281.093661 666.35109 
+L 365.064177 702.817553 
+L 449.034693 708.993222 
+L 533.005209 709.041041 
+" clip-path="url(#03-chain-controls-p78f6c3f165)" style="fill: none; stroke: #c25c16; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p78f6c3f165)">
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="113.152629" y="541.744424" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="197.123145" y="589.076568" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="281.093661" y="666.35109" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="365.064177" y="702.817553" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="449.034693" y="708.993222" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="533.005209" y="709.041041" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-patch_9">
+    <path d="M 92.16 751.68 
+L 92.16 507.727059 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-patch_10">
+    <path d="M 92.16 751.68 
+L 553.997838 751.68 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-text_49">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="92.16" y="494.727059" transform="rotate(-0 92.16 494.727059)">JSPI: elapsed-time ratio vs no periodic yields</text>
+   </g>
+  </g>
+  <g id="03-chain-controls-axes_4">
+   <g id="03-chain-controls-patch_11">
+    <path d="M 655.602162 751.68 
+L 1117.44 751.68 
+L 1117.44 507.727059 
+L 655.602162 507.727059 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_7">
+    <g id="03-chain-controls-xtick_19">
+     <g id="03-chain-controls-line2d_88">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="676.594791" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_50">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="676.594791" y="767.037422" transform="rotate(-0 676.594791 767.037422)">1</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_20">
+     <g id="03-chain-controls-line2d_89">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="760.565307" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_51">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="760.565307" y="767.037422" transform="rotate(-0 760.565307 767.037422)">10</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_21">
+     <g id="03-chain-controls-line2d_90">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="844.535823" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_52">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="844.535823" y="767.037422" transform="rotate(-0 844.535823 767.037422)">100</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_22">
+     <g id="03-chain-controls-line2d_91">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="928.506339" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_53">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="928.506339" y="767.037422" transform="rotate(-0 928.506339 767.037422)">1,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_23">
+     <g id="03-chain-controls-line2d_92">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="1012.476855" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_54">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1012.476855" y="767.037422" transform="rotate(-0 1012.476855 767.037422)">5,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-xtick_24">
+     <g id="03-chain-controls-line2d_93">
+      <g>
+       <use xlink:href="#03-chain-controls-mbd678f479f" x="1096.447371" y="751.68" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_55">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1096.447371" y="767.037422" transform="rotate(-0 1096.447371 767.037422)">10,000</text>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_56">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="886.521081" y="782.038281" transform="rotate(-0 886.521081 782.038281)">Handlers per turn (tested settings)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-matplotlib.axis_8">
+    <g id="03-chain-controls-ytick_30">
+     <g id="03-chain-controls-line2d_94">
+      <path d="M 655.602162 710.380278 
+L 1117.44 710.380278 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_95">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="710.380278" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_57">
+      <!-- $\mathdefault{10^{0}}$ -->
+      <g transform="translate(629.242162 715.550278)">
+       <text>
+        <tspan x="0" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.736688" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.279688" style="font-size: 7.7px; font-family: 'DejaVu Sans'">0</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_31">
+     <g id="03-chain-controls-line2d_96">
+      <path d="M 655.602162 573.18557 
+L 1117.44 573.18557 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="03-chain-controls-line2d_97">
+      <g>
+       <use xlink:href="#03-chain-controls-m967d5db204" x="655.602162" y="573.18557" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="03-chain-controls-text_58">
+      <!-- $\mathdefault{10^{1}}$ -->
+      <g transform="translate(629.242162 578.30057)">
+       <text>
+        <tspan x="0" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">1</tspan>
+        <tspan x="6.998535" y="-0.846063" style="font-size: 11px; font-family: 'DejaVu Sans'">0</tspan>
+        <tspan x="14.102344" y="-5.389063" style="font-size: 7.7px; font-family: 'DejaVu Sans'">1</tspan>
+       </text>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_32">
+     <g id="03-chain-controls-line2d_98">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="751.68" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_33">
+     <g id="03-chain-controls-line2d_99">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="740.816752" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_34">
+     <g id="03-chain-controls-line2d_100">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="731.632007" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_35">
+     <g id="03-chain-controls-line2d_101">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="723.675819" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_36">
+     <g id="03-chain-controls-line2d_102">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="716.657963" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_37">
+     <g id="03-chain-controls-line2d_103">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="669.080555" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_38">
+     <g id="03-chain-controls-line2d_104">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="644.921767" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_39">
+     <g id="03-chain-controls-line2d_105">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="627.780833" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_40">
+     <g id="03-chain-controls-line2d_106">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="614.485292" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_41">
+     <g id="03-chain-controls-line2d_107">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="603.622044" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_42">
+     <g id="03-chain-controls-line2d_108">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="594.437299" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_43">
+     <g id="03-chain-controls-line2d_109">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="586.481111" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_44">
+     <g id="03-chain-controls-line2d_110">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="579.463255" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_45">
+     <g id="03-chain-controls-line2d_111">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="531.885848" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-ytick_46">
+     <g id="03-chain-controls-line2d_112">
+      <g>
+       <use xlink:href="#03-chain-controls-mb461da4d4b" x="655.602162" y="507.727059" style="stroke: #000000; stroke-width: 0.6"/>
+      </g>
+     </g>
+    </g>
+    <g id="03-chain-controls-text_59">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="622.599584" y="629.703529" transform="rotate(-90 622.599584 629.703529)">Whole-run ratio (log scale)</text>
+    </g>
+   </g>
+   <g id="03-chain-controls-LineCollection_4">
+    <path d="M 676.594791 551.915587 
+L 676.594791 544.452671 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 760.565307 619.751333 
+L 760.565307 615.398477 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 844.535823 690.57227 
+L 844.535823 686.099537 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 928.506339 709.270363 
+L 928.506339 705.268925 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 1012.476855 712.945744 
+L 1012.476855 707.58804 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+    <path d="M 1096.447371 716.083492 
+L 1096.447371 698.248716 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #2266a5; stroke-width: 1.8"/>
+   </g>
+   <g id="03-chain-controls-line2d_113">
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="676.594791" y="551.915587" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="760.565307" y="619.751333" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="844.535823" y="690.57227" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="928.506339" y="709.270363" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="1012.476855" y="712.945744" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="1096.447371" y="716.083492" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_114">
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="676.594791" y="544.452671" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="760.565307" y="615.398477" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="844.535823" y="686.099537" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="928.506339" y="705.268925" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="1012.476855" y="707.58804" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m48e082eb0d" x="1096.447371" y="698.248716" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-LineCollection_5">
+    <path d="M 676.594791 537.644736 
+L 676.594791 530.747977 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 760.565307 589.536116 
+L 760.565307 587.98486 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 844.535823 675.272138 
+L 844.535823 671.339894 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 928.506339 720.192458 
+L 928.506339 718.408567 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 1012.476855 729.710741 
+L 1012.476855 727.589334 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+    <path d="M 1096.447371 728.282445 
+L 1096.447371 726.29318 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #29805f; stroke-width: 1.8"/>
+   </g>
+   <g id="03-chain-controls-line2d_115">
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="676.594791" y="537.644736" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="760.565307" y="589.536116" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="844.535823" y="675.272138" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="928.506339" y="720.192458" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="1012.476855" y="729.710741" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="1096.447371" y="728.282445" style="fill: #29805f; stroke: #29805f"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_116">
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="676.594791" y="530.747977" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="760.565307" y="587.98486" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="844.535823" y="671.339894" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="928.506339" y="718.408567" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="1012.476855" y="727.589334" style="fill: #29805f; stroke: #29805f"/>
+     <use xlink:href="#03-chain-controls-ma082eff2ac" x="1096.447371" y="726.29318" style="fill: #29805f; stroke: #29805f"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-LineCollection_6">
+    <path d="M 676.594791 550.508935 
+L 676.594791 549.269633 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 760.565307 617.287706 
+L 760.565307 616.543841 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 844.535823 687.082408 
+L 844.535823 686.295093 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 928.506339 708.174636 
+L 928.506339 706.073685 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 1012.476855 710.477021 
+L 1012.476855 704.284967 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+    <path d="M 1096.447371 711.644837 
+L 1096.447371 709.971608 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #c25c16; stroke-width: 1.8"/>
+   </g>
+   <g id="03-chain-controls-line2d_117">
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-m9425af8893" x="676.594791" y="550.508935" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="760.565307" y="617.287706" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="844.535823" y="687.082408" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="928.506339" y="708.174636" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="1012.476855" y="710.477021" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="1096.447371" y="711.644837" style="fill: #c25c16; stroke: #c25c16"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_118">
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-m9425af8893" x="676.594791" y="549.269633" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="760.565307" y="616.543841" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="844.535823" y="686.295093" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="928.506339" y="706.073685" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="1012.476855" y="704.284967" style="fill: #c25c16; stroke: #c25c16"/>
+     <use xlink:href="#03-chain-controls-m9425af8893" x="1096.447371" y="709.971608" style="fill: #c25c16; stroke: #c25c16"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_119">
+    <path d="M 655.602162 710.380278 
+L 1117.44 710.380278 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #687483"/>
+   </g>
+   <g id="03-chain-controls-line2d_120">
+    <path d="M 676.594791 551.069998 
+L 760.565307 618.497421 
+L 844.535823 689.147649 
+L 928.506339 707.310305 
+L 1012.476855 710.687887 
+L 1096.447371 709.390443 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #2266a5; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="676.594791" y="551.069998" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="760.565307" y="618.497421" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="844.535823" y="689.147649" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="928.506339" y="707.310305" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="1012.476855" y="710.687887" style="fill: #2266a5; stroke: #2266a5"/>
+     <use xlink:href="#03-chain-controls-m1fcee41bab" x="1096.447371" y="709.390443" style="fill: #2266a5; stroke: #2266a5"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_121">
+    <path d="M 676.594791 536.921343 
+L 760.565307 588.305729 
+L 844.535823 673.684637 
+L 928.506339 719.255623 
+L 1012.476855 728.658138 
+L 1096.447371 727.549388 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #29805f; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="676.594791" y="536.921343" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="760.565307" y="588.305729" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="844.535823" y="673.684637" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="928.506339" y="719.255623" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="1012.476855" y="728.658138" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-ma6ea454487" x="1096.447371" y="727.549388" style="fill: #29805f; stroke: #29805f; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-line2d_122">
+    <path d="M 676.594791 549.434075 
+L 760.565307 616.636397 
+L 844.535823 686.38692 
+L 928.506339 707.646151 
+L 1012.476855 709.452616 
+L 1096.447371 711.332497 
+" clip-path="url(#03-chain-controls-p478c9aef99)" style="fill: none; stroke: #c25c16; stroke-width: 1.8; stroke-linecap: square"/>
+    <g clip-path="url(#03-chain-controls-p478c9aef99)">
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="676.594791" y="549.434075" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="760.565307" y="616.636397" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="844.535823" y="686.38692" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="928.506339" y="707.646151" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="1012.476855" y="709.452616" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+     <use xlink:href="#03-chain-controls-mdd2973ba1e" x="1096.447371" y="711.332497" style="fill: #c25c16; stroke: #c25c16; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="03-chain-controls-patch_12">
+    <path d="M 655.602162 751.68 
+L 655.602162 507.727059 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-patch_13">
+    <path d="M 655.602162 751.68 
+L 1117.44 751.68 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="03-chain-controls-text_60">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="655.602162" y="494.727059" transform="rotate(-0 655.602162 494.727059)">ASYNCIFY: elapsed-time ratio vs no periodic yields</text>
+   </g>
+  </g>
+  <g id="03-chain-controls-text_61">
+   <text style="font-weight: 700; font-size: 21px; font-family: 'DejaVu Sans'; text-anchor: start" x="69.12" y="37.556719" transform="rotate(-0 69.12 37.556719)">Chain controls and whole-program comparisons</text>
+  </g>
+  <g id="03-chain-controls-text_62">
+   <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #475569" x="69.12" y="64.8" transform="rotate(-0 69.12 64.8)">All six turn limits | Same callback and timestamp counts within each control pair</text>
+  </g>
+  <g id="03-chain-controls-text_63">
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(69.12 817.73209)">Ratios below 1 are observed whole-program outcomes, not negative yield costs. Runtime effects confound subtraction.</text>
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(69.12 828.534551)">Primary: 7 runs; other groups: 3. Error bars show the range of paired ratios.</text>
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(69.12 839.337012)">LCG updates are source-level work, not a guarantee of 64 instructions after optimization.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="03-chain-controls-p250168e453">
+   <rect x="92.16" y="129.6" width="461.837838" height="243.952941"/>
+  </clipPath>
+  <clipPath id="03-chain-controls-p7cc6032b7d">
+   <rect x="655.602162" y="129.6" width="461.837838" height="243.952941"/>
+  </clipPath>
+  <clipPath id="03-chain-controls-p78f6c3f165">
+   <rect x="92.16" y="507.727059" width="461.837838" height="243.952941"/>
+  </clipPath>
+  <clipPath id="03-chain-controls-p478c9aef99">
+   <rect x="655.602162" y="507.727059" width="461.837838" height="243.952941"/>
+  </clipPath>
+ </defs>
+</svg>

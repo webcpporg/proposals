@@ -1,0 +1,350 @@
+From 8829e990d7f015be7e21b4d011c48ac754899000 Mon Sep 17 00:00:00 2001
+From: R <github.overboard312@passmail.net>
+Date: Wed, 14 Oct 2026 22:36:06 -0400
+Subject: [PATCH] tools/boost: complete Cobalt source and browser configuration
+
+---
+ AGENTS.md                          |  26 +++++++-
+ tools/boost/Jamfile                |  48 ++++++++++++--
+ tools/ci/actions/boost/action.yml  |   2 +-
+ tools/ci/actions/boost/install.sh  |   2 +-
+ tools/ci/actions_test.py           |   6 ++
+ tools/test/boost_libraries_test.py | 102 ++++++++++++++++++++++++++++-
+ 6 files changed, 173 insertions(+), 13 deletions(-)
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 39d1a5d..721a065 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -322,6 +322,29 @@ being on the compiler's default include path, naming the `using boost` line to
+ add, and if it lacks the library's sources; a build that needs none never
+ looks.
+ 
++**Cobalt source target.** `/webcpp//boost_cobalt` builds a static library from
++24 of Boost 1.92's 26 Cobalt sources: `src/*.cpp`, `src/detail/*.cpp` and
++`src/io/*.cpp`, excluding `src/main.cpp` and `src/io/ssl.cpp`. It supplies no
++OpenSSL integration or default `co_main` runner; the webcpp runner belongs to
++the subsequent Asio integration task. Ordinary `main` consumers can use it now.
++Its sources define `BOOST_COBALT_SOURCE=1` and `BOOST_COBALT_IO_SOURCE=1`, while
++consumers receive `BOOST_COBALT_NO_LIB=1`. On Emscripten, both sources and
++consumers define `BOOST_ASIO_DISABLE_THREADS`; native thread support is unchanged.
++Use the shared `BOOST_SOURCE` setup above, not a separate Cobalt source tree.
++
++**Cobalt without exceptions.** A build that uses `/webcpp//boost_cobalt` with
++`exception-handling=off` emits a non-fatal configuration warning with
++https://github.com/boostorg/cobalt/issues/287 and recommends enabling exception
++handling. Boost 1.92 with libc++ can abort when a pending task is moved, including
++moves performed inside Cobalt. This warning describes a runtime risk; it does
++not claim to detect a move or prove a program safe. It appears once per distinct
++Cobalt build configuration in each b2 invocation, including dry runs, and never
++for an exceptions-enabled Cobalt configuration or an unrelated target. It does
++not change the exception setting or the build exit status. Compiler and lint
++warnings still follow their existing warnings-as-errors policies; a b2 warning
++is not a compiler diagnostic. Keep the warning until an upstream fix has been
++verified, rather than assuming a newer Boost release fixes the issue.
++
+ **Machine-local setup.** `.local/` is git-ignored and holds what one machine
+ needs: `.local/user-config.jam`, `.local/wasi-sdk/`, `.local/mrdocs/`,
+ `.local/wit-bindgen/` and `.local/wasi-wit/p2` and `p3`, `.local/emsdk` (an
+@@ -2868,7 +2891,8 @@ What webcpp does not have yet, and the chapters that mention it:
+   Boost.Cobalt are built from Boost's sources (`/webcpp//boost_url`,
+   `/webcpp//boost_charconv`, `/webcpp//boost_locale`, `/webcpp//boost_cobalt`).
+   Boost.Locale requires exceptions. Boost.Cobalt follows the consumer's exception
+-  setting without a blanket refusal. This is not a guarantee that all of Cobalt
++  setting with a non-fatal warning when disabled (chapter 1). This is not a
++  guarantee that all of Cobalt
+   works without exceptions: in Boost 1.92, moving a pending task calls
+   std::make_exception_ptr, which aborts with libc++ and -fno-exceptions, even
+   when the application uses as_result. Eager promises and timer cancellation
+diff --git a/tools/boost/Jamfile b/tools/boost/Jamfile
+index 113f55d..fe8f040 100644
+--- a/tools/boost/Jamfile
++++ b/tools/boost/Jamfile
+@@ -9,12 +9,15 @@
+ # program's own features, exception-handling=off among them, reach them. The
+ # sources are the Jamroot's WEBCPP_BOOST_SOURCE, whose version the Jamroot's
+ # alias of each library checks before anything is built: /webcpp//boost_url,
+-# /webcpp//boost_charconv and /webcpp//boost_locale. They are Boost's code,
++# /webcpp//boost_charconv, /webcpp//boost_locale and /webcpp//boost_cobalt.
++# They are Boost's code,
+ # not webcpp's, and compile without webcpp's warnings, as Boost's headers are
+ # read as system ones.
+ import errors ;
+ import feature ;
++import property-set ;
+ import sequence ;
++import set ;
+ 
+ project /webcpp/boost-libraries
+   : source-location $(WEBCPP_BOOST_SOURCE)
+@@ -151,15 +154,15 @@ compiled boost_locale : $(.locale)
+   : <define>BOOST_LOCALE_SOURCE <conditional>@locale-configuration
+   : <define>BOOST_LOCALE_NO_LIB=1 <target-os>darwin:<library>iconv ;
+ 
+-# Boost.Cobalt's sources without ssl.cpp, which needs OpenSSL, and which no
+-# webcpp library uses yet.
++# Boost.Cobalt without its default co_main runner (main.cpp), which webcpp
++# supplies separately, and io/ssl.cpp, which needs OpenSSL.
+ rule cobalt-sources ( )
+ {
+     local sources ;
+     for local file in [ glob libs/cobalt/src/*.cpp libs/cobalt/src/detail/*.cpp
+         libs/cobalt/src/io/*.cpp ]
+     {
+-        if ! [ MATCH "(^|/)ssl[.]cpp$" : $(file) ]
++        if ! [ MATCH "(^|/)(main|ssl)[.]cpp$" : $(file) ]
+         {
+             sources += $(file) ;
+         }
+@@ -167,13 +170,44 @@ rule cobalt-sources ( )
+     return $(sources) ;
+ }
+ 
++# This diagnostic is a configuration warning, not a compiler warning: even
++# warnings-as-errors=on must preserve the consumer's choice. Cache the
++# base configuration so several consumers of one archive do not repeat it.
++# b2 evaluates conditionals before and after applying library requirements;
++# ignore link and warning features, which this library fixes independently.
++rule cobalt-configuration ( properties * )
++{
++    if <exception-handling>off in $(properties)
++    {
++        local settings = [ property-set.create $(properties) ] ;
++        local base = [ $(settings).base ] ;
++        base = [ set.difference $(base) : <link>shared <link>static
++            <warnings>all <warnings>extra <warnings>off
++            <warnings-as-errors>on <warnings-as-errors>off ] ;
++        local key = $(base:J=|) ;
++        if ! $(.cobalt-warned.$(key))
++        {
++            .cobalt-warned.$(key) = true ;
++            ECHO "warning: webcpp: Boost.Cobalt is built with exceptions disabled;"
++                "moving a pending task can abort at runtime with libc++."
++                "Use exception-handling=on."
++                "See https://github.com/boostorg/cobalt/issues/287" ;
++        }
++    }
++}
++
+ # Boost.Cobalt, with the macros of its own build: its sources see
+-# BOOST_COBALT_SOURCE=1, and its users BOOST_COBALT_NO_LIB=1. Exception handling
++# BOOST_COBALT_SOURCE=1 and BOOST_COBALT_IO_SOURCE=1; users see
++# BOOST_COBALT_NO_LIB=1. Emscripten sources and users disable Asio threads
++# consistently, without changing native thread support. Exception handling
+ # follows the consumer: result-based programs may disable it without a blanket
+ # configuration refusal. This does not guarantee every Cobalt operation works
+ # without exceptions: moving a pending task creates an exception_ptr in Boost
+ # 1.92, which libc++ aborts on when built with -fno-exceptions.
+ compiled boost_cobalt : [ cobalt-sources ]
+   : libs/cobalt/src holds no .cpp file
+-  : <define>BOOST_COBALT_SOURCE=1
+-  : <define>BOOST_COBALT_NO_LIB=1 ;
++  : <define>BOOST_COBALT_SOURCE=1 <define>BOOST_COBALT_IO_SOURCE=1
++    <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS
++    <conditional>@cobalt-configuration
++  : <define>BOOST_COBALT_NO_LIB=1
++    <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS ;
+diff --git a/tools/ci/actions/boost/action.yml b/tools/ci/actions/boost/action.yml
+index f003d82..fa1a609 100644
+--- a/tools/ci/actions/boost/action.yml
++++ b/tools/ci/actions/boost/action.yml
+@@ -6,7 +6,7 @@
+ 
+ name: Boost
+ description: >-
+-  Installs Boost 1.92.0's headers, the sources of its compiled libraries and its b2 in a cached
++  Installs Boost 1.92.0's headers, compiled-library sources (including Cobalt) and b2 in a cached
+   prefix, from the source archive of archives.boost.io checked against its SHA-256, writes the
+   `using boost` line and the sources' `modules.poke` of .local/user-config.jam, and puts b2 on
+   PATH. On Linux, macOS and Windows.
+diff --git a/tools/ci/actions/boost/install.sh b/tools/ci/actions/boost/install.sh
+index 38dfb27..870f2a5 100755
+--- a/tools/ci/actions/boost/install.sh
++++ b/tools/ci/actions/boost/install.sh
+@@ -23,7 +23,7 @@
+ #
+ # The headers are installed, and beside them, in <prefix>/source, the sources of Boost's compiled
+ # libraries, from which webcpp builds those it needs (the Jamroot's /webcpp//boost_url,
+-# boost_charconv and boost_locale).
++# boost_charconv, boost_locale and boost_cobalt).
+ set -euo pipefail
+ 
+ version=1.92.0
+diff --git a/tools/ci/actions_test.py b/tools/ci/actions_test.py
+index 8883ee1..243f2bd 100755
+--- a/tools/ci/actions_test.py
++++ b/tools/ci/actions_test.py
+@@ -200,6 +200,10 @@ def boost_archive(scratch: Path) -> Path:
+                        ('libs/charconv/src/from_chars.cpp', '// charconv\n'),
+                        ('libs/locale/src/message.cpp', '// locale\n'),
+                        ('libs/cobalt/src/this_thread.cpp', '// cobalt\n'),
++                       ('libs/cobalt/src/main.cpp', '// cobalt main\n'),
++                       ('libs/cobalt/src/detail/util.cpp', '// cobalt detail\n'),
++                       ('libs/cobalt/src/io/sleep.cpp', '// cobalt io\n'),
++                       ('libs/cobalt/src/io/ssl.cpp', '// cobalt ssl\n'),
+                        ('libs/url/doc/index.html', '<p>not kept</p>\n')):
+         (tree / path).parent.mkdir(parents=True, exist_ok=True)
+         (tree / path).write_text(text)
+@@ -260,6 +264,8 @@ def test_boost_install_fails_when_the_prefix_is_incomplete(scratch: Path) -> Non
+ # tree, nothing else.
+ MARKER = '.webcpp-boost-source'
+ KEPT_SOURCES = [MARKER, 'boost/version.hpp', 'libs/charconv/src/from_chars.cpp',
++                'libs/cobalt/src/detail/util.cpp', 'libs/cobalt/src/io/sleep.cpp',
++                'libs/cobalt/src/io/ssl.cpp', 'libs/cobalt/src/main.cpp',
+                 'libs/cobalt/src/this_thread.cpp', 'libs/json/src/src.cpp',
+                 'libs/locale/src/message.cpp', 'libs/url/src/detail/pattern.hpp',
+                 'libs/url/src/url.cpp']
+diff --git a/tools/test/boost_libraries_test.py b/tools/test/boost_libraries_test.py
+index e964477..aa03078 100755
+--- a/tools/test/boost_libraries_test.py
++++ b/tools/test/boost_libraries_test.py
+@@ -537,9 +537,20 @@ COBALT_JAMFILE = ('import webcpp ;\n'
+                   'webcpp.targets native emscripten ;\n'
+                   'webcpp.run coroutines : coroutines.cpp : <library>/webcpp//boost_cobalt ;\n')
+ 
+-COBALT_SOURCE = r'''#include <boost/asio/io_context.hpp>
++COBALT_SOURCE = r'''#if defined(__EMSCRIPTEN__) && !defined(BOOST_ASIO_DISABLE_THREADS)
++#error Cobalt must configure Asio for the browser in its usage requirements
++#endif
++#if !defined(__EMSCRIPTEN__) && defined(BOOST_ASIO_DISABLE_THREADS)
++#error Native consumers must retain their normal thread configuration
++#endif
++#if defined(BOOST_COBALT_SOURCE) || defined(BOOST_COBALT_IO_SOURCE)
++#error Source-only macros must not leak into consumers
++#endif
++
++#include <boost/asio/io_context.hpp>
+ #include <boost/asio/post.hpp>
+ #include <boost/asio/steady_timer.hpp>
++#include <boost/cobalt/io/steady_timer.hpp>
+ #include <boost/cobalt/op.hpp>
+ #include <boost/cobalt/result.hpp>
+ #include <boost/cobalt/promise.hpp>
+@@ -559,6 +570,11 @@ boost::cobalt::promise<int> exercise(boost::asio::io_context& ctx) {
+     auto result = co_await boost::cobalt::as_result(child);
+     if (!result || *result != 42)
+         co_return 1;
++    boost::cobalt::io::steady_timer cobalt_timer(std::chrono::milliseconds(1),
++                                                ctx.get_executor());
++    auto [timer_error] = co_await boost::cobalt::as_tuple(cobalt_timer.wait());
++    if (timer_error)
++        co_return 3;
+     boost::asio::steady_timer timer(ctx, std::chrono::hours(1));
+     boost::asio::post(ctx, [&timer] { timer.cancel(); });
+     auto [error] = co_await boost::cobalt::as_tuple(
+@@ -579,23 +595,100 @@ int main() {
+ '''
+ 
+ 
++def test_boost_cobalt_names_missing_or_mismatched_sources(root: Path) -> None:
++    harness.without_boost_source(root)
++    target = '/webcpp//boost_cobalt'
++    harness.expect(harness.run_b2(root, '-a', target), False,
++                   "Boost's sources", '-sBOOST_SOURCE=<dir>', '.local/boost-source')
++    harness.expect(harness.run_b2(root, '-a', 'libs/demo/test//pass'), True)
++    empty = fake_sources(root / 'no cobalt sources', 109200, with_url=False)
++    harness.expect(harness.run_b2(root, '-a', f'-sBOOST_SOURCE={empty}', target), False,
++                   'libs/cobalt/src holds no .cpp file', target)
++    old = with_sources_of(fake_sources(root / 'old sources', 109100), 'cobalt')
++    harness.expect(harness.run_b2(root, '-a', f'-sBOOST_SOURCE={old}', target), False,
++                   "holds Boost 1.91.0's sources", 'is 1.92.0')
++
++
++def test_boost_cobalt_omits_main_and_ssl_from_supplied_sources(root: Path) -> None:
++    # Poison the excluded sources: compiling either would break the application boundary.
++    sources = fake_sources(root / 'cobalt sources', 109200, with_url=False)
++    for name in ('channel.cpp', 'detail/util.cpp', 'io/sleep.cpp', 'main.cpp', 'io/ssl.cpp'):
++        source = sources / 'libs/cobalt/src' / name
++        source.parent.mkdir(parents=True, exist_ok=True)
++        text = '#error This source must not be compiled by boost_cobalt\n'
++        if name not in ('main.cpp', 'io/ssl.cpp'):
++            text = ('#if !defined(BOOST_COBALT_SOURCE) || !defined(BOOST_COBALT_IO_SOURCE)\n'
++                    '#error Both source macros are required\n#endif\n')
++            text += 'int fixture_' + name.replace('/', '_').replace('.', '_') + ' = 0;\n'
++        source.write_text(text)
++    result = harness.run_b2(root, '-a', '-j4', '-d+2', f'-sBOOST_SOURCE={sources}',
++                            '/webcpp//boost_cobalt')
++    harness.expect(result, True)
++    compiled = set(re.findall(r'libs/cobalt/src/([a-z/_]+[.]cpp)"', result.stdout))
++    assert compiled == {'channel.cpp', 'detail/util.cpp', 'io/sleep.cpp'}, compiled
++    assert len(list((root / 'bin').rglob('libboost_cobalt.a'))) == 1
++
++
++def test_boost_cobalt_warns_only_for_disabled_exceptions(root: Path) -> None:
++    # Missing, unconditional or repeated warnings would hide or misrepresent the risk.
++    # Dry runs exercise dependency configuration without recompiling the archive.
++    harness.add_library(root, 'coroutines', COBALT_JAMFILE, {'coroutines.cpp': COBALT_SOURCE})
++    harness.add_library(root, 'more_coroutines', COBALT_JAMFILE,
++                        {'coroutines.cpp': COBALT_SOURCE})
++    issue = 'https://github.com/boostorg/cobalt/issues/287'
++    targets = ('libs/coroutines/test', 'libs/more_coroutines/test')
++    for exceptions, expected in (('on', 0), ('off', 1)):
++        result = harness.run_b2(root, '-a', '-n', f'exception-handling={exceptions}', *targets)
++        harness.expect(result, True)
++        assert result.stdout.count(issue) == expected, result.stdout
++        if expected:
++            assert 'warning:' in result.stdout, result.stdout
++            assert 'pending task' in result.stdout, result.stdout
++            assert 'libc++' in result.stdout, result.stdout
++            assert 'exception-handling=on' in result.stdout, result.stdout
++    unrelated = harness.run_b2(root, '-a', '-n', 'exception-handling=off', 'libs/demo/test//pass')
++    harness.expect(unrelated, True)
++    assert issue not in unrelated.stdout, unrelated.stdout
++    variants = harness.run_b2(root, '-a', '-n', 'exception-handling=off',
++                              'variant=debug,release', *targets)
++    harness.expect(variants, True)
++    assert variants.stdout.count(issue) == 2, variants.stdout
++    # A consumer may require exceptions even in an otherwise exception-free build.
++    forced = COBALT_JAMFILE.replace('<library>/webcpp//boost_cobalt',
++                                   '<library>/webcpp//boost_cobalt <exception-handling>on')
++    (root / 'libs/coroutines/test/Jamfile').write_text(forced)
++    result = harness.run_b2(root, '-a', '-n', 'exception-handling=off', targets[0])
++    harness.expect(result, True)
++    assert issue not in result.stdout, result.stdout
++
++
+ def test_boost_cobalt_preserves_exception_setting(root: Path) -> None:
+     # A blanket exception requirement would reject a valid result-based consumer.
+     # Build the real archive and execute eager promises and cancellation in each mode.
+     harness.link_emsdk(root)
+     harness.add_library(root, 'coroutines', COBALT_JAMFILE, {'coroutines.cpp': COBALT_SOURCE})
+-    wasm = (*EMSCRIPTEN, 'define=BOOST_ASIO_DISABLE_THREADS')
++    wasm = EMSCRIPTEN
+     count = 0
+     for request in ((), wasm, (*wasm, 'webcpp-suspend=asyncify')):
+         for exceptions in ('off', 'on'):
+             result = harness.run_b2(root, '-a', '-j4', '-d+2', '--verbose-test', *request,
+                                     f'exception-handling={exceptions}', 'libs/coroutines/test')
+             harness.expect(result, True, 'result and cancellation passed')
++            issue = 'https://github.com/boostorg/cobalt/issues/287'
++            assert result.stdout.count(issue) == (1 if exceptions == 'off' else 0), result.stdout
+             assert passed(result) == {'coroutines'}, (request, exceptions, result.stdout[-4000:])
+             compiles = [line for line in result.stdout.splitlines()
+                         if ' -c ' in line and ('coroutines.cpp' in line or '/cobalt/src/' in line)]
+             assert any('coroutines.cpp' in line for line in compiles), result.stdout[-4000:]
+-            assert any('/cobalt/src/' in line for line in compiles), result.stdout[-4000:]
++            library_compiles = [line for line in compiles if '/cobalt/src/' in line]
++            assert len(library_compiles) == 24, library_compiles
++            assert not any('/main.cpp' in line or '/io/ssl.cpp' in line
++                           for line in library_compiles), library_compiles
++            for line in library_compiles:
++                assert '-DBOOST_COBALT_SOURCE=1' in line, line
++                assert '-DBOOST_COBALT_IO_SOURCE=1' in line, line
++            assert all(('-DBOOST_ASIO_DISABLE_THREADS' in line) == bool(request)
++                       for line in compiles), compiles
+             assert all(('-fno-exceptions' in line) == (exceptions == 'off')
+                        for line in compiles), (request, exceptions, compiles)
+             count += 1
+@@ -604,6 +697,9 @@ def test_boost_cobalt_preserves_exception_setting(root: Path) -> None:
+ 
+ 
+ CASES = [
++    test_boost_cobalt_names_missing_or_mismatched_sources,
++    test_boost_cobalt_omits_main_and_ssl_from_supplied_sources,
++    test_boost_cobalt_warns_only_for_disabled_exceptions,
+     test_boost_cobalt_preserves_exception_setting,
+     test_boost_url_links_on_every_target,
+     test_boost_charconv_links_on_every_target,
+-- 
+2.55.0
+

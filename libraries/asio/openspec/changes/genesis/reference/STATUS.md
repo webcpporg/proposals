@@ -1,5 +1,1290 @@
 # webcpp::asio: where the implementation stands, and how to resume
 
+## Coordinated publication in progress, 2026-11-07
+
+The owner authorized publication and remote CI for the reviewed migration.
+The immutable library candidates are Asio `e7cf267b4ab43437a09ce68f40a3994ca63b9054`,
+Cobalt `36b9f2475aab1171e0898ab87d5b9630a8e04d71`, and Beast
+`6c53f854070a4eebd844f21c29692e938181f8f6`. Superproject commit
+`c411965` records those three revisions and the new public Cobalt submodule.
+All three candidate branches are published. No main integration is claimed.
+
+CI environment preparation is running at
+https://github.com/webcpporg/webcpp/actions/runs/42370588658 . The complete
+combined CI and library CI remain pending. The preceding local validation
+records remain evidence for their stated scope, not remote-CI certification.
+No release or proposal archival is part of this publication step. The release
+packaging check still rejects the prepared 0.1.0 freeze together with these
+libraries' Unreleased entries; reconcile that state in the release procedure.
+
+## Current local migration, 2026-11-07
+
+The owner-approved 2026-11-06 distribution contract is now implemented locally in
+the coordinated Asio/Cobalt/Beast candidate. Native equivalents are actual Boost
+types; Wasm selects explicitly shipped sources, without consumer patches or Boost
+include overlays. Cobalt's corrected native SSL wrapper is the approved exception.
+Direct compiler/CMake consumers passed from an extracted source archive, including
+custom executor/PMR settings, multiple translation units and optional TLS.
+
+This candidate remains uncommitted. The starting revisions are superproject
+`d3a67959cbe52e6d972ef575be8870cc79da1312`, Asio
+`db4f7fc6afc516fdef057614cc971cdc39484099`, Beast
+`31af69150d61776e7699cb89125f79d103e11ac8`, and local Cobalt
+`58701c7dd22777c84c17ac9bbeea6d517c0c7f38`. These hashes identify bases, not the
+edited tree. Dated evidence includes source snapshots and artifact hashes.
+Historical remote CI below does not certify this local candidate. No new remote
+CI, push, merge, repository publication or release is claimed.
+
+Nine maintained guide programs cover 180 cells: 92 passing expected-output
+comparisons across 17 feasible profiles, 61 not applicable and 27 SDK blocked.
+This is not the full Boost.Asio original example corpus. Node example execution
+and actual Chrome scheduling/worker execution remain distinct evidence.
+The fresh yield suite contains 442 cases, 970,139,132 operations and 9,429,856
+clock pairs. Median per-run direct mean gaps are 4.103 us (JSPI) and 4.763 us
+(Asyncify); default turn size remains 100. This is not a loaded-page frame bound.
+See `libs/asio/doc/example-matrix.adoc`, `doc/yield-current.adoc` and
+`bench/yield/results/2026-11-07/` in the implementation tree.
+
+Documentation and proposal records have been reconciled with the shipped-source
+contract. All three strict MrDocs/AsciiDoc builds passed again. A fresh independent
+whole-candidate review, followed by focused reviews of every correction, has no
+open findings. Local closure items 4 and 5 are complete: the lint covered 831
+translation units and 1,528 compilation commands. The complete run found two
+final style issues; both were corrected and their exact checks passed again.
+Its original exit status and diagnostics are retained, alongside the successful
+follow-ups, in `closure-lint-reconciled.json`. All other lint rules and the tooling
+regression suites passed. SDK 34 P2 pthread/P3 cooperative EH limits, versioned P3
+LTO diagnostics, Boost.Context restrictions and native Boost
+defects remain explicit, not passing support cells. The local execution ledger is
+`.superpowers/sdd/2026-11-06-portable-network-libraries/progress.md` in the
+superproject. New implementation boxes remain unchecked until coordinated commits;
+publication/CI is a separate step. No proposal is archived or marked implemented.
+
+## Historical records
+
+The following snapshots and task states describe their dates, not the migration above.
+
+
+## Current committed snapshot
+
+- Asio: `db4f7fc6afc516fdef057614cc971cdc39484099`.
+- Integrated superproject: `80a48ff989bfa301917936af5945de0149bffa08`, with Asio
+  `4199a45f0625ecb5a9319a5b9eb28dbd1e0a48a9`.
+- Documentation follow-up candidate: superproject
+  `d994334102d138e2847b7e8463fb1c06a859bd42`, with the current Asio snapshot.
+- `reference/source/`: 208 tracked files, exported from the Asio commit above.
+- Scope: native/browser functionality, explicit browser pthread execution and
+  main-thread handoff, WASIp2/P3 networking/TLS/Cobalt, complete connected UDP
+  sequences, native P3 async DNS and central compile-time capability diagnostics.
+  P2 multiple threads and P3 cooperative exceptions remain SDK restrictions.
+- Publication gates: the documentation follow-up, individual library integration
+  and main CI/site publication remain pending. The implementation candidate passed
+  complete remote CI and was integrated; the records below identify both commits.
+
+## Current CI follow-up, 2026-11-04
+
+The corrected implementation candidate `44a2ee0` passed
+[CI 41803777144](https://github.com/webcpporg/webcpp/actions/runs/41803777144):
+all tests and examples built in 78 lanes, all eight tool-test and lint shards,
+documentation and site checks passed. [Root PR 7](https://github.com/webcpporg/webcpp/pull/7)
+merged it as `80a48ff` on 2026-11-04. Its tree is identical to the tested tree.
+The new [main CI 41814889451](https://github.com/webcpporg/webcpp/actions/runs/41814889451)
+is responsible for the main record and site publication.
+
+A real-browser review of that CI's site artifact confirmed that the Asio and Beast
+pages render and Asio's capabilities link navigates to its table. It found stale P2 omissions in
+Asio target summaries. Asio `db4f7fc` corrects four guide fragments and two API
+comments, including the existing generated P2 test count. No executable code
+changed. A focused independent review and a fresh `b2 -a libs/asio/doc` passed,
+including MrDocs, source and rendered-page checks; the clean root release check
+also passed. [Asio CI 41817278691](https://github.com/webcpporg/asio/actions/runs/41817278691)
+tests this new candidate with the integrated parent main. The earlier manual
+Asio run `41815054019` is superseded by this candidate.
+
+Parent run [41793433211](https://github.com/webcpporg/webcpp/actions/runs/41793433211)
+finished with failures. It found a stale OpenSSL header-stage test assertion, missing generated
+libdatachannel headers during lint and two Beast server readiness failures caused by
+cold runtime compilation. All identified groups now have focused passing checks and independent review,
+including the Windows driver quoting and portable Trystero allocation witness.
+The corrected parent is clean and passes the prepared release check and Pyright
+on all 136 repository Python files.
+Individual library integration, the documentation follow-up checks and main site
+publication remain gates. GitHub reported an active incident affecting Git operations,
+pull requests and Actions during this follow-up; incomplete runs are not failures
+or passing evidence. No release tag or completed archive is claimed.
+
+## Publication verification, 2026-11-03
+
+The owner authorized push and integration after green CI. Source branches are now
+published. Root run 41675267321 stopped during checkout because a Trystero gitlink
+had not yet been pushed; the missing Trystero and WASI commits are now published.
+Asio run 41675251165 uses the old superproject main and fails to find the new P2
+build project. Its checks must be rerun after the tested parent machinery is integrated.
+
+The full documentation build passed locally and in root CI at `3b2bf44`.
+Final local lint passed all 803 translation units and every text/type/style rule.
+Its compilation database contains 1,451 commands. Program-specific OpenSSL header
+preparation now uses a dedicated B2 target; clean, repeated and stale/missing-header
+regressions pass without compiling or executing consumers. The own-lane release
+default, relocated build tree and both exception modes are covered.
+
+Root CI 41680879413 was canceled after the incremental preparation defect was
+found locally. Its report also identified four Chrome startup timeouts, despite
+the browser-workers job itself returning success. The launcher now bounds startup
+at 30 seconds, bounds each discovery request, stops on process errors and reports
+the last discovery stage. A real Chrome delayed by 11 seconds fails the old limit
+and passes the new one. Pinned Linux Chrome 155 passed 18 worker/move fixtures,
+loader/idle/render with both exception profiles, and the startup regressions.
+The public B2 startup target passed both exception profiles. The cause of Chrome's
+historical startup delay remains unknown; D-Bus/fontconfig warnings also occur
+in successful runs and are not diagnosed as the cause.
+
+Independent reviews accepted both fixes. Root CI run 41686583077 tests the
+published superproject `d7a6614` with Asio `059f64c`; it does not test the newer
+local candidate above. Remote green results and main integration remain gates;
+no formal approval or merge is claimed yet.
+
+That run identified two stale build fixtures: the Windows allocator overlay
+fixture omitted Config, and the Cobalt SSL guard fixture still rejected P2.
+Both are corrected in the local candidate. Their exact cases and neighboring
+checks passed, with scoped type checking and independent review.
+
+The Windows MSVC 14.3 XML also exposed a failed oversized UDP assertion despite
+the job reporting success. Native Boost.Asio forwarded IOCP's system error 1784
+instead of `message_size` for the asynchronous send. The test now accepts only
+that exact additional error under IOCP; synchronous and WASI expectations remain
+strict. Zero bytes, deferred single completion and no received datagram remain
+required. Fresh native/P2/P3 tests passed with and without exceptions, scoped
+lint passed, and independent review accepted the change. No Windows runtime was
+available locally; the updated Windows test still requires remote confirmation.
+
+The partial report from this run passed all tests and examples in 25 other lanes,
+including GCC 15 and Apple Clang. This partial result is not a complete CI verdict.
+
+## Driven-test and lint follow-up, 2026-11-03
+
+The candidate above is committed locally and not yet pushed. The same remote run
+also exposed the IOCP assertion in MSVC 14.5, POSIX-only signal imports in the
+Windows TLS runner, and empty WASIp3 TLS executables. The shared driven-test
+runner now uses Windows Job Objects, preserves 32-bit exit codes and checks
+nested-job cleanup while the surrounding job remains alive. Ten local driver
+cases and twelve server cases pass; the two Windows-only cases require the next
+remote Windows run. Both Windows compiler jobs now run those actual regressions.
+
+The B2 generator now retains an existing executable when its producer also returns
+symbols or component metadata. The old generator reproduced the WASIp3
+`undefined_weak:main` trap in a real consumer; the correction passes with both
+exception modes. All seventeen WASIp3 TLS integration fixtures passed a fresh
+build under Wasmtime 50.0.1, and their XML report passed. MSVC graph regressions
+also prove that each actual fixture is linked and that single-threaded OpenSSL
+uses the static CRT, rather than silently selecting the multi-threaded profile.
+Independent review accepted these corrections.
+
+Actual remote XML reports confirm sixty-seven other lanes passing. These are
+partial results from the older candidate, not the final CI gate. Four lint shards
+hit the sixty-minute limit; cold profiling found that header preparation also
+built OpenSSL archives and ran optional upstream tests. A separate generated-header
+action is being validated locally. Full consumers must retain their archive builds
+and upstream tests, and no final lint or CI result is claimed for that change yet.
+
+## Final report follow-up, 2026-11-04
+
+Root run 41686583077 finished with a failing consolidated report, two tools
+failures and five lint timeouts. Every lane artifact was inspected. The local
+candidate includes the earlier Windows/WASI corrections and two further fixes:
+
+- OpenSSL header generation has its own B2 action. Cold native header preparation
+  took 30 seconds; the former action spent 610 seconds building libraries and
+  running tests before failing a sandboxed bind. The corrected full cold database
+  preparation completed in 642 seconds. The old and new collectors produce
+  exactly the same 1,449 commands on the same snapshot, including their order.
+  Native upstream tests passed 347 files and 4,009 tests in each thread profile,
+  and verified the hashes of the archives consumed by the application. Fresh P2
+  and P3 entropy/TLS consumers passed their XML reports after the provider change.
+- The global P2 test launcher imposed a focused 60-second limit on large finite
+  document workloads. Five remote failures were runtime interrupts; four were
+  reproduced locally. P2 now follows P3's configurable finite 600-second default.
+  The five unchanged document programs passed fresh builds and their XML report.
+  Twelve launcher regressions passed, including real runtime completion and
+  interruption of an infinite loop on both targets.
+
+The native Trystero follow-up now passes all 29 interoperability scenarios.
+A controlled real browser/native reproduction demonstrated frames arriving
+before a receiver was installed; bounded allocator-aware retention repairs
+that handoff. This does not prove the precise ordering in the historical CI
+failure. The correction and its timer/lifetime regressions passed independent
+review and are published as Trystero `9b7879515461dcfdc3f32f287db822b977654b84`.
+
+The last full local lint found three Trystero test-fixture style defects and
+an obsolete Beast host-TLS helper. Focused checks pass for all four fixes;
+Pyright passed over all 135 repository Python sources. The actual Beast TLS
+lanes passed 28 driver executions and 88 cases across P2/P3 and EH on/off.
+Full local documentation and the 21-page, 11-library site passed, as did the
+prepared 0.1.0 release check. The candidate above and all dependency commits
+are published. Its new complete remote lint/CI and main integration remain
+gates; no release tag or green final remote verdict is claimed.
+
+## Capability completion, 2026-11-03
+
+The owner requested completing WebCPP-owned gaps while documenting SDK/environment
+restrictions and diagnosing unsupported compile-visible combinations. The committed
+candidate above implements those extensions. Its exact 208-file reference export
+was verified against every Git blob and executable mode. The original completion
+checkpoint preceded publication; the current publication state is recorded above.
+The final whole-candidate review and its scoped
+fix re-review are complete; every finding is addressed with no new breakage.
+
+Final local Release runs passed 105 native, 66 P2, 117 P3 and 233 Emscripten B2 test
+targets with exceptions on/off, plus the applicable example output comparisons.
+The Emscripten count covers Node JSPI/Asyncify execution; real browser validation
+is recorded separately. Initial broad WASI builds omitted the runtime launcher;
+those runtime failures are not evidence. Corrected commands executed the freshly
+built artifacts through the pinned Wasmtime launcher and passed.
+
+Separate P2 TLS/Cobalt checks passed both exception profiles, including real TLS
+trust/identity, embedded/replacement CAs, transfer, handshake and shutdown errors
+and cancellation. Native/P3 TLS controls passed. The registered P2 TLS own lane
+passed all 16 driver runs. Host entropy failure is fail-closed; distinct generated
+keys test wiring and do not measure entropy strength.
+
+P3 async forward DNS uses the native async host import with a checked libc
+descriptor bridge, without a worker or polling interval. Tests cover deferred
+start, unrelated timer progress, pending cancellation, allocation and two-runner
+cooperative lifetime. Connected UDP gathers/scatters the complete sequence while
+preserving one-datagram semantics, truncation and cancellation.
+
+Real Chrome passed explicit pthread JSPI/Asyncify profiles with exceptions on/off,
+including main-thread handoff, worker affinity, reentrant context destruction and
+allocation cleanup. The raw Asyncify pthread-return probe remains a documented SDK
+counterexample, not a passing test. The default browser profile remains single
+threaded and the per-turn handler budget remains 100.
+
+At the earlier local completion checkpoint, focused clang-tidy, owned
+Python/text/format checks, overlay/source-build tests, MrDocs and rendered guide
+checks passed. That checkpoint did not claim full repository lint; the publication
+verification above records its later successful complete run.
+Complete lint database generation passed with 1,451 commands and materialized
+headers; it is not a full tidy run. The local release check also passed.
+Visual screenshot review remains unverified after blank local screenshots and a
+browser file-URL refusal. Runtime network grants, page isolation, host-blocking
+imports and trust/hostname errors cannot be inferred from target macros.
+
+Task-specific reviews approved the changes after public regressions fixed transient
+UDP send retries, canonical empty-result cleanup, cooperative DNS cancellation
+lifetime and browser reentrant destruction/throwing moves. The root verification
+record names exact commands and chronology limits. The historical entries below
+describe earlier candidates and do not override this current scope.
+
+The final review also corrected recurring test planning: both worker lanes now
+provision Chrome, worker requests cover JSPI/Asyncify and both EH modes, the
+throwing-move fixture covers only EH-on in both variants, and P2 TLS requests both
+EH modes. All 41 matrix-tool tests passed. Local B2 XML verified 34 actual driver
+configurations. The guide's P2 command now names the explicit TLS lane, and stale
+DNS/profile-count statements are corrected. These are local planning and graph
+checks, not a remote CI run. The scoped re-review accepted the complete fix wave.
+
+## WASIp2 follow-up verified and committed, 2026-11-03
+
+The final documentation-only root commit is `15e2f44d2bdff0602b8e761a5a9c89b98c3a5d97`; implementation
+remains root `e80ffab`, Asio `dad1aef` and Beast `ab95e84`. A later fresh Emscripten
+Release regression passed 271 B2 test targets, covering the default suites and
+Asio Asyncify/Cobalt lanes with EH on/off. This is Node-based execution, not a
+fresh complete browser run. Full lint compilation-database preparation passed
+with 1,419 commands, including P2 aggregate EH twins. The focused clang-tidy scope
+remains the 20 configurations below; database generation is not a full tidy run.
+
+The owner approved both the Asio pollable core and supplied-stream WebSocket work.
+The local implementation commits are Asio `dad1aef`, Beast `ab95e84` and superproject
+`e80ffab`. Each library's `reference/source/` is exported from its exact committed
+tree, with every Git blob and executable mode verified. These new commits have not
+been pushed or tested by remote CI. The older green root run does not validate them.
+
+Fresh Release builds passed 138 native, 131 WASIp3 and 68 WASIp2 B2 test targets,
+including compile/header and runtime targets, with exceptions on/off. The selected
+scope covers the default suites and supplied-stream lanes; it is not a new complete
+all-platform CI run. Focused clang-tidy passed 20 translation-unit configurations.
+Formatting, text rules, Pyright, Asio/Beast MrDocs and rendered-guide checks passed.
+Build tests verify the public P2 target, explicit multi-thread/Cobalt/TLS rejection,
+pinned SDK/private-ABI refusal and unchanged P3 profile selection. Root
+`b2 check-release` passed after the implementation commits.
+
+One independent review found two defects, each reproduced before its correction:
+guard-only idle trapped on an empty poll list, and a valid 64-bit host write permit
+could narrow to zero on wasm32. Idle now waits on a clock pollable; the permit is
+clamped before narrowing. Added consumers cover readiness at registration and
+pending-write cancellation. A controlled ABI fixture supplies the large/zero
+permit; it does not claim every host's stdout import is nonblocking or preemptible.
+
+P2 core supports timers, TCP/UDP, forward asynchronous DNS and the supplied CLI
+stream in a single thread. DNS preserves deferred initiation and handler
+associations. P2 guest TLS, Cobalt and multiple threads remain explicitly rejected.
+Both supplied WebSocket roles pass with EH on/off. Their actual exchanges cover
+upgrade, text/binary frames, fragmentation, ping/pong, close, truncated input,
+consumer pause/resume and pending-read cancellation. The application matrix records
+571 passed, 216 blocked and 432 platform-unavailable cells. P2 raw-socket Beast
+application integration remains blocked despite the now-working Asio core.
+
+## Joint Asio and Beast closure, 2026-11-03
+
+The owner approved applying the remaining Asio tasks 22/23 to the current Beast closure.
+The owner also clarified that Asio and Beast are foundations for Trystero's later migration;
+a temporary prohibition on combining them was proposed in an external audit but was not
+approved or implemented. Dependency provenance is being corrected instead.
+
+Repository `webcpporg/asio` exists (created 2026-11-03 UTC), and superproject commit `2ba5116`
+records its owner-authorized submodule integration. G1 and G2 are complete. The five original
+departures were approved on 2026-10-11 as already recorded in `reference/plan.md`; task 23.4
+records that existing decision. G3 still requires final successful library and root CI.
+
+The pre-closure published candidate is root `55a72c0`, Asio `9ed4ba8`, Beast `c173858`.
+Root CI run `41597577370` verifies that baseline; its results must not be presented as proof
+for subsequent local changes. The library's own CI had no runs at the start of this audit.
+The closure review covers Asio changes and superproject integration beyond
+previous task-specific reviews; its fixes are in the subsequent local candidate. No final merge, archived implementation claim or release is
+recorded by this progress entry.
+
+The proposal now includes WASIp3 timers, TCP/UDP, source-built TLS, cooperative-profile
+limitations, the selected default of 100 and the Diataxis page order. This reconciles the
+original accepted scope with the later approvals; the original dated implementation entries
+below remain historical records. `reference/source` now records the exact committed
+library tree identified at the top of this file.
+
+## Tasks 17 through 21 and default 100, 2026-10-15
+
+The library is at `f5fd7a8` on `work/task14-guide` in
+`asio-task9-review/libs/asio` in the local organization checkout. The superproject
+is at `063343d` on `work/asio-task9-review`. `source/` is exported from the
+committed library tree; patch 0016 records the superproject change. No CI,
+push, merge or publication ran. Tasks 22 and 23 remain pending.
+
+| Work | Commit | Result |
+| --- | --- | --- |
+| Configurable default 100 | `24c1e2c` | Compiler and per-context overrides remain supported |
+| 17: promises | `7aea14a` | Resolution, rejection, cancellation, Cobalt, shutdown and allocator tests |
+| 18: event waits | `68213bb` | One-shot events, cancellation, listener removal and deferred type ownership |
+| 19: sockets and transport point | `9b37306` | Native aliases, browser unsupported results and custom transport forwarding |
+| 20: resolver | `557d452` | Retained names, service parsing, posted results and deferred input ownership |
+| 21: TLS settings and explicit OpenSSL | `d438a61` | Native linking, browser settings, PMR storage and actionable refusal tests |
+
+Validation completed locally with Apple Clang, Boost 1.92, Emscripten 6.0.11,
+Node 26 and HeadlessChrome 153.0.8010.12. Native and WebAssembly suites were
+rebuilt from scratch, including JSPI and Asyncify with exceptions on/off,
+Cobalt, examples and native/browser TLS. The final native build updated 199
+targets and the WebAssembly build 778; these are build-target counts, not
+assertion counts. Full lint, MrDocs/AsciiDoc generation and rendered checks
+passed. The local matrix tool's unit suite passed; no CI job was dispatched.
+
+The Chrome lane passed loader, idle and responsiveness checks. With the new
+default 100, JSPI observed 60 animation callbacks in one second and processed 1,550,817
+handlers, turn p95 0.100 ms and maximum 0.600 ms; Asyncify observed 61 callbacks
+and processed 606,601 handlers, p95 0.300 ms and maximum 2.100 ms. Each unbounded
+control observed zero animation callbacks. Both idle cases observed one
+setTimeout(300000) and no polling over three seconds. These are local
+observations of trivial handlers, not scheduling guarantees.
+
+TLS host recording used exactly one allocation from the supplied resource,
+with zero counted global new/C/aligned allocations in all four WebAssembly
+configurations. The independently owning verification request is constructed
+before that measurement and moved into the context. Explicit missing OpenSSL
+and an invalid root stopped with guidance; the optional native suite without
+OpenSSL reported omission and passed. The checkout-local OpenSSL link was
+restored. C and C++ negative tests confirmed the actual WebAssembly refusal,
+not an unrelated missing-header failure.
+
+One independent final review found four important issues. Commit `f5fd7a8`
+fixes all four with permanent regressions observed failing before the fixes:
+promise/event operations retain their handler's associated executor work;
+moved-from default transports remain usable; socket close forwards to the
+custom transport's close hook; and the native umbrella header exposes all
+three socket templates. Success, cancellation, shutdown, move construction
+and assignment are exercised. The full suites, followed by focused tests after
+style-only test changes, passed. Final lint and rendered documentation are clean.
+Custom transports must supply close() to cancel pending work and release resources,
+and preserve a usable executor in a moved-from source.
+
+One minor documentation finding remains: the TLS example is compiled and run
+but lacks page variants and a row in the page size table. Carry this into task
+22's documentation work; no binary-size claim is made for that example here.
+
+The next implementation task is 22 (rulebook,
+index and full page), followed by 23 (broader release checks and gates). The
+owner's no-CI instruction still applies to those later gates.
+
+
+## Yield benchmark charts and complete tables, 2026-10-15
+
+Library commit `3b5d1f5` adds four scientific figures in PNG and SVG, a
+four-page PDF and a flattened table of all 102 configurations from 442 runs.
+The reproducible plotting script reads the committed summary; no measurements
+were rerun or changed. The guide includes all four figures inline. Full local
+lint, documentation generation and rendered checks passed. CSV values match
+the source summary; inline SVG identifiers are unique. The original raw-data
+archive and its checksum remain unchanged. No CI, push or merge ran. The
+default remains 1000 and task 17 remains pending. source/ matches library HEAD.
+
+## Default turn-limit rationale documented, 2026-10-15
+
+Library commit `0aed494` explains that 1000 was the initial design policy,
+then retained after task 13's workload-specific turn-duration check. The later
+Release benchmark measures yield cost independently; it does not derive an
+optimal default. The guide now links this provenance, the historical 8 ms p95
+screening criterion and an illustrative application cost model. Assumed callback
+costs and overhead targets are explicitly not the historical selection rule.
+Documentation generation and rendered checks passed. Only documentation changed;
+no benchmark observations, scheduling behavior or defaults changed. The raw-data
+archive remains the original measurement snapshot. No CI, push or merge ran.
+Task 17 remains pending, and source/ matches the committed library.
+
+## Yield latency benchmark after task 16, 2026-10-15
+
+Library commits `543e764` and `793c4c2` add a manual benchmark and its report;
+`source/` matches library HEAD `793c4c2`. The superproject stays `8829e99`.
+The default remains 1000; task 17 has not started. No CI, push or merge ran.
+
+The real production yield was measured locally in Release with compile/link
+-O3, under JSPI and Asyncify, exceptions on/off, on Apple M5 Max and
+HeadlessChrome 153.0.8010.12. All 442 fresh-page cases completed and validated:
+970,139,132 operations and 9,429,856 timing pairs, including limits 1, 10, 100,
+1000, 5000 and 10000. Seven primary repetitions gave median per-run direct
+means of 4.062 us for JSPI and 4.7365 us for Asyncify; a matching JavaScript
+control gave 3.9255 us. The observed isolated clock step was 5 us, ordinary
+page step 100 us. C++ and JS monotonic reads share the same underlying clock.
+
+The report distinguishes direct round trips, callback-boundary gaps,
+instrumented phase means and confounded whole-program control differences.
+A deliberate 2 ms message-handler delay validated the phase attribution.
+No outliers were removed: chain maxima were 5.01 ms and 39.72 ms. These data
+support amortization for trivial handlers, not a claim that 1000 is optimal.
+Observer overhead, clock quantization, warmup and baseline limitations are
+explicit. Independent review found no remaining blocker. Five analyzer tests,
+full local lint, documentation generation and rendered checks passed.
+
+Reproduction code is in `bench/yield/`, the guide report in
+`doc/yield-cost.adoc`, and per-run CSV, summary and build hashes in
+`bench/yield/results/2026-10-15/`. Raw timestamp arrays and logs are preserved
+locally at `asio-task9-review/.local/yield-benchmark-2026-10-15.tar.gz`,
+SHA-256 `2fbe2f23e6df9155ebc397da12bd12e94946a6bbbc4417f624fdc841a3baa341`.
+
+## Configurable default turn limit after task 16, 2026-10-15
+
+Library commit `3817dc9` adds the owner-requested compiler configuration;
+`source/` matches it. The superproject remains `8829e99`. Task 17 has not
+started. No CI, push or merge ran.
+
+`WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN` is declared and documented in
+config.hpp, defaulting to 1000. It initializes io_context_options; explicit
+context options and the setter keep precedence. Zero is normalized to one,
+negative build defaults are rejected, and native scheduling stays unchanged.
+Apply the same definition to every relevant translation unit and rebuild all
+of them, including Cobalt's separately compiled runner. The documented b2
+command passes the definition globally and uses a separate build directory.
+Do not configure an existing runner archive by defining the macro only in an
+application source file, or mix differently configured objects.
+
+Validation first reproduced the ignored value 100 in both context constructors
+and Cobalt's real JSPI run. The corrected implementation passed the custom
+and zero-default cases, the negative compile-fail case, the full native and
+WebAssembly suites, documentation/rendered checks and full lint. Cobalt's
+5,000-post regression passed with limit 100 under JSPI and Asyncify, with
+exceptions on and off. Compiler command logs confirm the define reaches all
+four separately compiled runner variants. An independent review found a test
+expectation that incorrectly required a full 10,000-handler lot from only
+5,000 samples; it failed with 5000 versus 10000, then passed after bounding
+the expected observation by the sample size. No review finding remains.
+
+The MrDocs reference and guide include the macro and rebuilding requirements.
+The guide now describes browser work as an opportunity, not a guarantee that
+a particular timer or frame happens before resumption. Existing turn-duration
+measurements are not measurements of the isolated yield overhead. No new
+latency benchmark or claim of an optimal default is introduced here.
+
+
+## Task 16 completed: Cobalt co_main with bounded turns, 2026-10-15
+
+Library commit `c74f511` completes task 16 on the existing `work/task14-guide`
+branch in the isolated checkout. `source/` matches that committed library.
+The superproject remains `8829e99`; no new superproject patch is needed.
+Tasks 0-16 are complete. Task 17 is next and has not started; tasks 17-23 remain.
+No CI, push or merge ran, and the primary checkout was not changed.
+
+`/webcpp/asio//cobalt` links Boost's sources and webcpp's replacement
+`main_promise::run_main` and `final_suspend`. The application keeps its ordinary
+co_main. Its executor uses the bounded webcpp context, with the existing
+1,000-handler default on Emscripten and native Boost behavior. Context and signal
+objects are destroyed before Asyncify's explicit exit preserves co_return.
+The adapter preserves the original Boost author's copyright notice.
+
+Validation: native Clang, JSPI and Asyncify passed with exceptions on and off.
+The 5,000-post test checks bounded turns and both Cobalt and Asio timers. The
+external drivers verify exact statuses 7 and 0, output, absence of signals and
+restricted stderr; raw run-fail is not the sole exit-status oracle. Negative
+scratch controls reproduced the lost status without std::exit and the unbounded
+turn with Boost's original context; restored code passed. The ordinary library
+suites and existing real-browser lane passed. The new example also passed in
+HeadlessChrome 153.0.8010.12 under both variants and both exception modes at -O2.
+This session did not execute the CI-pinned browser version.
+
+Six Cobalt suspension-stack configurations passed: debug, default-link release
+and release linked with -O3, with exceptions on/off. The deepest observed Cobalt
+path was 1,088 bytes. The existing 8,192-byte allocation remains unchanged. The
+probe forces actual blocking polls by posting cancellation from a JavaScript
+macrotask. The run-family probe remains covered through the shared observer.
+
+All 24 Release page modules completed once with the expected output. The six
+profiles are -O2, -O3, -Os, -Oz, -O3 -flto and -Oz -flto, crossed with exception
+mode and suspension variant. Compile/link flags and LTO bitcode were checked.
+The full Wasm/JavaScript size matrix is in doc/cobalt.adoc, and the generated
+release size table includes the fourth example. The documentation build and
+rendered-content checks passed. The final full lint passed. There are no new
+public headers requiring additional MrDocs declarations.
+
+Independent read-only review found one important attribution omission, fixed
+and checked against Boost's original main.cpp. No functional defect or deferred
+minor was reported for this task. The final verification command passed after
+commit; its log remains under the library's .superpowers/sdd/plan/task-16-tests.log.
+
+### Task 16 decisions and their limits
+
+- Use yield_counter for the handler bound and observe page_timeout separately.
+  Host timers do not run at a fixed callback index. If the witness proves
+  insufficient, strengthen it without imposing a false timing guarantee.
+- Test both exception modes with result adapters and retain issue 287's warning.
+  This does not repair pending-task moves or prove universal no-exception safety;
+  applications that use the affected upstream operation can still abort.
+- Require exact status 7 and 0 with external drivers in their own local lanes.
+  A trap or unfinished main must not satisfy a run-fail test. The driver accepts
+  only Emscripten's exact debug runtime-retained notice in addition to empty stderr.
+- Preserve EXIT_RUNTIME=0 instead of forcing shutdown. External runtime callbacks
+  may remain active after std::exit; full runtime teardown is not promised.
+- Suppress only Clang's coroutine-missing-unhandled-exception diagnostic for
+  explicitly exception-free Cobalt consumers. Boost omits that promise member.
+  This one diagnostic is unavailable for other coroutines in those translation
+  units until upstream provides a compatible declaration; other warnings remain.
+- Preserve upstream executor/resource and signal lifetimes. Review found no new
+  regression; existing upstream limitations remain outside this adapter's scope.
+- Keep task 14 timings scoped to its three original examples. Cobalt's separate
+  size matrix is not a timing benchmark; repeated isolated timing runs would
+  be required for such claims. Profiles other than -O2 were checked under Node,
+  not individually in Chrome.
+- Keep task 17 and later pending and preserve the local branch/checkout. The
+  next task's promise integration is not supplied by this completion.
+
+To resume, use library `c74f511` with superproject `8829e99`, read task 17 and
+these decisions, and implement browser promises as operations. Preserve the
+owner's no-CI instruction and exception policy unless explicitly changed.
+
+
+## Task 15 completed: compiled Cobalt source target, 2026-10-14
+
+Superproject commit `8829e99` completes task 15 on the isolated
+`work/asio-task9-review` branch. Patch 0015 records that commit, preserving the
+previous patches. The library remains `ee64779`; `source/` is unchanged.
+Tasks 0-15 are complete. Task 16 is next and has not started; tasks 16-23 remain.
+No CI, push or merge ran, and the primary checkout was not changed.
+
+`/webcpp//boost_cobalt` builds 24 of Boost 1.92's 26 sources, excluding
+`src/main.cpp` and `src/io/ssl.cpp`. Its implementation defines
+`BOOST_COBALT_SOURCE=1` and `BOOST_COBALT_IO_SOURCE=1`. Consumers receive
+`BOOST_COBALT_NO_LIB=1`; Emscripten sources and consumers receive
+`BOOST_ASIO_DISABLE_THREADS`, with native thread support unchanged.
+Ordinary `main` consumers work. The replacement `co_main` runner belongs to
+task 16 and is not supplied by this archive.
+
+The consumer's exception setting is preserved. With exceptions disabled, b2
+prints a non-fatal configuration warning linking
+https://github.com/boostorg/cobalt/issues/287 and recommending exceptions.
+This warning is not a compiler diagnostic, does not become fatal under
+warnings-as-errors, and does not detect moves or establish runtime safety.
+It is cached per base configuration within a b2 invocation. No warning is
+printed for an exceptions-enabled configuration or an unrelated target.
+
+Validation: all 20 compiled-Boost-library cases, 11 Jamroot cases and 45 local
+installer cases passed. The source-composition test first failed on the missing
+I/O source macro and deliberately invalid main.cpp, then passed after the fix.
+The real Cobalt consumer compiles, links and executes on native Clang, JSPI and
+Asyncify with exceptions off and on. Each configuration rebuilds exactly 24
+sources and verifies macro and exception propagation. It exercises eager
+promises, a completed result, Cobalt's I/O timer and timer cancellation handled
+as a value. Missing or mismatched sources and nested installer preservation
+also pass. Pyright reports zero errors and warnings; licence, line length,
+blank lines, Jam comments, shell syntax and git whitespace checks pass.
+These are local tests, not a CI run or a full browser/API validation.
+
+### Decisions against the older plan
+
+- Keep the existing shared BOOST_SOURCE discovery, version check and installer,
+  rather than add a second Cobalt source tree. The existing installer already
+  preserves nested Cobalt sources. If a separate layout becomes necessary,
+  source discovery must be adapted without changing the public target.
+- Keep compiled-library regressions in boost_libraries_test.py, their current
+  home; also run the plan's Jamroot and installer suites. Moving their location
+  later does not change the covered behavior.
+- Replace three archive-only builds with six real archive-and-consumer builds;
+  they additionally execute the result. Direct archive builds can be repeated
+  if a target-only distinction is discovered.
+- Exclude main.cpp as required, deferring its replacement to task 16. Until
+  then co_main consumers must supply run_main separately.
+- Preserve the owner-approved non-fatal warning instead of forbidding builds
+  without exceptions. The known upstream runtime risk remains unresolved.
+
+Independent read-only review found no Critical or Important issue. One minor
+wording correction is deferred: AGENTS.md says distinct configuration, whereas
+the warning cache uses distinct base configurations and ignores free flags.
+The reviewer deliberately left co_main to task 16 and did not claim real-browser
+or exhaustive I/O coverage. Broader guarantees need their own tests. The
+reviewer did not rerun the suites; execution evidence comes from the executor.
+The final verification log is retained in the isolated worktree at
+`.superpowers/sdd/plan/task-15-tests.log`.
+
+To resume, keep the existing isolated checkout at `8829e99` and library at
+`ee64779`, read task 16 in plan.md and the rulings above, and implement the
+replacement main_promise::run_main with webcpp::asio's turn limit. Do not restore
+the old blanket exception restriction or silently enable exceptions.
+
+
+## Cobalt exception-policy correction before task 15, 2026-10-14
+
+The owner explicitly requested removing the blanket rejection of Cobalt builds
+with exception-handling=off. Superproject commit `d507a93` removes that conditional
+from tools/boost/Jamfile, corrects AGENTS.md, and adds a real compiled-library
+regression to tools/test/boost_libraries_test.py. It preserves the consumer's
+exception setting; it does not force exceptions on. Patch 0014 records this
+commit without changing any earlier patch. The library remains `ee64779`.
+
+The old command `/webcpp//boost_cobalt exception-handling=off` was reproduced
+failing before compilation. The final regression consumer was also rejected by
+the old rule in a separate scratch checkout. With the correction, eager promises,
+as_result on a completed promise, and timer cancellation through as_tuple compile,
+link and execute on native Clang, JSPI and Asyncify, with exceptions both off and
+on. All six archives are built from Boost's sources; the test checks that
+-fno-exceptions reaches the library and consumer only when off. The Emscripten
+requests explicitly provide BOOST_ASIO_DISABLE_THREADS; automatic configuration
+and the remaining task 15 integration are still pending.
+
+Validation: the full 17-case boost_libraries_test.py suite passed, including the
+six Cobalt configurations and existing URL, Charconv and Locale cases. Pyright
+reported zero errors and warnings. Licence, Python line length and blank-line,
+Jam comment and git whitespace checks passed. Independent static review found no
+blocking issue; its stale native-only comment finding was corrected.
+No CI, push or merge ran. The primary checkout remains unchanged.
+
+### Upstream limitations found during validation
+
+Removing the configuration refusal does not establish universal Cobalt support
+without exceptions. A first consumer using a pending task with as_result and
+spawn compiled and linked but aborted under native libc++ with
+`make_exception_ptr was called in -fno-exceptions mode`. Boost 1.92's
+`task_receiver` move constructor calls moved_from_exception(), which constructs
+an exception_ptr. The reproduction is retained locally as
+`.local/cobalt-moved-task-noexceptions.cpp`. The build comments and AGENTS.md
+record this limitation. No Boost sources were patched or exception settings
+silently enabled.
+
+A further exploratory probe retaining a lazy task in place and awaiting it via
+as_result did not complete; the eager-promise regression does not claim to cover
+that path. Investigate lazy-task adapters and movement before claiming full
+no-exceptions support in the Cobalt integration. The remaining task 15 and task 16
+work has not been marked complete.
+
+## Task 14 follow-up: exception support, sizes and timings, 2026-10-14
+
+The owner requested comparisons with exceptions on and off, including both
+build duration and runtime. The isolated library is `ee64779` on
+`work/task14-guide`; `source/` matches all 72 tracked files. Only README.md,
+doc/building.adoc and doc/testing.adoc changed. The superproject remains
+771a247. No CI, push, merge or task 15 work ran.
+
+Measured all six profiles (-O2, -O3, -Os, -Oz, -O3 -flto, -Oz -flto), both
+suspension variants, both exception settings and all three page examples:
+72 modules. Each configuration had one cache-preparation build and three
+measured builds in fresh directories, with -a -j4 and compile/link flags
+checked. All four builds produced identical file sizes. The build median
+covers the complete six-module batch, including manifests and size tables.
+No measured build generated an Emscripten system library.
+
+| Profile | Build median, exceptions on | Build median, exceptions off |
+| --- | ---: | ---: |
+| -O2 | 3.33 s | 3.16 s |
+| -O3 | 4.08 s | 3.61 s |
+| -Os | 3.93 s | 3.58 s |
+| -Oz | 3.94 s | 3.51 s |
+| -O3 -flto | 4.72 s | 4.17 s |
+| -Oz -flto | 4.46 s | 4.01 s |
+
+Runtime: one discarded round followed by eleven measured rounds in fresh
+Node processes, alternating order. All 864 runs matched expected output,
+reported exactly one successful completion and produced no stderr. Module
+initialization starts after JavaScript import and Wasm file reading;
+execution starts at onRuntimeInitialized and ends at webcppTestFinished(0),
+before local-object cleanup. Asyncify factory resolution alone is not used
+as completion. Timings include timer waits and scheduling, are not CPU-only
+or warmed-JIT measurements, and do not measure throw/catch latency.
+
+Environment: Emscripten 6.0.11, Boost 1.92, C++20, Node 26.7.0, macOS 27
+arm64, Apple M5 Max, 128 GiB RAM, Asyncify suspension stack 8192 bytes.
+With exceptions on, JSPI uses Wasm exceptions and Asyncify JavaScript-based
+exceptions. With exceptions off, all objects use -fno-exceptions.
+
+-Oz -flto produced the smallest Wasm and combined payload in every
+example/variant/exception setting. Disabling exceptions reduced Wasm and
+total payload throughout. JSPI -O2 JavaScript alone grew by 38 bytes;
+other JavaScript files shrank. Full size, build-time and runtime tables,
+including variability, are in source/doc/testing.adoc.
+
+Validation: 72 artifact sizes and hashes, 792 measured samples and their
+statistics, 48 build logs, and all 78 measurement rows in source and rendered
+HTML checked. MrDocs, Asciidoctor, source/rendered checks and shell syntax
+passed. An independent read-only review approved the measurement method,
+final tables and conclusions with no blocking findings. No full library
+suite or real-browser matrix was rerun for this documentation follow-up.
+
+Evidence in the isolated superproject: .local/measure-asio-exceptions.py,
+.local/asio-runtime-measure.mjs,
+.local/task14-exceptions-20261014-142622/results.json and its 48 build logs,
+bin/task14-eh-20261014-142622-* and bin/task14-exceptions-doc.
+The primary checkout remains unchanged. Task 15 has not started.
+
+## Task 14 follow-up: six release profiles, 2026-10-14
+
+The owner authorized compiling all six proposed profiles before moving to the
+next task. The isolated library is `a4ecb6b` on `work/task14-guide`; `source/`
+matches all 72 tracked files. No production code or build rules changed in this
+follow-up. No CI, push, merge or task 15 work ran.
+
+Built all three examples in JSPI and Asyncify for -O2, -O3, -Os, -Oz,
+-O3 -flto and -Oz -flto: 36 page modules. Each profile used a fresh isolated
+build directory, release/NDEBUG, and the same flags at compile and link.
+Every effective optimization flag was checked in the verbose build log, and
+LTO object files were verified to contain LLVM bitcode. Every exact page
+module ran under Node 26.7.0 and matched its expected output, without stderr.
+Emscripten 6.0.11, Boost 1.92, C++20, macOS arm64; exception settings and
+Asyncify's 8192-byte suspension stack were unchanged across profiles.
+
+The guide now contains three matrices with Wasm and JavaScript bytes separately,
+plus commands that reproduce all profiles. All 72 recorded sizes were checked
+against the files and the rendered documentation. MrDocs, Asciidoctor and
+source/rendered checks passed. No full library suite or real-browser run was
+performed per profile; the matrix establishes the examples' behavior under Node.
+
+| Flags | Example | JSPI Wasm | Asyncify Wasm | JSPI JS | Asyncify JS |
+| --- | --- | ---: | ---: | ---: | ---: |
+| -O2 | asio_quick_start | 81,162 | 157,410 | 79,404 | 90,706 |
+| -O2 | asio_timers | 82,969 | 162,160 | 79,394 | 90,696 |
+| -O2 | asio_turn_limit | 78,205 | 149,904 | 79,402 | 90,704 |
+| -O3 | asio_quick_start | 80,979 | 153,459 | 78,899 | 89,248 |
+| -O3 | asio_timers | 82,724 | 157,831 | 78,889 | 89,238 |
+| -O3 | asio_turn_limit | 78,085 | 146,529 | 78,897 | 89,246 |
+| -Os | asio_quick_start | 74,490 | 147,893 | 78,899 | 88,867 |
+| -Os | asio_timers | 74,987 | 150,501 | 78,889 | 88,857 |
+| -Os | asio_turn_limit | 71,052 | 139,673 | 78,897 | 88,661 |
+| -Oz | asio_quick_start | 70,771 | 148,813 | 78,328 | 88,296 |
+| -Oz | asio_timers | 72,022 | 153,293 | 78,318 | 88,286 |
+| -Oz | asio_turn_limit | 67,838 | 141,185 | 78,326 | 88,090 |
+| -O3 -flto | asio_quick_start | 86,096 | 143,667 | 79,747 | 89,240 |
+| -O3 -flto | asio_timers | 87,840 | 148,668 | 79,737 | 89,496 |
+| -O3 -flto | asio_turn_limit | 83,189 | 136,877 | 79,745 | 89,238 |
+| -Oz -flto | asio_quick_start | 65,712 | 127,067 | 79,176 | 88,871 |
+| -Oz -flto | asio_timers | 67,968 | 132,768 | 79,166 | 89,386 |
+| -Oz -flto | asio_turn_limit | 62,824 | 120,140 | 79,174 | 89,104 |
+
+-Oz -flto produced the smallest Wasm and combined two-file payload in every
+example/variant. -Os beat -Oz for Asyncify Wasm without LTO; -O3 -flto increased
+JSPI Wasm size. These are size measurements, not performance benchmarks.
+
+Evidence in the isolated superproject: `.local/task14-release-matrix.json`,
+`.local/measure-asio-release-matrix.py`, `.local/task14-matrix-*.log`,
+`bin/task14-matrix-{o2,o3,os,oz,o3-lto,oz-lto}` and `bin/task14-matrix-doc`.
+The earlier release correction below remains the source of the full suite,
+lint and browser results. The primary checkout remains unchanged.
+Task 15 has not started.
+
+## Task 14 follow-up: optimized release sizes, 2026-10-14
+
+The owner requested release-only binary-size documentation. The isolated library
+is now `c87731f` on `work/task14-guide`; `source/` matches its 72 tracked files.
+The superproject remains `771a247`. No CI, push, merge or task 15 work ran.
+
+### Release build and measurements
+
+Both compilation and link use `-O3`, with `variant=release` and `NDEBUG`.
+The explicit link flag is necessary with the current b2 Emscripten toolset.
+Emscripten 6.0.11, Boost 1.92, C++20, macOS arm64; exceptions enabled for both
+variants, Asyncify stack 8192, no LTO or compression requested. These are complete
+page modules without the Node harness, excluding JavaScript glue and runtime memory.
+
+| program | jspi bytes | asyncify bytes | asyncify / jspi |
+| --- | ---: | ---: | ---: |
+| page-asio_quick_start | 80,979 | 153,459 | 1.90 |
+| page-asio_timers | 82,724 | 157,831 | 1.91 |
+| page-asio_turn_limit | 78,085 | 146,529 | 1.88 |
+
+Reproduce from the superproject root:
+
+```sh
+b2 -a toolset=emscripten variant=release linkflags=-O3 libs/asio/example//asyncify
+```
+
+The measured artifacts and generated table are in
+`bin/task14-release-sizes-final/` in the isolated checkout. All six exact page
+modules were also loaded under Node 26.7.0 and matched their expected output.
+The guide and README require release for binary-size publication; the former
+unqualified three-times Asyncify estimate now points to the measured table.
+
+### Defects found by release validation
+
+- Optimized JSPI with WebAssembly exceptions failed to link the native dependencies
+  of JavaScript's stackSave/stackRestore. Emscripten reads EM_JS_DEPS after native
+  linking. Asio's target now explicitly exports emscripten_stack_get_current and
+  _emscripten_stack_restore. The optimized bridge regression failed before this
+  correction and passes afterward, alongside a no-exceptions control.
+- Native optimized allocation instrumentation failed 11 checks because compiler
+  allocation builtins elided or reordered calls relative to measurement flags.
+  Only the native allocation tests use -fno-builtin on Clang/GCC. A permanent
+  allocation_native_release target covers this configuration. Application builds
+  and size measurements keep their normal optimizations.
+
+### Validation
+
+Fresh builds passed 16 native release test markers, 76 WebAssembly test markers,
+three examples natively and under each optimized WebAssembly variant, and all four
+browser drivers in optimized release. HeadlessChrome 153.0.8010.12 passed loader,
+idle and rendering checks for both variants. The native allocation controls retain
+correct attribution and still detect an unbound handler's C allocation.
+
+MrDocs, Asciidoctor and source/rendered documentation checks passed. Full lint was
+clean with 97 compilation commands and 33 translation units. Read-only review found
+no Critical or Important issues; its README placement finding was fixed. A scoped
+review of the later native instrumentation correction found no issues.
+
+Build directories are `bin/task14-release-native-final`,
+`bin/task14-release-fix-suite`, `bin/task14-release-browser`,
+`bin/task14-release-asyncify-examples`, and `bin/task14-release-doc-complete`.
+The primary checkout remains unchanged. Task 15 has not started.
+
+## Task 14 completed locally, 2026-10-14
+
+This update supersedes the task statuses below. Tasks 15 to 23 remain unstarted.
+The owner authorized task 14 and requested Diataxis writing while retaining the
+superproject's AsciiDoc and MrDocs documentation pipeline. No CI, push or merge ran.
+The primary superproject remains `eba8545`, with its Asio library at `a179adc`.
+Tasks 12 to 14 remain in the isolated checkout.
+
+The isolated superproject branch `work/asio-task9-review` is `771a247`; the library
+branch `work/task14-guide` is `f6ce577`, based on task 13's `3d22924`.
+`source/` matches all 72 tracked library files byte for byte. The new `0013` patch
+records the build correction; historical patches `0001` to `0012` are unchanged.
+
+### Guide, examples and contracts
+
+- Added a guided first-program tutorial, task-focused timer and turn-limit sections,
+  application-testing instructions and navigation by learning, doing, understanding
+  and reference needs. The existing single-page layout, AsciiDoc, generated MrDocs
+  reference and stable section titles remain in use.
+- Added three compiled examples with exact `.expected` files. The quick start arms
+  its 50 ms timer inside the posted handler. The timers example shares one clock
+  origin for 60/20/40 ms deadlines and demonstrates cancellation after restarting
+  the drained context. Their output order does not rely on setup speed.
+- Added nine numbered guarantees, moving existing anchors into one chapter and
+  preserving their identifiers. The text qualifies polling-turn bounds, timed-call
+  scheduling, supported callers, assertion behaviour and allocator exclusions.
+  Corrected the run-family test's reference to its general semantics section.
+- README code and output are checked copies of the compiled quick start. Every
+  shown guide listing includes its real source or expected output.
+- The examples use the existing completion helper when main finishes after suspension.
+  Page variants receive its header directory without the Node test harness.
+
+### Reproduced defects and review
+
+The actual WebAssembly example runner selected `browser-src.o` as expected output,
+while the size-table action attempted to parse it as JSON. Inherited library source
+usage appended that object to each make action's sources. Two scratch integration
+regressions reproduced those failures before the fix. The actions now select the
+expected file and JSON manifests by suffix, preserving their build dependencies.
+The example regression also proves that deliberately wrong output still fails.
+
+Independent read-only review found two Important issues: executable-only tutorial
+targets did not run their programs, and suspended Asyncify examples did not report
+completion to the test harness. Both were reproduced and fixed. The five individual
+guide commands now name `.output` targets, actually run and capture the documented
+text. The tutorial explains that output is captured, not automatically printed.
+There were no Critical or Minor findings. The later tool fix was validated by the
+parent with regression and integration tests; it was not independently re-reviewed.
+
+### Validation
+
+After commit, fresh builds passed 15 native and 78 WebAssembly test markers, plus
+all three examples natively, under JSPI and under Asyncify. The real browser lane
+passed too. Every example output matched its fixture. Each missing fixture had
+first been observed failing on native and Emscripten builds.
+
+All 25 Emscripten tool integration cases, the example-runner tests and five variant
+tests passed. Full lint was clean: 91 compilation commands, 33 translation units,
+Pyright and the remaining text and boundary checks. MrDocs, Asciidoctor, source and
+rendered documentation checks passed. Navigation and all nine guarantee anchors
+occur exactly once in the generated HTML.
+
+The integrated browser rejected a direct local-file URL, so visual inspection was
+not completed and no workaround was attempted. Automated rendered-HTML checks passed.
+The OpenSpec CLI is unavailable; strict CLI validation remains unperformed.
+
+### Measured page-module sizes
+
+The optimized release measurements in the follow-up above supersede the
+initial debug measurements. Published binary-size documentation uses release only.
+
+The complete post-commit log is `libs/asio/.superpowers/sdd/plan/task-14-tests.log`
+in the isolated checkout. Other task 14 logs and the verification script are beside
+it. The script builds native tests/examples, WebAssembly tests and the browser lane,
+JSPI examples and the size table, Asyncify examples, and the documentation in fresh
+`bin/task14-committed-*` directories, using `.local/review-b2 -a -j4 --verbose-test`.
+Proposal validation passed: 22 proposals with zero problems and all 17 checker tests.
+Keep the isolated checkout. The next task is 15 and has not started.
+
+## Task 13 completed locally, 2026-10-14
+
+This update supersedes the task statuses below. Tasks 14 to 23 remain unstarted.
+The owner authorized task 13 without CI. No CI, push or integration of tasks 12 and 13 ran.
+The primary superproject remains `eba8545`, with its local Asio library at `a179adc`.
+
+The isolated superproject branch `work/asio-task9-review` is `3d069a1`; its library
+branch `work/task13-browser` is `3d22924`, based on task 12's `da3c790`.
+`source/` matches all 64 tracked library files byte for byte. The new `0012` patch
+records the superproject change; patches `0001` to `0011` remain unchanged.
+
+### Changes and decisions
+
+- Added real headless Chrome idle, render and loader drivers alongside the existing
+  Node loader driver, covering both JSPI and Asyncify.
+- Idle observation lasts three seconds: exactly one `setTimeout(300000)`, with no
+  other recorded timer or message polling. A work guard keeps the context pending.
+- Self-posting handlers run for one second. With the default 1,000-handler turn limit,
+  animation callbacks occur; both unbounded Boost controls produce zero callbacks.
+  Callback entry uses `performance.now()`, avoiding stale animation-frame timestamps.
+  This observes animation opportunities, not proof of specific pixels being painted.
+- Full turns end at the yield message post and start at message delivery. The final
+  partial turn is excluded; p95 uses the nearest-rank statistic. The driver rejects
+  p95 above 8 ms and missing animation callbacks. The default remains unchanged.
+- Loader checks execute three handlers in each actually imported variant, including
+  Asyncify selected after removing `WebAssembly.Suspending` before page execution.
+  The fixture identifies the imported artifact before awaiting its factory: the JSPI
+  factory awaits `main`, and the idle program intentionally never returns.
+- The driver rejects console errors, uncaught exceptions and reported loader errors.
+  Bounded waits, signal handling and cleanup remove its Chrome process and profile.
+- Added Asio to `CHROME_LANES`, preserving existing document and Trystero entries.
+  The matrix change was tested before implementation; no CI workflow was executed.
+- Used the existing bound-function-pointer handler pattern to satisfy static analysis
+  without suppressing its recursion diagnostic. No production Asio or loader code changed.
+
+### Validation
+
+On macOS arm64, local Playwright HeadlessChrome 153.0.8010.12, Emscripten 6.0.11,
+Boost 1.92 and Node 26.7.0, three fresh serial browser builds passed all four drivers.
+The final six measurements are recorded in `source/AGENTS.md`:
+
+- JSPI: p95 0.700 ms in every run; maximum up to 1.900 ms; 60 animation callbacks.
+- Asyncify: p95 1.600 ms in every run; maximum up to 9.200 ms; 61 animation callbacks.
+- Both unbounded controls: zero callbacks in all runs. Both idle and loader variants passed.
+
+A fourth fresh browser build passed after commit and recorded task completion.
+Fresh full suites passed 15 native and 78 WebAssembly markers before the final C++
+style corrections; all changed browser programs were then rebuilt and retested in
+all four final browser runs. Full lint after those corrections passed with 85 compilation
+commands and 30 translation units. Documentation generation and rendered checks,
+35 matrix tests, JavaScript syntax and diff checks passed.
+
+Scratch negative controls proved detection of console errors, uncaught exceptions,
+import failures, wrong variants and polling. A SIGTERM check returned 143 and left
+no owned Chrome process or profile. Independent read-only review found no Critical,
+Important or Minor issues.
+
+Commands from the isolated superproject:
+
+```sh
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-final-measure-1 toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-final-measure-2 toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-final-measure-3 toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j1 --verbose-test --build-dir=bin/task13-committed toolset=emscripten libs/asio/test/browser//browser
+```
+
+Logs are under `.local/task13-validation/`; committed verification output is at
+`libs/asio/.superpowers/sdd/plan/task-13-tests.log`. The local Chrome version differs
+from the CI pin; the pinned browser and other platforms were not executed here.
+The OpenSpec CLI is unavailable, so strict CLI validation remains unperformed.
+Proposal validation passed: 22 proposals with zero problems and all 17 checker tests.
+Keep the isolated checkout. The next task is 14 and has not started.
+
+## Tasks 9 to 11 integrated locally; task 12 completed, 2026-10-14
+
+This update supersedes the earlier task statuses below. Tasks 13 to 23 remain unstarted.
+The owner authorized local integration of tasks 9, 10 and 11 and implementation of task 12.
+No CI workflow, push, remote repository or registered submodule was created.
+
+### Local integration
+
+- `webcpp/main` fast-forwarded from `9a268b7` to `eba8545`, carrying the ten prerequisite
+  superproject commits already validated in the isolated checkout.
+- `webcpp/libs/asio` was absent, so a local clone brought in the library's complete history.
+  Its `main` is `a179adc`, including tasks 9, 10 and 11. It has no remote and remains ignored
+  by the superproject until registration is authorized.
+- Fresh post-integration Asio suites passed: 15 native and 74 WebAssembly markers.
+  Local tool checks also passed: variants (5 cases), lint tests (57), build declarations (35),
+  matrix planning (34) and Emscripten integration (22). These are local test scripts, not CI.
+  Logs are in the primary checkout's `.local/asio-merge-validation/`.
+
+### Task 12
+
+The isolated checkout remains `asio-task9-review`. Its superproject branch
+`work/asio-task9-review` is now `35c8aa7`; its library branch `work/task12-loader` is `da3c790`.
+These task 12 commits are not integrated into the primary checkout.
+`source/` matches all 59 tracked files at library commit `da3c790` byte for byte.
+The new `0011` superproject patch records the build correction; patches `0001` to `0010`
+remain unchanged historical records.
+
+- Added the loader's `supportsJspi`, `pick` and `load` functions, using artifact names from
+  the generated manifest, explicit variant overrides and replaceable fetch/import functions.
+- Added the browser lane's Node driver and a real page program that posts three handlers,
+  runs its context and prints its completion. Both generated JSPI and Asyncify artifacts load.
+- The driver waits for observed output within its 60-second bound. It replaces the plan's
+  fixed 200 ms sleep, avoiding an assumption about machine speed.
+- Fixed `webcpp.variants` exporting consumed library source dependencies through its finished
+  executables. This caused duplicate symbols when the manifest and driver consumed both
+  variants. A real linked fixture failed before the fix and passed afterward; each executable
+  still consumes its dependencies for its own compilation and link.
+- Applied library requirements only to the page program. The driver uses `.//page_program`
+  and removes the inherited library requirement, avoiding another unintended link.
+- Independent read-only review identified one important issue: HTTP redirects changed the
+  manifest's directory, but the loader used the original URL. A real loopback HTTP 302
+  reproduced the wrong artifact path. The fix uses `response.url`, falling back to the
+  requested URL for custom fetch implementations. The regression and both real variants pass.
+- Documented the manifest, loader options, errors, redirects and the distinction between
+  factory readiness and completion of a suspended main. README reflects the Node lane.
+
+### Task 12 validation
+
+With Boost 1.92, Emscripten 6.0.11, Node 26.7.0 and native Clang 21:
+
+- Fresh full suites: 15 native and 75 WebAssembly passing markers. Following the review fix,
+  the affected browser lane was rebuilt from scratch and passed, including once after commit.
+- Full local lint: `lint: clean`, including 76 compilation commands for 27 C++ translation
+  units, Pyright, formatting, library boundaries and all text rules.
+- All 23 Emscripten tool integration cases passed with the new variant dependency regression.
+- Full documentation generation and rendered checks passed; the page lists 78 distinct tests,
+  15 native and 75 Emscripten, with overlap between targets. JavaScript syntax and diff checks
+  passed. The runtime browser test is Node-only here; Chrome measurements belong to task 13.
+
+Commands from the isolated superproject, using `.local/review-b2`:
+
+```sh
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task12-final-native libs/asio/test
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task12-final-wasm toolset=emscripten libs/asio/test libs/asio/test//asyncify libs/asio/test/browser//browser
+.local/review-b2 -a -j4 --verbose-test --build-dir=bin/task12-committed toolset=emscripten libs/asio/test/browser//browser
+.local/review-b2 -a -j4 --verbose-test --build-dir=bin/task12-final-doc libs/asio/doc
+```
+
+Suite logs and lint output are under `.local/task12-validation/`; the committed browser
+lane's complete output is `libs/asio/.superpowers/sdd/plan/task-12-tests.log`.
+The next task is 13. Preserve the isolated checkout and use its two task 12 commits as the
+base when authorized to continue. No task 13 code or CI configuration was added.
+Proposal validation passed: 22 proposals with zero problems and all 17 checker tests.
+The OpenSpec CLI is unavailable, so strict CLI validation remains unperformed.
+
+## Task 11 completed, 2026-10-14
+
+This update supersedes task 11's status in the historical sections below. Tasks 12 to 23
+remain unstarted. `source/` matches local library commit `a179adc` on top of `ded30cb`.
+The isolated superproject worktree remains at `eba8545`, with no production changes here.
+
+### Changes
+
+- Added `test/allocation_test.cpp`, registered natively and in all four WebAssembly
+  configurations: JSPI and Asyncify, each with and without exceptions.
+- Counted all eight global `operator new` forms and the platform's C and aligned allocation
+  entry points. The supplied allocator obtains its storage through the uncounted backend,
+  avoiding double counting. Direct controls exercise the intercepted allocation functions.
+- Measured context construction and destruction, a 5 ms timer, ten bound posts and, on
+  Emscripten, two bridge deliveries that post bound handlers. All operations must finish;
+  the supplied allocator must be used, with zero unexpected allocations.
+- Kept the named runtime allocations separate: a stack-backed test replacement for
+  Emscripten's `select` poll array, and a flag around Asyncify's unwind-data allocation.
+  A separate explicit suspension proves that the latter counter works, independently of
+  whether the timer is already ready when `run` begins.
+- Added the unbound-handler control: default handler storage is visible through the C or
+  aligned counters even though it does not call global `operator new`.
+- Added `doc/allocation.adoc`, including the compiled scenario, platform limitations and
+  the distinction between context and handler allocators. No production implementation
+  change was necessary. Independent read-only review found no Critical or Important issues;
+  its minor documentation correction about MSVC counting all threads was applied.
+
+### Local validation
+
+With Boost 1.92, Emscripten 6.0.11, Node 26.7.0 and the configured native Clang 21 toolset:
+
+- Fresh native suite: 15 passing markers. The scenario reported `given=18 new=0 c=0
+  aligned=0 runtime=0`; the unbound handler reported `c=1`.
+- Fresh WebAssembly suite, including Asyncify: 74 passing markers. The allocation scenario
+  passed in all four configurations with `given=22 new=0 c=0 aligned=0`; runtime allocations
+  depend on suspension. The explicit suspension reported runtime 1 on Asyncify and 0 on
+  JSPI. Each unbound handler reported `aligned=1`.
+- Removing only the context allocator in a scratch copy failed on native and all four
+  WebAssembly configurations, with `operator_new_calls > 0` and exit status 1. The native
+  count was 7. The temporary Jamfile declarations were restored. The correct source then
+  passed the fresh full suites after the instrumentation cleanup.
+- clang-tidy passed in six configurations: native with and without exceptions and all four
+  WebAssembly configurations. Dependency diagnostics use the existing suppression policy;
+  no project findings remain. clang-format, changed-file text rules and diff checks passed.
+- Full local documentation passed: MrDocs, source checks, Asciidoctor conversion and rendered
+  HTML checks. It lists 77 distinct tests, 15 native and 74 Emscripten, with overlap between
+  targets. The allocation section and compiled listing are present.
+
+Commands from `asio-task9-review`, through its existing toolchain wrapper:
+
+```sh
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task11-suite-native libs/asio/test
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task11-suite-wasm toolset=emscripten libs/asio/test libs/asio/test//asyncify
+.local/review-b2 -a -j2 -d+2 --build-dir=bin/task11-doc libs/asio/doc
+```
+
+Full logs are `.local/task11-validation/native.log`, `wasm.log` and `doc.log`. Six compile
+command databases and analysis logs are under `.local/task11-validation/lint/`. Scratch
+negative-control logs are `.local/task11-negative/native.log` and `wasm.log`.
+
+### Measurement decisions and limits
+
+LLDB traced an initial native `calloc` to dyld instantiating Asio's thread-call-stack TLS.
+The test initializes that thread runtime by querying `running_in_this_thread` on a temporary
+context before measurement. The measured context and all operations are still fresh. The
+assertion therefore covers routing after thread runtime initialization, not cold-start
+memory usage. This scope is explicitly documented. A thread-local bookkeeping flag was
+also replaced with main-thread-only access after LLDB reproduced recursion through the
+macOS allocation logger while dyld initialized the flag itself.
+
+An assertion that the timer must suspend was removed after it failed when the timer was
+already ready. Its replacement deliberately suspends in a separate control; no elapsed-time
+tolerance or allowance for unexpected allocations was introduced.
+
+JavaScript heap allocations, leak detection and later resolver/socket/coroutine scenarios
+are outside this task. Linux/glibc, MSVC and AddressSanitizer hooks were not executed on this
+Mac. No CI, push, merge, real-browser execution or whole-organization lint was run. The
+OpenSpec CLI remains unavailable, so strict OpenSpec CLI validation was not performed.
+Proposal validation also passed: 22 proposals with zero problems and all 17 checker tests.
+The reference snapshot matches all 53 tracked library files byte for byte.
+The next implementation task is task 12; it has not been started.
+
+## Task 10 completed, 2026-10-14
+
+This update supersedes the task 10 status in the historical sections below. Tasks 11 to 23
+remain unstarted. `source/` now matches local library commit `ded30cb` on top of `ad6367b`.
+The isolated superproject worktree and its tip remain as described in the task 9 update.
+
+### Changes
+
+- Added `test/timers_test.cpp` with five cases: steady timers registered at 60, 20 and 40 ms
+  complete in deadline order; a 30 ms system timer; cancellation of a timer; cancellation of
+  one wait through its slot, signalled by a 10 ms timer; and Beast's 100 ms WebSocket handshake
+  timeout over its in-memory test stream.
+- Ordered steady deadlines share a clock origin. Completion counts and error values are
+  asserted. The cancellation-slot case keeps a second wait on the same timer and verifies
+  that explicit cleanup still cancels one operation, proving isolation of the signalled wait.
+- Registered `timers_native` and the four WebAssembly configurations: JSPI and Asyncify, each
+  with and without exceptions. Every test reports its cases and ends through `exit_status`.
+- Added `doc/timers.adoc`, included by the page, with compiled test listings and guarantee 8.
+  An independent read-only review found no blocking issue. Its numbering observation was
+  corrected with `[start=8]`, and the generated HTML was checked for that numbering.
+- No production implementation change was needed.
+
+### Local validation
+
+With Boost 1.92, Emscripten 6.0.11, Node 26.7.0 and Apple Clang 21:
+
+- Fresh native suite: 14 passing markers.
+- Fresh WebAssembly suite, including the Asyncify lane: 70 passing markers. Expected failures
+  are counted only through their corresponding negative-test declarations.
+- All five new cases passed natively and in each of the four WebAssembly configurations.
+- A scratch copy expected the deliberately wrong order 60, 20, 40. JSPI and Asyncify both
+  reported the three order mismatches and exited 1. The temporary Jamfile declarations were
+  restored, and the final correct suite then passed from scratch.
+- clang-tidy passed on the new test in six configurations: native with and without exceptions,
+  plus the four WebAssembly configurations, using the actual build options. Dependency
+  diagnostics were suppressed according to the existing lint configuration; no project
+  findings remained. clang-format, changed-file text rules and diff checks passed.
+- The full local library documentation build passed, including MrDocs, source checks,
+  Asciidoctor conversion and rendered HTML checks. Its counts are 72 distinct tests, 14 native
+  and 70 Emscripten; these overlap because some tests run on both targets.
+
+Commands from `asio-task9-review`, using its existing `.local/review-b2` toolchain wrapper:
+
+```sh
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task10-suite-native libs/asio/test libs/asio/example
+.local/review-b2 -a -j4 -d+2 --verbose-test --build-dir=bin/task10-suite-wasm toolset=emscripten libs/asio/test libs/asio/example libs/asio/test//asyncify
+.local/review-b2 -a -j2 -d+2 --build-dir=bin/task10-doc libs/asio/doc
+```
+
+Full suite logs are in `.local/task10-validation/native.log` and `wasm.log`; the six analysis
+commands and their logs are under `.local/task10-validation/lint/`. Negative-control output is
+in `.local/task10-negative/build.log`. The local HTML is `libs/asio/doc/html/index.html`.
+
+These are local task checks, not a release or merge gate: no CI, push, merge, real-browser test
+or whole-organization lint was run. The OpenSpec CLI is not installed in this environment.
+The next authorized implementation task would be task 11; it has not been started.
+
+## Task 9 re-review completed, 2026-10-14
+
+This update supersedes the open task 9 review recorded below. Tasks 10 to 23 remain unstarted.
+The historical sections below describe the imported 2026-10-13 baseline; `source/` now includes
+this review's corrections, matching local library commit `ad6367b` on top of import `a9a48f0`.
+
+The active superproject worktree is `asio-task9-review`, beside `webcpp` and `proposals` in the
+organization directory, on branch `work/asio-task9-review`, tip `eba8545`. It starts at
+`9a268b7` and carries the ten recorded superproject patches. Integration preserves both the
+current Boost.Cobalt support and the node test support. `libs/asio` is its own local repository,
+without a remote or a registered submodule. The historical patch files are unchanged.
+
+### Findings and corrections
+
+- An expired 1 ms timer still suspends in Emscripten's initial nonblocking poll, so the suspected
+  missing-suspension failure was not reproduced. The real gap was a shorter measurement path:
+  delaying entry by 25 ms changed `run_for` from 1104 to 1060 bytes and `run_until` from 1092 to
+  1048, while the old test passed.
+- The test now observes nonzero-timeout calls to `doPollAsync` and requires one for every
+  reactor-wait case. With the old timer and the 25 ms delay, all eight wait assertions failed.
+- Reactor cases now keep outstanding work until a JavaScript macrotask posts the completing
+  handler. They retain the 25 ms entry delay as a regression case. Pending callbacks are
+  cancelled at destruction, and the fixture cannot move or copy.
+- The yield of `run_until` is measured separately. The bridge comments now state the actual
+  guarantee, no entry after Emscripten sets `ABORT`, without claiming every raw Wasm trap sets it.
+- An independent review checked the corrected instrumentation, callback lifetime and test
+  evidence, and found no remaining blocking issue in this scoped task 9 review.
+
+### Validation performed locally
+
+With Emscripten 6.0.11, Node 26.7.0 and Boost 1.92:
+
+- Native Asio suite: 13 passing test markers, built from scratch with Apple Clang 21.
+- Asio JSPI and Asyncify suites: 66 passing test markers, built from scratch; expected compile
+  and runtime failures were accepted only by their corresponding negative tests.
+- After the final measurement correction, all six changed Asyncify stack builds were rebuilt
+  from scratch and passed: debug, release and release linked with `-O3`, each with and without
+  exceptions. There are eleven measured paths with exceptions and nine without.
+- Their maxima (exceptions on/off) were 1164/844 bytes in debug, 2896/1940 in release and 384/288
+  with the optimized link, below half of the configured 8192 bytes in every case.
+- The five variants-tool cases and three selected superproject integration cases passed:
+  suspension variants, node test support linkage and the variants manifest.
+- clang-tidy passed all four compile configurations of the changed test; clang-format,
+  changed-file text rules, source documentation checks and `git diff --check` passed.
+
+This was a scoped local review, not the release gate: CI, a full organization lint, rendered
+HTML generation, GCC and Chrome were not run. No remote repository, push, merge or CI run was
+created. The user's instruction is to stop here before task 10.
+
+### Resume task 10
+
+Use the existing worktree and `libs/asio` repository. `.local/review-b2` supplies its isolated
+Emscripten cache, Python 3.14 and `.local/user-config.jam`; it accepts ordinary b2 arguments.
+Read the original plan's task 10 before starting. The toolchains are reused from the older
+local superproject, and the build outputs remain isolated in this worktree's `bin/`.
+
+## Historical handoff, 2026-10-13
+
 Written 2026-10-13, when this proposal took the library in as a partly implemented genesis.
 `spec.md` (approved by the owner on 2026-10-11, marked active) and `plan.md` (24 tasks, 0 to 23,
 every task with its code) are the specification and the plan; `../tasks.md` is the checklist;

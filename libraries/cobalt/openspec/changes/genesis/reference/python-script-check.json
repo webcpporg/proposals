@@ -1,0 +1,14 @@
+{
+  "checked": "2026-11-04",
+  "source_path": "source/upstream/example/python.py",
+  "source_sha256": "63242af318ec0040b0bc1cc8daacbe96200332c485c42aaa935e6d426cc6c261",
+  "method": "Executed unchanged script with a minimal empty module stub installed only under the imported boost_cobalt_example_python name. No C++ extension or nanobind dependency was loaded.",
+  "python_version": "3.9.6",
+  "observation": {
+    "exception_type": "NameError",
+    "undefined_name": "boost_async_example_python",
+    "message": "name 'boost_async_example_python' is not defined"
+  },
+  "scope": "Python script name-resolution defect only; not evidence for the C++ binding, coroutine, cancellation or target runtime behavior.",
+  "expected_counterpart": "A separately identified patch consistently uses boost_cobalt_example_python; real binding validation remains pending."
+}

@@ -5,10 +5,9 @@
 // https://www.boost.org/LICENSE_1_0.txt)
 
 // <webcpp/asio/config.hpp> defines WEBCPP_ASIO_NO_EXCEPTIONS exactly when the
-// build has no exceptions, and keeps the developer's own definition in a build
-// that has them. test/Jamfile builds this file twice: as the build asks, and
-// with the macro defined as a developer defines it, on the command line, which
-// WEBCPP_TEST_ASIO_DEVELOPER_DEFINED tells this file.
+// collection has no exceptions, and keeps the developer's own definition in a build
+// that has them. test/Jamfile builds this file as the build asks, with all webcpp exceptions
+// disabled, and with the library macro defined by the developer.
 
 #include <webcpp/asio/config.hpp>
 
@@ -22,6 +21,11 @@
 #ifndef WEBCPP_ASIO_NO_EXCEPTIONS
 #error "config.hpp drops WEBCPP_ASIO_NO_EXCEPTIONS, which the developer defined"
 #endif
-#elif defined(BOOST_NO_EXCEPTIONS) != defined(WEBCPP_ASIO_NO_EXCEPTIONS)
-#error "WEBCPP_ASIO_NO_EXCEPTIONS is not defined exactly when the build has no exceptions"
+#elif defined(WEBCPP_HAS_EXCEPTIONS) == defined(WEBCPP_ASIO_NO_EXCEPTIONS)
+#error "WEBCPP_ASIO_NO_EXCEPTIONS must follow the collection exception configuration"
+#endif
+
+#if !defined(WEBCPP_TARGET_NATIVE) && !defined(WEBCPP_TARGET_EMSCRIPTEN) && \
+    !defined(WEBCPP_TARGET_WASIP2) && !defined(WEBCPP_TARGET_WASIP3)
+#error "Asio must expose the collection target configuration"
 #endif

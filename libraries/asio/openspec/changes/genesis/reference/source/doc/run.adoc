@@ -10,7 +10,7 @@
 The io_context's `run`, `run_one`, `run_for`, `run_until`, `run_one_for`
 and `run_one_until` keep Boost.Asio's meaning on every target: `run`
 returns when the io_context is out of work or stopped, `run_one` after one
-handler, `run_for` and `run_until` at their deadline at most, and each
+handler, `run_for` and `run_until` after their deadline is observed, and each
 returns the number of handlers it ran. `poll` and `poll_one` are Boost's
 everywhere. Natively the six are Boost's own, and the options change
 nothing.
@@ -30,7 +30,9 @@ go to step 1.
 `run_for` and `run_until` are the same composition with Boost's
 `run_one_until` in step 4. Like Boost's, they check their deadline before
 each handler, so that a deadline already passed runs nothing, and they
-return once it has passed, even when every turn reaches the limit.
+return once it has passed, even when every turn reaches the limit. A
+running handler cannot be interrupted, and host scheduling can delay
+resumption beyond the deadline.
 `run_one` is step 4 alone, and
 `run_one_for` and `run_one_until` are Boost's, each running one handler at
 most. Code that calls `run` through a `boost::asio::io_context&` gets
@@ -47,18 +49,18 @@ before a JavaScript `setTimeout(0)` ran, in either suspension variant. Boost's
 `run` is not virtual and cannot be told to yield, hence the composition.
 
 The yield is a suspension, an `EM_ASYNC_JS` import whose promise a
-`MessageChannel` message resolves: a macrotask, never a microtask, so that
-the browser renders, runs its timers and delivers its events before the
-next turn. `MessageChannel` exists in every browser and in node.
+`MessageChannel` message resolves: a macrotask rather than only a microtask, giving
+the browser an opportunity to render, run timers and deliver events. It does
+not guarantee that any particular work happens before the next turn. `MessageChannel` exists in every browser and in node.
 
-[[asio-invariant-3]]*A turn runs at most `max_handlers_per_turn` handlers,
+*A turn runs at most `max_handlers_per_turn` handlers,
 and the run family yields to the browser after each turn that reaches it.*
 Step 4's one handler belongs to no turn: when it follows a short turn of
 `k` handlers and its wait ends at once, a timer having fallen due
 meanwhile, no macrotask comes between them, so that up to
-`k + 1 + max_handlers_per_turn` handlers, fewer than twice the limit and
-one, can run between two yields. The option is 1000 by default:
-measured with Emscripten 6.0.11, the `setTimeout(0)` above then ran after
+`k + 1 + max_handlers_per_turn` handlers, at most twice the limit,
+can run between two yields. The option is 100 by default.
+Historically, with a limit of 1000 and Emscripten 6.0.11, the `setTimeout(0)` above ran after
 1,000 handlers under JSPI and 999 under Asyncify, against 300,000 without
 the limit, and `run` still ran every handler. It is given at construction,
 `+io_context io(io_context_options{.max_handlers_per_turn = 250})+`, or
@@ -69,6 +71,46 @@ itself: one after every `max_handlers_per_turn` handlers under `run` and
 `run_for`, never more handlers between two, and none under Boost's own
 `run`; and a JavaScript `setTimeout(0)` runs at a yield, seen by the first
 handler of a turn. And by `run_family`, in each variant.
+
+[#asio-run-default]
+=== Configure the build's default turn limit
+
+`WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN` in `config.hpp` supplies the
+initial value of `io_context_options::max_handlers_per_turn`. It defaults
+to 100 and can be replaced by a compiler definition, for example to use 1000:
+
+[source,bash]
+----
+-DWEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=1000
+----
+
+For b2, pass the definition on the command line for the complete build:
+
+[source,bash]
+----
+b2 -a --build-dir=bin/asio-limit-1000 toolset=emscripten \
+    define=WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN=1000 \
+    libs/asio/example//asio_cobalt.output
+----
+
+Use the same value in every translation unit that uses asio and rebuild all
+of them when changing it. In particular, Cobalt's runner is compiled separately:
+a definition in an application source file alone cannot configure an existing
+runner archive. A separate build directory avoids reusing outputs built with
+another definition. Do not mix differently configured objects in one program.
+
+An explicit option at construction or a later `max_handlers_per_turn(n)` call
+overrides this build default for that context. Zero is normalized to one;
+negative build defaults are rejected. Native scheduling is unchanged.
+
+The value 100 is a configurable scheduling policy, not a measured optimum or
+a time budget. Smaller values offer more frequent yields under continuous
+ready work, with more suspension and scheduling overhead. A single expensive
+handler can still block the thread. The original browser measurements used
+small self-posting handlers and checked turn duration, not isolated yield cost.
+The later <<asio-yield-cost,Release benchmark>> measures yield latency separately.
+See <<asio-yield-default-origin>> for the default's origin and validation,
+and <<asio-yield-select-limit>> for the cost model and its limits.
 
 [#asio-run-callers]
 === Who may call it
@@ -86,7 +128,7 @@ event, on the wrong stack. asio's bridge only posts. Nor does a program
 block the page's thread without suspending, in a busy loop or a blocking
 system call.
 
-[[asio-invariant-6]]*On emscripten, a run family call made while another
+*On emscripten, a run family call made while another
 runs, or while the bridge delivers a browser event, asserts and returns 0
 having run nothing.* The io_context keeps a flag while one of its six
 members runs, and the bridge counts the deliveries in progress. A call
@@ -137,7 +179,7 @@ the program's io_context is safe in either variant.
 [#asio-run-exceptions]
 === Exceptions
 
-[[asio-invariant-7]]*A handler's exception propagates out of `run`, as
+*A handler's exception propagates out of `run`, as
 Boost's, on both variants.* Handlers run on the stack of `main`, inside the
 run family call, so that a {cpp} exception a handler throws leaves `run`,
 clearing the run family's flag on its way, and reaches the program's
@@ -164,7 +206,7 @@ default limit.
 [#asio-run-main]
 === Before run, and after main
 
-[[asio-invariant-2]]*On emscripten, handlers run only on the stack of a
+*On emscripten, handlers run only on the stack of a
 run family call*, as natively: work posted before `run` is called waits for
 it, and a browser event that arrives while no `run` is active is posted and
 waits for the next one. _Held by_ `reactor`, where work posted before `run`
@@ -177,3 +219,36 @@ alive, and its messages queue. After `main` returns, the runtime stays
 alive, since Emscripten keeps it by default, events keep being posted, and
 nothing runs them unless an export listed for suspension calls the run
 family again.
+
+[#asio-run-configure]
+=== How to configure the turn limit
+
+When ready work repeatedly posts more work, set the limit on the context
+that runs it. This program requests turns of 250 handlers and posts a
+finite chain of 5,000 pieces of work:
+
+[source]
+----
+include::{examples}/asio_turn_limit.cpp[tag=program,indent=0]
+----
+
+Run it from the superproject root:
+
+[source,bash]
+----
+b2 toolset=emscripten libs/asio/example//asio_turn_limit.output
+----
+
+[listing]
+----
+include::{examples}/asio_turn_limit.expected[]
+----
+
+Keep the state alive until `run` returns. Each handler posts the next one
+instead of calling it inline, so the context can yield between turns.
+Natively the same program prints the same output, but the option does not
+change Boost's scheduling. Change the limit to trade handler throughput
+against opportunities for the browser to process other work. A handler
+that itself blocks for a long time still blocks the page; the option does
+not impose a time budget on individual handlers. The measured browser
+checks are described in <<asio-testing-browser>>.

@@ -1,0 +1,6 @@
+{
+    "name": "webcpp-asio-browser-tests",
+    "private": true,
+    "type": "module",
+    "description": "The browser lane's drivers: node built-ins only."
+}

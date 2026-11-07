@@ -2,10 +2,10 @@ schema: spec-driven
 created: 2026-10-10
 webcpp:
   library: asio
-  title: "asio: Boost.Asio natively, the browser's event loop on Emscripten"
+  title: "asio: Boost.Asio across native, browsers and WASI"
   kind: wrapper
   port_of: null
   status: implementing
   release: null
-  implementation: null
+  implementation: https://github.com/webcpporg/asio
   decided: 2026-10-11

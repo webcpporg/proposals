@@ -1,0 +1,25 @@
+{
+  "applications": [
+    "doc-ssl-client",
+    "http-client-async",
+    "http-client-async-local",
+    "http-client-async-ssl",
+    "http-client-async-ssl-system-executor",
+    "http-client-awaitable",
+    "http-client-awaitable-ssl",
+    "json_client",
+    "http-client-coro",
+    "http-client-coro-ssl",
+    "http-crawl",
+    "http-client-methods",
+    "http-client-sync",
+    "http-client-sync-ssl"
+  ],
+  "adaptations": [
+    "Incoming host invocation replaces command-line launch.",
+    "Host HTTP perform replaces original socket scheduling and HTTP framing.",
+    "GET, six methods and JSON Body retained. Crawler preserves the upstream report and two asynchronous get-next/complete/aggregate workers over up to 32 distinct controlled authority/path pairs. Host HTTP combines transport phases; complete exchange failures increment Read, while the separate socket phase counters are unmeasured.",
+    "TLS/Unix transport become host-owned; the base fixture measures HTTP payloads. Separate configured-host HTTPS fixtures verify CA trust, hostname rejection, and the documentation client's mutual TLS.",
+    "Stackful source compatibility remains blocked without Boost.Context."
+  ]
+}

@@ -2,7 +2,7 @@
     "key": "asio",
     "name": "asio",
     "authors": ["R"],
-    "description": "Boost.Asio natively, and in the browser Boost.Asio's own io_context suspended into the page's event loop.",
+    "description": "Boost.Asio and Cobalt for native, browser and WASIp2/P3 targets, with explicit platform capabilities.",
     "category": ["Concurrent", "IO"],
     "maintainers": ["R <github.overboard312@passmail.net>"],
     "cxxstd": "20",

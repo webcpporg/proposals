@@ -14,4 +14,4 @@ webcpp.doc asio : asio.adoc ;
 # (/webcpp//emscripten-reference), with the define of build.jam that a
 # requirement conditioned on the emscripten toolset does not give it.
 webcpp.reference asio : <library>/webcpp//emscripten-reference
-  <define>BOOST_ASIO_DISABLE_THREADS ;
+  <define>BOOST_ASIO_DISABLE_THREADS <define>WEBCPP_ASIO_REFERENCE ;

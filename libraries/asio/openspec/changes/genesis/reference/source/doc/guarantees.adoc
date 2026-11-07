@@ -1,0 +1,75 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-guarantees]
+== Guarantees
+
+These contracts apply to the supported calls described in <<asio-run-callers>>.
+The numbered anchors are stable: code and tests link to the same guarantee
+when its explanation moves. The reference describes individual API members;
+these guarantees describe their behaviour together.
+
+. [[asio-invariant-1]]Natively, `io_context` derives from Boost.Asio's context,
+  shares its executor type and uses Boost's run family. Browser scheduling
+  options are accepted without changing native execution. The timer aliases
+  name Boost's types. See <<asio-names>>; checked by `names`.
+. [[asio-invariant-2]]On Emscripten, supported handler execution happens on
+  the stack of a run family call from `main` or another export configured
+  for suspension. Posted work and events delivered through the bridge wait
+  for such a call. See <<asio-run-main>>; checked by `reactor` and `bridge`.
+. [[asio-invariant-3]]A polling turn runs at most `max_handlers_per_turn`
+  handlers. A full turn yields through a macrotask unless the context is
+  stopped or its timed call has expired. A wait may run one additional
+  handler between turns; the bound between yields is therefore at most
+  twice the limit, not always the limit itself. Timed calls check deadlines
+  before handlers; they cannot interrupt a running handler or guarantee
+  when the host resumes them. See <<asio-run-turn>>; checked by `turn_limit`,
+  `run_family` and `browser_render`.
+. [[asio-invariant-4]]A conforming bridge registration only posts completed
+  work; it does not run or dispatch it inline. A listener alone is not
+  outstanding work. See <<asio-browser>>; checked by `bridge`.
+. [[asio-invariant-5]]A bridge registration's key is never reused. An event
+  for a removed key or a destroyed context delivers nothing. The
+  registration must outlive its key. See <<asio-browser>>; checked by `bridge`.
+. [[asio-invariant-6]]On Emscripten, a run family call on a context already
+  running or delivering a bridge event reports an assertion violation and,
+  if assertion handling permits execution to continue, returns zero without
+  running work. It is also refused with assertions disabled. The detection
+  scope and bypasses are listed in <<asio-run-callers>>; checked by `detection`.
+. [[asio-invariant-7]]With exceptions enabled, a handler's {cpp} exception
+  propagates out of the run family as it does in Boost.Asio, natively and
+  under both suspension variants. JavaScript errors have different rules.
+  See <<asio-run-exceptions>> and <<asio-browser-errors,JavaScript errors>>;
+  checked by `exceptions`.
+. [[asio-invariant-8]]Boost's timers and Beast's timeouts complete through
+  the reactor on both targets. Timer cancellation retains Boost's semantics,
+  including cancellation of an individual wait through its associated slot.
+  See <<asio-timers>>; checked by `timers`.
+. [[asio-invariant-9]]Context services use the context's allocator; operation
+  storage uses the handler's associated allocator. Supplying one does not
+  implicitly supply the other. The named runtime allocations and measurement
+  limits in <<asio-allocation-runtime>> remain outside that routing claim.
+  See <<asio-allocation>>; checked by `allocation`.
+. [[asio-invariant-10]]A Promise completes its operation through the bridge
+  with its value, or with `promise_rejected` and its reason. Cancellation
+  posts `operation_aborted`; a later settlement cannot complete it again.
+  See <<asio-promises>>; checked by `promise` and `promise_cobalt`.
+. [[asio-invariant-11]]A pending Promise or event operation owns outstanding work.
+  Destroying the context destroys its pending handler without invoking it.
+  An event wait also removes its listener. See <<asio-promises>>;
+  checked by `promise` and `event`.
+. [[asio-invariant-12]]On Emscripten, network operations on a socket or acceptor
+  fail with `operation_not_supported` unless a transport supplies them. Open
+  and close manage local state; synchronous failures never block and asynchronous
+  failures are posted. See <<asio-sockets>>; checked by `sockets` and `transport`.
+
+[[asio-invariant-13]]
+=== 13. Resolver entries preserve host and service
+
+On Emscripten, forward resolution returns one entry containing the original
+host and service, an unspecified address and the service port. A plain socket
+cannot connect to it. `resolver_test.cpp` checks service parsing and posted
+completion, including failures.

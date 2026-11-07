@@ -1,0 +1,19 @@
+{
+  "applications": [
+    "advanced-server",
+    "advanced-server-flex",
+    "advanced-server-flex-awaitable",
+    "http-server-async",
+    "http-server-async-local",
+    "http-server-async-ssl",
+    "http-server-awaitable",
+    "http-server-coro",
+    "http-server-coro-ssl",
+    "http-server-flex",
+    "http-server-stackless",
+    "http-server-stackless-ssl",
+    "http-server-sync",
+    "http-server-sync-ssl"
+  ],
+  "adaptation": "Original mime_type, path_cat and handle_request; message_generator replaced by std::variant; host owns persistence and server entrypoint."
+}

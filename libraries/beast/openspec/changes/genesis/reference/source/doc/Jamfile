@@ -1,0 +1,19 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+import webcpp ;
+
+webcpp.doc beast : beast.adoc ;
+# Browser headers need Emscripten's data model. Independent WASI bindings
+# expose host API contracts in the same parse, without a guest reactor.
+webcpp.reference beast : <library>/webcpp//emscripten-reference
+  <library>/webcpp/asio//asio <library>/webcpp/wasi//wasi
+  <library>/webcpp/wasi//host-http-bindings-p2-headers
+  <define>WEBCPP_WASI_HTTP_P2 <define>BOOST_ASIO_DISABLE_THREADS
+  : <library>/webcpp//emscripten-reference
+    <library>/webcpp/asio//asio <library>/webcpp/wasi//wasi
+    <library>/webcpp/wasi//host-http-bindings-p3-headers
+    <define>WEBCPP_WASI_HTTP_P3 <define>BOOST_ASIO_DISABLE_THREADS ;

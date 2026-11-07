@@ -12,6 +12,12 @@ project /webcpp/asio ;
 
 import feature ;
 import numbers ;
+import webcpp ;
+import webcpp-target ;
+
+use-project /webcpp/asio-wasip3 : ../../tools/boost/asio-wasip3 ;
+use-project /webcpp/asio-wasip2 : ../../tools/boost/asio-wasip2 ;
+use-project /webcpp/asio-windows : ../../tools/boost/asio-windows ;
 
 # The stack Asyncify saves a suspension in, in bytes: 8192 unless a program
 # asks for more with <asyncify-stack-size>, propagated so that asio's usage
@@ -56,14 +62,14 @@ rule asyncify-stack ( properties * )
 # (include/webcpp/asio/browser/src.hpp), linked into every program on
 # emscripten by asio's usage requirements below.
 obj browser-src : src/browser_src.cpp : <include>include <library>/boost//headers
-  <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS ;
+  <library>/webcpp/config//config
+  <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS ;
 explicit browser-src ;
 
-# On emscripten Asio needs BOOST_ASIO_DISABLE_THREADS: without it,
-# <boost/asio/io_context.hpp> stops at "Only Windows and POSIX are
-# supported!" (<boost/asio/detail/signal_blocker.hpp>, line 27 in Boost
-# 1.92). Its inline namespace differs with and without threads, so a
-# translation unit that missed the define fails at link. The browser's
+# Single-thread Emscripten needs BOOST_ASIO_DISABLE_THREADS. A pthread build
+# supplies the POSIX thread implementation instead. Boost's inline namespace
+# differs with and without threads, so every translation unit must agree.
+# The browser's
 # values reach C++ through embind: -lembind, a free feature, which a usage
 # requirement keeps.
 #
@@ -74,13 +80,70 @@ explicit browser-src ;
 # scheduler_task::run. ASYNCIFY_STACK_SIZE is asyncify-stack-size's, above.
 # The tag names every program on asio Boost's way, with its variant:
 # reactor-60-d-jspi.js.
+# EM_JS_DEPS is read after the native link in Emscripten 6.0.11. Keep the
+# bridge's stack helpers exported even when an optimized JSPI runtime does
+# not otherwise need them; JavaScript calls both through stackSave/Restore.
 # tag::asio[]
 alias asio : : : : <include>include <library>/boost//headers
-  <toolset>emscripten:<define>BOOST_ASIO_DISABLE_THREADS
+  <library>/webcpp/config//config
+  <target-os>windows:<library>/webcpp/asio-windows//headers
+  <toolset>clang-wasip2:<library>/webcpp/asio-wasip2//headers
+  <toolset>clang-wasip2:<source>/webcpp/asio-wasip2//pollable
+  <toolset>clang-wasip3:<library>/webcpp/asio-wasip3//headers
+  <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS
   <toolset>emscripten:<linkflags>-lembind
+  <toolset>emscripten:<linkflags>-Wl,--export=emscripten_stack_get_current
+  <toolset>emscripten:<linkflags>-Wl,--export=_emscripten_stack_restore
+  <toolset>emscripten,<threading>multi:<linkflags>-Wl,--wrap=__syscall_poll
   <toolset>emscripten:<source>browser-src
   <toolset>emscripten,<webcpp-suspend>jspi:<linkflags>-sJSPI
   <toolset>emscripten,<webcpp-suspend>asyncify:<linkflags>-sASYNCIFY
   <conditional>@asyncify-stack
   <toolset>emscripten:<tag>@webcpp%suspend-tag ;
 # end::asio[]
+
+# WASIp2 and WASIp3 use the same checked Cobalt capability overlays.
+# Cobalt's entry point, with webcpp's bounded application event loop.
+# tag::cobalt[]
+lib cobalt-main : src/cobalt_main.cpp
+  : <link>static <library>asio <library>/webcpp//boost_cobalt ;
+explicit cobalt-main ;
+# The checked common Cobalt patch supplies the promise member required even
+# when a compiler builds the coroutine without exception handling.
+alias cobalt : : : : <library>asio <library>cobalt-main <library>/webcpp//boost_cobalt ;
+# end::cobalt[]
+
+# tag::openssl[]
+rule openssl-linked ( properties * )
+{
+    if [ webcpp-target.target-of $(properties) ] in native wasip2 wasip3
+    {
+        return <library>/webcpp/third_party//openssl
+            <define>WEBCPP_ASIO_HAS_OPENSSL=1 ;
+    }
+}
+
+# Refused on Emscripten: every source of a program built for emscripten
+# that names it stops at the forced include, whose message says what to
+# write. Quoted, as the Jamroot quotes Boost's directory, for a path that
+# holds a space.
+path-constant WEBCPP_ASIO_ROOT : . ;
+alias openssl : : : : <conditional>@openssl-linked
+    <toolset>emscripten:<cflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\""
+    <toolset>emscripten:<cxxflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\"" ;
+# end::openssl[]
+
+# Browser tests exercise the settings adapter without linking OpenSSL.
+alias openssl-tests : : : : <conditional>@openssl-linked ;
+explicit openssl-tests ;
+
+# An explicit portable trust policy, separate from the raw OpenSSL context.
+# tag::tls[]
+alias tls : : : : <library>asio <library>openssl
+  <library>/webcpp/third_party//ca_certificates ;
+# end::tls[]
+
+# tag::cobalt-ssl[]
+alias cobalt_ssl : : : : <library>cobalt <library>tls
+  <library>/webcpp//boost_cobalt_io_ssl ;
+# end::cobalt-ssl[]

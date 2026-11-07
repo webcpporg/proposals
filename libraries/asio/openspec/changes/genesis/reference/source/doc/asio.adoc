@@ -4,7 +4,7 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 
-= asio: Boost.Asio in the browser's event loop for {cpp}
+= asio: Boost.Asio and Cobalt for {cpp} and WebAssembly
 :toc: left
 :toclevels: 1
 :idprefix:
@@ -21,15 +21,62 @@ lacks there, the configuration Asio needs to build, what wakes `run` from a
 browser event, and a limit on the handlers one turn runs, so that the page
 keeps rendering.
 
+WASIp2 provides single-threaded timers, TCP/UDP, pollable-driven forward DNS,
+supplied CLI streams, Cobalt and optional source-built TLS.
+See <<asio-wasip2>> for its explicit limitations.
+WASIp3 provides timers, TCP/UDP, waitable-driven forward DNS, Cobalt and the same
+optional TLS provider, with single-thread and experimental cooperative-thread profiles. See <<asio-capabilities>> for their
+limits and the features available in each target variant.
+
+[#asio-reading]
+== Find your way through the guide
+
+The guide follows https://diataxis.fr/[Diataxis]: choose a path for what
+you need now. All paths share the compiled examples and generated API
+reference on this page.
+
+* *Learn by doing:* start with <<asio-quick-start>>.
+* *Complete a task:* <<asio-building,build and load a program>>,
+  <<asio-run-configure,configure a turn limit>>,
+  <<asio-timers-example,schedule and cancel timers>>,
+  <<asio-cobalt-build,link a Cobalt program>>, <<asio-wasip3,build for WASIp3>>, or
+  <<asio-testing-application,test your application>>.
+* *Understand the design:* read <<asio-overview>>, <<asio-run-turn>>,
+  <<asio-browser>> and <<asio-allocation-runtime>>.
+* *Look up a contract:* use <<asio-capabilities>>, <<asio-names>>, <<asio-guarantees>> and
+  the generated <<reference,API reference>>.
+
+include::quick-start.adoc[]
+
 include::overview.adoc[]
 
 include::names.adoc[]
 
+include::capabilities.adoc[]
+
 include::building.adoc[]
+
+include::wasip2.adoc[]
+
+include::wasip3.adoc[]
 
 include::run.adoc[]
 
+include::yield-cost.adoc[]
+
 include::browser.adoc[]
+
+include::promises.adoc[]
+
+include::timers.adoc[]
+
+include::cobalt.adoc[]
+
+include::sockets.adoc[]
+
+include::allocation.adoc[]
+
+include::guarantees.adoc[]
 
 include::testing.adoc[]
 
@@ -37,3 +84,5 @@ include::testing.adoc[]
 == Reference
 
 include::{reference}[leveloffset=+1]
+
+include::changelog.adoc[]

@@ -1,0 +1,160 @@
+From d507a93e7dd22f2a740524f8d5b4f1c5edc1c4e6 Mon Sep 17 00:00:00 2001
+From: R <github.overboard312@passmail.net>
+Date: Wed, 14 Oct 2026 14:56:25 -0400
+Subject: [PATCH] tools/boost: let Cobalt preserve the consumer exception
+ setting
+
+---
+ AGENTS.md                          |  8 +++-
+ tools/boost/Jamfile                | 24 +++-------
+ tools/test/boost_libraries_test.py | 74 +++++++++++++++++++++++++++++-
+ 3 files changed, 86 insertions(+), 20 deletions(-)
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 68d09a5..39d1a5d 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -2867,7 +2867,13 @@ What webcpp does not have yet, and the chapters that mention it:
+ - **Compiled Boost libraries.** Boost.URL, Boost.Charconv, Boost.Locale and
+   Boost.Cobalt are built from Boost's sources (`/webcpp//boost_url`,
+   `/webcpp//boost_charconv`, `/webcpp//boost_locale`, `/webcpp//boost_cobalt`).
+-  Boost.Locale and Boost.Cobalt have no build without exceptions, and it is not yet measured on Windows. A
++  Boost.Locale requires exceptions. Boost.Cobalt follows the consumer's exception
++  setting without a blanket refusal. This is not a guarantee that all of Cobalt
++  works without exceptions: in Boost 1.92, moving a pending task calls
++  std::make_exception_ptr, which aborts with libc++ and -fno-exceptions, even
++  when the application uses as_result. Eager promises and timer cancellation
++  handled as values are covered by tools/test/boost_libraries_test.py.
++  The compiled libraries are not yet measured on Windows. A
+   Boost.Test suite still compiles the framework's header-only form (chapters
+   2 and 9).
+ - **Bundled toolchains.** Each toolchain is installed by hand and configured
+diff --git a/tools/boost/Jamfile b/tools/boost/Jamfile
+index f9d4bf7..113f55d 100644
+--- a/tools/boost/Jamfile
++++ b/tools/boost/Jamfile
+@@ -167,25 +167,13 @@ rule cobalt-sources ( )
+     return $(sources) ;
+ }
+ 
+-# Boost.Cobalt throws, through boost::throw_exception and
+-# std::rethrow_exception, so it is refused without exceptions, as Boost.Locale
+-# is; a program that uses it declares <exception-handling>on in its own
+-# requirements.
+-rule cobalt-configuration ( properties * )
+-{
+-    if <exception-handling>off in $(properties)
+-    {
+-        errors.user-error "/webcpp//boost_cobalt needs exceptions: Boost.Cobalt throws, and"
+-            "a program that uses it declares <exception-handling>on in its own requirements,"
+-            "which keeps it with exceptions in a build without them (b2 ignores it as a usage"
+-            "requirement), or leaves Boost.Cobalt out" ;
+-    }
+-}
+-
+ # Boost.Cobalt, with the macros of its own build: its sources see
+-# BOOST_COBALT_SOURCE=1, and its users BOOST_COBALT_NO_LIB=1. Native only in
+-# practice: the programs that use it are declared native.
++# BOOST_COBALT_SOURCE=1, and its users BOOST_COBALT_NO_LIB=1. Exception handling
++# follows the consumer: result-based programs may disable it without a blanket
++# configuration refusal. This does not guarantee every Cobalt operation works
++# without exceptions: moving a pending task creates an exception_ptr in Boost
++# 1.92, which libc++ aborts on when built with -fno-exceptions.
+ compiled boost_cobalt : [ cobalt-sources ]
+   : libs/cobalt/src holds no .cpp file
+-  : <define>BOOST_COBALT_SOURCE=1 <conditional>@cobalt-configuration
++  : <define>BOOST_COBALT_SOURCE=1
+   : <define>BOOST_COBALT_NO_LIB=1 ;
+diff --git a/tools/test/boost_libraries_test.py b/tools/test/boost_libraries_test.py
+index ee7c6ff..e964477 100755
+--- a/tools/test/boost_libraries_test.py
++++ b/tools/test/boost_libraries_test.py
+@@ -14,7 +14,8 @@ library's sources each stopping the build by name, while a build that needs none
+ /webcpp//boost_charconv links on every target, with and without exceptions; /webcpp//boost_locale
+ converts, and translates from a catalog, natively, on wasip2, wasip3 and emscripten, where its
+ sources alone are told that pthreads are there, which no public header depends on, and is refused
+-by name without exceptions.
++by name without exceptions. Boost.Cobalt follows the consumer's exception setting,
++including a result-based coroutine and timer cancellation handled as a value.
+ Each case builds a scratch superproject with the fixture library demo, whose path holds a space.
+ Run with the names of some cases to run only those."""
+ 
+@@ -532,7 +533,78 @@ def test_boost_locale_is_refused_without_exceptions(root: Path) -> None:
+                                                               result.stdout[-4000:])
+ 
+ 
++COBALT_JAMFILE = ('import webcpp ;\n'
++                  'webcpp.targets native emscripten ;\n'
++                  'webcpp.run coroutines : coroutines.cpp : <library>/webcpp//boost_cobalt ;\n')
++
++COBALT_SOURCE = r'''#include <boost/asio/io_context.hpp>
++#include <boost/asio/post.hpp>
++#include <boost/asio/steady_timer.hpp>
++#include <boost/cobalt/op.hpp>
++#include <boost/cobalt/result.hpp>
++#include <boost/cobalt/promise.hpp>
++#include <boost/cobalt/this_thread.hpp>
++#include <webcpp/test/exit_status.hpp>
++
++#include <chrono>
++#include <cstdio>
++
++boost::cobalt::promise<int> answer() {
++    co_return 42;
++}
++
++boost::cobalt::promise<int> exercise(boost::asio::io_context& ctx) {
++    // Eager promises provide a result without moving a pending task.
++    auto child = answer();
++    auto result = co_await boost::cobalt::as_result(child);
++    if (!result || *result != 42)
++        co_return 1;
++    boost::asio::steady_timer timer(ctx, std::chrono::hours(1));
++    boost::asio::post(ctx, [&timer] { timer.cancel(); });
++    auto [error] = co_await boost::cobalt::as_tuple(
++        timer.async_wait(boost::cobalt::use_op));
++    co_return error == boost::asio::error::operation_aborted ? 42 : 2;
++}
++
++int main() {
++    webcpp::test::bound(std::chrono::seconds(10));
++    boost::asio::io_context ctx;
++    boost::cobalt::this_thread::set_executor(ctx.get_executor());
++    auto operation = exercise(ctx);
++    ctx.run();
++    bool const ok = operation.ready() && operation.get() == 42;
++    std::puts(ok ? "result and cancellation passed" : "failed");
++    return webcpp::test::exit_status(ok ? 0 : 1);
++}
++'''
++
++
++def test_boost_cobalt_preserves_exception_setting(root: Path) -> None:
++    # A blanket exception requirement would reject a valid result-based consumer.
++    # Build the real archive and execute eager promises and cancellation in each mode.
++    harness.link_emsdk(root)
++    harness.add_library(root, 'coroutines', COBALT_JAMFILE, {'coroutines.cpp': COBALT_SOURCE})
++    wasm = (*EMSCRIPTEN, 'define=BOOST_ASIO_DISABLE_THREADS')
++    count = 0
++    for request in ((), wasm, (*wasm, 'webcpp-suspend=asyncify')):
++        for exceptions in ('off', 'on'):
++            result = harness.run_b2(root, '-a', '-j4', '-d+2', '--verbose-test', *request,
++                                    f'exception-handling={exceptions}', 'libs/coroutines/test')
++            harness.expect(result, True, 'result and cancellation passed')
++            assert passed(result) == {'coroutines'}, (request, exceptions, result.stdout[-4000:])
++            compiles = [line for line in result.stdout.splitlines()
++                        if ' -c ' in line and ('coroutines.cpp' in line or '/cobalt/src/' in line)]
++            assert any('coroutines.cpp' in line for line in compiles), result.stdout[-4000:]
++            assert any('/cobalt/src/' in line for line in compiles), result.stdout[-4000:]
++            assert all(('-fno-exceptions' in line) == (exceptions == 'off')
++                       for line in compiles), (request, exceptions, compiles)
++            count += 1
++            assert len(list((root / 'bin').rglob('libboost_cobalt.a'))) == count
++            print(f'cobalt {request or ("native",)} exceptions={exceptions}: passed', flush=True)
++
++
+ CASES = [
++    test_boost_cobalt_preserves_exception_setting,
+     test_boost_url_links_on_every_target,
+     test_boost_charconv_links_on_every_target,
+     test_boost_locale_on_every_target,

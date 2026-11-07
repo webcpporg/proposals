@@ -1,0 +1,44 @@
+From 063343df26066ac3fa57ef7ca894c4e311a41b14 Mon Sep 17 00:00:00 2001
+From: R <github.overboard312@passmail.net>
+Date: Thu, 15 Oct 2026 04:02:59 -0400
+Subject: [PATCH] tools/ci: asio's native ssl requires OpenSSL
+
+---
+ tools/ci/matrix.py      | 6 +++++-
+ tools/ci/matrix_test.py | 2 ++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/tools/ci/matrix.py b/tools/ci/matrix.py
+index 94ad20f..b2e3522 100755
+--- a/tools/ci/matrix.py
++++ b/tools/ci/matrix.py
+@@ -162,7 +162,11 @@ EMSDK_JAM = ROOT / 'tools/ci/emsdk.jam'
+ # until webcpp builds them from third_party/ (AGENTS.md chapter 13): the CI's actions of these
+ # names, tools/ci/actions/<name>, install each where the build looks, in .local/, before a lane,
+ # an own lane, the docs or the lint that builds such a library runs.
+-EXTERNAL_DEPENDENCIES = {'trystero': ('secp256k1', 'libdatachannel', 'openssl')}
++# Asio's native ssl header requires the program to name OpenSSL.
++EXTERNAL_DEPENDENCIES = {
++    'asio': ('openssl',),
++    'trystero': ('secp256k1', 'libdatachannel', 'openssl'),
++}
+ 
+ # The variables that name those libraries' directories, which the actions give a job, and a lane
+ # of such a library passes to b2 as -s<VARIABLE>=<dir>: a library's build.jam reads them from b2's
+diff --git a/tools/ci/matrix_test.py b/tools/ci/matrix_test.py
+index 36c2fd3..9ecba8f 100755
+--- a/tools/ci/matrix_test.py
++++ b/tools/ci/matrix_test.py
+@@ -945,7 +945,9 @@ def test_a_lane_of_a_library_with_external_dependencies_says_so(root):
+     # the CI's actions of their names, on a lane or an own lane that builds trystero: its entry
+     # says external, and no other does.
+     assert matrix.EXTERNAL_DEPENDENCIES == {
++        'asio': ('openssl',),
+         'trystero': ('secp256k1', 'libdatachannel', 'openssl')}, matrix.EXTERNAL_DEPENDENCIES
++    assert matrix.needs_external('asio')
+     for dependencies in matrix.EXTERNAL_DEPENDENCIES.values():
+         for dependency in dependencies:
+             assert (matrix.ROOT / 'tools/ci/actions' / dependency / 'action.yml').is_file(), (
+-- 
+2.55.0
+

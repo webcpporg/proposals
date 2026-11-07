@@ -1,0 +1,110 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#beast-browser-differences]
+=== Browser settings and observable differences
+
+This table describes the browser-owned WebSocket and fetch backends. It does not
+change native or WASIp3 guest socket semantics. `ERROR` rejects an unsupported
+setting with `operation_not_supported` when the dependent operation starts.
+`IGNORE` discards that setting; it does not add a missing browser capability or
+disable browser security. Configuration is part of the browser types' namespace;
+translation units using different policies cannot exchange those types silently.
+
+The browser-owned WebSocket's `websocket::request_type` uses
+`http::basic_fields<std::pmr::polymorphic_allocator<char>>`. Its handshake fields
+therefore use the stream's memory resource, including long decorator values.
+Use that alias, or a generic callable, when declaring a request decorator rather
+than requiring Boost's default field allocator. Native and WASIp3 socket streams
+retain the upstream request type. The explicit guest WebSocket adapter accepts
+typed WebCPP request and response decorators for client and server handshakes;
+it converts their fields when calling the upstream protocol implementation.
+
+The test harness configures an ephemeral CA in a disposable full-Chrome profile.
+The protocol contract peer's certificate covers `localhost` and `127.0.0.1`;
+an untrusted profile rejects its WSS connection before the trusted contracts run.
+Application HTTPS fixtures use a separate localhost-only certificate to prove
+that a trusted certificate is still rejected for the wrong hostname. These
+fixture settings belong to the host harness and do not add guest TLS controls.
+
+[cols="2,2,3",options="header"]
+|===
+|Setting or operation |Outcome |Meaning for the application
+|SNI and `host_name_verification` matching the URL authority
+|Accepted |The browser performs its own certificate and hostname validation.
+|`verify_peer`, default verification paths, `tls_client` and `sslv23_client`
+|Accepted |The browser chooses its enabled protocol versions and trust store.
+|Fixed TLS version, `verify_none`, arbitrary verification callback
+|Unsupported |The application cannot change browser TLS validation or negotiation.
+|Client certificate/key, additional roots, verification path or file
+|Unsupported |Guest certificate material does not configure the browser's TLS stack.
+|SNI, verification hostname or handshake Host differing from the URL authority
+|Unsupported |The browser connects and authenticates the URL authority.
+|WebSocket decorator's `Sec-WebSocket-Protocol`
+|Accepted |Its values become the browser constructor's subprotocol list.
+|Other WebSocket decorator fields, including `User-Agent`
+|Unsupported |The browser constructs the handshake headers.
+|`expires_after`, `expires_at`, `expires_never`, handshake timeout
+|Accepted |An expired operation returns `beast::error::timeout` and closes the connection.
+|Idle timeout without keep-alive pings
+|Accepted |Visible messages and closure determine activity; incoming ping frames are hidden.
+|Idle timeout with keep-alive pings; explicit ping and pong
+|Unsupported |The browser cannot send application-requested control frames.
+|`control_callback`
+|Close notifications only |Ping and pong frames are not exposed by the browser API.
+|`permessage_deflate`, `auto_fragment`, `write_buffer_bytes`
+|Ignored under both policies |The browser controls compression and frame boundaries.
+|Close code 1000 or 3000 through 4999
+|Accepted |The reason uses Beast's bounded UTF-8 reason string.
+|Other close codes, including 1001
+|Unsupported |Under `IGNORE`, the adapter closes with 1000 instead.
+|`read_message_max`
+|Enforced |An oversized message reports `message_too_big` and closes the connection.
+|`queue_limits`
+|Enforced |Queued receives and browser-buffered sends have separate bounds. Exceeding
+one closes the connection with `receive_limit` or `send_limit`.
+|HTTP Host equal to URL host or host:port
+|Accepted |The browser generates the corresponding Host field.
+|HTTP `Content-Length` and `Transfer-Encoding`
+|Message framing accepted |The adapter sends decoded body bytes; fetch chooses wire framing.
+|HTTP `Connection` and `Keep-Alive`
+|Ignored under both policies |Connection ownership and reuse belong to the browser.
+|HTTP `User-Agent` and browser-forbidden request headers
+|Unsupported |The browser may reject, replace or omit these headers.
+|HTTP methods or bodies fetch cannot send, including CONNECT
+|Unsupported |`IGNORE` cannot make the browser issue a forbidden request.
+|Redirected HTTP response
+|Policy dependent |`ERROR` reports `operation_not_supported`; `IGNORE` returns the final response.
+The redirect has already been followed by fetch when this is reported.
+|CORS rejection, mixed-content rejection or another fetch failure
+|`browser_errc::fetch_failed` |The browser does not reliably expose a more specific cause.
+|Browser socket facade's shutdown, close and cancel
+|Facade lifecycle operations |These stop pending facade work; they do not expose a TCP descriptor.
+|===
+
+A successful WebSocket write means the browser accepted the message, not that the
+peer received it. Partial writes are accumulated into one message, and their
+bytes count toward the send bound. A cancelled read leaves the next message
+available to a later read. Destruction aborts pending operations through posted
+completion and unregisters event callbacks before late events can reach them.
+Both queue bounds default to 4 MiB. The default maximum WebSocket message is
+16 MiB; a smaller receive-queue bound still applies independently.
+The receive bound charges each retained payload and its message record, including
+empty messages. Partial reads release that charge only when the complete message
+is consumed and its storage is released. Container bookkeeping and allocator
+overhead are additional implementation costs; the bound is not a total heap quota.
+
+The default HTTP path maps messages directly to fetch. Its response body limit
+defaults to 8 MiB. `http::async_read_header` and `http::read_header` accept response
+messages and complete when metadata is available, before the body is consumed;
+a subsequent full read consumes the body. The separate
+`http_byte_stream` compatibility adapter synthesizes HTTP/1.1 bytes for programs
+using Beast parsers, buffering the full fetch response before parsing. Fetch has
+already decoded the response body, so synthetic
+responses omit original `Content-Encoding` and `Content-Length`; responses with
+a body use chunked framing. HEAD, 204 and 304 responses have no synthetic body
+or chunk terminator. HEAD parser users retain `skip(true)`. These representation
+differences do not imply byte-for-byte equality with the original wire response.

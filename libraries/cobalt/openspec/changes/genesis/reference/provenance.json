@@ -1,0 +1,570 @@
+{
+  "schema_version": 1,
+  "captured": "2026-11-04",
+  "snapshot_kind": "selected-unmodified-source-files",
+  "boost_release": "1.92.0",
+  "boost_cobalt_tag": "boost-1.92.0",
+  "upstream_archive_sha256": "85ea240cdd20ab0912737dcf0f5346dc8389f91e901d34b7574f5fa29d262ae0",
+  "files": [
+    {
+      "path": "source/asio/build.jam",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "build.jam",
+      "git_mode": "100644",
+      "sha256": "a94ab9a661419c342d18fc11cbf86d9ffbcfbad9c5f825fac8448be9d3fc4fdd"
+    },
+    {
+      "path": "source/asio/example/Jamfile",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "example/Jamfile",
+      "git_mode": "100644",
+      "sha256": "1ce59e0199d448902bf78d5a66b2d65fa39d219af1b059af9e02d6a1e99977a2"
+    },
+    {
+      "path": "source/asio/example/asio_cobalt.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "example/asio_cobalt.cpp",
+      "git_mode": "100644",
+      "sha256": "1c2888901465f0a88a3d2c9b91bbbba2748709f7ad5319a3351ee77c956f5634"
+    },
+    {
+      "path": "source/asio/example/asio_cobalt.expected",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "example/asio_cobalt.expected",
+      "git_mode": "100644",
+      "sha256": "9835c7a051cda9fc985f8dfcb09cc9e820911b82a96e59dbe2a4a26b4b7f1e4a"
+    },
+    {
+      "path": "source/asio/src/cobalt_main.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "src/cobalt_main.cpp",
+      "git_mode": "100644",
+      "sha256": "1bd93a27ae6169c657b4d7f99d78d1f62bd794b0498c735dd8d67aebc13e8191"
+    },
+    {
+      "path": "source/asio/test/Jamfile",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/Jamfile",
+      "git_mode": "100644",
+      "sha256": "480f4defda940d4c996e19d967c41789d602b6c7b0fc905c0a3276c149b16d21"
+    },
+    {
+      "path": "source/asio/test/cobalt_accept_cancel_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_accept_cancel_test.cpp",
+      "git_mode": "100644",
+      "sha256": "f40f7cf2a35b7fdc51fa8a111b038aad9fd77042c89fd84e7c504b9b28bfd5d5"
+    },
+    {
+      "path": "source/asio/test/cobalt_io_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_io_test.cpp",
+      "git_mode": "100644",
+      "sha256": "15081b4d56a5785539114b4d54ab957fb840f0926660e6f0aa7eb164c95c34f7"
+    },
+    {
+      "path": "source/asio/test/cobalt_network_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_network_test.cpp",
+      "git_mode": "100644",
+      "sha256": "5e9984059b6e27534373cc97f7f98b626b4a870061440d8151000b09cdf218e2"
+    },
+    {
+      "path": "source/asio/test/cobalt_stack_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_stack_test.cpp",
+      "git_mode": "100644",
+      "sha256": "0b88da01820d7826033d1f9465919abdd409cd693aa43238c33fe9917ceea237"
+    },
+    {
+      "path": "source/asio/test/cobalt_status_driver.mjs",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_status_driver.mjs",
+      "git_mode": "100644",
+      "sha256": "af0608d16af929b23a9f23d7696bb2abcfc0c5649c09b487333b4f888b94a904"
+    },
+    {
+      "path": "source/asio/test/cobalt_status_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_status_test.cpp",
+      "git_mode": "100644",
+      "sha256": "006729dd8886183233d418afcf5935e84d248424b884e61d7561ba43f6e09430"
+    },
+    {
+      "path": "source/asio/test/cobalt_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_test.cpp",
+      "git_mode": "100644",
+      "sha256": "6d2332408ea7299e1360aebfc9403a2ee56fa5dd4f1869734efaaa4cb7a94b0c"
+    },
+    {
+      "path": "source/asio/test/cobalt_thread_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/cobalt_thread_test.cpp",
+      "git_mode": "100644",
+      "sha256": "c7ae07aa13188e74b78dcf093e50a80dfd8845ea661d8f66e5e6ab38b67fe885"
+    },
+    {
+      "path": "source/asio/test/promise_cobalt_test.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/promise_cobalt_test.cpp",
+      "git_mode": "100644",
+      "sha256": "14af347230c4f13c95967ddec7dc0bbe5d30e7da11790ad14b8dbe74d9af6d27"
+    },
+    {
+      "path": "source/asio/test/wasip2_tls_cobalt/Jamfile",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/wasip2_tls_cobalt/Jamfile",
+      "git_mode": "100644",
+      "sha256": "37fbe05cb683a0cd8fce0a986089b5581f7073d56883b9bea4d109580bbcf217"
+    },
+    {
+      "path": "source/asio/test/wasip2_tls_cobalt/cobalt_cancel.cpp",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/wasip2_tls_cobalt/cobalt_cancel.cpp",
+      "git_mode": "100644",
+      "sha256": "18610cf3c44f7cceb6b5b2936a8a1e3629a8abdfd8c18acf9395c3489d9fd450"
+    },
+    {
+      "path": "source/asio/test/wasip2_tls_cobalt/entropy_driver.py",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/wasip2_tls_cobalt/entropy_driver.py",
+      "git_mode": "100644",
+      "sha256": "2a0d28e85c0120b2b936c053bea0580456670c8ca7f496de6ede2ef1fa089f81"
+    },
+    {
+      "path": "source/asio/test/wasip2_tls_cobalt/status_driver.py",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/wasip2_tls_cobalt/status_driver.py",
+      "git_mode": "100644",
+      "sha256": "f4d326518e7bfffc9dc8de799054c557cfebda1703f9c5aa011f05de840563e4"
+    },
+    {
+      "path": "source/asio/test/wasip2_tls_cobalt/tls_driver.py",
+      "repository": "https://github.com/webcpporg/asio",
+      "revision": "db4f7fc6afc516fdef057614cc971cdc39484099",
+      "source_path": "test/wasip2_tls_cobalt/tls_driver.py",
+      "git_mode": "100644",
+      "sha256": "8380b9cfaf1ff325d4ab10a05b39af83529fc53d424eae58d7f9380f20d58ff8"
+    },
+    {
+      "path": "source/superproject/LICENSE_1_0.txt",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "LICENSE_1_0.txt",
+      "git_mode": "100644",
+      "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
+    },
+    {
+      "path": "source/superproject/tools/boost/Jamfile",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/Jamfile",
+      "git_mode": "100644",
+      "sha256": "78ff64e3f83d31c85370e406d366b5543aeea61de010f9f6a703085f7fd78a3a"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-common/Jamfile",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-common/Jamfile",
+      "git_mode": "100644",
+      "sha256": "4b2ff29c79f0d01cfd995e9f0fa9d4f90529c5398bf7d38fb1904e362c15d654"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-common/boost-1.92.patch",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-common/boost-1.92.patch",
+      "git_mode": "100644",
+      "sha256": "318b3cfdd94ad11225e08a6a5af3b2a53cf046659842bf8a6f23dc25add3c7f0"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-common/manifest.json",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-common/manifest.json",
+      "git_mode": "100644",
+      "sha256": "c216af2c04377ad8be9bfdaee3c393d88549c3abba31b491df5ed5cd838979aa"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-ssl/Jamfile",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-ssl/Jamfile",
+      "git_mode": "100644",
+      "sha256": "6b522a17a216e75b82194edaab7bfd6afb8142feb8e9e7f29c6b26e972f46b72"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-ssl/boost-1.92.patch",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-ssl/boost-1.92.patch",
+      "git_mode": "100644",
+      "sha256": "8e5ad4c9765b4ded4074986b32eca11a7dc704e65661a8b246c971e701dca4a2"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-ssl/manifest.json",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-ssl/manifest.json",
+      "git_mode": "100644",
+      "sha256": "5cce350f545d4ac149b0532472d179962d77a98c253c9ccfaf650d3fa681736d"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-ssl/ssl.cpp",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-ssl/ssl.cpp",
+      "git_mode": "100644",
+      "sha256": "8968a23df8f0b6c2a3b6128bb4082ce27e26a4ba410717fb3afeb615b863a24f"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-wasip3/Jamfile",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-wasip3/Jamfile",
+      "git_mode": "100644",
+      "sha256": "0d4154322c73f369744fc34ed033114ef4ff47f1bd62b6d862c049d27aadadd0"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-wasip3/acceptor.cpp",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-wasip3/acceptor.cpp",
+      "git_mode": "100644",
+      "sha256": "e7740f5508aa93ae6dddeb2585a4ea231c06cd683651675bb2046169a78fc4a7"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-wasip3/boost-1.92.patch",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-wasip3/boost-1.92.patch",
+      "git_mode": "100644",
+      "sha256": "c2e7e36101cb005e530021c07ea3351177c2effc415ae9a1f2cbc763b609d022"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-wasip3/endpoint.cpp",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-wasip3/endpoint.cpp",
+      "git_mode": "100644",
+      "sha256": "e4cbe8e683842ba4fcef1290ffd897d2cfecc3a82c50301f72da86980e74853b"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-wasip3/manifest.json",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-wasip3/manifest.json",
+      "git_mode": "100644",
+      "sha256": "a9b05dc83b6bb2c1339e484948ba627f21b73444204b84f405ecda1be63876f7"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-wasip3/prepare.py",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-wasip3/prepare.py",
+      "git_mode": "100644",
+      "sha256": "c27b8fcf98710ce78381c0914eb767177b6a34ca0ae883d25b68bc55f5e00feb"
+    },
+    {
+      "path": "source/superproject/tools/boost/cobalt-wasip3/prepare_test.py",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/boost/cobalt-wasip3/prepare_test.py",
+      "git_mode": "100644",
+      "sha256": "e0fa5259150b5e4b044a482a92d807ed910d70e4b1b958530bd5108609c031c6"
+    },
+    {
+      "path": "source/superproject/tools/ci/actions/boost/install.sh",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/ci/actions/boost/install.sh",
+      "git_mode": "100755",
+      "sha256": "17838a2a98dbc9712e82418a2fecdc8a20f5a92f25a26cb6c71fb20a97aeb941"
+    },
+    {
+      "path": "source/superproject/tools/openssl/test/cobalt_ssl_cancel.cpp",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/openssl/test/cobalt_ssl_cancel.cpp",
+      "git_mode": "100644",
+      "sha256": "b13bb7552edd234ea8e12e265ad3bc49619a29c44e93ae0bb1970e4b6a02077b"
+    },
+    {
+      "path": "source/superproject/tools/openssl/test/cobalt_ssl_client.cpp",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/openssl/test/cobalt_ssl_client.cpp",
+      "git_mode": "100644",
+      "sha256": "ae36f9a972fcca720302e2959fa9dd98bbc9777fb2d74a9d19ca59a6589df253"
+    },
+    {
+      "path": "source/superproject/tools/openssl/test/cobalt_ssl_state.cpp",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/openssl/test/cobalt_ssl_state.cpp",
+      "git_mode": "100644",
+      "sha256": "6e8d0450d72f6a9003ebfbc71c7ea1fa19d12675dbdd2c6d218eb8f2602ee8ac"
+    },
+    {
+      "path": "source/superproject/tools/openssl/test/cobalt_tls_client.cpp",
+      "repository": "https://github.com/webcpporg/webcpp",
+      "revision": "d994334102d138e2847b7e8463fb1c06a859bd42",
+      "source_path": "tools/openssl/test/cobalt_tls_client.cpp",
+      "git_mode": "100644",
+      "sha256": "805d6c47e62520ddd0b7b5c10b66660695b0487fcda28ef2bee8d2393203f9db"
+    },
+    {
+      "path": "source/upstream/bench/CMakeLists.txt",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "bench/CMakeLists.txt",
+      "git_mode": "100644",
+      "sha256": "68118427b3759061e39997c9ecc39a4b00fdbc011d96ed10a6842997a05de808"
+    },
+    {
+      "path": "source/upstream/bench/channel.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "bench/channel.cpp",
+      "git_mode": "100644",
+      "sha256": "8af2c85f84016858f0bc2024ba2792efd3614b4a2c4179954e74777f233bad70"
+    },
+    {
+      "path": "source/upstream/bench/immediate.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "bench/immediate.cpp",
+      "git_mode": "100644",
+      "sha256": "b7dc772a57140d354fda56634e060b516b494d8d4b6c49abcca3e9710449b345"
+    },
+    {
+      "path": "source/upstream/bench/monotonic.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "bench/monotonic.cpp",
+      "git_mode": "100644",
+      "sha256": "41038a1381096ab7c53fe6075d1777b42c5feac480e7e0d11714d1fcd3d26317"
+    },
+    {
+      "path": "source/upstream/bench/parallel.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "bench/parallel.cpp",
+      "git_mode": "100644",
+      "sha256": "69692bea858797b705f55fccdc5755db707e7f71aec561625de75cf94b78e612"
+    },
+    {
+      "path": "source/upstream/bench/post.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "bench/post.cpp",
+      "git_mode": "100644",
+      "sha256": "974bfd1036a621e278ad27bec634cc487693361e489379f003d2c5b0bcdbd42a"
+    },
+    {
+      "path": "source/upstream/build/Jamfile",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "build/Jamfile",
+      "git_mode": "100644",
+      "sha256": "e361cab054bbf42bc10b88b9b9399c1930273395023e30c576d0c408d44c5b4e"
+    },
+    {
+      "path": "source/upstream/example/CMakeLists.txt",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/CMakeLists.txt",
+      "git_mode": "100644",
+      "sha256": "83127e4c9337bfa581c1526c74c43f806f9f36189e721a62c0efa59c9dbb6953"
+    },
+    {
+      "path": "source/upstream/example/Jamfile",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/Jamfile",
+      "git_mode": "100644",
+      "sha256": "a317a0e373eb7e188a82bc17a0976b0ec284bfc383847c905d65d490511c8621"
+    },
+    {
+      "path": "source/upstream/example/channel.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/channel.cpp",
+      "git_mode": "100644",
+      "sha256": "430fdb3b8399f0de14a08c7fb3145b5933b2b89c959224b2319989c010b3b6c0"
+    },
+    {
+      "path": "source/upstream/example/delay.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/delay.cpp",
+      "git_mode": "100644",
+      "sha256": "6da48db04f73fd7cdcb93fdbe491fee56828ad3472f16a4e1e894b139b458744"
+    },
+    {
+      "path": "source/upstream/example/delay_op.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/delay_op.cpp",
+      "git_mode": "100644",
+      "sha256": "2bf930999e7e6e4d430c0b9a8206743dc8fc72846b33d52e8e6d418b4f29b58c"
+    },
+    {
+      "path": "source/upstream/example/echo_server.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/echo_server.cpp",
+      "git_mode": "100644",
+      "sha256": "c042bd93a9dbb278a3187f91627c10641087a2d22e32928b627ba7be4478a492"
+    },
+    {
+      "path": "source/upstream/example/http.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/http.cpp",
+      "git_mode": "100644",
+      "sha256": "f4da82928d0cdbb9e2e8a909c73fb2e205526965b5a40712d4583f363e01f9c7"
+    },
+    {
+      "path": "source/upstream/example/outcome.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/outcome.cpp",
+      "git_mode": "100644",
+      "sha256": "51ea374b0ed7519cd5d5ff7331d4f2106b8273fe35f445509344451b2092e33d"
+    },
+    {
+      "path": "source/upstream/example/python.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/python.cpp",
+      "git_mode": "100644",
+      "sha256": "d58e60f7a57a9083c21d5ee32afce5874559c4d382d14b4697c80f4ef1990c0a"
+    },
+    {
+      "path": "source/upstream/example/python.py",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/python.py",
+      "git_mode": "100644",
+      "sha256": "63242af318ec0040b0bc1cc8daacbe96200332c485c42aaa935e6d426cc6c261"
+    },
+    {
+      "path": "source/upstream/example/signals.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/signals.cpp",
+      "git_mode": "100644",
+      "sha256": "70768c8612b9102118c95e266357aea045aa7b52acf3e91a1c4923e38bb628f5"
+    },
+    {
+      "path": "source/upstream/example/spsc.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/spsc.cpp",
+      "git_mode": "100644",
+      "sha256": "a3d8c7f084ebcad150544bb318199bdafb259496c4e7498a0253d444e0317dab"
+    },
+    {
+      "path": "source/upstream/example/thread.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/thread.cpp",
+      "git_mode": "100644",
+      "sha256": "f37e11eed4fe9931e358a10258e5a25c015fc8b565afd23c9eafbc5e84b8397d"
+    },
+    {
+      "path": "source/upstream/example/thread_pool.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/thread_pool.cpp",
+      "git_mode": "100644",
+      "sha256": "6f49c58b95f8d51df996409d20ada6c1c89adfdf6505e4b30e43c98ba43ea6f4"
+    },
+    {
+      "path": "source/upstream/example/ticker.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "example/ticker.cpp",
+      "git_mode": "100644",
+      "sha256": "d694672dece5c2764d6901be7739288b9e5f80d8308e2c4955f8068fc7d3054f"
+    },
+    {
+      "path": "source/upstream/include/boost/cobalt/detail/task.hpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "include/boost/cobalt/detail/task.hpp",
+      "git_mode": "100644",
+      "sha256": "e10352c9405b628be56f17bc1fdb3022664f0d8aa560a087b9d3de0a0cf82148"
+    },
+    {
+      "path": "source/upstream/src/detail/exception.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "src/detail/exception.cpp",
+      "git_mode": "100644",
+      "sha256": "bb4cd3b626d2d02a2a60ff7323601982fc7ffff6ec15d737c185a7214a7405ec"
+    },
+    {
+      "path": "source/upstream/src/main.cpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "src/main.cpp",
+      "git_mode": "100644",
+      "sha256": "d11134f9fd12fe185096fa7e117adfaa26f7cf358342168c75af452df510856f"
+    },
+    {
+      "path": "source/upstream/include/boost/cobalt/run.hpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "include/boost/cobalt/run.hpp",
+      "git_mode": "100644",
+      "sha256": "2e545ed0483a254897fa17f206f503037fcb364e25b902c73608c0bc6cfb4def"
+    },
+    {
+      "path": "source/upstream/include/boost/cobalt/experimental/context.hpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "include/boost/cobalt/experimental/context.hpp",
+      "git_mode": "100644",
+      "sha256": "4482f981ade7a7897cc9ed7d48334649dac8c21dcedadff7e2299795ecf6b319"
+    },
+    {
+      "path": "source/upstream/include/boost/cobalt/experimental/frame.hpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "include/boost/cobalt/experimental/frame.hpp",
+      "git_mode": "100644",
+      "sha256": "cb10497e13c6e1e47df5fde5b501a80b90a00e034fc84843ad9777bf04283ea9"
+    },
+    {
+      "path": "source/upstream/include/boost/cobalt/experimental/yield_context.hpp",
+      "repository": "https://github.com/boostorg/cobalt",
+      "revision": "8b1cecba91d0e868ee0947b40fb04e3594680297",
+      "source_path": "include/boost/cobalt/experimental/yield_context.hpp",
+      "git_mode": "100644",
+      "sha256": "76adc21a3282403383d8ec56f3f8e59336eb2cf123e8fc75e83d654a2de3a9d9"
+    }
+  ]
+}

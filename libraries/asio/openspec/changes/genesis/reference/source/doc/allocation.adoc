@@ -1,0 +1,121 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-allocation]
+== Allocation
+
+The application supplies an allocator to the `io_context` through its
+`std::allocator_arg` constructor. Boost.Asio uses it for the context's
+services and their I/O state. On Emscripten the bridge's registration map
+uses the context's allocator too. On Windows, a checked Boost 1.92 overlay
+forwards that allocator into IOCP's internal worker and timer thread state.
+This includes the first timer operation, without warming up its thread or
+allowing an extra global allocation.
+
+An asynchronous operation uses its completion handler's associated
+allocator. Giving an allocator to the context does not associate it with
+all handlers: bind it to each operation with `boost::asio::bind_allocator`.
+The following compiled test binds a timer wait and ten posts, and on
+Emscripten the handlers posted by two bridge deliveries:
+
+[source]
+----
+include::{library-root}/test/allocation_test.cpp[tag=supplied-allocator,indent=0]
+----
+
+These are runtime objects, with executors, callbacks and pointers into the
+current process. None of asio's runtime objects is a relocatable object
+that can be shared between processes merely by placing it in shared memory.
+
+[#asio-allocation-runtime]
+=== Runtime allocations
+
+The allocator contract does not cover these known allocations outside an
+operation's associated allocator:
+
+* Emscripten's `select` allocates its poll array with `calloc` on each call.
+* Asyncify allocates its unwind data when a call suspends.
+* Boost.Asio's `basic_resolver_results` allocates its result entries with
+  `new`. The measured operation scenario above does not resolve a name.
+  Forward asynchronous resolution owns copies of its input names through the
+  initiating token's associated allocator, preserving temporary input lifetimes.
+  Bind the allocator when creating a deferred operation; binding one only when
+  later launching it cannot retroactively change its already-owned input storage.
+* WASI libc allocates pipe descriptors and message storage for Asio's wakeup pipe.
+  The test attributes only calls creating that pipe and writes to its tracked
+  writer descriptors, removes descriptors on close, and exercises a real pipe
+  as a positive control. Ordinary user writes and allocations remain counted.
+* OpenSSL owns context, trust-store and cryptographic allocations. Its memory
+  hooks are process-global and must be set before any OpenSSL allocation; an
+  Asio context cannot install a per-operation allocator for other OpenSSL users.
+
+The allocation test replaces Emscripten's `select` in the test executable
+with a version whose poll array is on the stack. It marks only the call to
+Asyncify's `allocateData` while it runs, restoring the flag even if it
+throws, and counts those runtime allocations separately. These are test
+instrumentation choices, not changes to allocations in a user's program.
+JavaScript heap allocations are outside these WebAssembly-memory counters.
+
+On macOS, dyld allocates the native thread-local storage of Asio's
+thread-call-stack on its first access. Before measurement the test queries
+`running_in_this_thread` on a temporary context to initialize that thread
+runtime. The measured context and all its operations are then constructed
+anew inside the window. This measures allocation routing after thread
+runtime initialization, not the process's cold-start memory usage.
+
+[#asio-allocation-testing]
+=== What the test proves
+
+`allocation_native` runs natively, with `allocation_native_release` also
+checking an optimized build; `allocation` joins the Node-based
+WebAssembly tests with JSPI and Asyncify, each with and without exceptions.
+`allocation_wasip3` checks the single-thread profile with exceptions on/off;
+`allocation_wasip3_threads` checks the supported cooperative profile without
+exceptions through the `threads` lane.
+A counting allocator services context construction, a timer, ten posts and
+on Emscripten the bridge's two event deliveries. The measurement includes
+object destruction. It requires allocations through the supplied allocator
+and zero calls through the other counted paths, excluding only the named
+runtime operations above. This checks allocation routing, not a total
+memory limit or a proof of freedom from leaks. A separate explicit
+suspension verifies Asyncify's runtime attribution: the timer may already
+be ready when `run` starts and therefore need no suspension.
+
+The counters observe all eight global `operator new` forms: scalar and
+array, ordinary and aligned, throwing and nothrow. They also observe the C
+library's `malloc`, `calloc`, `realloc`, `aligned_alloc`, `posix_memalign`
+and `memalign` where the platform permits it. On glibc and Emscripten the
+replacements forward to the underlying allocator; on macOS `malloc_logger`
+observes allocations, including aligned ones, in the C counter. Only the
+test's thread and measurement windows are counted on POSIX platforms.
+MSVC counts global `operator new` calls from all threads in each window.
+The native allocation tests use `-fno-builtin` with Clang and GCC so calls
+to allocation functions remain observable by the hooks and are not moved
+across their measurement flags. This setting is confined to the test;
+application builds and the release size measurements keep their normal
+optimizations.
+
+MSVC and AddressSanitizer builds do not count C-library allocations; they
+print that limitation and omit the C-specific controls. Global allocations
+through `operator new` are still counted. Local validation on one platform
+does not establish the behaviour of the hooks on another.
+
+Controls deliberately call the allocation functions and post an unbound
+handler. Asio's default handler storage goes through an aligned allocation,
+which counting only `operator new` would miss. A separate negative run
+constructs the context without its allocator and must fail. There is no
+allowance for an arbitrary number of extra allocations.
+
+Promise operations allocate their state through the handler's allocator.
+The allocation test covers resolution and rejection with a concrete context
+executor and a bound allocator, including the completion post. Explicitly
+erasing an executor into `any_io_executor` can introduce Boost-owned dispatch
+allocations that its handler allocator does not control; see <<asio-promises>>.
+
+The default browser socket transport preserves an ordinary context executor's
+associated allocation policy even when stored as `any_io_executor`. The same
+measurement includes an unsupported asynchronous connection with a bound
+allocator. Custom executors, including strands, keep their own dispatch policy.

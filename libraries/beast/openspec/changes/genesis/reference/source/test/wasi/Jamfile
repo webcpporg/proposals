@@ -1,0 +1,32 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project : requirements <library>/webcpp/beast//beast ;
+import webcpp ;
+webcpp.targets native wasip2 wasip3 ;
+webcpp.run supplied_buffer : supplied.cpp : <library>/webcpp/beast//wasi-streams : native wasip2 wasip3 ;
+webcpp.serve host_http.cpp : <library>/webcpp/wasi//host-http ;
+webcpp.lane http : host_http : wasip2 wasip3 ;
+
+webcpp.original python3 ;
+webcpp.drive host_exchange : host_http.cpp
+  : <library>/webcpp/wasi//host-http <linkflags>-mexec-model=reactor
+  : host_driver.py : : wasip2 wasip3 ;
+webcpp.lane host : host_exchange : wasip2 wasip3 ;
+
+webcpp.drive supplied_stream : stream.cpp : <library>/webcpp/wasi//wasi <target-os>windows:<build>no : stream_driver.py : : native wasip2 wasip3 ;
+webcpp.lane streams : supplied_stream : native wasip2 wasip3 ;
+
+webcpp.drive streaming : streaming.cpp
+  : <library>/webcpp/wasi//host-http <linkflags>-mexec-model=reactor
+  : streaming_driver.py : : wasip2 wasip3 ;
+webcpp.lane body : streaming : wasip2 wasip3 ;
+
+
+webcpp.drive async_http : async_http.cpp
+  : <library>/webcpp/beast//wasi-http <linkflags>-mexec-model=reactor
+  : async_driver.py : : wasip2 wasip3 ;
+webcpp.lane async : async_http : wasip2 wasip3 ;

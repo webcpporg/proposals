@@ -1,0 +1,18 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+import webcpp ;
+webcpp.targets wasip2 wasip3 ;
+webcpp.original python3 : .. ;
+for name in http-server-fast http-server-small doc-ssl-server
+{
+    webcpp.drive $(name) : ../../../example/applications/host-extra/$(name).cpp
+      : <library>/webcpp/beast//wasi-http <linkflags>-mexec-model=reactor
+        <define>WEBCPP_BEAST_HOST_MTLS_CONFIRMED <webcpp-drive-timeout>90
+      : host_extra.py : $(name) : wasip2 wasip3 ;
+}
+webcpp.lane applications-host-extra
+  : http-server-fast http-server-small doc-ssl-server : wasip2 wasip3 ;

@@ -1,0 +1,29 @@
+{
+  "applications": [
+    "http-client-async",
+    "http-client-async-ssl",
+    "http-client-async-ssl-system-executor",
+    "http-client-awaitable",
+    "http-client-awaitable-ssl",
+    "json_client",
+    "http-crawl",
+    "http-client-methods",
+    "http-client-sync",
+    "http-client-sync-ssl",
+    "websocket-client-async",
+    "websocket-client-async-ssl",
+    "websocket-client-async-ssl-system-executor",
+    "websocket-client-awaitable",
+    "websocket-client-sync",
+    "websocket-client-sync-ssl"
+  ],
+  "adaptations": [
+    "Browser owns DNS, HTTP framing, WebSocket wire protocol and TLS trust.",
+    "TLS fixture trusts an ephemeral CA only in a fresh Chromium profile.",
+    "No certificate exception is used; untrusted CA and trusted wrong-host rejection controls accompany HTTPS/WSS exchanges.",
+    "Guest CA lists, TLS version pinning, and handshake User-Agent removed.",
+    "System executor and crawler threads use explicit io_context scheduling.",
+    "Awaitable clients retain co_await with explicit use_awaitable tokens.",
+    "Driver injects the local browser endpoint and validates response output."
+  ]
+}

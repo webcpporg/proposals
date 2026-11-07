@@ -1,0 +1,17 @@
+{
+    "key": "beast",
+    "name": "beast",
+    "authors": [
+        "R"
+    ],
+    "description": "Beast-compatible HTTP and WebSocket interfaces for WebAssembly and native applications.",
+    "category": [
+        "Concurrent",
+        "IO"
+    ],
+    "maintainers": [
+        "R <github.overboard312@passmail.net>"
+    ],
+    "cxxstd": "20",
+    "port-of": null
+}

@@ -9,9 +9,71 @@ lacks there, the configuration Asio needs to build, what wakes `run` from a
 browser event, and a limit on the handlers one turn runs, so that the page
 keeps rendering. The program's code runs only when the browser delivers an
 event (a message, a promise, a timer), never by polling, and its stack and
-objects stay as they were. Timers are Boost's on both targets, so that a
+objects stay as they were. Timers are Boost's on these targets, so that a
 library written on asio, and every Boost library built on Asio, never knows
 where it runs.
+
+WASIp3 has a minimal port for timers and plain TCP/UDP, with single-thread and
+experimental cooperative-thread profiles. See the [capability matrix](doc/capabilities.adoc)
+and [WASIp3 build instructions](doc/wasip3.adoc) for exception settings, SDK/runtime
+requirements and unsupported operations. `/webcpp/asio//cobalt` supports the same
+WASIp3 profiles with its normal `co_main`, timers and IP socket APIs.
+OpenSSL is built from pinned sources for
+native and WASIp3 targets through `/webcpp/asio//openssl`.
+For embedded Mozilla CA roots and an error-returning TLS client factory, use
+`/webcpp/asio//tls` and `<webcpp/asio/tls_client_context.hpp>`.
+Its replacement overload trusts only the authorities supplied by the application;
+see [trusted certificate authorities](doc/building.adoc#asio-ca-certificates).
+
+## First program
+
+Schedule a message and a timer, then run their context. The complete
+[tutorial](doc/html/index.html#asio-quick-start) walks through this program
+natively and with both WebAssembly variants.
+
+<!-- include::example/asio_quick_start.cpp[tag=program] -->
+```cpp
+#include <webcpp/asio/io_context.hpp>
+#include <webcpp/asio/steady_timer.hpp>
+
+#include <webcpp/test/exit_status.hpp>
+
+#include <boost/asio/post.hpp>
+
+#include <chrono>
+#include <cstdio>
+
+namespace asio = webcpp::asio;
+using namespace std::chrono_literals;
+
+int main() {
+    asio::io_context io;
+    asio::steady_timer timer(io);
+
+    boost::asio::post(io, [&timer] {
+        std::puts("posted");
+        timer.expires_after(50ms);
+        timer.async_wait([](boost::system::error_code ec) {
+            if (ec) {
+                std::printf("timer error: %d\n", ec.value());
+            } else {
+                std::puts("timer fired");
+            }
+        });
+    });
+
+    const auto handlers = io.run();  // lint-run: main owns the program's event loop
+    std::printf("run returned %zu handlers\n", handlers);
+    return webcpp::test::exit_status(0);
+}
+```
+
+<!-- include::example/asio_quick_start.expected[] -->
+```text
+posted
+timer fired
+run returned 2 handlers
+```
 
 ## Building and testing
 
@@ -26,7 +88,8 @@ asio's tests and examples:
 
     b2 libs/asio/test libs/asio/example
     b2 toolset=emscripten libs/asio/test libs/asio/example
-    b2 toolset=emscripten libs/asio/test//asyncify libs/asio/example//asyncify
+    b2 toolset=emscripten libs/asio/test//asyncify
+    b2 toolset=emscripten webcpp-suspend=asyncify libs/asio/example
     b2 toolset=emscripten libs/asio/test/browser//browser
 
 The first builds them natively, runs every test and every example, and
@@ -34,19 +97,51 @@ compares each example's output with the `.expected` file beside it. The
 second does the same on emscripten, run by node, with the toolset that
 `user-config.jam` registers against emsdk, in the default suspension
 variant, JSPI. The third, the lane `asyncify`, runs every browser test again
-under Asyncify, the other variant, and writes the size table of both. The
-fourth, the lane `browser`, runs the loader that picks a variant under node,
-and in headless Chrome checks that a page program never polls, that the
-page keeps rendering, and that the loader picks the variant. b2 compares timestamps, so a
+under Asyncify, the other variant.
+The extra `webcpp-suspend=asyncify` command also executes all guide examples
+under Asyncify. The lane `browser` runs the loader that picks a variant under node,
+loading both built artifacts and checking their output. It also runs idle,
+animation and loader checks in headless Chrome, on JSPI and Asyncify.
+`CHROME` names the executable; on macOS the driver can use the newest
+Playwright headless shell already installed in its cache. b2 compares timestamps, so a
 result that counts is built from scratch, with `b2 -a`, and the CI gives
 each lane a `--build-dir` of its own. A b2 project uses asio through
 `/webcpp/asio//asio`.
+
+A page imports `load` from `webcpp-asio-loader.mjs`, shipped in
+`include/webcpp/asio/`, and calls `load('page_program.variants.json')`.
+The loader detects JSPI support, selects JSPI or Asyncify from the build's
+manifest and returns `{variant, module}` when its factory resolves. A JSPI
+factory can await `main`, so an indefinitely running program must expose
+its readiness through its module callbacks instead of awaiting `load`. The manifest
+and its artifacts keep the relative layout produced by `webcpp.variants`.
+
+The documented binary-size table uses optimized release builds only. Build
+both page variants and measure their uncompressed `.wasm` files with:
+
+    b2 -a toolset=emscripten variant=release cxxflags=-O3 linkflags=-O3 libs/asio/example//asyncify
+
+The link flag is required because the current b2 Emscripten toolset does not
+forward the compilation optimization level to the link. The guide records
+the toolchain and six profiles: `-O2`, `-O3`, `-Os`, `-Oz`, `-O3 -flto`
+and `-Oz -flto`. It reports Wasm and JavaScript bytes separately for both
+suspension variants, with exceptions on and off. It also records complete
+build durations and separate module-initialization and example-execution
+times, including sample counts and variability. Timer waits are included
+in execution time; these examples do not measure throw/catch latency or
+CPU-only throughput. Use the same flags for compilation and link, with a
+separate build directory per profile and exception setting. Runtime memory and transfer
+compression are outside the tables.
 
 ## Documentation
 
 asio's page, with its API reference, is published at
 <https://webcpporg.github.io/webcpp/libs/asio/>; `b2 libs/asio/doc` builds
-it into `doc/html/index.html`.
+it into `doc/html/index.html`. The guide uses Diataxis to distinguish
+learning tutorials, practical instructions, explanations and reference.
+Its AsciiDoc includes the API reference generated by MrDocs from the C++
+Doc Comments. All shown programs and outputs are checked against their
+compiled examples and `.expected` files.
 
 ## License
 

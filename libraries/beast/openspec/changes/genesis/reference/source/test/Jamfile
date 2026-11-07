@@ -1,0 +1,63 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+# Socket contract tests need extended COFF sections for their many handlers.
+project : requirements <library>/webcpp/beast//beast
+  <toolset>msvc:<cxxflags>/bigobj ;
+
+import webcpp ;
+import feature ;
+
+webcpp.targets native wasip2 wasip3 emscripten ;
+
+webcpp.headers-alone beast : ../include : beast.hpp beast/config.hpp
+  beast/core.hpp beast/http.hpp beast/browser/error.hpp ;
+webcpp.compile config : config_test.cpp ;
+webcpp.compile config_all_off : config_test.cpp
+  : <define>WEBCPP_NO_EXCEPTIONS <define>WEBCPP_TEST_ALL_OFF ;
+webcpp.compile config_developer_off : config_test.cpp
+  : <define>WEBCPP_BEAST_NO_EXCEPTIONS <define>WEBCPP_TEST_DEVELOPER_OFF ;
+webcpp.compile config_ignore : config_test.cpp : <webcpp-beast-unsupported>ignore ;
+webcpp.compile-fail conflicting_policies : config_test.cpp
+  : <define>WEBCPP_BEAST_UNSUPPORTED_ERROR <define>WEBCPP_BEAST_UNSUPPORTED_IGNORE ;
+
+webcpp.run message : message_test.cpp ;
+
+webcpp.headers-alone beast : ../include : beast/tcp_stream.hpp beast/websocket.hpp beast/http/read.hpp beast/http/write.hpp
+  : <library>/webcpp/beast//sockets : native wasip3 emscripten ;
+webcpp.run socket : socket_test.cpp : <library>/webcpp/beast//sockets : native wasip3 ;
+
+# One header unit supplies the combined dependencies for aggregate analysis.
+# A browser parse must never acquire guest OpenSSL through that combination.
+rule ssl-header-dependencies ( properties * )
+{
+    if [ feature.get-values <toolset> : $(properties) ] = emscripten
+    {
+        return <library>/webcpp/beast//browser ;
+    }
+    return <library>/webcpp/beast//tls <library>/webcpp/beast//wasi-http ;
+}
+webcpp.headers-alone beast : ../include : beast/ssl.hpp
+  : <conditional>@ssl-header-dependencies : native wasip3 emscripten ;
+webcpp.run ssl : ssl_test.cpp : <library>/webcpp/beast//tls : native wasip3 ;
+
+webcpp.headers-alone beast : ../include : beast/detail/socket_algorithms.hpp
+  : <library>/webcpp/beast//sockets : native wasip3 ;
+webcpp.headers-alone beast : ../include
+  : beast/browser/tcp_stream.hpp beast/browser/ssl_stream.hpp
+    beast/browser/websocket.hpp beast/browser/http.hpp
+    beast/browser/http_byte_stream.hpp beast/websocket/guest.hpp
+    beast/browser/detail/imports.hpp beast/browser/detail/support.hpp
+  : <library>/webcpp/beast//browser : emscripten ;
+webcpp.headers-alone beast : ../include : beast/wasi/http.hpp beast/wasi/async.hpp
+  : <library>/webcpp/beast//wasi-http : wasip2 wasip3 ;
+webcpp.headers-alone beast : ../include : beast/wasi/stream.hpp
+  : <library>/webcpp/beast//wasi-streams : native wasip2 wasip3 ;
+
+build-project tls ;
+build-project browser ;
+build-project wasi ;
+build-project applications ;

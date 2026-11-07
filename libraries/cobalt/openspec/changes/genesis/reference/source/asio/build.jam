@@ -1,0 +1,149 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+#
+# asio: Boost.Asio natively, and on emscripten Boost.Asio's own io_context
+# suspended into the browser's event loop. A program uses
+# /webcpp/asio//asio.
+
+project /webcpp/asio ;
+
+import feature ;
+import numbers ;
+import webcpp ;
+import webcpp-target ;
+
+use-project /webcpp/asio-wasip3 : ../../tools/boost/asio-wasip3 ;
+use-project /webcpp/asio-wasip2 : ../../tools/boost/asio-wasip2 ;
+use-project /webcpp/asio-windows : ../../tools/boost/asio-windows ;
+
+# The stack Asyncify saves a suspension in, in bytes: 8192 unless a program
+# asks for more with <asyncify-stack-size>, propagated so that asio's usage
+# requirements read it and their flag ends last on emcc's command line,
+# where emcc keeps the last. Its values are powers of two; those below 8192
+# are refused, by an #error of config.hpp that says why.
+#
+# 8192 is twice 4096, the smallest power of two with which every test of
+# asio passed in every build b2 links today, measured on 2026-10-11 with
+# Emscripten 6.0.11 as the bytes each unwind wrote. The deepest build is
+# release, compiled with -O3 and linked without optimization, as b2's
+# emscripten toolset links it: its deepest suspension wrote 3,540 bytes,
+# against 1,272 in a debug build; Emscripten's default, 4096, left it 556,
+# and with 2048 its tests trapped. Linked with -O3, the deepest test wrote
+# 416 and the run family's deepest path 384, against 2,404 linked without.
+# The test asyncify_stack measures each build on every run, and fails when
+# a suspension of the run family leaves less than half of the stack; a new
+# way to suspend, such as a coroutine's, is measured there.
+feature.feature asyncify-stack-size
+  : 8192 16384 32768 65536 131072 262144 524288 1048576
+    256 512 1024 2048 4096
+  : propagated ;
+
+# The usage requirement of asyncify-stack-size under Asyncify: the flag, or
+# the define that refuses a size below asio's.
+rule asyncify-stack ( properties * )
+{
+    if [ feature.get-values <toolset> : $(properties) ] = emscripten
+        && [ feature.get-values <webcpp-suspend> : $(properties) ] = asyncify
+    {
+        local size = [ feature.get-values <asyncify-stack-size> : $(properties) ] ;
+        if [ numbers.less $(size) 8192 ]
+        {
+            return <define>WEBCPP_ASIO_ASYNCIFY_STACK_SIZE_REFUSED ;
+        }
+        return <linkflags>-sASYNCIFY_STACK_SIZE=$(size) ;
+    }
+}
+
+# What a program on emscripten compiles once: the JavaScript functions asio
+# calls, the run family's yield among them
+# (include/webcpp/asio/browser/src.hpp), linked into every program on
+# emscripten by asio's usage requirements below.
+obj browser-src : src/browser_src.cpp : <include>include <library>/boost//headers
+  <library>/webcpp/config//config
+  <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS ;
+explicit browser-src ;
+
+# Single-thread Emscripten needs BOOST_ASIO_DISABLE_THREADS. A pthread build
+# supplies the POSIX thread implementation instead. Boost's inline namespace
+# differs with and without threads, so every translation unit must agree.
+# The browser's
+# values reach C++ through embind: -lembind, a free feature, which a usage
+# requirement keeps.
+#
+# Each suspension variant links its own flags. The suspending imports are
+# Emscripten's __syscall_poll and asio's yield, which Emscripten finds
+# itself, so no list of imports is given. ASYNCIFY_IGNORE_INDIRECT is not
+# set, since the path from main to select passes the virtual
+# scheduler_task::run. ASYNCIFY_STACK_SIZE is asyncify-stack-size's, above.
+# The tag names every program on asio Boost's way, with its variant:
+# reactor-60-d-jspi.js.
+# EM_JS_DEPS is read after the native link in Emscripten 6.0.11. Keep the
+# bridge's stack helpers exported even when an optimized JSPI runtime does
+# not otherwise need them; JavaScript calls both through stackSave/Restore.
+# tag::asio[]
+alias asio : : : : <include>include <library>/boost//headers
+  <library>/webcpp/config//config
+  <target-os>windows:<library>/webcpp/asio-windows//headers
+  <toolset>clang-wasip2:<library>/webcpp/asio-wasip2//headers
+  <toolset>clang-wasip2:<source>/webcpp/asio-wasip2//pollable
+  <toolset>clang-wasip3:<library>/webcpp/asio-wasip3//headers
+  <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS
+  <toolset>emscripten:<linkflags>-lembind
+  <toolset>emscripten:<linkflags>-Wl,--export=emscripten_stack_get_current
+  <toolset>emscripten:<linkflags>-Wl,--export=_emscripten_stack_restore
+  <toolset>emscripten,<threading>multi:<linkflags>-Wl,--wrap=__syscall_poll
+  <toolset>emscripten:<source>browser-src
+  <toolset>emscripten,<webcpp-suspend>jspi:<linkflags>-sJSPI
+  <toolset>emscripten,<webcpp-suspend>asyncify:<linkflags>-sASYNCIFY
+  <conditional>@asyncify-stack
+  <toolset>emscripten:<tag>@webcpp%suspend-tag ;
+# end::asio[]
+
+# WASIp2 and WASIp3 use the same checked Cobalt capability overlays.
+# Cobalt's entry point, with webcpp's bounded application event loop.
+# tag::cobalt[]
+lib cobalt-main : src/cobalt_main.cpp
+  : <link>static <library>asio <library>/webcpp//boost_cobalt ;
+explicit cobalt-main ;
+# The checked common Cobalt patch supplies the promise member required even
+# when a compiler builds the coroutine without exception handling.
+alias cobalt : : : : <library>asio <library>cobalt-main <library>/webcpp//boost_cobalt ;
+# end::cobalt[]
+
+# tag::openssl[]
+rule openssl-linked ( properties * )
+{
+    if [ webcpp-target.target-of $(properties) ] in native wasip2 wasip3
+    {
+        return <library>/webcpp/third_party//openssl
+            <define>WEBCPP_ASIO_HAS_OPENSSL=1 ;
+    }
+}
+
+# Refused on Emscripten: every source of a program built for emscripten
+# that names it stops at the forced include, whose message says what to
+# write. Quoted, as the Jamroot quotes Boost's directory, for a path that
+# holds a space.
+path-constant WEBCPP_ASIO_ROOT : . ;
+alias openssl : : : : <conditional>@openssl-linked
+    <toolset>emscripten:<cflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\""
+    <toolset>emscripten:<cxxflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\"" ;
+# end::openssl[]
+
+# Browser tests exercise the settings adapter without linking OpenSSL.
+alias openssl-tests : : : : <conditional>@openssl-linked ;
+explicit openssl-tests ;
+
+# An explicit portable trust policy, separate from the raw OpenSSL context.
+# tag::tls[]
+alias tls : : : : <library>asio <library>openssl
+  <library>/webcpp/third_party//ca_certificates ;
+# end::tls[]
+
+# tag::cobalt-ssl[]
+alias cobalt_ssl : : : : <library>cobalt <library>tls
+  <library>/webcpp//boost_cobalt_io_ssl ;
+# end::cobalt-ssl[]

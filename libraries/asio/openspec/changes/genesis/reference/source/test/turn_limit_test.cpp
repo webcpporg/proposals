@@ -72,14 +72,14 @@ void spin(turn* state) {
 }
 
 // Every turn runs the limit exactly and then yields, under run: a yield between each two of the
-// five turns, and none after the last, whose last handler leaves the context out of work.
+// fifty turns, and none after the last, whose last handler leaves the context out of work.
 void run_yields_every_turn() {
     turn state;
     state.until = 5000;
     boost::asio::post(state.io, std::bind_front(&spin, &state));
     BOOST_TEST_EQ(state.io.run(), 5000U);  // lint-run: the test's event loop
-    BOOST_TEST_EQ(state.longest, 1000U);
-    BOOST_TEST_EQ(state.yields.count(), 4);
+    BOOST_TEST_EQ(state.longest, 100U);
+    BOOST_TEST_EQ(state.yields.count(), 49);
 }
 
 // The same under run_for, whose deadline is never reached: twenty turns, nineteen yields.

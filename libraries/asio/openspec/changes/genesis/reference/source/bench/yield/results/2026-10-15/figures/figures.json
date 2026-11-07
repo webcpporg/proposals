@@ -1,0 +1,12 @@
+{
+  "source": "summary.json",
+  "configurations": 102,
+  "runs": 442,
+  "matplotlib": "3.11.2",
+  "charts": [
+    "01-yield-latency",
+    "02-direct-and-phases",
+    "03-chain-controls",
+    "04-tails-and-clocks"
+  ]
+}

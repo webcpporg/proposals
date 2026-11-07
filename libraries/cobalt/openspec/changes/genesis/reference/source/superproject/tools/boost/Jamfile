@@ -1,0 +1,354 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+#
+# The compiled Boost libraries that webcpp's libraries need, built from
+# Boost's sources for every target, static and once per variant, so that a
+# program's own features, exception-handling=off among them, reach them. The
+# sources are the Jamroot's WEBCPP_BOOST_SOURCE, whose version the Jamroot's
+# alias of each library checks before anything is built: /webcpp//boost_url,
+# /webcpp//boost_charconv, /webcpp//boost_locale and /webcpp//boost_cobalt.
+# They are Boost's code,
+# not webcpp's, and compile without webcpp's warnings, as Boost's headers are
+# read as system ones.
+import errors ;
+import feature ;
+import os ;
+import property-set ;
+import sequence ;
+import set ;
+import webcpp-target ;
+
+use-project /webcpp/asio-wasip3 : asio-wasip3 ;
+use-project /webcpp/asio-windows : asio-windows ;
+use-project /webcpp/cobalt-wasip3 : cobalt-wasip3 ;
+use-project /webcpp/cobalt-ssl : cobalt-ssl ;
+use-project /webcpp/cobalt-common : cobalt-common ;
+
+project /webcpp/boost-libraries
+  : source-location $(WEBCPP_BOOST_SOURCE)
+  : requirements <warnings>off <warnings-as-errors>off
+  ;
+
+# The library whose sources the tree lacks, which sources-missing names.
+feature.feature webcpp-boost-library : : free incidental ;
+
+rule sources-missing ( properties * )
+{
+    local name = [ feature.get-values <webcpp-boost-library> : $(properties) ] ;
+    errors.user-error "$(WEBCPP_BOOST_SOURCE)/$(.missing.$(name)), and /webcpp//$(name) is"
+        "built from them: fill the tree from Boost's source archive (`bash"
+        "tools/ci/actions/boost/install.sh source <dir>`)" ;
+}
+
+# compiled <name> : <sources> * : <missing> + : <requirements> * :
+# <usage-requirements> * ; the static library name, built from sources, paths
+# under the tree. Without sources it is an alias that stops a build that uses
+# it, saying of the tree what missing says ("libs/url/src holds no .cpp
+# file"): never a lib without sources, which b2 would search for on the
+# system, where a package's own libboost_url may be.
+rule compiled ( name : sources * : missing + : requirements * : usage-requirements * )
+{
+    if $(sources)
+    {
+        lib $(name) : $(sources) : <link>static $(requirements) : : $(usage-requirements) ;
+    }
+    else
+    {
+        .missing.$(name) = $(missing:J=" ") ;
+        alias $(name) : : <webcpp-boost-library>$(name) <conditional>@sources-missing ;
+    }
+    explicit $(name) ;
+}
+
+# Whether the tree holds every one of paths.
+rule holds ( paths + )
+{
+    if [ sequence.length [ glob $(paths) ] ] = [ sequence.length $(paths) ]
+    {
+        return true ;
+    }
+}
+
+# Boost.URL, with the macros of its own libs/url/build/Jamfile: its sources
+# see BOOST_URL_SOURCE, and it and its users BOOST_URL_STATIC_LINK=1 and
+# BOOST_URL_NO_LIB=1.
+compiled boost_url : [ glob-tree-ex libs/url/src : *.cpp ]
+  : libs/url/src holds no .cpp file
+  : <define>BOOST_URL_SOURCE <define>BOOST_URL_STATIC_LINK=1
+  : <define>BOOST_URL_STATIC_LINK=1 <define>BOOST_URL_NO_LIB=1 ;
+
+# Boost.Charconv, with the macros of its own build/Jamfile: its sources see
+# BOOST_CHARCONV_SOURCE=1, and its users BOOST_CHARCONV_NO_LIB=1. Without
+# GCC's quadmath, so without the __float128 overloads, on every target alike.
+compiled boost_charconv : [ glob libs/charconv/src/*.cpp ]
+  : libs/charconv/src holds no .cpp file
+  : <define>BOOST_CHARCONV_SOURCE=1
+  : <define>BOOST_CHARCONV_NO_LIB=1 ;
+
+# The pinned Context fcontext recipe keeps its C++ wrapper and assembly
+# together. Windows ARM64 uses upstream's WinFiber default. Wasm has no
+# proven Context backend, independently of JSPI or Asyncify suspension.
+rule context-architecture ( properties * )
+{
+    local architecture = [ feature.get-values <architecture> : $(properties) ] ;
+    if ! $(architecture)
+    {
+        local host = [ os.platform ] ;
+        switch $(host:L)
+        {
+            case arm* : architecture = arm ;
+            case aarch64 : architecture = arm ;
+            case * : architecture = x86 ;
+        }
+    }
+    return $(architecture) ;
+}
+
+rule context-configuration ( properties * )
+{
+    local target = [ webcpp-target.target-of $(properties) ] ;
+    if $(target) != native
+    {
+        errors.user-error "Boost.Context has no verified $(target) backend; stackful"
+            "coroutines remain blocked. JSPI, Asyncify and C++20 awaitables do not"
+            "supply a Boost.Context backend." ;
+    }
+    local architecture = [ context-architecture $(properties) ] ;
+    local model = [ feature.get-values <address-model> : $(properties) ] ;
+    local system = [ feature.get-values <target-os> : $(properties) ] ;
+    local compiler = [ feature.get-values <toolset> : $(properties) ] ;
+    if $(model) && $(model) != 64
+    {
+        errors.user-error "webcpp's Boost.Context recipe currently requires address-model=64" ;
+    }
+    local directory = $(WEBCPP_BOOST_SOURCE)/libs/context/src ;
+    local sources = $(directory)/fcontext.cpp ;
+    local suffix ;
+    if $(system) = windows
+    {
+        sources += $(directory)/windows/stack_traits.cpp ;
+        if $(architecture) = arm
+        {
+            return <source>$(directory)/continuation.cpp <source>$(directory)/fiber.cpp
+                <source>$(directory)/windows/stack_traits.cpp <define>BOOST_USE_WINFIB
+                <define>_WIN32_WINNT=0x0601 ;
+        }
+        if $(architecture) = x86 && $(compiler) = msvc
+        {
+            suffix = x86_64_ms_pe_masm.asm ;
+        }
+        else if $(architecture) = x86
+        {
+            suffix = x86_64_ms_pe_gas.asm ;
+        }
+    }
+    else
+    {
+        sources += $(directory)/posix/stack_traits.cpp ;
+        if $(system) = darwin
+        {
+            suffix = combined_sysv_macho_gas.S ;
+        }
+        else if $(system) = linux && $(architecture) = arm
+        {
+            suffix = arm64_aapcs_elf_gas.S ;
+        }
+        else if $(system) = linux && $(architecture) = x86
+        {
+            suffix = x86_64_sysv_elf_gas.S ;
+        }
+    }
+    if ! $(suffix)
+    {
+        errors.user-error "No Boost.Context recipe for" $(system) $(architecture) $(compiler) ;
+    }
+    for local operation in make jump ontop
+    {
+        sources += $(directory)/asm/$(operation)_$(suffix) ;
+    }
+    return <source>$(sources) ;
+}
+
+rule context-usage ( properties * )
+{
+    if <target-os>windows in $(properties) && [ context-architecture $(properties) ] = arm
+    {
+        return <define>BOOST_USE_WINFIB <define>_WIN32_WINNT=0x0601 ;
+    }
+}
+
+compiled boost_context : [ glob libs/context/src/fcontext.cpp ]
+  : libs/context/src/fcontext.cpp is missing
+  : <conditional>@context-configuration <define>BOOST_CONTEXT_SOURCE
+    <define>BOOST_CONTEXT_STATIC_LINK=1 <define>BOOST_CONTEXT_NO_LIB=1
+    # Upstream's static MSVC recipe removes the MASM PROC export qualifier.
+    <toolset>msvc:<define>BOOST_CONTEXT_EXPORT=
+  : <define>BOOST_CONTEXT_STATIC_LINK=1 <define>BOOST_CONTEXT_NO_LIB=1
+    <conditional>@context-usage ;
+
+# The system's iconv, which macOS keeps in a library of its own; glibc and
+# wasi-libc have it in libc.
+lib iconv : : <name>iconv ;
+
+explicit iconv ;
+
+# Boost.Locale without ICU (~/.buzz/RESEARCH/BOOST_LOCALE_ON_EVERY_TARGET.md
+# measured it): the shared sources of its own build/Jamfile.v2 and its std
+# backend on every target; with them the posix backend and iconv on Linux,
+# macOS, WASI and emscripten, and the winapi backend on Windows, as Boost
+# configures it there. Refused without exceptions, which Boost.Locale throws
+# unguarded. A program that uses it therefore declares
+# <exception-handling>on in its own requirements, which b2 ignores as a usage
+# requirement, so that a build without exceptions, the lint's included,
+# builds it with them; the refusal can name that fix but not the program,
+# since b2 gives a dependency's conditional the properties its dependent
+# propagates, never the dependent.
+#
+# On emscripten, single-threaded, Boost.Config turns threads off, having no
+# _POSIX_THREADS, and three of Boost.Locale's sources include Boost.Thread's
+# mutex, which then stops with "Compiler threading support is not turned
+# on". Its sources alone are told that pthreads are there,
+# BOOST_HAS_PTHREADS, with which Boost.Config keeps the BOOST_HAS_THREADS
+# libc++ gives it: the mutex then calls Emscripten's single-threaded pthread
+# functions, which do nothing, and no program is built with -pthread, which
+# would make its memory shared. Sound because no public header of
+# Boost.Locale depends on the macro: every mutex is inside a source, behind a
+# pointer or in a function's static, and the headers preprocess to the same
+# code with it and without (tools/test/boost_libraries_test.py pins both).
+.locale-shared = encoding/codepage shared/date_time shared/format shared/formatting
+    shared/generator shared/iconv_codecvt shared/ids shared/localization_backend
+    shared/message shared/mo_lambda util/codecvt_converter util/default_locale
+    util/encoding util/info util/locale_data util/gregorian std/codecvt std/collate
+    std/converter std/numeric std/std_backend ;
+.locale-posix = posix/collate posix/converter posix/numeric posix/codecvt posix/posix_backend ;
+.locale-winapi = win32/collate win32/converter win32/numeric win32/win_backend win32/lcid ;
+
+rule locale-configuration ( properties * )
+{
+    if <exception-handling>off in $(properties)
+    {
+        errors.user-error "/webcpp//boost_locale needs exceptions: Boost.Locale throws and"
+            "catches without a path for a build without them; a program that uses it"
+            "declares <exception-handling>on in its own requirements, which keeps it"
+            "with exceptions in a build without them (b2 ignores it as a usage"
+            "requirement), or leaves Boost.Locale out" ;
+    }
+    local threads ;
+    if <toolset>emscripten in $(properties)
+    {
+        threads = <define>BOOST_HAS_PTHREADS ;
+    }
+    if <target-os>windows in $(properties)
+    {
+        return <source>libs/locale/src/$(.locale-winapi).cpp
+            <define>BOOST_LOCALE_NO_POSIX_BACKEND=1
+            <define>_CRT_SECURE_NO_WARNINGS <define>_SCL_SECURE_NO_WARNINGS ;
+    }
+    return <source>libs/locale/src/$(.locale-posix).cpp
+        <define>BOOST_LOCALE_WITH_ICONV=1 <define>BOOST_LOCALE_NO_WINAPI_BACKEND=1 $(threads) ;
+}
+
+# Every source a target may compile must be in the tree, a backend's too, so
+# that a partial tree stops by name rather than at a compile or a link.
+if [ holds libs/locale/src/$(.locale-shared).cpp libs/locale/src/$(.locale-posix).cpp
+    libs/locale/src/$(.locale-winapi).cpp ]
+{
+    .locale = libs/locale/src/$(.locale-shared).cpp boost_charconv ;
+}
+compiled boost_locale : $(.locale)
+  : libs/locale/src holds no Boost.Locale sources, or only some of them
+  : <define>BOOST_LOCALE_SOURCE <conditional>@locale-configuration
+  : <define>BOOST_LOCALE_NO_LIB=1 <target-os>darwin:<library>iconv ;
+
+# Boost.Cobalt without its default co_main runner (main.cpp), which webcpp
+# supplies separately, and io/ssl.cpp, which needs OpenSSL.
+rule cobalt-sources ( )
+{
+    local sources ;
+    for local file in [ glob libs/cobalt/src/*.cpp libs/cobalt/src/detail/*.cpp
+        libs/cobalt/src/io/*.cpp ]
+    {
+        if ! [ MATCH "(^|/)(main|ssl|endpoint|acceptor|thread|signal_set|serial_port|seq_packet_socket)[.]cpp$" : $(file) ]
+        {
+            sources += $(file) ;
+        }
+    }
+    return $(sources) ;
+}
+
+# This diagnostic is a configuration warning, not a compiler warning: even
+# warnings-as-errors=on must preserve the consumer's choice. Cache the
+# base configuration so several consumers of one archive do not repeat it.
+# b2 evaluates conditionals before and after applying library requirements;
+# ignore link and warning features, which this library fixes independently.
+rule cobalt-configuration ( properties * )
+{
+    if <exception-handling>off in $(properties)
+    {
+        local settings = [ property-set.create $(properties) ] ;
+        local base = [ $(settings).base ] ;
+        base = [ set.difference $(base) : <link>shared <link>static
+            <warnings>all <warnings>extra <warnings>off
+            <warnings-as-errors>on <warnings-as-errors>off ] ;
+        local key = $(base:J=|) ;
+        if ! $(.cobalt-warned.$(key))
+        {
+            .cobalt-warned.$(key) = true ;
+            ECHO "warning: webcpp: Boost.Cobalt is built with exceptions disabled;"
+                "moving a pending task can abort at runtime with libc++."
+                "Use exception-handling=on."
+                "See https://github.com/boostorg/cobalt/issues/287" ;
+        }
+    }
+}
+
+.cobalt-platform-sources = [ glob libs/cobalt/src/thread.cpp
+    libs/cobalt/src/io/endpoint.cpp libs/cobalt/src/io/acceptor.cpp
+    libs/cobalt/src/io/signal_set.cpp libs/cobalt/src/io/serial_port.cpp
+    libs/cobalt/src/io/seq_packet_socket.cpp ] ;
+
+rule cobalt-platform-sources ( properties * )
+{
+    if [ webcpp-target.target-of $(properties) ] in wasip2 wasip3
+    {
+        local threaded ;
+        if <threading>multi in $(properties)
+        {
+            threaded = <source>libs/cobalt/src/thread.cpp ;
+        }
+        return <source>/webcpp/cobalt-wasip3//endpoint
+            <source>/webcpp/cobalt-wasip3//acceptor
+            <library>/webcpp/cobalt-wasip3//headers $(threaded) ;
+    }
+    return <source>$(.cobalt-platform-sources) ;
+}
+
+# Boost.Cobalt, with the macros of its own build: its sources see
+# BOOST_COBALT_SOURCE=1 and BOOST_COBALT_IO_SOURCE=1; users see
+# BOOST_COBALT_NO_LIB=1. Emscripten sources and users disable Asio threads
+# consistently on single threads; worker builds retain thread support. Exception
+# handling follows the consumer: result-based programs may disable it without
+# a blanket configuration refusal. This does not guarantee every operation works
+# without exceptions: moving a pending task creates an exception_ptr in Boost
+# 1.92, which libc++ aborts on when built with -fno-exceptions.
+compiled boost_cobalt : [ cobalt-sources ]
+  : libs/cobalt/src holds no .cpp file
+  : <define>BOOST_COBALT_SOURCE=1 <define>BOOST_COBALT_IO_SOURCE=1
+    <library>/webcpp/cobalt-common//headers
+    <target-os>windows:<library>/webcpp/asio-windows//headers
+    <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS
+    <conditional>@cobalt-configuration
+    <conditional>@cobalt-platform-sources
+  : <define>BOOST_COBALT_NO_LIB=1
+    <library>/webcpp/cobalt-common//headers
+    <target-os>windows:<library>/webcpp/asio-windows//headers
+    <toolset>clang-wasip2:<library>/webcpp/cobalt-wasip3//headers
+    <toolset>clang-wasip3:<library>/webcpp/cobalt-wasip3//headers
+    <toolset>emscripten,<threading>single:<define>BOOST_ASIO_DISABLE_THREADS ;
+
+# Optional TLS wrapper, separate from the archive used by non-TLS consumers.
+alias boost_cobalt_io_ssl : /webcpp/cobalt-ssl//boost_cobalt_io_ssl ;
+explicit boost_cobalt_io_ssl ;

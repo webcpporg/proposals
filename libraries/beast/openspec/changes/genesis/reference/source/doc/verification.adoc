@@ -1,0 +1,161 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#beast-verification]
+== Verification and reproduction
+
+The local evidence below was collected on macOS ARM64 on 2026-11-02 and 2026-11-03 with Boost
+1.92, native Clang 21, wasi-sdk 34, Emscripten 6.0.11 and Wasmtime 50.0.1.
+Core and guest TLS runs use Release builds. Browser contract runs use Debug,
+and the standalone upstream oracle compiles with `-O0`; these are correctness
+checks, not performance or binary-size measurements. A local pass does not
+establish Windows or Linux coverage; the remote CI report supplies those
+independent results.
+
+[cols="2,2,3",options="header"]
+|===
+|Suite |Profiles exercised |What passed
+|Portable core and socket facade
+|Native single/multi, exceptions on/off; WASIp2/P3 single, exceptions on/off;
+Emscripten single, exceptions on/off
+|Public-header compilation, upstream type identity, binary HTTP bodies, parser
+limits, error policy, constructor conversion and applicable socket/SNI exchanges.
+|Guest TLS protocol
+|Native single/multi, exceptions on/off; WASIp3 single, exceptions on/off;
+WASIp3 cooperative, exceptions off
+|Eight scenarios with TLS 1.2 and again with TLS 1.3 in each profile: 112 scenario
+executions. HTTP and binary WebSocket transfer, normal close, wrong hostname,
+untrusted CA, cancelled body read, truncated TLS shutdown, cancelled shutdown
+and handshake timeout.
+|Browser and Node contract, plus browser tutorial
+|JSPI/Asyncify, exceptions on/off, ERROR/IGNORE
+|Real Chrome and Node 26 WebSocket/fetch exchanges, queue and body limits, timeout,
+cancellation, destruction, allocator alignment, reconnection and response reuse.
+Direct header reads complete while the server still withholds the body.
+The allocation counter distinguishes stream, handler and context resources and
+requires zero escaped global allocations and zero retained blocks after cleanup.
+|WASI host HTTP and supplied streams
+|WASIp2/P3 single, exceptions on/off; applicable WASIp3 cooperative tests
+|Bounded 256 KiB exchanges, request/response trailers, malformed requests,
+resource cleanup, cancellation and explicit CLI stream counterparts.
+|WASI host HTTPS
+|WASIp2/P3 single, exceptions on/off; WASIp3 cooperative, exceptions off
+|Six application counterparts and the shared sync/async body-and-trailer contract:
+35 driver executions containing 125 TLS attempts. Trusted localhost succeeds;
+unknown CA and trusted wrong hostname fail. The documentation SSL client also
+proves mutual TLS and rejection without a client identity.
+|Upstream application inventory
+|Per-application and per-profile results below
+|All 53 executable definitions are cross-checked against upstream Jamfiles,
+CMake definitions and entry points. Source hashes protect the original corpus.
+|===
+
+The TLS fixture synchronizes shutdown cancellation with the peer receiving
+`close_notify`; it does not rely on an arbitrary sleep or callback ordering.
+WebSocket close already tears down TLS and TCP, so its test verifies that result
+without starting a second TLS shutdown. Each protocol scenario has an outer
+five-second deadline, and the driver also bounds the whole process.
+
+Guest-socket applications compile their Wasm component once with Wasmtime before
+the execution deadlines start. Compilation has a separate 60-second limit and
+records its command, duration and exit status. The driver runs only the artifact
+it produced in its private temporary directory, with matching engine features and
+epoch interruption enabled. Guest readiness retains its 15-second bound and
+protocol I/O retains its five-second bound. The WASIp3 driven-test envelope is
+90 seconds: the compilation allowance plus the existing 30-second driver bound.
+Compilation failures report stdout and stderr without starting the guest.
+
+The native WebSocket constructor regression checks same-type move and conversion
+from a concrete executor to `any_io_executor`, including `deflateSupported=false`.
+The configuration tests include a deliberately failing cross-translation-unit
+link with different browser policies and a matching-policy success control.
+An expected compile/link failure is a passing negative test only when B2 reports
+`failed-as-expected` and its success control also passes.
+
+[#beast-reproduce]
+=== Reproduce a suite
+
+Configure the project's pinned SDKs and native Boost 1.92 in a B2 user config.
+Select Wasmtime 50.0.1 explicitly through `PATH`. Emscripten 6 requires Python
+3.10 or newer; set `EMSDK_PYTHON` when the system's default Python is older.
+The commands assume `.local/user-config.jam` and run from the superproject root.
+`-a` forces compilation and execution; separate build directories preserve logs
+and outputs across targets.
+
+[source,bash]
+----
+unset CPATH CPLUS_INCLUDE_PATH C_INCLUDE_PATH
+b2 --user-config=.local/user-config.jam -a variant=release \
+  exception-handling=on,off threading=single,multi \
+  libs/beast/test libs/beast/example libs/beast/test/tls//tls
+b2 --user-config=.local/user-config.jam -a toolset=clang-wasip2 \
+  variant=release exception-handling=on,off testing.launcher=wasmtime \
+  libs/beast/test libs/beast/example libs/beast/test/wasi//http
+b2 --user-config=.local/user-config.jam -a toolset=clang-wasip3 \
+  variant=release exception-handling=on,off \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/beast/test libs/beast/example libs/beast/test/tls//tls
+b2 --user-config=.local/user-config.jam -a toolset=clang-wasip3 \
+  variant=release threading=multi exception-handling=off \
+  testing.launcher=tools/boost/asio-wasip3/run.sh \
+  libs/beast/test libs/beast/example libs/beast/test/tls//tls
+b2 --user-config=.local/user-config.jam \
+  libs/beast/test/browser/peer//native_peer-program threading=multi
+b2 --user-config=.local/user-config.jam -a toolset=emscripten \
+  variant=release exception-handling=on,off \
+  libs/beast/test/browser//browser libs/beast/example/browser//browser
+----
+
+The native peer built above is shared by the browser and Node contract suites.
+Run the Node contracts separately:
+
+[source,bash]
+----
+b2 --user-config=.local/user-config.jam -a toolset=emscripten \
+  exception-handling=on,off libs/beast/test/browser//browser-node
+----
+
+Repeat both contract commands with `webcpp-beast-unsupported=ignore` to exercise the
+second policy. The browser lane installs and runs pinned full Chrome. The Node lane
+executes the same Wasm programs in Node 26, using its WebSocket and fetch APIs;
+it does not replace the separate browser CORS and mixed-content checks.
+Host HTTP drivers start
+Wasmtime with a loopback listener and bounded request transcripts. Production
+network capabilities remain the embedding application's responsibility.
+
+HTTPS/WSS fixtures use temporary CAs. The protocol contract peer has a leaf
+valid for both `localhost` and `127.0.0.1`, preserving its existing loopback
+request URLs. Its fresh untrusted Chrome profile must reject WSS with an
+authority error before the trusted contract exchange runs. The application
+fixture uses a separate leaf valid only for `localhost`; its trusted profile
+must reject that certificate when addressed as `127.0.0.1`.
+Full Chrome receives each CA in a disposable profile, and Node receives the
+contract CA through `NODE_EXTRA_CA_CERTS`. The system trust store is unchanged,
+and neither fixture disables certificate verification. Production browser
+trust remains browser-owned.
+
+The WASI HTTPS fixture embeds exactly Wasmtime 50.0.1 and supplies a private
+test root through its supported host hook. Rustls performs normal chain and
+hostname verification. This isolates the CA from the machine and avoids claiming
+that a guest OpenSSL test establishes host HTTPS behavior. The stock Wasmtime
+CLI uses its own public roots and does not expose a custom-CA command-line option.
+
+[source,bash]
+----
+cargo +1.97.1 build --locked \
+  --manifest-path libs/beast/test/applications/host-tls/Cargo.toml \
+  --target-dir .local/beast-host-tls
+export WEBCPP_WASI_TLS_FIXTURE="$PWD/.local/beast-host-tls/debug/webcpp-beast-host-tls-fixture"
+b2 --user-config=.local/user-config.jam \
+  toolset=clang-wasip2,clang-wasip3 exception-handling=on,off \
+  libs/beast/test/applications/host-tls//applications-host-tls
+----
+
+The 53 upstream applications and their adaptations have separate targets. Their
+matrix records compilation and execution separately, including unavailable
+programming models rather than selecting an empty fallback program. In particular,
+stackful Boost.Context coroutines, native threads and asynchronous DNS are not
+inferred from a successful {cpp}20 coroutine or pre-resolved-address counterpart.

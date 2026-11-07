@@ -1,0 +1,92 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-quick-start]
+== Tutorial: your first asynchronous program
+
+We will run a program that prints a message, waits for a timer and returns
+from its event loop. You will see when a scheduled handler actually runs
+and why the context stays alive while a timer wait is pending.
+
+You need basic {cpp} knowledge, a webcpp checkout, b2 and a configured native
+{cpp}20 compiler. For the second run, you also need the Emscripten and Node
+setup described in <<asio-building>>. Run the commands below from the
+superproject root. No web server is needed for this first exercise.
+
+[#asio-quick-start-program]
+=== 1. Open the program
+
+Open `libs/asio/example/asio_quick_start.cpp`. This is the complete program
+we will compile, including its headers:
+
+[source]
+----
+include::{examples}/asio_quick_start.cpp[tag=program,indent=0]
+----
+
+The context owns the event loop. The timer belongs to that context and
+stays alive until `main` ends. `post` schedules the first handler; it does
+not call it immediately. That handler prints `posted`, arms the timer and
+registers its completion handler. This sequence keeps the output order
+the same even if the machine pauses before entering `run`.
+
+[#asio-quick-start-native]
+=== 2. Run it natively
+
+[source,bash]
+----
+b2 libs/asio/example//asio_quick_start.output
+----
+
+The build compiles and executes the program, then compares its output
+with the file beside it, `asio_quick_start.expected`. On success, b2 saves
+the captured output in `asio_quick_start.output` at the build path printed
+by its `run-and-compare` action. Open that file; its contents should be:
+
+[listing]
+----
+include::{examples}/asio_quick_start.expected[]
+----
+
+The last line uses webcpp's example-test helper to report completion,
+including after an Asyncify suspension. It leaves page modules without
+the Node harness unchanged.
+
+Notice that `run` returns after both handlers have run. The timer's 50 ms
+is a requested delay, not a promise about exact wall-clock execution time.
+The output deliberately shows no measured duration.
+
+[#asio-quick-start-wasm]
+=== 3. Run the same source as WebAssembly
+
+[source,bash]
+----
+b2 toolset=emscripten libs/asio/example//asio_quick_start.output
+----
+
+Node executes the generated WebAssembly using JSPI. Its `.output` file
+contains exactly the same three lines. Next, run it with Asyncify:
+
+[source,bash]
+----
+b2 toolset=emscripten webcpp-suspend=asyncify libs/asio/example//asio_quick_start.output
+----
+
+Again the output is unchanged. These runs exercise the source and its
+suspension under Node; loading a page in a browser is a separate step in
+<<asio-building-loader>>. If b2 cannot find a compiler or Node, check
+<<asio-building>> before changing the program. If the output differs,
+the example runner prints the difference and fails the build.
+
+[#asio-quick-start-next]
+=== 4. Follow the next piece of work
+
+You have now run the same event loop natively and with both WebAssembly
+suspension variants. Follow <<asio-timers-example>> to schedule several
+deadlines and cancel a wait, or <<asio-run-configure>> to configure a
+finite chain of posted work. For the reason the browser needs a turn
+limit, read <<asio-run-turn>>. Exact contracts are in <<asio-guarantees>>
+and the generated <<reference,API reference>>.

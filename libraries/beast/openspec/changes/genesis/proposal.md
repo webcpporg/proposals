@@ -1,78 +1,107 @@
 ## Why
 
-Code written against Boost.Beast (resolve, connect, the TLS handshake, the WebSocket handshake,
-then reads and writes) cannot run in a browser: the browser has no sockets, only `WebSocket` and
-`fetch`. A C++ program that talks WebSocket or HTTP, and that must run natively and on
-Emscripten, therefore has two code paths today, or a custom abstraction over both. webcpp wants
-one: Beast's own layered code, unchanged, driving the browser's `WebSocket` and `fetch` when
-compiled with Emscripten, and Boost.Beast itself natively. It is to webcpp::asio what Boost.Beast
-is to Boost.Asio, and it is what trystero's relays (WebSocket signalling) need to stop polling
-the browser from event handlers. With webcpp::asio it is also the prototype of a later proposal to
-Boost.
+The primary purpose of webcpp::beast is to take existing Boost.Beast applications to
+WebAssembly: WASIp2, WASIp3 and Emscripten in a real browser. Native Boost.Beast is the
+behavioural reference. Keeping the original operations, types and control flow with minimal,
+reviewable source changes matters more than providing a new HTTP or WebSocket interface.
+The implementation should use the target's own facilities: browser fetch/WebSocket and WASI
+HTTP/streams, rather than requiring Boost.Beast's transport/protocol implementation everywhere.
 
-The library is specified (draft of 2026-10-10, with four decisions of the owner) and has no plan
-and no code yet. This change records the specification as a proposal, so that the plan and the
-reference code are the first work and everything after them is traceable to a requirement.
+The owner's scope clarification of 2026-11-02 includes every application in Boost.Beast's
+examples. The pinned Boost 1.92 catalogue contains 53 executable targets, including clients,
+servers, TLS, synchronous, asynchronous, stackful and C++20 coroutine examples. Every target
+must be accounted for; a rewritten application, a compile-only result and a working port are
+not interchangeable. Browsers expose WebSocket and fetch instead of raw listening sockets,
+so compatibility has to state the platform boundaries rather than promise impossible parity.
+
+The original specification of 2026-10-10 is preserved in `reference/spec.md`. This revision
+supersedes its native/Emscripten-only scope and its three-example acceptance criterion.
+The owner authorized the coordinated Asio/Cobalt/Beast implementation contract on
+2026-11-06. Status is `implementing`, with no release or publication claim. The committed
+implementation and measured backend/application results are recorded in `reference/STATUS.md`;
+remaining prerequisites and acceptance gates stay explicit in `tasks.md`.
 
 ## What Changes
 
-- **New library `webcpp::beast`**, a wrapper (not a port) over Boost.Beast and webcpp::asio,
-  header-only C++20, on native and Emscripten (webcpp::asio has no WASI target, so neither has
-  this library until a WASI backend exists).
-- **Natively** it is Boost.Beast: aliases of Beast's types, a `websocket::stream` derived from
-  Beast's that adds an allocator constructor, `set_server_name` (the one line of Beast's SSL
-  examples that cannot compile in a browser), and `teardown` / `async_teardown` for
-  webcpp::asio's sockets.
-- **On Emscripten** the same names drive the browser: `tcp_stream` and `ssl_stream<tcp_stream>`
-  are browser streams that record what the layers say (resolver entry, endpoint, TLS settings)
-  and `websocket::stream` over them opens `new WebSocket(...)` at the handshake, with reads,
-  writes, close, timeouts, back-pressure queues, cancellation and a destructor contract.
-- **What the browser cannot honour fails as a value** (`boost::asio::error::operation_not_supported`)
-  by default, `WEBCPP_BEAST_UNSUPPORTED_ERROR`; a program may define
-  `WEBCPP_BEAST_UNSUPPORTED_IGNORE` to have it ignored. A b2 feature,
-  `webcpp-beast-unsupported=error|ignore`, drives it for a whole program, and the browser classes
-  live in an inline namespace named after the setting so that disagreeing translation units fail
-  at link.
-- **Errors by name:** failures with no counterpart in Beast or Asio are in the category
-  `webcpp.beast` (`invalid_url`, `blocked`, `connection_failed`, `send_limit`, `receive_limit`,
-  `fetch_failed`, `no_host`), with fixed values never reused.
-- **The HTTP client in the browser (second increment):** the browser `tcp_stream` is a byte
-  stream, so `http::async_write` and `http::async_read` run unchanged over it; each whole request
-  becomes one `fetch`, and the response is serialized back into the bytes the reads yield.
-- **The rules hold from the first commit:** exceptions on and off, both Emscripten suspension
-  variants, allocators, Boost first, outside interfaces wrapped, fixed-width types.
-- Tests: native lanes, Emscripten lanes under node on both variants, a headless-browser lane,
-  native Beast echo servers (plain and TLS), and a twin of each guide example that prints the
-  same natively and in the browser.
-- Out of this change (later increments, later proposals): `WebSocketStream` where the browser has
-  it, and trystero's relays on webcpp::beast.
+- **WebAssembly is the main deliverable.** Native is the reference; WASIp2, WASIp3 and
+  Emscripten are required target workstreams through their declared backends. Guest sockets
+  follow Asio's declared targets and each Beast backend needs independent validation.
+  Asio now offers a single-thread WASIp2 core; Beast's P2 raw-socket application corpus
+  remains blocked integration work and guest TLS remains unsupported there. P2 portable
+  HTTP, host `wasi:http` and supplied stdin/stdout have independent supported paths.
+  P2 supplied WebSocket uses the new pollable executor; host HTTP does not require it.
+- **A separate library `webcpp::beast`**, a C++20 wrapper over Boost.Beast and webcpp::asio,
+  presenting Beast-compatible operations and data interfaces while selecting an environment
+  backend. Native retains upstream Beast. Wasm data interfaces reuse upstream types while
+  host-service protocol execution maps directly to the environment.
+  The first increment remains WebSocket, followed by HTTP.
+- **WASI HTTP uses the host's HTTP interfaces.** Adapt client requests and server handlers to
+  `wasi:http` on P2/P3, reusing and extending webcpp::wasi. The host owns transport and may
+  own TLS; this path does not require the raw-socket Asio port or guest OpenSSL. Keep a
+  separate stream/socket backend for applications that need wire-level control, with shared
+  Asio/OpenSSL dependencies where available.
+- **Stream counterparts preserve useful applications.** For Unix-domain socket examples,
+  add a pair-of-streams counterpart, including host-wired stdin/stdout, keeping the exchange
+  logic. Document startup and endpoint changes; do not pretend to implement Unix-domain
+  addressing, ancillary data or peer credentials. Similar applications are part of the
+  requested deliverable, not merely rejected examples.
+- **Emscripten uses browser transports.** The layered connection calls record URL and TLS
+  intent; the final handshake or request uses WebSocket or fetch. Add synchronous client
+  coverage through suspending adapters as well as the asynchronous interface. Run both
+  JSPI and Asyncify in the browser.
+- **All 53 upstream executables are the acceptance inventory**, with their original paths,
+  dependency restrictions, source differences and per-profile build and runtime evidence.
+  Supporting sources, certificate fixtures, the chat HTML and documentation snippets are
+  included. The detailed initial inventory is in `design.md`.
+- **A capability matrix** separates target, suspension mechanism, threading and exception
+  mode. It distinguishes tested parity, documented adaptation, implementation blockers and
+  platform-unavailable operations. No silent skips or trivial replacement programs count.
+- **Browser differences stay explicit.** The default unsupported-setting policy reports
+  errors as values; the optional ignore policy cannot create a listening socket, Unix-domain
+  socket or unsupported execution backend. An explicit host-service/stream adaptation can
+  nevertheless provide the application with a supported execution path. Raw servers run on native/WASI and serve the
+  browser clients; they are not advertised as browser server ports.
+- **Validation uses real exchanges.** Test each runnable example with local controlled peers,
+  compare application payloads and outcomes against native Boost.Beast, and exercise failure,
+  timeout, cancellation and TLS trust behaviour. Compilation alone is a separate result.
+- **Documentation** follows Diataxis in AsciiDoc, with MrDocs reference and compiled examples.
+  It publishes the capability and example matrices and reproducible commands.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `beast`: webcpp::beast, Boost.Beast's names and layered interfaces natively, and over the
-  browser's `WebSocket` and `fetch` on Emscripten, with its unsupported-setting policy, error
-  category, back-pressure, cancellation, allocation, configuration, tests and documentation.
+- `beast`: source-compatible migration of Boost.Beast programs to WebAssembly, its native
+  reference, browser stream adaptations, WASI transport integration, unsupported-setting
+  policy, allocation and lifetime contracts, exhaustive example inventory and evidence.
 
 ### Modified Capabilities
 
-None.
+None in this OpenSpec root. Extensions to webcpp::wasi for complete HTTP requests/responses
+and stream I/O, shared TLS/B2 changes for Asio's declared socket targets and any
+Boost.Context work belong to their owning components and must have linked changes and tests;
+this proposal does not declare those dependencies implemented.
 
 ## Impact
 
-- **Kind:** a wrapper (`port_of: null`): webcpp's interface over Boost.Beast and, in the
-  browser, over the Web APIs. Repository `webcpporg/beast` (not created), checked out as the
-  submodule `libs/beast`, BSL-1.0, "Copyright (c) 2026 WebCpp.org".
-- **Implementation:** not started. There is no reference code: `reference/` holds the
-  specification alone, and a plan and the reference code are required before the proposal is
-  accepted. They are the first tasks (`tasks.md`, group 0).
-- **Dependencies:** webcpp::asio (the proposal `libraries/asio`, change `genesis`: the
-  io_context, the bridge that posts the browser's events, the `ip::tcp` types and resolver, the
-  `ssl` record); Boost.Beast 1.92 and Boost.Asio, Boost.System; OpenSSL natively (through
-  Boost.Asio's `ssl`); webcpp::config; Emscripten 6.0.11 with its two suspension variants; node
-  26 and headless Chrome for the lanes.
-- **Status:** draft; no release. Targets are native and Emscripten only.
-- **Other proposals:** depends on webcpp::asio's genesis (its Emscripten resolver of decision 4,
-  its bridge and its `ssl` record must exist first). The later trystero change that moves its
-  relays onto webcpp::beast depends on this one.
+- **Kind:** wrapper (`port_of: null`), BSL-1.0; repository
+  [webcpporg/beast](https://github.com/webcpporg/beast), registered as `libs/beast` in the
+  superproject candidate. Retain upstream copyright and licence on adapted code.
+- **Implementation:** committed browser, WASI host HTTP, supplied-stream and native/WASIp3
+  socket backends, with the full 53-application inventory and explicit adaptations.
+  The P2 supplied-channel WebSocket backend now also passes its four role/EH cells.
+  `reference/source/` records the exact committed tree named in `reference/STATUS.md`;
+  the new local commits still need publication and fresh CI. WASIp2 raw-socket application
+  integration is blocked and guest TLS is unsupported. All classifications remain explicit
+  in the complete matrix.
+- **Dependencies:** pinned Boost.Beast 1.92, webcpp::asio, Boost.System and webcpp::config;
+  webcpp::wasi for host HTTP/streams; shared OpenSSL and CA targets only for guest-owned
+  TLS in native/WASI socket backends; wasi-sdk and Wasmtime for WASI;
+  Emscripten, Node and a real browser for JSPI/Asyncify. Stackful examples additionally
+  require a proven Boost.Coroutine/Context backend; replacing them with C++20 coroutines
+  does not establish compatibility of the original examples.
+- **Status:** proposed; no acceptance decision or release. Intended targets: native, wasip2,
+  wasip3, emscripten, by backend. Asio declares native, wasip3 and emscripten; Beast guest
+  sockets use native/WASIp3, while WASIp2 uses portable HTTP, host HTTP and supplied streams.
+- **Other proposals:** build on the published Asio integration and record extensions in its
+  proposal. Trystero's later relay migration and an upstream Boost proposal remain separate.

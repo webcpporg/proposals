@@ -1,0 +1,39 @@
+<!--
+Copyright (c) 2026 WebCpp.org
+
+Distributed under the Boost Software License, Version 1.0. (See
+accompanying file LICENSE_1_0.txt or copy at
+https://www.boost.org/LICENSE_1_0.txt)
+
+The browser lane loads a manifest and records program output and animation callbacks.
+-->
+<!doctype html>
+<meta charset="utf-8">
+<title>asio browser lane</title>
+<script type="module">
+import {load} from '/loader/webcpp-asio-loader.mjs'
+const report = (window.report = {lines: [], variant: null, error: null, frames: []})
+const tick = () => {
+    report.frames.push(performance.now())
+    requestAnimationFrame(tick)
+}
+requestAnimationFrame(tick)
+try {
+    const manifest = new URLSearchParams(location.search).get('manifest')
+    const print = line => report.lines.push({line, at: performance.now()})
+    // Identify the imported artifact before its factory waits on an indefinitely suspended main.
+    const response = await fetch(manifest)
+    const artifacts = await response.clone().json()
+    const importModule = async url => {
+        const matches = ['jspi', 'asyncify'].filter(variant =>
+            new URL(artifacts[variant].script, response.url).href === url)
+        if (matches.length !== 1) throw new Error(`unexpected artifact ${url}`)
+        report.variant = matches[0]
+        return import(url)
+    }
+    const loaded = await load(manifest, {module: {print}, fetch: async () => response, importModule})
+    if (loaded.variant !== report.variant) throw new Error('loaded variant differs from its artifact')
+} catch (error) {
+    report.error = String(error)
+}
+</script>

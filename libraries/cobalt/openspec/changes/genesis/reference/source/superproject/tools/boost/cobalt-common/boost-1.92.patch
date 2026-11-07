@@ -1,0 +1,67 @@
+--- a/boost/cobalt/composition.hpp
++++ b/boost/cobalt/composition.hpp
+@@ -130,7 +130,7 @@
+   template<typename ... Ts>
+   composition_promise(Ts && ... args) : handler(std::move(std::get<sizeof... (Ts) - 1>(std::tie(args...))))
+   {
+-
++    this->reset_cancellation_source(handler.get_cancellation_slot());
+   }
+ 
+   void unhandled_exception() { throw ; }
+--- a/boost/cobalt/detail/main.hpp
++++ b/boost/cobalt/detail/main.hpp
+@@ -13,6 +13,7 @@
+ #include <boost/cobalt/this_coro.hpp>
+ 
+ #include <boost/config.hpp>
++#include <exception>
+ 
+ 
+ namespace boost::asio
+@@ -26,10 +27,17 @@
+ namespace boost::cobalt::detail
+ {
+ 
++#if defined(__clang__) && defined(__wasip3__)
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wmain"
++#endif
+ extern "C"
+ {
+ int main(int argc, char * argv[]);
+ }
++#if defined(__clang__) && defined(__wasip3__)
++#pragma clang diagnostic pop
++#endif
+ 
+ struct signal_helper
+ {
+@@ -92,6 +100,8 @@
+ 
+ #if !defined(BOOST_NO_EXCEPTIONS)
+     void unhandled_exception() { throw ; }
++#else
++    void unhandled_exception() noexcept { std::terminate(); }
+ #endif
+     void return_value(int res = 0)
+     {
+--- a/boost/cobalt/detail/thread.hpp
++++ b/boost/cobalt/detail/thread.hpp
+@@ -17,6 +17,7 @@
+ 
+ #include <boost/asio/cancellation_signal.hpp>
+ 
++#include <exception>
+ #include <thread>
+ 
+ namespace boost::cobalt
+@@ -84,6 +85,8 @@
+ 
+ #if !defined(BOOST_NO_EXCEPTIONS)
+   void unhandled_exception() { throw; }
++#else
++  void unhandled_exception() noexcept { std::terminate(); }
+ #endif
+   void return_void() { }
+ 

@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "applications": [
+    {
+      "application": "http-client-async-local",
+      "source": "http/client/async-local/http_client_async_local.cpp",
+      "counterpart": "http-client-async-local.cpp",
+      "backend": "supplied-stdio",
+      "execution_model": "explicit synchronous partial operations",
+      "targets": [
+        "native",
+        "wasip2",
+        "wasip3"
+      ],
+      "unsupported": [
+        {
+          "target": "native-windows",
+          "reason": "The stdio adapter requires WASI resources or POSIX descriptor readiness; provide supplied_stream callbacks on Windows."
+        }
+      ],
+      "native_os": "POSIX"
+    },
+    {
+      "application": "http-server-async-local",
+      "source": "http/server/async-local/http_server_async_local.cpp",
+      "counterpart": "http-server-async-local.cpp",
+      "backend": "supplied-stdio",
+      "execution_model": "explicit synchronous partial operations",
+      "targets": [
+        "native",
+        "wasip2",
+        "wasip3"
+      ],
+      "unsupported": [
+        {
+          "target": "native-windows",
+          "reason": "The stdio adapter requires WASI resources or POSIX descriptor readiness; provide supplied_stream callbacks on Windows."
+        }
+      ],
+      "native_os": "POSIX"
+    },
+    {
+      "application": "websocket-client-async-local",
+      "source": "websocket/client/async-local/websocket_client_async_local.cpp",
+      "counterpart": "websocket-client-async-local.cpp",
+      "backend": "supplied-stdio",
+      "execution_model": "explicit synchronous partial operations",
+      "targets": [
+        "native",
+        "wasip3"
+      ],
+      "unsupported": [
+        {
+          "target": "wasip2",
+          "reason": "The guest WebSocket protocol engine is unavailable on WASIp2."
+        },
+        {
+          "target": "native-windows",
+          "reason": "The stdio adapter requires WASI resources or POSIX descriptor readiness; provide supplied_stream callbacks on Windows."
+        }
+      ],
+      "native_os": "POSIX"
+    },
+    {
+      "application": "websocket-server-async-local",
+      "source": "websocket/server/async-local/websocket_server_async_local.cpp",
+      "counterpart": "websocket-server-async-local.cpp",
+      "backend": "supplied-stdio",
+      "execution_model": "explicit synchronous partial operations",
+      "targets": [
+        "native",
+        "wasip3"
+      ],
+      "unsupported": [
+        {
+          "target": "wasip2",
+          "reason": "The guest WebSocket protocol engine is unavailable on WASIp2."
+        },
+        {
+          "target": "native-windows",
+          "reason": "The stdio adapter requires WASI resources or POSIX descriptor readiness; provide supplied_stream callbacks on Windows."
+        }
+      ],
+      "native_os": "POSIX"
+    }
+  ]
+}

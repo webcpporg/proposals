@@ -1,0 +1,137 @@
+From 35c8aa78ef8752c595b5eea8e307f3c304f2ae81 Mon Sep 17 00:00:00 2001
+From: R <github.overboard312@passmail.net>
+Date: Wed, 14 Oct 2026 13:10:30 -0400
+Subject: [PATCH] tools: keep variant link dependencies out of artifact
+ consumers
+
+---
+ AGENTS.md                     |  8 +++++++
+ tools/test/emscripten_test.py | 39 +++++++++++++++++++++++++++++++++++
+ tools/webcpp.jam              | 25 +++++++++++++++++++++-
+ 3 files changed, 71 insertions(+), 1 deletion(-)
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 65fe5aa..a5214f7 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -1677,6 +1677,14 @@ webcpp.variants shell : shell.cpp ;
+ webcpp.size-table shell : shell ;
+ ```
+ 
++A `webcpp.variants` executable consumes its library usage requirements at
++its own link and exports none to downstream consumers. A driver can pass
++the explicit target reference `.//shell` to `webcpp.drive`, with
++`<dependency>shell.variants.json`, without linking the libraries' source
++objects again or combining the two suspension variants. The driver must
++not inherit the page program's library requirements; apply those to the
++page program itself.
++
+ **WebAssembly components** (`tools/component/component.jam`). A library's
+ `build.jam` declares the C bindings of a world, and its test and example
+ Jamfiles the HTTP components that wasmtime serves:
+diff --git a/tools/test/emscripten_test.py b/tools/test/emscripten_test.py
+index 84e183d..4e6b582 100644
+--- a/tools/test/emscripten_test.py
++++ b/tools/test/emscripten_test.py
+@@ -357,6 +357,44 @@ def test_variants_write_the_manifest_beside_the_jspi_artifact(root):
+     assert '-sEXPORT_ES6' in link_line(root, result, 'shell-60-d-asyncify')
+ 
+ 
++def test_variants_can_be_driven_without_relinking_dependencies(root):
++    # A library's source usage belongs to each linked variant, not to its consumer.
++    folder = root / 'libs/browser_demo/test/variants'
++    library = root / 'libs/browser_demo/build.jam'
++    library.write_text(library.read_text() + "\nobj support : support.cpp ;\n"
++                       "alias supported : : : : <source>support <include>include ;\n")
++    (library.parent / 'support.cpp').write_text('int support() { return 7; }\n')
++    (folder / 'shell.cpp').write_text('#include <cstdio>\nint support();\n'
++                                     'int main() { std::printf("support=%d\\n", support()); }\n')
++    jam = folder / 'Jamfile'
++    jam.write_text(jam.read_text().replace(
++        'webcpp.variants shell : shell.cpp ;',
++        'webcpp.variants shell : shell.cpp : <library>/webcpp/browser_demo//supported ;')
++        + '\nwebcpp.targets emscripten ;\nwebcpp.original node ;\n'
++        'webcpp.drive loads : .//shell : <dependency>shell.variants.json : load.mjs ;\n'
++        'webcpp.lane load : loads : emscripten ;\n')
++    for name in ('package.json', 'package-lock.json'):
++        (folder / name).write_bytes((folder.parent / 'driver' / name).read_bytes())
++    (folder / 'load.mjs').write_text("""import assert from 'node:assert/strict'
++import {readFileSync} from 'node:fs'
++import {dirname, join} from 'node:path'
++import {pathToFileURL} from 'node:url'
++const manifestUrl = pathToFileURL(join(dirname(process.argv.at(-1)), 'shell.variants.json'))
++const manifest = JSON.parse(readFileSync(manifestUrl, 'utf8'))
++for (const variant of ['jspi', 'asyncify']) {
++    const lines = []
++    const {default: factory} = await import(new URL(manifest[variant].script, manifestUrl))
++    await factory({print: line => lines.push(line)})
++    assert.deepEqual(lines, ['support=7'])
++}
++console.log('both linked variants loaded')
++""")
++    result = harness.run_b2(root, '-a', '-d+2', *EMSCRIPTEN,
++                            'libs/browser_demo/test/variants//load')
++    harness.expect(result, True, 'both linked variants loaded')
++    assert passed(result) == {'loads'}, (passed(result), result.stdout[-4000:])
++
++
+ def test_variants_asked_for_with_javascript_exceptions_are_refused(root):
+     # b2 cannot take an optional property back from a request: the jspi variant would be linked
+     # with JavaScript exceptions, and the manifest and the size table would give it as jspi's.
+@@ -529,6 +567,7 @@ CASES = [prepared(case) for case in (
+     test_link_only_unresolved_symbol_fails,
+     test_artifacts_are_named_boost_s_way,
+     test_variants_write_the_manifest_beside_the_jspi_artifact,
++    test_variants_can_be_driven_without_relinking_dependencies,
+     test_variants_asked_for_with_javascript_exceptions_are_refused,
+     test_the_size_table_lists_every_variant,
+     test_variants_are_not_built_natively,
+diff --git a/tools/webcpp.jam b/tools/webcpp.jam
+index e4a44c9..c59d58b 100644
+--- a/tools/webcpp.jam
++++ b/tools/webcpp.jam
+@@ -89,6 +89,7 @@ import project ;
+ import regex ;
+ import sequence ;
+ import set ;
++import targets ;
+ import testing ;
+ import toolset ;
+ 
+@@ -472,10 +473,32 @@ rule suspend-tag ( name : type ? : property-set )
+ # size of its .wasm, which webcpp-asio-loader.mjs reads. Never run by
+ # node: no -sNODERAWFS=1. The manifest builds both variants itself, so a
+ # build that asks for one of them is refused (variants-request).
++# A page program is a finished executable, not a link dependency. Its
++# library usage requirements have already been consumed by its own link.
++# Exporting them would make a driver or a manifest consumer link those
++# sources again, combining objects from incompatible suspension variants.
++class variant-program : typed-target
++{
++    import property-set ;
++
++    rule __init__ ( name : project : sources * : requirements *
++        : default-build * : usage-requirements * )
++    {
++        typed-target.__init__ $(name) : $(project) : EXE : $(sources)
++          : $(requirements) : $(default-build) : $(usage-requirements) ;
++    }
++
++    rule compute-usage-requirements ( subvariant )
++    {
++        return [ property-set.empty ] ;
++    }
++}
++
+ rule variants ( name : sources + : requirements * )
+ {
+     local only = <webcpp-targets>emscripten <conditional>@webcpp%filter ;
+-    exe $(name) : $(sources)
++    targets.create-metatarget variant-program : [ project.current ]
++      : $(name) : $(sources)
+       : $(requirements) $(only) $(.handler) <tag>@webcpp%suspend-tag
+         <linkflags>-sMODULARIZE <linkflags>-sEXPORT_ES6 ;
+     local found = [ where ] ;
+-- 
+2.55.0
+

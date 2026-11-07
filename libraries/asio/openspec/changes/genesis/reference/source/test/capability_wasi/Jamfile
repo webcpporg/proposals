@@ -1,0 +1,24 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+project : requirements <library>/webcpp/asio//asio ;
+import webcpp ;
+webcpp.targets native wasip2 wasip3 ;
+webcpp.run datagrams : datagrams_test.cpp : : native wasip2 wasip3 ;
+webcpp.run resolver : ../wasip2/resolver_test.cpp : : wasip3 ;
+webcpp.run resolver_progress : resolver_progress_test.cpp
+  : <linkflags>-Wl,--wrap=webcpp_asio_wasip3_lookup
+    <linkflags>-Wl,--wrap=wasip3_subtask_drop : wasip3 ;
+webcpp.run send_retry : send_retry_test.cpp : <linkflags>-Wl,--wrap=send : wasip2 wasip3 ;
+webcpp.run resolver_empty_list : resolver_empty_result_test.cpp
+  : <linkflags>-Wl,--wrap=webcpp_asio_wasip3_lookup : wasip3 ;
+webcpp.run resolver_empty_message : resolver_empty_result_test.cpp
+  : <define>WEBCPP_TEST_EMPTY_ERROR_MESSAGE
+    <linkflags>-Wl,--wrap=webcpp_asio_wasip3_lookup : wasip3 ;
+webcpp.run resolver_runners : resolver_runners_test.cpp
+  : <threading>multi <exception-handling>off
+    <linkflags>-Wl,--wrap=webcpp_asio_wasip3_lookup
+    <linkflags>-Wl,--wrap=wasip3_waitable_join : wasip3 ;
+webcpp.lane wasi-dns-threads : resolver_runners : wasip3 ;

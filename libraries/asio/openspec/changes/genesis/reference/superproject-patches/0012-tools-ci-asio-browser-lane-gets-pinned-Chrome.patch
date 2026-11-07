@@ -1,0 +1,79 @@
+From 3d069a16728cb1a86dc3070658399b0f747649bc Mon Sep 17 00:00:00 2001
+From: R <github.overboard312@passmail.net>
+Date: Wed, 14 Oct 2026 13:19:08 -0400
+Subject: [PATCH] tools/ci: asio's browser lane gets the pinned Chrome
+
+---
+ AGENTS.md               |  3 ++-
+ tools/ci/matrix.py      |  4 ++--
+ tools/ci/matrix_test.py | 14 ++++++++++++--
+ 3 files changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/AGENTS.md b/AGENTS.md
+index a5214f7..68d09a5 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -2230,7 +2230,8 @@ jobs:
+     kind `programs` on any other target, such as wasi's served lanes, has
+     none.
+   - An own lane whose driver meets a browser, one of `CHROME_LANES` in
+-    `tools/ci/matrix.py` (trystero's `interop`, natively and on emscripten),
++    `tools/ci/matrix.py` (trystero's `interop`, natively and on emscripten,
++    document's `js`, and asio's `browser`),
+     has its entry's `chrome`, and its job runs the `chrome` action, which
+     gives it `CHROME`, a pinned Chrome rather than the image's, which moves
+     with the image, so that a red interop lane is never a browser nobody
+diff --git a/tools/ci/matrix.py b/tools/ci/matrix.py
+index 5bc03a2..94ad20f 100755
+--- a/tools/ci/matrix.py
++++ b/tools/ci/matrix.py
+@@ -190,8 +190,8 @@ CONTAINER_IMAGE = container_tag()
+ 
+ # The own lanes whose driver meets a browser, (library, lane), which the CI's chrome action gives
+ # its pinned chrome-headless-shell, as CHROME: trystero's interop, natively and on emscripten, and
+-# document's js, whose examples Playwright runs in Chrome.
+-CHROME_LANES = {('document', 'js'), ('trystero', 'interop')}
++# document's js, whose examples Playwright runs in Chrome, and asio's browser lane.
++CHROME_LANES = {('asio', 'browser'), ('document', 'js'), ('trystero', 'interop')}
+ 
+ # MSVC's lanes build 64-bit programs, embed their manifest with the linker and abbreviate b2's
+ # paths against Windows's MAX_PATH, as xstate-cpp's green Windows jobs did. b2 abbreviates each
+diff --git a/tools/ci/matrix_test.py b/tools/ci/matrix_test.py
+index eba357e..36c2fd3 100755
+--- a/tools/ci/matrix_test.py
++++ b/tools/ci/matrix_test.py
+@@ -1092,12 +1092,21 @@ def test_a_container_lane_has_its_image_from_the_cache(_):
+     assert 'if: matrix.container\n' in steps[container[0]], steps[container[0]]
+ 
+ 
++def test_asio_browser_lane_receives_chrome(root):
++    # The browser driver needs Chrome when the lane is scheduled, on emscripten alone.
++    own = matrix.OwnLane('asio', 'browser', ('libs/asio/test/browser',),
++                         'emscripten', 'original')
++    entry = own_lane_entry_of(own)
++    assert entry['chrome'] is True, entry
++
++
+ def test_a_browser_lane_has_the_pinned_chrome(root):
+-    # An own lane whose driver meets a browser, trystero's interop and document's js
++    # An own lane whose driver meets a browser, asio's browser, trystero's interop and document's js
+     # (CHROME_LANES), says chrome, on every target it runs on, and its job installs the pinned
+     # chrome-headless-shell, which gives CHROME; no other own lane does, and no job names the
+     # image's Chrome.
+-    assert matrix.CHROME_LANES == {('document', 'js'), ('trystero', 'interop')}, matrix.CHROME_LANES
++    assert matrix.CHROME_LANES == {
++        ('asio', 'browser'), ('document', 'js'), ('trystero', 'interop')}, matrix.CHROME_LANES
+     boost_only(root)
+     external_library(root)
+     oracle_library(root, 'beta')
+@@ -1307,6 +1316,7 @@ CASES = [
+     test_whether_a_library_has_external_dependencies,
+     test_the_jobs_install_the_external_dependencies,
+     test_a_container_lane_has_its_image_from_the_cache,
++    test_asio_browser_lane_receives_chrome,
+     test_a_browser_lane_has_the_pinned_chrome,
+     test_container_apt_get_retries_transient_failures,
+     test_a_container_lane_runs_b2_with_no_network,
+-- 
+2.55.0
+

@@ -1,0 +1,637 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-feature-matrix]
+=== Feature matrix by library and build profile
+
+This records the WebCPP integration and capability-completion work verified
+on 2026-11-03, using
+Boost 1.92.0, Emscripten 6.0.11 and wasi-sdk 34.0. The project now selects
+Wasmtime 50.0.1 for its regression suites; the original isolated probes used
+Wasmtime 49.0.3. It is not a
+list of everything those upstream projects might support in other builds.
+The Asio target is `/webcpp/asio//asio`; the Cobalt integration is
+`/webcpp/asio//cobalt`, using Boost.Cobalt's names. Do not infer that an Asio
+feature has also been tested through a Cobalt wrapper or completion token.
+
+Each cell describes the named feature, not every overload or possible input.
+Read the profile availability table first: an unavailable profile makes all
+of its public features unavailable, even if an isolated source file compiles.
+
+.Status legend
+[cols="1,5",options="header"]
+|===
+| Mark | Meaning
+| T | Tested: the named behavior has local runtime evidence in this profile.
+| A | Provided by the backend or Boost contract; dedicated runtime validation
+is pending. Treat this as a validation task, not as a tested support guarantee.
+| L | Limited: usable only within the restriction explained beside the table.
+| U | Unverified: there is insufficient evidence to promise this combination.
+| X | Unavailable through this integration or the tested toolchain.
+| B | Build integration blocked: WebCPP rejects the library target before
+compilation. Read the named blocker; this does not establish a platform limit.
+| P | Probe only: isolated runtime evidence, outside the public library target.
+This is progress toward a port, not an available application configuration.
+| C | Compile only: an isolated source compiles; linking and execution are unverified.
+| N/A | The feature is specific to another environment.
+|===
+
+[#asio-feature-profiles]
+==== Profile availability
+
+`EH on/off` means `exception-handling=on/off`. `S/M` means
+`threading=single/multi`. Every on/off pair below refers to both choices;
+it does not conceal a requirement for exceptions.
+
+[cols="2,2,1,1,1,4",options="header"]
+|===
+| Environment | Thread profile | EH | Asio | Cobalt | Qualification
+| Native | S | on | T | T | Existing backend; native evidence is macOS arm64.
+| Native | S | off | T | L | Cobalt issue 287 applies to pending-task moves.
+| Native | M | on | T | T | Cobalt runner, IP wrappers and thread completion/join tested.
+| Native | M | off | T | L | Same tested paths, with Cobalt issue 287.
+| Native | Asio threads disabled with `BOOST_ASIO_DISABLE_THREADS` | on/off | U | U
+| A separate profile with Asio's thread support disabled has not been validated.
+| Browser / JSPI | S | on | T | T | Requires a JSPI-capable engine.
+| Browser / JSPI | S | off | T | L | Cobalt issue 287; use result-based paths.
+| Browser / JSPI | M | on | T | T | Isolated page and creator-thread affinity.
+| Browser / JSPI | M | off | T | L | Same profile; Cobalt issue 287 applies.
+| Browser / Asyncify | S | on | T | T | Uses the configured Asyncify stack.
+| Browser / Asyncify | S | off | T | L | Cobalt issue 287; use result-based paths.
+| Browser / Asyncify | M | on | T | T | Isolated page and creator-thread affinity.
+| Browser / Asyncify | M | off | T | L | Same profile; Cobalt issue 287 applies.
+| WASIp3 | S | on | T | T | Public Cobalt target; Asio threads disabled.
+| WASIp3 | S | off | T | L | Same tested target; pending-task moves retain issue 287.
+| WASIp3 | M, cooperative | on | X | X | SDK 34.0 lacks the cooperative {cpp} EH runtime.
+| WASIp3 | M, cooperative | off | T | L | Public Cobalt target, including its
+thread coroutine; SDK cooperative runtime and Cobalt issue 287 apply.
+| WASIp2 | S | on | T | T | Core, DNS, CLI streams, Cobalt and TLS consumers.
+| WASIp2 | S | off | T | L | Same consumers; Cobalt issue 287 applies.
+| WASIp2 | M | on/off | X | X | Pinned SDK has no supported P2 pthread runtime/profile.
+|===
+
+*Native S is not a promise of no threads.* The native build does not set
+`BOOST_ASIO_DISABLE_THREADS`. Boost may use internal threads, for example for
+asynchronous name resolution. Explicitly disabling Asio threads is a different
+configuration and must be applied consistently to the application and compiled
+dependencies. It does not disable unrelated libraries' threads.
+
+Browser S sets `BOOST_ASIO_DISABLE_THREADS`; explicit M enables pthreads in
+the application and compiled dependencies. WASIp3 S also disables Asio threads. WASIp3 M
+uses cooperative threads, not simultaneous CPU execution on multiple cores.
+The missing cooperative EH runtime is a limitation of the SDK distribution
+tested here, not proof that threads and exceptions are fundamentally incompatible.
+
+`variant=release/debug` changes optimization, not these feature declarations.
+The WASIp3 evidence here uses Release. Native operating-system features remain
+subject to Boost and the host OS; macOS results are not Windows or Linux tests.
+
+[#asio-feature-native]
+==== Asio: native
+
+The S/M columns use the build profiles above, not a count of active application
+threads. The strict thread-disabled profile remains U for all features here.
+
+[cols="4,1,1,1,1",options="header"]
+|===
+| Feature | S / EH on | S / EH off | M / EH on | M / EH off
+| Context, executors and posting | T | T | T | T
+| Complete run/poll family | T | T | T | T
+| Timers, expiry and cancellation | T | T | T | T
+| Cross-thread post and multiple context runners | A | A | T | T
+| Strands and thread pools | A | A | A | A
+| Asio `awaitable`, `co_spawn`, result-based timer wait | T | T | T | T
+| Context and associated-handler allocation routing | T | T | T | T
+| IPv4 TCP connect/accept, read/write, EOF and cancellation | T | T | T | T
+| IPv4 UDP single-buffer datagrams | T | T | T | T
+| UDP multi-buffer `send_to` / `async_send_to` | T | T | T | T
+| UDP multi-buffer receive and connected send | T | T | A | A
+| Synchronous and asynchronous DNS | A | A | A | A
+| IPv6 traffic, multicast and socket options | A | A | A | A
+| TLS through Asio/OpenSSL | T | T | T | T
+| Process signals, local sockets and serial ports | A | A | A | A
+| Files, descriptors, pipes and platform-specific Asio backends | A | A | A | A
+| Browser Promise/DOM bridge and turn limit | N/A | N/A | N/A | N/A
+|===
+
+Asio availability follows the native backend, including platform feature
+macros. A does not mean every operating system supplies every row's APIs.
+TLS T refers to the tested Clang/macOS recipe, not an MSVC recipe. Exceptions
+off retain error-code and callback paths; throwing error paths require the
+qualification in <<asio-feature-errors>>.
+
+[#asio-feature-browser]
+==== Asio: browser / Emscripten
+
+The first table covers S. The M table below records narrower real-browser
+worker coverage; S results are not automatically evidence for M.
+T includes the project's local Emscripten tests under Node; it does not mean
+every case was independently exercised in every browser engine.
+The coroutine timer row also passed in HeadlessChrome 153.0.8010.12 in all
+four columns, linked for the browser without Node's raw-filesystem option.
+
+[cols="4,1,1,1,1",options="header"]
+|===
+| Feature | JSPI / EH on | JSPI / EH off | Asyncify / EH on | Asyncify / EH off
+| Context, run/poll family, posting and timers | T | T | T | T
+| Bounded turns and explicit browser yield | T | T | T | T
+| Context and associated-handler allocation routing | T | T | T | T
+| JavaScript Promise operations and event bridge | T | T | T | T
+| Promise/event cancellation | T | T | T | T
+| Socket API with a supplied custom transport | L | L | L | L
+| Direct native TCP/UDP through the default transport | X | X | X | X
+| Browser resolver retaining a name for a transport | T | T | T | T
+| OS DNS lookup through that resolver | X | X | X | X
+| Asio `awaitable`, `co_spawn`, result-based timer wait | T | T | T | T
+| Strands on the single executor | A | A | A | A
+| Worker-thread execution | X | X | X | X
+| TLS settings for a transport | T | T | T | T
+| Linked OpenSSL through the native/WASI TLS target | X | X | X | X
+| Supplied WebSocket, HTTP or Fetch stream adapter | X | X | X | X
+| Host POSIX signals, local sockets and serial ports | X | X | X | X
+| Native-style files/descriptors through this integration | U | U | U | U
+|===
+
+L for sockets means that the default transport reports
+`operation_not_supported`; the application supplies a transport with the
+required semantics. This is not raw browser TCP/UDP access. Browser HTTPS or
+WSS capabilities do not by themselves supply an Asio/OpenSSL stream adapter.
+The SSL settings record does not encrypt data. See <<asio-sockets>>.
+
+The run family must execute on a stack configured for suspension. A browser
+yield gives the host an opportunity to run; it does not guarantee a timer
+deadline or a rendered frame. EH on uses Wasm exceptions with JSPI and the
+configured JavaScript exception mechanism with Asyncify.
+
+[#asio-feature-browser-workers]
+===== Browser pthread profiles
+
+These columns use `threading=multi` and real HeadlessChrome 156.0.8078.4 with
+isolation headers. Run each context on its constructing thread; post between
+threads. See <<asio-building-workers>> for lifetime and hosting requirements.
+
+[cols="4,1,1,1,1",options="header"]
+|===
+| Feature | JSPI / EH on | JSPI / EH off | Asyncify / EH on | Asyncify / EH off
+| Main-context wait woken by a browser event | T | T | T | T
+| Worker timer, cross-thread wakeup and main DOM handoff | T | T | T | T
+| Timer cancellation delivered through the main executor | T | T | T | T
+| Context/handler allocators and queued-handler shutdown | T | T | T | T
+| Reentrant context destruction with queued work | T | T | T | T
+| Cleanup when moving a handler throws | T | N/A | T | N/A
+| Reject running a context from a different thread | T | T | T | T
+| Multiple simultaneous runners of one browser context | X | X | X | X
+| Complete S scheduling, transport and Promise suite under M | U | U | U | U
+| Raw pthread return value after an async suspension | T | T | X | X
+|===
+
+The last row is a dependency-only witness. A suspended pthread returning pointer
+value 42 joins with zero under the pinned Asyncify SDK. The versioned probe fails
+that assertion; void-return workers with explicit result storage pass in both
+variants. This runtime path cannot be identified by a target macro. It is not a
+blanket prohibition of pthreads with Asyncify.
+
+[#asio-feature-wasip2]
+==== Asio on WASIp2
+
+Both columns use `threading=single`, SDK 34.0 and Wasmtime 50.0.1.
+Multiple threads are rejected before compilation. T is limited to the stated
+consumer contracts, not every Boost.Asio overload.
+
+[cols="4,1,1",options="header"]
+|===
+| Feature | EH on | EH off
+| Run/poll family, timers and timer cancellation | T | T
+| TCP connect/accept, partial transfer and shutdown | T | T
+| UDP scalar, empty datagrams and gathered send_to | T | T
+| Pending socket cancellation | T | T
+| Async forward DNS, deferred initiation and associated executor | T | T
+| Resolver-wide and per-operation cancellation | T | T
+| Numeric synchronous resolution | T | T
+| Canonical name, mapped-address policy and async reverse DNS | X | X
+| Asio timer coroutine | T | T
+| CLI stream pending read cancellation, allocator and executor | T | T
+| CLI stream WebSocket client/server, text/binary and close | T | T
+| UDP multiple-buffer receive and connected multiple-buffer send | T | T
+| POSIX signals, local sockets and serial ports | X | X
+| Asio/OpenSSL TLS, roots and peer verification | T | T
+| Cobalt runner/wrappers and SSL integration | T | L
+| Parallel threads, thread pools and cross-thread post | X | X
+|===
+
+See <<asio-wasip2-dns>> for resolver flag/allocation limits and
+<<asio-wasip2-streams>> for the host-import blocking boundary. Pollable-based
+waiting does not make an independently blocking host import preemptible.
+
+[#asio-feature-wasip3]
+==== Asio: WASIp3
+
+M is the SDK's cooperative profile. X in its EH-on column reflects the missing
+runtime, including rows that do not otherwise need exceptions.
+
+[cols="4,1,1,1,1",options="header"]
+|===
+| Feature | S / EH on | S / EH off | M / EH on | M / EH off
+| Context, run/poll family, posting and timers | T | T | X | T
+| Cross-thread post and multiple context runners | X | X | X | T
+| Strands | A | A | X | A
+| Thread pools | X | X | X | U
+| Asio `awaitable`, `co_spawn`, result-based timer wait | T | T | X | T
+| Context/timer/post allocators with dedicated allocation counters | T | T | X | T
+| Allocation routing in UDP gather operations | T | T | X | T
+| IPv4 TCP connect/accept, read/write, EOF and cancellation | T | T | X | T
+| TCP composed read/write with multiple buffers | T | T | X | T
+| IPv4 UDP, including empty datagrams | T | T | X | T
+| UDP multi-buffer `send_to` / `async_send_to` | T | T | X | T
+| UDP multi-buffer receive or connected send | T | T | X | T
+| Synchronous resolver: numeric addresses and localhost | T | T | X | T
+| Asynchronous forward resolver | T | T | X | T
+| Arbitrary external DNS and network reachability | U | U | X | U
+| IPv6 numeric scope parsing and formatting | T | T | X | T
+| IPv6 connections and multicast interoperability | U | U | X | U
+| Interface-name IPv6 scopes | X | X | X | X
+| Socket options | L | L | X | L
+| `available` / `FIONREAD`, peek and out-of-band marks | X | X | X | X
+| TLS through Asio/OpenSSL | T | T | X | T
+| Process signals, local sockets and serial ports | X | X | X | X
+| Asio file/pipe/descriptor runtime integration | U | U | X | U
+| Browser Promise/DOM bridge and browser turn limit | N/A | N/A | X | N/A
+|===
+
+Both profiles use native asynchronous forward lookup with a waitable-backed
+reactor descriptor. Deferred initiation, real localhost lookup, timer progress,
+cancellation and allocator routing are tested. The cooperative lane also checks
+two-runner cancellation after the host waitable joins the active wait set.
+External DNS and network access still depend on host capabilities.
+
+UDP gather/scatter preserves one datagram and uses the caller-associated
+allocator, including connected sends, truncation, empty buffers and cancellation.
+The separate context/timer/post counters now cover all three supported WASIp3
+profiles; narrowly attributed libc wakeup-pipe allocations remain outside the
+Asio allocator contract. These scenarios are not a complete audit of every
+operation. Socket-option limits are in
+<<asio-wasip3-contract>>. TLS support does not automatically validate a Cobalt
+TLS completion token or `boost::cobalt::io::ssl::stream`.
+
+[#asio-feature-cobalt-native]
+==== Cobalt: native
+
+These cells apply to the existing Cobalt build target. S does not disable
+`boost::cobalt::thread` or guarantee that Cobalt cannot create threads.
+
+[cols="4,1,1,1,1",options="header"]
+|===
+| Feature | S / EH on | S / EH off | M / EH on | M / EH off
+| `co_main`, posting, timer suspension and exact exit status | T | T | T | T
+| Await Asio timers with Cobalt's `use_op` | T | T | T | T
+| Cobalt `io::steady_timer` | T | T | T | T
+| Await Asio IPv4 TCP/UDP, cancellation and EOF with `use_op` | T | T | T | T
+| Cobalt `io` TCP/UDP wrappers and numeric resolver | T | T | T | T
+| Tasks, promises, generators and composition algorithms | A | U | A | U
+| Moving a pending task safely without exception support | N/A | X | N/A | X
+| Channels and wait groups | A | A | A | A
+| PMR coroutine allocation | A | A | A | A
+| Internal coroutine cancellation | A | A | A | A
+| Automatic SIGINT/SIGTERM cancellation in the runner | A | A | A | A
+| Cobalt thread coroutine completion and join | U | U | T | T
+| Cobalt file/pipe/serial/local-socket wrappers | A | A | A | A
+| Await Asio/OpenSSL TLS through a Cobalt token | T | T | T | T
+| Cobalt `io::ssl::stream` via `cobalt_ssl` | T | T | T | T
+|===
+
+The task limitation is <<asio-feature-errors,Cobalt issue 287>>; A for other
+EH-off APIs does not establish universal exception-free safety. The thread
+coroutine also has internal exception-handling paths that require a dedicated
+failure-path audit without EH. Native I/O rows are subject to the OS and Boost
+feature macros. Cobalt's SSL wrapper is supplied by the optional
+`/webcpp/asio//cobalt_ssl` target; plain Cobalt remains independent of OpenSSL.
+
+The M thread test creates a Cobalt thread coroutine and awaits its completion.
+It does not establish correctness of arbitrary concurrent coroutine composition.
+The network test uses Asio socket types with Cobalt's completion token; it does
+not validate Cobalt's separate `io` socket wrappers. The independent `cobalt_io`
+test supplies that wrapper evidence, including refused TCP connections,
+TCP/UDP cancellation and numeric resolution.
+
+[#asio-feature-cobalt-browser]
+==== Cobalt: browser / Emscripten
+
+The following columns cover S. M has separate evidence below.
+
+[cols="4,1,1,1,1",options="header"]
+|===
+| Feature | JSPI / EH on | JSPI / EH off | Asyncify / EH on | Asyncify / EH off
+| `co_main`, posting, timer suspension and exact exit status | T | T | T | T
+| Runner's bounded turns | T | T | T | T
+| Await Asio timers with `use_op` | T | T | T | T
+| Cobalt `io::steady_timer` | T | T | T | T
+| Await JavaScript Promise operations through Cobalt | T | T | T | T
+| Await the custom socket transport through Cobalt | U | U | U | U
+| Direct TCP/UDP using Cobalt's `io` socket wrappers | X | X | X | X
+| Tasks, promises, generators and composition algorithms | U | U | U | U
+| Moving a pending task safely without exception support | N/A | X | N/A | X
+| Channels and wait groups | U | U | U | U
+| PMR allocation and cancellation across all coroutine families | U | U | U | U
+| Cobalt thread coroutine | X | X | X | X
+| Host SIGINT/SIGTERM notifications | X | X | X | X
+| Cobalt file/pipe runtime behavior | U | U | U | U
+| Native local sockets and serial ports | X | X | X | X
+| Cobalt `io::ssl::stream` compiled implementation | X | X | X | X
+|===
+
+The runner retains Emscripten's existing signal registration, but that does
+not supply POSIX process notifications from a browser host. The successful
+timer and Promise tests do not establish every Cobalt composition or I/O API.
+Asyncify tests also measure suspension-stack usage; application call depth
+still needs an appropriate configured stack, as explained in <<asio-cobalt>>.
+
+M passes the public Cobalt thread posting/completion/join test in all four
+suspension/EH combinations. Broader composition, cancellation and Promise paths
+under M remain unverified. The completed-thread join still emits the SDK's main
+thread blocking warning; Asyncify also emits its documented successful exit notice.
+The driver matches only these exact notices. This does not authorize waiting
+synchronously on a live worker from the browser main thread.
+
+[#asio-feature-cobalt-wasip2]
+==== Cobalt: WASIp2
+
+Both columns use `threading=single`, the public `//cobalt` or optional
+`//cobalt_ssl` target, SDK 34.0 and Wasmtime 50.0.1.
+
+[cols="4,1,1",options="header"]
+|===
+| Feature | EH on | EH off
+| Runner, bounded posting, timers and exact exit status | T | T
+| Asio TCP/UDP with `use_op` and Cobalt IP wrappers | T | T
+| Pending accept/read/resolver cancellation | T | T
+| Asio/OpenSSL and Cobalt SSL verified TLS | T | T
+| Cobalt SSL transfer/shutdown errors and cancellation | T | T
+| Entropy-backed key generation and failure handling | T | T
+| Moving a pending task safely without exception support | N/A | X
+| Thread coroutine, local sockets, serial ports and POSIX signals | X | X
+| Broader coroutine families and filesystem I/O | U | U
+|===
+
+The focused suite has 13 checks per EH profile. Entropy tests observe calls to
+host `getentropy`, distinct generated keys and failure handling; they do not
+measure the host RNG's entropy strength. TLS uses the shared source-built
+OpenSSL and embedded/replacement CA provider. Host networking grants and trust
+policy remain application/runtime requirements.
+
+[#asio-feature-cobalt-wasip3]
+==== Cobalt: WASIp3
+
+The public dependency `/webcpp/asio//cobalt` builds and runs in all three
+available profiles. M/EH on remains X because SDK 34.0 lacks that runtime.
+EH-off tests do not remove the pending-task move restriction in issue 287.
+
+[cols="4,1,1,1,1",options="header"]
+|===
+| Feature | S / EH on | S / EH off | M / EH on | M / EH off
+| Runner without POSIX signal registration | T | T | X | T
+| Await Asio and Cobalt timers in `co_main` | T | T | X | T
+| Return success/failure through the WASI command entry point | T | T | X | T
+| Await Asio IPv4 TCP/UDP, cancellation and EOF with `use_op` | T | T | X | T
+| Cobalt `io` IPv4 TCP/UDP wrappers, cancellation and EOF | T | T | X | T
+| Cobalt async resolver: numeric address | T | T | X | T
+| Task result and eager promise completion | T | T | X | T
+| Generators, channels and composition | U | U | X | U
+| Cobalt thread coroutine completion and join | X | X | X | T
+| Automatic SIGINT/SIGTERM cancellation | X | X | X | X
+| Cobalt file/pipe/descriptor runtime integration | U | U | X | U
+| Cobalt local sockets and serial ports | X | X | X | X
+| Await Asio/OpenSSL TLS with a Cobalt token | T | T | X | T
+| Cobalt `io::ssl::stream` via `cobalt_ssl` | T | T | X | T
+|===
+
+Numeric asynchronous resolution is tested through Cobalt's compiled resolver
+in the supported profiles above. WASIp3's single-thread and cooperative profiles
+use the native asynchronous forward resolver; the Asio consumers test localhost
+lookup, deferred initiation, progress and cancellation. Arbitrary external DNS
+access depends on host policy and is not established by localhost or numeric
+consumers.
+
+[#asio-feature-cobalt-build-block]
+===== How the Cobalt source integration works
+
+The target builds the normal compiled archive, replacing its endpoint and
+acceptor source files with checked private copies. The private header overlay
+uses Asio capability macros to omit unsupported local-socket, signal and serial
+APIs. Seqpacket declarations are omitted when that socket type is unavailable.
+Single-thread builds omit the thread source and declaration; cooperative builds
+include it. Native and browser builds retain their original sources and headers.
+
+The application, archive and replacement runner use the same patched Asio
+headers, thread profile and exception setting. No system Cobalt archive is
+linked, and installed Boost files are never modified. Input/output hashes pin
+the compatibility patch to Boost 1.92. A changed upstream input is rejected.
+
+The public-target tests cover both Cobalt completion tokens applied to Asio
+sockets and Cobalt's own compiled TCP/UDP wrappers, with IPv4 loopback traffic,
+refused TCP connections, TCP EOF and TCP/UDP cancellation.
+TLS tests add the ordinary Asio/OpenSSL stream and
+Cobalt token, with custom or embedded CAs and peer identity verification.
+
+SDK 34.0 maps nonzero command returns to failure: the host statuses are 0 for
+`co_return 0` and 1 for `co_return 7`. The status driver checks both output and
+status, so a trap cannot satisfy the failure case. No host shutdown protocol
+has been added. See <<asio-cobalt-runner>> and <<asio-cobalt-status>>.
+
+[#asio-feature-errors]
+==== Exceptions and error handling
+
+[cols="3,3,3",options="header"]
+|===
+| Behavior | EH on | EH off
+| Error-code overloads and callback error parameters
+| Available where the underlying operation is available
+| Same error channels; no exception is needed to report an ordinary I/O error
+| Result/tuple adapters around an asynchronous wait
+| Available | Available for the tested paths; underlying operation support still applies
+| Throwing overload invoked on an error
+| Can report an exception according to the API contract
+| May be excluded by the wrapper or reach the fatal Boost exception handler;
+do not treat it as an error-code overload
+| Exceptions escaping a coroutine
+| Follows the coroutine's documented propagation policy
+| No guarantee of recoverable propagation; use supported result-based paths
+| Cobalt pending-task move with `libc++`
+| No exception-disabled limitation claimed here
+| Known abort risk linked to https://github.com/boostorg/cobalt/issues/287[Cobalt issue 287]
+| WASIp3 cooperative profile in SDK 34.0
+| Missing runtime in this distribution | Available for the tested Asio feature set
+|===
+
+Result adapters do not repair a library operation that constructs an exception
+object internally. The Cobalt EH-off build warning is a configuration warning,
+so the compiler's warnings-as-errors setting does not turn that warning into
+a build failure. It remains a restriction the application must account for.
+
+[#asio-feature-restrictions]
+==== Restrictions, causes and application consequences
+
+[cols="2,3,4",options="header"]
+|===
+| Restriction | Cause | Consequence or required work
+| WASIp3 cooperative threads with EH
+| SDK 34.0's cooperative sysroot is built without the {cpp} exception runtime
+| Use S/EH on or M/EH off. Supporting M/EH on needs a matching runtime build
+and runtime validation, not just adding `-fexceptions` to an application.
+| Native S versus disabled thread support
+| `threading=single` does not define `BOOST_ASIO_DISABLE_THREADS` natively
+| Native S can still use internal threads. Explicit thread disabling needs
+consistent library/application settings and its own validation.
+| Browser M hosting and affinity
+| Pthreads need isolated shared memory; JavaScript values have thread affinity
+| Use the creator thread to run each context and the main executor for DOM work.
+Configure COOP/COEP when hosting; compiler macros cannot verify deployment.
+| Browser sockets and TLS
+| The default transport returns `operation_not_supported`; only a transport
+interface and TLS settings are supplied
+| Supply and validate an adapter. These APIs do not expose raw browser TCP/UDP
+or provide an OpenSSL stream. See <<asio-sockets>>.
+| WASI reverse DNS and canonical/mapped-name policies
+| The host lookup interface supplies forward address results
+| Unsupported async policies report `operation_not_supported`. Host DNS permission
+remains a runtime fact; numeric and forward lookup paths are available.
+| WASIp3 UDP buffer sequences
+| The tested wasi-libc lacks the vectored socket calls used by stock Asio
+| The port supplies gather sends and scatter receives, including connected sends,
+with temporary allocator-aware storage. See <<asio-wasip3-contract>>.
+| WASIp3 socket options and IPv6 scopes
+| The port exposes only the tested libc interfaces
+| Missing options return `operation_not_supported`; interface-name scopes are
+rejected. Numeric IPv6 scope parsing is tested, IPv6 traffic is not.
+| WASIp3 process signals and OS-specific devices
+| This port has no POSIX signal service, local-socket family or serial backend
+| There is no automatic SIGINT/SIGTERM cancellation. Explicit operation
+cancellation works; a host shutdown protocol would be separate integration work.
+| Cobalt pending-task move without EH
+| Boost 1.92's move path can construct an exception with `std::make_exception_ptr`;
+the reported `libc++` no-EH configuration aborts
+| See https://github.com/boostorg/cobalt/issues/287[issue 287]. This concerns
+the pending task's move implementation, not every `std::move` or every coroutine.
+Result adapters do not repair this internal path. Other coroutine families
+still need their own success, error and cancellation tests.
+| Cobalt `io::ssl::stream`
+| Available through an optional target with a checked Boost 1.92 patch
+| `/webcpp/asio//cobalt_ssl` adds the wrapper, state/callback corrections and
+`native_ssl_handle()` extension. Native, P2 S and supported P3 profiles are
+available; browser TLS remains host-owned. See
+<<asio-cobalt-ssl>> for trust configuration and the STARTTLS contract.
+|===
+
+[#asio-feature-validation-pending]
+==== Validation still required
+
+A and U are open validation work, not reasons to skip testing. C needs linking
+and runtime checks. P needs the same behavior tested through the public target.
+This inventory groups the remaining gaps; each test must record its target,
+thread/EH profile, tool versions and observed success or supported failure.
+
+[cols="3,5",options="header"]
+|===
+| Pending area | Required evidence before claiming tested support
+| Native profile coverage
+| Test a consistently Asio-thread-disabled build separately. macOS results
+do not validate Windows or Linux platform-specific APIs.
+| Strands, pools and concurrent Cobalt
+| Check strand serialization and pool shutdown/cancellation in each supplied
+profile. The Cobalt thread completion/join test does not cover cancellation,
+exception propagation or concurrent coroutine composition.
+| Network coverage beyond current loopback cases
+| Extend resolver variants, IPv6 traffic, multicast and supported socket options.
+Native scatter/connected UDP now has focused S controls. For WASIp3, record host
+network/DNS grants and test both permitted and denied operations.
+| Cobalt coroutine families
+| Add lifecycle, result/error, cancellation and cleanup cases for tasks,
+promises, generators, channels, wait groups and composition; measure PMR
+allocation/release. Retain issue 287's negative/control evidence separately.
+| Cobalt network wrappers and TLS
+| Extend IP wrappers to broader resolver/IPv6 cases. Cobalt SSL handshake and
+terminal transfer cancellation, buffered ClientHello, STARTTLS, peer verification,
+clean/truncated/cancelled shutdown and partial composed transfers are covered.
+Connection recovery after terminal cancellation is not established.
+| Browser custom transport and I/O
+| Await the custom transport through Cobalt with success/error/cancellation;
+establish what filesystem/pipe APIs are exposed before testing their runtime
+behavior. Node filesystem access is not browser filesystem evidence.
+| OS-specific I/O and signals
+| Validate each native file/descriptor/pipe/serial/local-socket backend where
+available, and runner cancellation on an actual process signal. WASIp3
+file/pipe probes need linking, granted host resources and runtime checks.
+| Browser engines and unavailable profiles
+| Record real-browser runs for each supported engine; Node evidence alone
+does not cover them. Browser M has the focused Chrome coverage above, not the
+complete S suite. WASIp3 M/EH on needs a matching SDK runtime before validation.
+|===
+
+[#asio-feature-evidence]
+==== Evidence and maintenance
+
+The matrix records existing local results; updating this page does not run CI
+or establish new feature coverage. T is limited to the behavior exercised by
+these tests, not a blanket certification of an upstream library.
+
+[cols="3,5",options="header"]
+|===
+| Feature family | Evidence to maintain
+| Native/WASIp3 context, TCP/UDP, timers and threads
+| `wasi_core`, explicit `wasi_core_threads`, `wasi_contract`,
+`wasi_coroutine`, `run_family_native/wasip3`, `timers_native/wasip3`
+| UDP multi-buffer sends and their allocators
+| `wasi_udp_gather`; keep receive and connected-send limits distinct
+| Native M run/poll and allocation coverage
+| `run_family_native`, `allocation_native` and `wasi_udp_gather`, Release
+with `threading=multi` and both EH settings
+| WASI datagram sequences and DNS
+| `capability_wasi` plus `wasi-dns-threads`: retries, canonical cleanup,
+timer progress, cancellation and two-runner ownership
+| Browser M contexts and main-thread handoff
+| `test/browser//browser-workers`, both suspensions and EH settings;
+`test/browser/probes/pthread_return.cpp` is the separate SDK counterexample
+| P2 Cobalt/TLS
+| `test/wasip2_tls_cobalt` and its `wasip2-tls` lane in both EH profiles
+| Browser scheduling, timers, Promise/event bridge and transports
+| `reactor`, `run_family`, `turn_limit`, `timers`, `allocation`, `promise`,
+`event`, `sockets`, `transport`, `resolver`, and their declared suspension/EH variants
+| Asio coroutine timer in browser configurations
+| `asio_coroutine_exceptions_on/off` and Asyncify counterparts under Node;
+the same coroutine timer also passed in HeadlessChrome 153.0.8010.12 for all
+four variants. The browser links replace `-sNODERAWFS=1` with `-sENVIRONMENT=web`.
+The test uses `awaitable`, `co_spawn` and result-based timer completion.
+| Cobalt native/browser runner and timers
+| `cobalt_exceptions_on/off_native`, Emscripten counterparts and Asyncify
+counterparts; the `cobalt` and `cobalt_asyncify` exact-exit driver lanes
+| Cobalt token with native Asio sockets
+| `cobalt_network_exceptions_on/off`, in S and M: IPv4 TCP/UDP data,
+pending-receive cancellation and TCP EOF
+| Browser Promise/Cobalt interoperability
+| `promise_cobalt_exceptions_on/off` and Asyncify counterparts
+| WASIp3 runner compile regression
+| `cobalt_main_wasip3`, with S EH on/off and M EH off
+| WASIp3 Cobalt runtime tests
+| `cobalt_wasi`, `cobalt_network_wasi`, `cobalt_io`, explicit `cobalt_thread`
+and the `cobalt_wasip3` status lane, all through the public target
+| Cobalt TLS over Asio/OpenSSL
+| `tools/openssl/test//cobalt_tls_client` and `tools/openssl/test/tls.py --embedded`
+| Cobalt SSL wrapper
+| `tools/openssl/test//cobalt_ssl_client` with `tls.py --embedded --require-sni`,
+including `--client-arg=buffered`; `cobalt_ssl_state` and `cobalt_ssl_cancel`
+with `--state-test`, for TLS 1.2/1.3 in the recorded native/WASIp3 profiles.
+WASIp2 has separate peer, state and cancellation evidence from
+`test/wasip2_tls_cobalt//wasip2-tls` in S with EH on/off
+| Native/WASIp3 TLS
+| Superproject `tools/openssl/test/run.py`: verified TLS 1.2/1.3 handshakes,
+application data, shutdown and rejected peer identities in the recorded profiles
+|===
+
+The commands in <<asio-wasip3>> and <<asio-cobalt-verify>> reproduce the
+registered lanes. To promote U, C or P to T, record a successful runtime test
+through the intended public target, including the relevant thread and EH
+profile. Keep unsupported-operation tests as evidence of a limit, not evidence
+that the rejected operation is supported. Update this matrix when a backend,
+toolchain, capability guard or test result changes.

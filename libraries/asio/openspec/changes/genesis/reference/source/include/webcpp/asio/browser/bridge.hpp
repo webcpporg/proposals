@@ -9,10 +9,16 @@
 
 #include <webcpp/asio/config.hpp>
 
+#if !WEBCPP_ASIO_HAS_BROWSER_BRIDGE
+#error \
+    "webcpp::asio::browser::bridge requires the Emscripten browser bridge; use native/WASI Asio completion operations on this target"
+#else
+
 #include <webcpp/asio/detail/browser_imports.hpp>
 
 #include <emscripten/val.h>
 #include <boost/asio/execution_context.hpp>  // lint-world: a service of the io_context
+#include <boost/intrusive/avl_set.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 
 #include <cstdint>
@@ -57,6 +63,31 @@ protected:
      @return This registration.
     */
     registration& operator=(const registration&) = default;
+};
+
+/**
+ A registration whose lookup node lives in its owner's allocation.
+
+ The bridge indexes it without allocating memory. Remove it before destruction,
+ exactly as for registration; it may not be registered in two bridges at once.
+*/
+class intrusive_registration : public registration,
+                               public boost::intrusive::avl_set_base_hook<
+                                   boost::intrusive::link_mode<boost::intrusive::auto_unlink>> {
+    friend class bridge;
+    std::uint64_t bridge_key_ = 0;
+
+protected:
+    /** Constructs an unregistered node. */
+    intrusive_registration() = default;
+    /** Destroys an already removed node. */
+    ~intrusive_registration() = default;
+
+public:
+    /** A registered node cannot be copied. */
+    intrusive_registration(const intrusive_registration&) = delete;
+    /** A registered node cannot be assigned. */
+    intrusive_registration& operator=(const intrusive_registration&) = delete;
 };
 
 /**
@@ -115,10 +146,21 @@ public:
     }
 
     /**
+     Registers an owner-allocated node without allocating lookup storage.
+     @param r Unregistered node that remains alive until removal or shutdown.
+     @return Its unique key, from the same sequence as ordinary registrations.
+    */
+    [[nodiscard]] std::uint64_t add(intrusive_registration& r) {
+        r.bridge_key_ = next_++;
+        intrusive_.insert(r);
+        return r.bridge_key_;
+    }
+
+    /**
      A JavaScript function that delivers its argument to the registration key.
 
      Called once key is removed, once the io_context is destroyed, or once the runtime aborted,
-     a trap or abort(), it does nothing.
+     with Emscripten's ABORT flag set, it does nothing.
 
      @param key A key add returned.
      @return The function, to install as a listener or a promise's reaction.
@@ -132,7 +174,13 @@ public:
 
      @param key A key add returned; one already removed is ignored.
     */
-    void remove(std::uint64_t key) noexcept { registrations_.erase(key); }
+    void remove(std::uint64_t key) noexcept {
+        registrations_.erase(key);
+        const auto found = intrusive_.find(key, node_less{});
+        if (found != intrusive_.end()) {
+            intrusive_.erase(found);
+        }
+    }
 
     /**
      Whether the bridge is delivering an event, which the run family refuses to run inside.
@@ -155,6 +203,10 @@ private:
     void deliver(std::uint64_t key, const emscripten::val& event) {
         const auto found = registrations_.find(key);
         if (found == registrations_.end()) {
+            const auto node = intrusive_.find(key, node_less{});
+            if (node != intrusive_.end() && node->deliver(event)) {
+                remove(key);
+            }
             return;
         }
         // A registration that is done may have freed itself, and one added meanwhile may have
@@ -168,6 +220,24 @@ private:
         std::uint64_t, registration*, boost::hash<std::uint64_t>, std::equal_to<>,
         boost::asio::execution_context::allocator<std::pair<const std::uint64_t, registration*>>>;
 
+    struct node_less {
+        bool operator()(const intrusive_registration& a, const intrusive_registration& b) const {
+            return a.bridge_key_ < b.bridge_key_;
+        }
+
+        bool operator()(std::uint64_t a, const intrusive_registration& b) const {
+            return a < b.bridge_key_;
+        }
+
+        bool operator()(const intrusive_registration& a, std::uint64_t b) const {
+            return a.bridge_key_ < b;
+        }
+    };
+
+    using nodes =
+        boost::intrusive::avl_set<intrusive_registration, boost::intrusive::compare<node_less>,
+                                  boost::intrusive::constant_time_size<false>>;
+
     /** Stops the functions and shuts down every registration still held, without calling it. */
     void shutdown() override {
         token_.set("alive", false);
@@ -175,9 +245,15 @@ private:
         for (auto& [key, r] : pending) {
             r->shutdown();
         }
+        while (!intrusive_.empty()) {
+            auto& r = *intrusive_.begin();
+            intrusive_.erase(intrusive_.begin());
+            r.shutdown();
+        }
     }
 
     map registrations_;
+    nodes intrusive_;
     // {alive, depth}: whether the bridge exists, which every function of the bridge reads first,
     // and how many of its deliveries are in progress, which its functions put back however a
     // delivery ends and delivering() reads.
@@ -187,4 +263,5 @@ private:
 
 }  // namespace webcpp::asio::browser
 
+#endif  // WEBCPP_ASIO_HAS_BROWSER_BRIDGE
 #endif  // WEBCPP_ASIO_BROWSER_BRIDGE_HPP

@@ -1,0 +1,1066 @@
+{
+  "schema": 1,
+  "upstream": {
+    "repository": "https://github.com/boostorg/beast",
+    "tag": "boost-1.92.0",
+    "commit": "7c1e061f91e2ef542217b76286c314d006c0c8fc",
+    "sha256": {
+      "CMakeLists.txt": "070c5efabeab51b1d5b25c69c55afa4fb72d56d6743529cde0bcc85165bed995",
+      "Jamfile": "d02ebb503b9d7c161b3ec3c7f77eed1269ef6c1828991ba2e6945c29b418c28c",
+      "LICENSE_1_0.txt": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566",
+      "advanced/CMakeLists.txt": "f4dc5153a8e05f96203d9df442d3aec75adfbf4ac7a61b09a051c7caa4b0ddfe",
+      "advanced/Jamfile": "ac1cc37d7feef12153110dcd2257c5690c55c37f4ced763577cca0ef9c630bfb",
+      "advanced/server/CMakeLists.txt": "abbd30741cfdee278bafbc631372aded32b73604c74bb482f748424f87d0f34a",
+      "advanced/server/Jamfile": "4074fd02df4e6e014a1691118e848ba3e17215cb96501c1dfb93fceeff20a9b4",
+      "advanced/server/advanced_server.cpp": "b8551a0401513926775fa9a4fb586c31b1c35d6bdbbeab133acd76dcef6417c1",
+      "advanced/server-flex/CMakeLists.txt": "4d0dde1af2c5ae1f53b6de7b1e877568869af94f9c59dff81bdeeaae53d59c65",
+      "advanced/server-flex/Jamfile": "6da2ee2ab44cbea73228f2f5e25253d278350467dd04ab940b4057bea1e31fd9",
+      "advanced/server-flex/advanced_server_flex.cpp": "3cdadec03c231d96b32138121fcaaa91058f946b145efab5fdbd257a658e586f",
+      "advanced/server-flex-awaitable/CMakeLists.txt": "743190da13fe67d4af3091a6572dcd63a80ecd9b06f357e28948e0551a820acb",
+      "advanced/server-flex-awaitable/Jamfile": "0f2ddb70faae3ab9d0d4f4cb8273e801e9b99937f76b18abce2c88f1622a39ca",
+      "advanced/server-flex-awaitable/advanced_server_flex_awaitable.cpp": "0916159386ccbaad071ab35d551be64cbc85e36b10fcd61552689222827d7772",
+      "common/root_certificates.hpp": "8cde8d4eeff7cf1aebbc5dd6446f777e9a9b96b21252939994eb7cf99d11197f",
+      "common/server_certificate.hpp": "38da7e73494f7cdfe9e4852b3475a06a2748403fea2a5d555833f6a1c2766c7e",
+      "doc/CMakeLists.txt": "5ed94b7c2c534b958cf23731b2a9833b257b08473beed38ef4b50add58d2cdcb",
+      "doc/Jamfile": "487488cdb5268d8747af40870aa78ea97a5344104d69105ba63278d99926fd16",
+      "doc/http_examples.hpp": "745cd03f963d0e548a06401f94ed9994133b0928536ac91292283b1ab4bc59ff",
+      "doc/ssl/CMakeLists.txt": "4b6e9c3a619fd7200dd0fa791bbadc62f74f05c17e770207e5904620ae93a402",
+      "doc/ssl/Jamfile": "1b8b84a99cd009eabbe86bfc70d73eeb6c412006c5ef8efd2509360b7c443ba3",
+      "doc/ssl/client.cpp": "910605f3980b2a8ee48f9d9609315340e9ff7c99e3a521cdc8f2dcda230dc641",
+      "doc/ssl/server.cpp": "3680895ad66c553faa0d0427261f12c47f8b44990556d12e91bfe58b837b20bc",
+      "echo-op/CMakeLists.txt": "188de9bec2e436c6861461f376a6644706345105f1e7cc1e628e860f0a55882c",
+      "echo-op/Jamfile": "c7f8ca15e9aff1eb1a0c3ae96af64fac281fe607716245972e7274b374a47ea3",
+      "echo-op/echo_op.cpp": "e01a3157d3bfb8b09b104546fa3a3895daacab5d4a859adf1d3f5a36a22d5be8",
+      "http/CMakeLists.txt": "f5f9e4155b210f4db27471241df5b91bf927e9ffd338eeaf29a76fa95020c279",
+      "http/Jamfile": "865cb1dfb1c6840e465f6a4d4b9a499f563b4d286e5582d81f81bcc47e3c9e78",
+      "http/client/CMakeLists.txt": "652343e1537af9631f7da56921060aa6b985c6e278be6c10db83a0d19f1e1468",
+      "http/client/Jamfile": "c0b56ccbf53187fd16775c1b6134c1359ee19231ec5aba789fcca4e1de01ec78",
+      "http/client/async/CMakeLists.txt": "125aad15c8631d0acf758484993ff24a322720a713ecdb9ae302103451492c75",
+      "http/client/async/Jamfile": "dab57a5fcfa8a3048be7b19723ed77e7c2ebfa0217eb4e12c0dd0577c549667b",
+      "http/client/async/http_client_async.cpp": "816f89467516608d32223d1002e3be8be5c5a216f94a63153b3a39721c30c69b",
+      "http/client/async-local/CMakeLists.txt": "56010ac64696f288281ac853b5d4d932b9b6530cb242bbe75980ada78de030cf",
+      "http/client/async-local/Jamfile": "8c29cc9480554c10ae45c55919debac414a8a1b86be8e7c2d001746881a224c5",
+      "http/client/async-local/http_client_async_local.cpp": "5817e41c77c0201e00940c65811aa67b8e700d87f334fc514149705e194effba",
+      "http/client/async-ssl/CMakeLists.txt": "d50c27b1eafcf7dd3c3bccf1ab1a5621fc5a08913101256e4a26ca351081036a",
+      "http/client/async-ssl/Jamfile": "3b843f2a0dbe21ffc54f81d3dc6052110501ba04ff0bff31bf794f6a837e3b78",
+      "http/client/async-ssl/http_client_async_ssl.cpp": "3a6d13f9fec8f3947cbb0a760eebb97a92ac668553ba127f5b8e6c339fe3793d",
+      "http/client/async-ssl-system-executor/CMakeLists.txt": "c4fb1bb25e2728b11f71cc5c9ee3e27bffff098ff20f77fb296a9eebaae8a246",
+      "http/client/async-ssl-system-executor/Jamfile": "cce33422fb6356f2d01c26131aceb0b923bfb04303631508889a02209d41bd2a",
+      "http/client/async-ssl-system-executor/http_client_async_ssl_system_executor.cpp": "5e6adcee1bd3e12a82a93d5ee8a75ec2cce9cf10fe77a0deabe270cfa6707b39",
+      "http/client/awaitable/CMakeLists.txt": "0b52172cab0f8e84a6ecc71eaa32811755a42b0859441b6a944763e1e96e5bb0",
+      "http/client/awaitable/Jamfile": "33e5a061e769e27da28e559d3e21aa1ebf9b9f5420df51af47c000daf8fb9730",
+      "http/client/awaitable/http_client_awaitable.cpp": "76b5b6bfc44480b6804e02908b0f25a4f2abb810386ea40818c288bf2d79a6f1",
+      "http/client/awaitable-ssl/CMakeLists.txt": "6a96f55e49ef5ee21ab0bdaca2eb957baf76e9f22ebebb80d05efe7eccc64b87",
+      "http/client/awaitable-ssl/Jamfile": "f0aa009d4f9835fd9852f36bb3d4d8b12de62e259094745c27e64a9d37db9c3d",
+      "http/client/awaitable-ssl/http_client_awaitable_ssl.cpp": "1908532b161ff89663c36abdc15f38861d5c66aa14cfc01b352d4a9a911a3c02",
+      "http/client/body/CMakeLists.txt": "58b0bf38be34614c78d893879f331ec64afdf73ba6dec3d9a649888e91e04988",
+      "http/client/body/Jamfile": "3434784a22d67916d11fccc0057a9ce8c739b10d57deb3d82713ec842adb4ab5",
+      "http/client/body/json_body.hpp": "2e3ecabdabd268fa6923e7d64fc16201d320ae44cf4aca75cc14931ced273339",
+      "http/client/body/json_client.cpp": "a210c17676556d6c6cc3ddcc749de298524a8c41248ff25db36b930a6e6f4af8",
+      "http/client/coro/CMakeLists.txt": "e8933439e23a8f3296126bd1bf92b5fa90ccae0600d5629922c99bdb18e19c5f",
+      "http/client/coro/Jamfile": "8ab6e8cbd290343ba63a88fc9e3dfd4320e0924e7edeeb7b04d897fe48f3d17c",
+      "http/client/coro/http_client_coro.cpp": "b85b19fe93ea3fd20b17c732d688d4a317667cd641cd68ef7440cda8b683096d",
+      "http/client/coro-ssl/CMakeLists.txt": "3ddc2c400b84be7e7c4a57d242a15024f8dfc5ef7729f9ef8b56a18c22ed9610",
+      "http/client/coro-ssl/Jamfile": "275b19e8a0d7a7a7f81510cf96046e4ac49759b05e648d07a008110083c4800b",
+      "http/client/coro-ssl/http_client_coro_ssl.cpp": "0015284bc663851a3e47386ece94529ab3dc480c65f7394c5a70b529102ec506",
+      "http/client/crawl/CMakeLists.txt": "d15b141e08efc2e3579921c80c7e631335601c78cf6fd80062eee15bb357f1de",
+      "http/client/crawl/Jamfile": "6b938d6e63095608684678a19244db02cbaec157a37ea08760814884075327a1",
+      "http/client/crawl/http_crawl.cpp": "3e86324bf49cbffd4a98bde64a21c0d8a4a3cb4fc34e3dce678f0c4e599b4424",
+      "http/client/crawl/urls_large_data.cpp": "a9c315c2208246012763299130aae078df3a33739b19c26ae276a3e5fdb1ef50",
+      "http/client/crawl/urls_large_data.hpp": "e6c6495f5a419875f547ac16693be6b6fcc2c134aa9a26931a1428a28912eee5",
+      "http/client/methods/CMakeLists.txt": "7aa4c2fa358958089e39921cd30d91bfabc6c91c3b5732d03aa82435211611b7",
+      "http/client/methods/Jamfile": "4029b4b85b5ec4b7f2b46278423757054c0c3965da1f14b2424fa8a7ee8ed874",
+      "http/client/methods/http_client_methods.cpp": "ab47deeed0cae45178ef75da1da3bae724b198d4d06b5b60b13df519690c1e04",
+      "http/client/sync/CMakeLists.txt": "0d79f46099d1cd687b23933161aed1cc4810a367234d7527bb1c39f18231dd46",
+      "http/client/sync/Jamfile": "e336ceff1a9af38af3777d6cc1c4049817d8c2fe791b4ee99aaf925e01689df7",
+      "http/client/sync/http_client_sync.cpp": "5b68cb9b6f615024d8a8819e4bc2b692b69e79416cccbeb0dcaac1c01567b620",
+      "http/client/sync-ssl/CMakeLists.txt": "114940b97c54d12ae4d7a42b667a5a2ad779d8fbf82edc258f58dc8ebc8b5f92",
+      "http/client/sync-ssl/Jamfile": "b21f4c2c81ed2dd181c7e9593d7ebf414fe9446273911d298e51336b610e924b",
+      "http/client/sync-ssl/http_client_sync_ssl.cpp": "7d7069120db34a88ead11609a4a651cce3e679c48ce0365440b411cfb4be915b",
+      "http/server/CMakeLists.txt": "e64a7e654b2e13d8ac71376b58048010a4a0afe7f672b6e7179f188e237c4ffd",
+      "http/server/Jamfile": "47d65c2686cf25c00792dc344082ba5f1ddd43fd45b146cf1f09a76d6d2a4215",
+      "http/server/async/CMakeLists.txt": "3c5075595025810339228e4f7e252d4c8d3da5a65e664d86beba3a92191587d6",
+      "http/server/async/Jamfile": "cf11c95209cb18e382eef72b95ec98dcbae5653c3c4837127325fb5c4aaaefa4",
+      "http/server/async/http_server_async.cpp": "53ab7acfc3811774a8c426ff9b5f61ad6ae6a123c578540bb8d71c25858f4fe6",
+      "http/server/async-local/CMakeLists.txt": "9aac26dce633426bd33212f372b68d33a0ed63c52641a65fc087eb70ea396e82",
+      "http/server/async-local/Jamfile": "4aecf93e2feded958b6b7d00e077d4e05383497d4267658f9391345cf3a3b449",
+      "http/server/async-local/http_server_async_local.cpp": "e139d39a73dd5eb332f48dee35763bfca9fc5a44b04c453ea34281e3ba06e508",
+      "http/server/async-ssl/CMakeLists.txt": "3ebb5d9b031037672534e6c81d29a75b11b87c5ee99d7617ba72056ee388558f",
+      "http/server/async-ssl/Jamfile": "40a127f2657d9b2336d42dcc28a9965add14c02f2a6ebe1b0e0c35b6b616675f",
+      "http/server/async-ssl/http_server_async_ssl.cpp": "b8a2eb08500ae28628e5a2854c1aba94580877bebb6f7bae1558244e69382897",
+      "http/server/awaitable/CMakeLists.txt": "069ce8c32802b71c67378b1fb1cf37926bceb2f344e651284d37fe4027a6b407",
+      "http/server/awaitable/Jamfile": "01ffa4e1fef1b7faf6582c1b65441668c0df4da22957e8ec43ce99bf7cb75548",
+      "http/server/awaitable/http_server_awaitable.cpp": "3d092ed8c558faa234f2e8625179d8a11fbc95979891b9d694e3b4bc0d202d33",
+      "http/server/coro/CMakeLists.txt": "67eb72cc74a9dab4926da992ddbbb60305c777b5341a757858952854d032f070",
+      "http/server/coro/Jamfile": "396703d272b70f03ed4f3fda7fdf30633d09553fff95e248b4280838fb42e04a",
+      "http/server/coro/http_server_coro.cpp": "0d4fac745d0e490fe694c84faeb8fb5354a8347480d3320b26aed7794edb0f0f",
+      "http/server/coro-ssl/CMakeLists.txt": "2e7360a6977750501ee1e1025e616ac77cd87597ed43b6c095230077cdaab5f3",
+      "http/server/coro-ssl/Jamfile": "6121cda0d3cf48956b9bee8205da0abe5c99efe2efca19bbc76adcce308e9312",
+      "http/server/coro-ssl/http_server_coro_ssl.cpp": "ef5bd717a8ef8418d25b201738ae8c351b9d5f8ca424f2e39d7eb65b777b3cbc",
+      "http/server/fast/CMakeLists.txt": "635e9c2ac8a3907706a023eee7bb0a87088b3a2c5e2e637613a0771c6a01a5df",
+      "http/server/fast/Jamfile": "1b6b0cffaea08e1fd1de1b955695abfed7252f90501f701378ceba107207f806",
+      "http/server/fast/fields_alloc.hpp": "dff083804efa396f0f990db55eac8f075b2704259330ce889afdcb3ce4c93712",
+      "http/server/fast/http_server_fast.cpp": "33f30c472d0114c50cc04506a8eca32cceed24ba0dc578d0f573a09ae3097809",
+      "http/server/flex/CMakeLists.txt": "e03415cae519ad52c82b4fb4744e1a89d7e8fbb1f4358a06413dfbd8262a916f",
+      "http/server/flex/Jamfile": "f2bea3c4d6585c8b0115d945cbd575f49444535868b5af9d5c22b10ff975da39",
+      "http/server/flex/http_server_flex.cpp": "b80c1fed1ec189d0ae08eb9c9b19646e35fc692f27b89435185de3f31f6c312a",
+      "http/server/small/CMakeLists.txt": "07d50fc2d6ac48f02cb96838c441c25f186bb5878e447fe03f08df24e81df764",
+      "http/server/small/Jamfile": "affa46bc123ff0ebfde08b4e433d4a3445a4e78d151703e1a03ca1d60f337c07",
+      "http/server/small/http_server_small.cpp": "9e105862c5deb57abee9a037aa446e6ac19a2b2e0a26afa6619bbbbdb2ecf788",
+      "http/server/stackless/CMakeLists.txt": "467fb59b915556219778704eef164ac79fe2c39603fa33f3fc133250b8723406",
+      "http/server/stackless/Jamfile": "80b732ea9f2733d6be359acb8a1fa955aed3edcbcd5685d9c97d9b9f523e2368",
+      "http/server/stackless/http_server_stackless.cpp": "11c956e807f83d6d7a15d3b041dbf82f4e2c272aba000295ed40ff8a737ae033",
+      "http/server/stackless-ssl/CMakeLists.txt": "2279c445737ff679c8047bef244abbd0498fc8df6c0584152296ce61b5658136",
+      "http/server/stackless-ssl/Jamfile": "f040195b26b742152d5113500cbdabc1726f2a6442238acbeef13ac0cd3634f1",
+      "http/server/stackless-ssl/http_server_stackless_ssl.cpp": "84da30c85fcd2dd62c1789e102b3b5c6c8f8fdf33e047d4cee7bd8cd6821276a",
+      "http/server/sync/CMakeLists.txt": "3e32497df9d4d20bd7390a2d72d8bbae61f1d8771b654631ae6359584d3b2a2c",
+      "http/server/sync/Jamfile": "14a066f850234bda2fb7a9260bdbbb039d06738672bbfb40713546567d6a6b54",
+      "http/server/sync/http_server_sync.cpp": "15939682a95af5d212d073dc1caaa077b0fe3966feeac0c248a1bebae76d7d58",
+      "http/server/sync-ssl/CMakeLists.txt": "c4eb1a91eaf200affb2dc0f97607720f69a4bf48a7695e3e134555e44fc272ec",
+      "http/server/sync-ssl/Jamfile": "51e4d78465f56ae1c705adcb39ad854398c240b8cdefffcfb7768ec6e1ae9dfe",
+      "http/server/sync-ssl/http_server_sync_ssl.cpp": "64e2bac9d7780a43839acaa9632fe9b7a5907497e7aa00c01cea0dc45af7ca7b",
+      "websocket/CMakeLists.txt": "f5f9e4155b210f4db27471241df5b91bf927e9ffd338eeaf29a76fa95020c279",
+      "websocket/Jamfile": "865cb1dfb1c6840e465f6a4d4b9a499f563b4d286e5582d81f81bcc47e3c9e78",
+      "websocket/client/CMakeLists.txt": "f824e9d8cd7ea985e2ebcd67300d7b575cb87e69b2c5ed83ae4cae9d790a3666",
+      "websocket/client/Jamfile": "1bcd841f8bd5f9aded3865605657d7d2e357c4d43a721e719359262745c2e6f9",
+      "websocket/client/async/CMakeLists.txt": "17fa4c8c516984507c32fe1287e9a2f043debf7ad9cd1e7bb4ec9928ca9077ad",
+      "websocket/client/async/Jamfile": "4657921f7cdf7c14f5861dcd1a10f43a430efdc5304f40f9eb9f6162b5015d48",
+      "websocket/client/async/websocket_client_async.cpp": "49e4c78f9512adf7fb21835e3bd9948efb8406c8c917bef2a4f5f9797c057d52",
+      "websocket/client/async-local/CMakeLists.txt": "7c1d20f8c130dcb974c70c53fca9036450d22e200ab2817024a1f9c0067c7c87",
+      "websocket/client/async-local/Jamfile": "d110e5ea88b614dd03707c44f59fbee90b721afbe302106a5459252e5983e311",
+      "websocket/client/async-local/websocket_client_async_local.cpp": "df9eacfbc9df03a34fcb1b4139f7b6c480e377ceb86f97ecd323d1f7825d55a8",
+      "websocket/client/async-ssl/CMakeLists.txt": "3d80f629a776d249d49c09b28518b8430789cc17e62692086d9eae272f819c73",
+      "websocket/client/async-ssl/Jamfile": "978d0512e88af97baf792ac76803b020cbe7f81991a342e726a27f3109b74f80",
+      "websocket/client/async-ssl/websocket_client_async_ssl.cpp": "4098df4a5fb6f4d6294cff1547d5823e0f2f3faf1f55975500e39014b822b7b9",
+      "websocket/client/async-ssl-system-executor/CMakeLists.txt": "356ea1d55ef6f17bd071616e941bebdb5193dbd4617c0677cf62395c126fe1d0",
+      "websocket/client/async-ssl-system-executor/Jamfile": "27ebe6127b420b562356801dad8bb24c67f1d543eeb360041e4230c146b92d1d",
+      "websocket/client/async-ssl-system-executor/websocket_client_async_ssl_system_executor.cpp": "20ab08f7820871e36456fe5760abeb5ad5cb0949529864cab93b12544754d91d",
+      "websocket/client/awaitable/CMakeLists.txt": "49f2563596b65d291870c354d3189905447c622d08d91b362df3c4d4829c96bb",
+      "websocket/client/awaitable/Jamfile": "630a0082ad6740602c5ab467d1cb3a14e2712947fcf66882f8b2bfcc06bce24c",
+      "websocket/client/awaitable/websocket_client_awaitable.cpp": "1643f654a9faf1c89467929f638bdf5bedacebfd20047059dff90847df95c411",
+      "websocket/client/coro/CMakeLists.txt": "64218162f612ee8ac2dabb86bb0c9939f542bf3ed4b654c07190471028795645",
+      "websocket/client/coro/Jamfile": "f067e9bad4e23697498a19f7a5de0b543cac530353cc10e603b3912deececeea",
+      "websocket/client/coro/websocket_client_coro.cpp": "fa03f7796b92b847082a3861c6e4c58918597cd73e6fa8346f5d3aa9542a4f4c",
+      "websocket/client/coro-ssl/CMakeLists.txt": "61fc82090d3825779d25c9459a874b6318a0b26ac18e946d218261b0a73775af",
+      "websocket/client/coro-ssl/Jamfile": "6f3c047324935b7a43ed8c1bdc10f9cde1a3361c495fb3f9049bf67bad7170a4",
+      "websocket/client/coro-ssl/websocket_client_coro_ssl.cpp": "e9813be3865b1113821636aa66b8eabc0c86c752e4094e6ab953a25bb4b07a0e",
+      "websocket/client/sync/CMakeLists.txt": "f33351c1e71db39065f08db467750ae26751c517a94f8233b369444f7ff5b1a9",
+      "websocket/client/sync/Jamfile": "fda4b6cf09e12364f2e50729d8d7cc64dbdd48553f0e94fd7bd8071411fa380d",
+      "websocket/client/sync/websocket_client_sync.cpp": "f41a2e80c5d4423337fc29d307edd7b254f8ef02d46482c1e5e7802a35319fee",
+      "websocket/client/sync-ssl/CMakeLists.txt": "3ea7e324e06aa7858b8ed547a46eb8384fffd7df5dc2fc37d61d6fc6ca0048a3",
+      "websocket/client/sync-ssl/Jamfile": "f782bdbb460b6aff841f30de0db261812e6fd93de19e3f0372b0cb42bc389503",
+      "websocket/client/sync-ssl/websocket_client_sync_ssl.cpp": "665b91b089855d64bf028eaddab9cb313df1a77ec0fe8a6459a6694c7873b67d",
+      "websocket/server/CMakeLists.txt": "a06ed3a01b09ca42327fd56ebc636886109fe5d7fed4f300618d6371add7e9f0",
+      "websocket/server/Jamfile": "180966f1942b47ecfcbda6ceac8084c855825651dfa3cffd415809af647a3dcd",
+      "websocket/server/async/CMakeLists.txt": "fbd316f7b8d47ba2bd88e88709f662860e75318c2a1958ba59a2c8400700ed62",
+      "websocket/server/async/Jamfile": "af4b7dde9e8d4a3b8463cee6c0c1d886c6036c2bf97e7797bf07c24a59a4a17f",
+      "websocket/server/async/websocket_server_async.cpp": "7c8353425941717ed7339935d857e7face75f0cfc0db743618ac1732ad45f1ab",
+      "websocket/server/async-local/CMakeLists.txt": "c07b4420b116b709e0691081ae0cd3cd486f213b6c7ff5931c70cf2b97ff792a",
+      "websocket/server/async-local/Jamfile": "fd3cd75e5d3181df0873eac6e01611bb06abb74605e068a77ffc62fc4d8d4d34",
+      "websocket/server/async-local/websocket_server_async_local.cpp": "fee7d38ca2c50934b2a188ec94a3f56e70a9bb114cf2a66dcb2149bd15ee9e84",
+      "websocket/server/async-ssl/CMakeLists.txt": "01b6b14c6726237899cdbb2e008fa33ea2afe7655b1c1ab44b97fc0f2ae28a16",
+      "websocket/server/async-ssl/Jamfile": "96fa37a5495763aa15e214eeffa3147f3cdb3b9168f25f510ed7946a6d43f34d",
+      "websocket/server/async-ssl/websocket_server_async_ssl.cpp": "88bc72fb879de2daf27ae4a052958f0c6cfa9de5ebab0342cc934bf250c009db",
+      "websocket/server/awaitable/CMakeLists.txt": "b1ee3cd77d0c85bd5161effabd9fa6f851eb690bbd49c8cfd248e83828e20c33",
+      "websocket/server/awaitable/Jamfile": "100a3bdb37c5d0e31d57ee369670f8baffa296a47338d48ee8742e2fa5ac4662",
+      "websocket/server/awaitable/websocket_server_awaitable.cpp": "d12e2e3633195e68a579996f6b77a0214d2e3a1fa2ff23c5b78b8274cd032f3c",
+      "websocket/server/chat-multi/CMakeLists.txt": "d49cd8a02e32f9648fa349498e844921199e1d1e8f89ec3612019916eb42cb9f",
+      "websocket/server/chat-multi/Jamfile": "6f1eed1800889b3669ad1a90784254ad65212591eda6a8b6034d68f2f2286716",
+      "websocket/server/chat-multi/beast.hpp": "613bd070ac645e514baaee813f54da5d3336583ec9d529ee0a1e7993c11e504f",
+      "websocket/server/chat-multi/chat_client.html": "105de4fce2f4c36c99edc872da0195617fec8dbd0c378435f055053244638a4b",
+      "websocket/server/chat-multi/http_session.cpp": "93e31131bf2b516158f61b1b3d7a87e363a3c086833314ea342022721e8dd20d",
+      "websocket/server/chat-multi/http_session.hpp": "19ff07949b7b85ee59c9a9517bb9032a737d63d012d5fd395ec06865174db932",
+      "websocket/server/chat-multi/listener.cpp": "58e6501890380dd734c69f9a39dfdcd264a276a5f1dc0135a2f55214c7950f01",
+      "websocket/server/chat-multi/listener.hpp": "4bb3f9dc51cee198660d1cc9d27b9cdfe763d1e6b98e21c4f3760f786d7b5478",
+      "websocket/server/chat-multi/main.cpp": "23742e3af586286404eb7670b7e21dc4ba1327c56c787b1e4f8f5fd441dcafe9",
+      "websocket/server/chat-multi/net.hpp": "4e2b0d03747ae82b6b594b6e6e5ad65fb7eccae9498451d7486be5d795ccac95",
+      "websocket/server/chat-multi/shared_state.cpp": "2757f7f63ef9499e433b668018415a6bfecfa015e89aeb1f8af8a03180d9421a",
+      "websocket/server/chat-multi/shared_state.hpp": "0936355348c3de0bdb46efb62e2cd917ead27bbf890626874d3061ba83635c9d",
+      "websocket/server/chat-multi/websocket_session.cpp": "d827e36b5b5a67168047e67a6ba027fbaf621231863c88e9cd47f1766a2b544f",
+      "websocket/server/chat-multi/websocket_session.hpp": "8a76f8e05a0f3a4467ec0a217728372ed699429f427211989f0ea271544b68ec",
+      "websocket/server/coro/CMakeLists.txt": "7facc531e9a695f1bbe22f910fa9f121fb2463c6ee1734f9874c6f41da4e87cc",
+      "websocket/server/coro/Jamfile": "b71a6aaa0401a2c6fce85e980e42f588718dc04bf9fef64923027f68d4d6bf73",
+      "websocket/server/coro/websocket_server_coro.cpp": "4cb6d60d4d708d5f69b3d435484f0004110ca79afa1b9313bd6ac38e0b64b882",
+      "websocket/server/coro-ssl/CMakeLists.txt": "cd664c67895fe1057fc9196f276adcd342ca4ac329b85b48d01fb9cca94a3c49",
+      "websocket/server/coro-ssl/Jamfile": "38665d8930139aadd256dfd5c296d8cb2a787dbcebc6af67c8fa8e320cbfc948",
+      "websocket/server/coro-ssl/websocket_server_coro_ssl.cpp": "6a0ef064a530c3254a30e357bac478584303b2b52dd07397d14b72293c1cb3b2",
+      "websocket/server/fast/CMakeLists.txt": "d3f9755218a506a88979fe4670fc9668715e3823db5689a1b8b4c83ea10e588e",
+      "websocket/server/fast/Jamfile": "f19b81810b70d5d563fad4b1f020aa95c92341ed4532c593c321a14987c2f4c7",
+      "websocket/server/fast/websocket_server_fast.cpp": "6335605dfe73c7b1fe4a6511c22ea896023e3bf4bffc13af1b4290255cca2608",
+      "websocket/server/stackless/CMakeLists.txt": "242acbde310c209293d5a51822280af254dd431ae30f76d47f8dbfb9415b85d4",
+      "websocket/server/stackless/Jamfile": "068169891cb6bb046eafc9d1945f287fe6fc655a9785b66cd0f365d9fd06ca44",
+      "websocket/server/stackless/websocket_server_stackless.cpp": "632b1cef70872b4a88ef305435b5efdd5182f66b40d90267dfa47f235e876fad",
+      "websocket/server/stackless-ssl/CMakeLists.txt": "9244f023a23b8be92d0a8d0afce5b3c90ea78fe5e2563776a0460c79fd4dc782",
+      "websocket/server/stackless-ssl/Jamfile": "e130faf6e121a31803a16bcb507b9edfcea7b998c405b3922ab854f68cddf2bf",
+      "websocket/server/stackless-ssl/websocket_server_stackless_ssl.cpp": "e332b0648c2c20f1c68d0c2514c0b7042bfbc030b72909f7eb1cb651e4366902",
+      "websocket/server/sync/CMakeLists.txt": "798d7a5439023141bb53aaaef9224b21700cad19918eceb2148bce46c12e7752",
+      "websocket/server/sync/Jamfile": "c95496c3cbe95d2d396b9e4f45bca95fe04b962801ca7a8905255f07d2370e89",
+      "websocket/server/sync/websocket_server_sync.cpp": "45465d151483066a4d05c196ab771f50dca417f26d583d616f037748ece78af0",
+      "websocket/server/sync-ssl/CMakeLists.txt": "07c8e03c87cb12c92ebb021913bbd12aa36587727ea8929b052762bad7f21b7e",
+      "websocket/server/sync-ssl/Jamfile": "8033e6eb7fa7bae5dd04c7cf00158827fde48077beac46b34048a51150589d65",
+      "websocket/server/sync-ssl/websocket_server_sync_ssl.cpp": "657dc21e4dd33778767281a50a2ea761c60d0cf6365d6cd29f456fcbef81c454"
+    }
+  },
+  "applications": [
+    {
+      "id": "advanced-server",
+      "path": "advanced/server",
+      "cmake_target": "advanced-server",
+      "sources": [
+        "advanced/server/advanced_server.cpp"
+      ],
+      "entrypoint": "advanced/server/advanced_server.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "signals",
+        "threads"
+      ]
+    },
+    {
+      "id": "advanced-server-flex",
+      "path": "advanced/server-flex",
+      "cmake_target": "advanced-server-flex",
+      "sources": [
+        "advanced/server-flex/advanced_server_flex.cpp"
+      ],
+      "entrypoint": "advanced/server-flex/advanced_server_flex.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "signals",
+        "threads"
+      ]
+    },
+    {
+      "id": "advanced-server-flex-awaitable",
+      "path": "advanced/server-flex-awaitable",
+      "cmake_target": "advanced-server-flex-awaitable",
+      "sources": [
+        "advanced/server-flex-awaitable/advanced_server_flex_awaitable.cpp"
+      ],
+      "entrypoint": "advanced/server-flex-awaitable/advanced_server_flex_awaitable.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "awaitable",
+        "signals",
+        "threads"
+      ]
+    },
+    {
+      "id": "doc-ssl-client",
+      "path": "doc/ssl",
+      "cmake_target": "doc-ssl-client",
+      "sources": [
+        "doc/ssl/client.cpp"
+      ],
+      "entrypoint": "doc/ssl/client.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "awaitable"
+      ]
+    },
+    {
+      "id": "doc-ssl-server",
+      "path": "doc/ssl",
+      "cmake_target": "doc-ssl-server",
+      "sources": [
+        "doc/ssl/server.cpp"
+      ],
+      "entrypoint": "doc/ssl/server.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "awaitable"
+      ]
+    },
+    {
+      "id": "echo-op",
+      "path": "echo-op",
+      "cmake_target": "echo-op",
+      "sources": [
+        "echo-op/echo_op.cpp"
+      ],
+      "entrypoint": "echo-op/echo_op.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": []
+    },
+    {
+      "id": "http-client-async",
+      "path": "http/client/async",
+      "cmake_target": "http-client-async",
+      "sources": [
+        "http/client/async/http_client_async.cpp"
+      ],
+      "entrypoint": "http/client/async/http_client_async.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "http-client-async-local",
+      "path": "http/client/async-local",
+      "cmake_target": "http-client-async-local",
+      "sources": [
+        "http/client/async-local/http_client_async_local.cpp"
+      ],
+      "entrypoint": "http/client/async-local/http_client_async_local.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": true,
+      "server": false,
+      "dependencies": [
+        "local-socket"
+      ]
+    },
+    {
+      "id": "http-client-async-ssl",
+      "path": "http/client/async-ssl",
+      "cmake_target": "http-client-async-ssl",
+      "sources": [
+        "http/client/async-ssl/http_client_async_ssl.cpp"
+      ],
+      "entrypoint": "http/client/async-ssl/http_client_async_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "http-client-async-ssl-system-executor",
+      "path": "http/client/async-ssl-system-executor",
+      "cmake_target": "http-client-async-ssl-system-executor",
+      "sources": [
+        "http/client/async-ssl-system-executor/http_client_async_ssl_system_executor.cpp"
+      ],
+      "entrypoint": "http/client/async-ssl-system-executor/http_client_async_ssl_system_executor.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "system-executor"
+      ]
+    },
+    {
+      "id": "http-client-awaitable",
+      "path": "http/client/awaitable",
+      "cmake_target": "http-client-awaitable",
+      "sources": [
+        "http/client/awaitable/http_client_awaitable.cpp"
+      ],
+      "entrypoint": "http/client/awaitable/http_client_awaitable.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "awaitable"
+      ]
+    },
+    {
+      "id": "http-client-awaitable-ssl",
+      "path": "http/client/awaitable-ssl",
+      "cmake_target": "http-client-awaitable-ssl",
+      "sources": [
+        "http/client/awaitable-ssl/http_client_awaitable_ssl.cpp"
+      ],
+      "entrypoint": "http/client/awaitable-ssl/http_client_awaitable_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "awaitable"
+      ]
+    },
+    {
+      "id": "json_client",
+      "path": "http/client/body",
+      "cmake_target": "http-client-json",
+      "sources": [
+        "http/client/body/json_client.cpp"
+      ],
+      "entrypoint": "http/client/body/json_client.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "http-client-coro",
+      "path": "http/client/coro",
+      "cmake_target": "http-client-coro",
+      "sources": [
+        "http/client/coro/http_client_coro.cpp"
+      ],
+      "entrypoint": "http/client/coro/http_client_coro.cpp",
+      "tls": false,
+      "stackful": true,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "stackful"
+      ]
+    },
+    {
+      "id": "http-client-coro-ssl",
+      "path": "http/client/coro-ssl",
+      "cmake_target": "http-client-coro-ssl",
+      "sources": [
+        "http/client/coro-ssl/http_client_coro_ssl.cpp"
+      ],
+      "entrypoint": "http/client/coro-ssl/http_client_coro_ssl.cpp",
+      "tls": true,
+      "stackful": true,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "stackful"
+      ]
+    },
+    {
+      "id": "http-crawl",
+      "path": "http/client/crawl",
+      "cmake_target": "http-crawl",
+      "sources": [
+        "http/client/crawl/http_crawl.cpp",
+        "http/client/crawl/urls_large_data.cpp"
+      ],
+      "entrypoint": "http/client/crawl/http_crawl.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "http-client-methods",
+      "path": "http/client/methods",
+      "cmake_target": "http-client-methods",
+      "sources": [
+        "http/client/methods/http_client_methods.cpp"
+      ],
+      "entrypoint": "http/client/methods/http_client_methods.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "http-client-sync",
+      "path": "http/client/sync",
+      "cmake_target": "http-client-sync",
+      "sources": [
+        "http/client/sync/http_client_sync.cpp"
+      ],
+      "entrypoint": "http/client/sync/http_client_sync.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "http-client-sync-ssl",
+      "path": "http/client/sync-ssl",
+      "cmake_target": "http-client-sync-ssl",
+      "sources": [
+        "http/client/sync-ssl/http_client_sync_ssl.cpp"
+      ],
+      "entrypoint": "http/client/sync-ssl/http_client_sync_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "http-server-async",
+      "path": "http/server/async",
+      "cmake_target": "http-server-async",
+      "sources": [
+        "http/server/async/http_server_async.cpp"
+      ],
+      "entrypoint": "http/server/async/http_server_async.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-async-local",
+      "path": "http/server/async-local",
+      "cmake_target": "http-server-async-local",
+      "sources": [
+        "http/server/async-local/http_server_async_local.cpp"
+      ],
+      "entrypoint": "http/server/async-local/http_server_async_local.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": true,
+      "server": true,
+      "dependencies": [
+        "local-socket",
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-async-ssl",
+      "path": "http/server/async-ssl",
+      "cmake_target": "http-server-async-ssl",
+      "sources": [
+        "http/server/async-ssl/http_server_async_ssl.cpp"
+      ],
+      "entrypoint": "http/server/async-ssl/http_server_async_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-awaitable",
+      "path": "http/server/awaitable",
+      "cmake_target": "http-server-awaitable",
+      "sources": [
+        "http/server/awaitable/http_server_awaitable.cpp"
+      ],
+      "entrypoint": "http/server/awaitable/http_server_awaitable.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "awaitable",
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-coro",
+      "path": "http/server/coro",
+      "cmake_target": "http-server-coro",
+      "sources": [
+        "http/server/coro/http_server_coro.cpp"
+      ],
+      "entrypoint": "http/server/coro/http_server_coro.cpp",
+      "tls": false,
+      "stackful": true,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "stackful",
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-coro-ssl",
+      "path": "http/server/coro-ssl",
+      "cmake_target": "http-server-coro-ssl",
+      "sources": [
+        "http/server/coro-ssl/http_server_coro_ssl.cpp"
+      ],
+      "entrypoint": "http/server/coro-ssl/http_server_coro_ssl.cpp",
+      "tls": true,
+      "stackful": true,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "stackful",
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-fast",
+      "path": "http/server/fast",
+      "cmake_target": "http-server-fast",
+      "sources": [
+        "http/server/fast/http_server_fast.cpp"
+      ],
+      "entrypoint": "http/server/fast/http_server_fast.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": []
+    },
+    {
+      "id": "http-server-flex",
+      "path": "http/server/flex",
+      "cmake_target": "http-server-flex",
+      "sources": [
+        "http/server/flex/http_server_flex.cpp"
+      ],
+      "entrypoint": "http/server/flex/http_server_flex.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-small",
+      "path": "http/server/small",
+      "cmake_target": "http-server-small",
+      "sources": [
+        "http/server/small/http_server_small.cpp"
+      ],
+      "entrypoint": "http/server/small/http_server_small.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": []
+    },
+    {
+      "id": "http-server-stackless",
+      "path": "http/server/stackless",
+      "cmake_target": "http-server-stackless",
+      "sources": [
+        "http/server/stackless/http_server_stackless.cpp"
+      ],
+      "entrypoint": "http/server/stackless/http_server_stackless.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-stackless-ssl",
+      "path": "http/server/stackless-ssl",
+      "cmake_target": "http-server-stackless-ssl",
+      "sources": [
+        "http/server/stackless-ssl/http_server_stackless_ssl.cpp"
+      ],
+      "entrypoint": "http/server/stackless-ssl/http_server_stackless_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-sync",
+      "path": "http/server/sync",
+      "cmake_target": "http-server-sync",
+      "sources": [
+        "http/server/sync/http_server_sync.cpp"
+      ],
+      "entrypoint": "http/server/sync/http_server_sync.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "http-server-sync-ssl",
+      "path": "http/server/sync-ssl",
+      "cmake_target": "http-server-sync-ssl",
+      "sources": [
+        "http/server/sync-ssl/http_server_sync_ssl.cpp"
+      ],
+      "entrypoint": "http/server/sync-ssl/http_server_sync_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-client-async",
+      "path": "websocket/client/async",
+      "cmake_target": "websocket-client-async",
+      "sources": [
+        "websocket/client/async/websocket_client_async.cpp"
+      ],
+      "entrypoint": "websocket/client/async/websocket_client_async.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "websocket-client-async-local",
+      "path": "websocket/client/async-local",
+      "cmake_target": "websocket-client-async-local",
+      "sources": [
+        "websocket/client/async-local/websocket_client_async_local.cpp"
+      ],
+      "entrypoint": "websocket/client/async-local/websocket_client_async_local.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": true,
+      "server": false,
+      "dependencies": [
+        "local-socket"
+      ]
+    },
+    {
+      "id": "websocket-client-async-ssl",
+      "path": "websocket/client/async-ssl",
+      "cmake_target": "websocket-client-async-ssl",
+      "sources": [
+        "websocket/client/async-ssl/websocket_client_async_ssl.cpp"
+      ],
+      "entrypoint": "websocket/client/async-ssl/websocket_client_async_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "websocket-client-async-ssl-system-executor",
+      "path": "websocket/client/async-ssl-system-executor",
+      "cmake_target": "websocket-client-async-ssl-system-executor",
+      "sources": [
+        "websocket/client/async-ssl-system-executor/websocket_client_async_ssl_system_executor.cpp"
+      ],
+      "entrypoint": "websocket/client/async-ssl-system-executor/websocket_client_async_ssl_system_executor.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "system-executor"
+      ]
+    },
+    {
+      "id": "websocket-client-awaitable",
+      "path": "websocket/client/awaitable",
+      "cmake_target": "websocket-client-awaitable",
+      "sources": [
+        "websocket/client/awaitable/websocket_client_awaitable.cpp"
+      ],
+      "entrypoint": "websocket/client/awaitable/websocket_client_awaitable.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "awaitable"
+      ]
+    },
+    {
+      "id": "websocket-client-coro",
+      "path": "websocket/client/coro",
+      "cmake_target": "websocket-client-coro",
+      "sources": [
+        "websocket/client/coro/websocket_client_coro.cpp"
+      ],
+      "entrypoint": "websocket/client/coro/websocket_client_coro.cpp",
+      "tls": false,
+      "stackful": true,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "stackful"
+      ]
+    },
+    {
+      "id": "websocket-client-coro-ssl",
+      "path": "websocket/client/coro-ssl",
+      "cmake_target": "websocket-client-coro-ssl",
+      "sources": [
+        "websocket/client/coro-ssl/websocket_client_coro_ssl.cpp"
+      ],
+      "entrypoint": "websocket/client/coro-ssl/websocket_client_coro_ssl.cpp",
+      "tls": true,
+      "stackful": true,
+      "local_socket": false,
+      "server": false,
+      "dependencies": [
+        "stackful"
+      ]
+    },
+    {
+      "id": "websocket-client-sync",
+      "path": "websocket/client/sync",
+      "cmake_target": "websocket-client-sync",
+      "sources": [
+        "websocket/client/sync/websocket_client_sync.cpp"
+      ],
+      "entrypoint": "websocket/client/sync/websocket_client_sync.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "websocket-client-sync-ssl",
+      "path": "websocket/client/sync-ssl",
+      "cmake_target": "websocket-client-sync-ssl",
+      "sources": [
+        "websocket/client/sync-ssl/websocket_client_sync_ssl.cpp"
+      ],
+      "entrypoint": "websocket/client/sync-ssl/websocket_client_sync_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": false,
+      "dependencies": []
+    },
+    {
+      "id": "websocket-server-async",
+      "path": "websocket/server/async",
+      "cmake_target": "websocket-server-async",
+      "sources": [
+        "websocket/server/async/websocket_server_async.cpp"
+      ],
+      "entrypoint": "websocket/server/async/websocket_server_async.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-async-local",
+      "path": "websocket/server/async-local",
+      "cmake_target": "websocket-server-async-local",
+      "sources": [
+        "websocket/server/async-local/websocket_server_async_local.cpp"
+      ],
+      "entrypoint": "websocket/server/async-local/websocket_server_async_local.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": true,
+      "server": true,
+      "dependencies": [
+        "local-socket",
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-async-ssl",
+      "path": "websocket/server/async-ssl",
+      "cmake_target": "websocket-server-async-ssl",
+      "sources": [
+        "websocket/server/async-ssl/websocket_server_async_ssl.cpp"
+      ],
+      "entrypoint": "websocket/server/async-ssl/websocket_server_async_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-awaitable",
+      "path": "websocket/server/awaitable",
+      "cmake_target": "websocket-server-awaitable",
+      "sources": [
+        "websocket/server/awaitable/websocket_server_awaitable.cpp"
+      ],
+      "entrypoint": "websocket/server/awaitable/websocket_server_awaitable.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "awaitable",
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-chat-multi",
+      "path": "websocket/server/chat-multi",
+      "cmake_target": "websocket-chat-multi",
+      "sources": [
+        "websocket/server/chat-multi/http_session.cpp",
+        "websocket/server/chat-multi/listener.cpp",
+        "websocket/server/chat-multi/main.cpp",
+        "websocket/server/chat-multi/shared_state.cpp",
+        "websocket/server/chat-multi/websocket_session.cpp"
+      ],
+      "entrypoint": "websocket/server/chat-multi/main.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "signals",
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-coro",
+      "path": "websocket/server/coro",
+      "cmake_target": "websocket-server-coro",
+      "sources": [
+        "websocket/server/coro/websocket_server_coro.cpp"
+      ],
+      "entrypoint": "websocket/server/coro/websocket_server_coro.cpp",
+      "tls": false,
+      "stackful": true,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "stackful",
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-coro-ssl",
+      "path": "websocket/server/coro-ssl",
+      "cmake_target": "websocket-server-coro-ssl",
+      "sources": [
+        "websocket/server/coro-ssl/websocket_server_coro_ssl.cpp"
+      ],
+      "entrypoint": "websocket/server/coro-ssl/websocket_server_coro_ssl.cpp",
+      "tls": true,
+      "stackful": true,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "stackful",
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-fast",
+      "path": "websocket/server/fast",
+      "cmake_target": "websocket-server-fast",
+      "sources": [
+        "websocket/server/fast/websocket_server_fast.cpp"
+      ],
+      "entrypoint": "websocket/server/fast/websocket_server_fast.cpp",
+      "tls": false,
+      "stackful": true,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "stackful",
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-stackless",
+      "path": "websocket/server/stackless",
+      "cmake_target": "websocket-server-stackless",
+      "sources": [
+        "websocket/server/stackless/websocket_server_stackless.cpp"
+      ],
+      "entrypoint": "websocket/server/stackless/websocket_server_stackless.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-stackless-ssl",
+      "path": "websocket/server/stackless-ssl",
+      "cmake_target": "websocket-server-stackless-ssl",
+      "sources": [
+        "websocket/server/stackless-ssl/websocket_server_stackless_ssl.cpp"
+      ],
+      "entrypoint": "websocket/server/stackless-ssl/websocket_server_stackless_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-sync",
+      "path": "websocket/server/sync",
+      "cmake_target": "websocket-server-sync",
+      "sources": [
+        "websocket/server/sync/websocket_server_sync.cpp"
+      ],
+      "entrypoint": "websocket/server/sync/websocket_server_sync.cpp",
+      "tls": false,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    },
+    {
+      "id": "websocket-server-sync-ssl",
+      "path": "websocket/server/sync-ssl",
+      "cmake_target": "websocket-server-sync-ssl",
+      "sources": [
+        "websocket/server/sync-ssl/websocket_server_sync_ssl.cpp"
+      ],
+      "entrypoint": "websocket/server/sync-ssl/websocket_server_sync_ssl.cpp",
+      "tls": true,
+      "stackful": false,
+      "local_socket": false,
+      "server": true,
+      "dependencies": [
+        "threads"
+      ]
+    }
+  ],
+  "support": {
+    "documentation_snippets": "doc/http_examples.hpp",
+    "tls": [
+      "common/root_certificates.hpp",
+      "common/server_certificate.hpp"
+    ],
+    "json": "http/client/body/json_body.hpp",
+    "chat_html": "websocket/server/chat-multi/chat_client.html",
+    "crawler": [
+      "http/client/crawl/urls_large_data.hpp",
+      "http/client/crawl/urls_large_data.cpp"
+    ],
+    "allocator": "http/server/fast/fields_alloc.hpp"
+  },
+  "normalization": {
+    "http": "Compare status, application headers and decoded body. Keep raw output; ignore Date, Server and transport framing only.",
+    "websocket": "Compare text/binary mode, payload bytes and close outcome.",
+    "crawler": "Ignore elapsed wall time only; compare all counters/status buckets."
+  }
+}

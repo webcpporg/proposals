@@ -1,0 +1,1437 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1224pt" height="792pt" viewBox="0 0 1224 792" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-15T03:06:31.033565</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="02-direct-and-phases-figure_1">
+  <g id="02-direct-and-phases-patch_1">
+   <path d="M 0 792 
+L 1224 792 
+L 1224 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="02-direct-and-phases-axes_1">
+   <g id="02-direct-and-phases-patch_2">
+    <path d="M 244.8 601.92 
+L 600.45283 601.92 
+L 600.45283 118.8 
+L 244.8 118.8 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="02-direct-and-phases-matplotlib.axis_1">
+    <g id="02-direct-and-phases-xtick_1">
+     <g id="02-direct-and-phases-line2d_1">
+      <defs>
+       <path id="02-direct-and-phases-m8e2098f89a" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="244.8" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_1">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="244.8" y="617.277422" transform="rotate(-0 244.8 617.277422)">0</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_2">
+     <g id="02-direct-and-phases-line2d_2">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="300.370755" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_2">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="300.370755" y="617.277422" transform="rotate(-0 300.370755 617.277422)">1</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_3">
+     <g id="02-direct-and-phases-line2d_3">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="355.941509" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_3">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="355.941509" y="617.277422" transform="rotate(-0 355.941509 617.277422)">2</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_4">
+     <g id="02-direct-and-phases-line2d_4">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="411.512264" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_4">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="411.512264" y="617.277422" transform="rotate(-0 411.512264 617.277422)">3</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_5">
+     <g id="02-direct-and-phases-line2d_5">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="467.083019" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_5">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="467.083019" y="617.277422" transform="rotate(-0 467.083019 617.277422)">4</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_6">
+     <g id="02-direct-and-phases-line2d_6">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="522.653774" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_6">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="522.653774" y="617.277422" transform="rotate(-0 522.653774 617.277422)">5</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_7">
+     <g id="02-direct-and-phases-line2d_7">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="578.224528" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_7">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="578.224528" y="617.277422" transform="rotate(-0 578.224528 617.277422)">6</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-text_8">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="422.626415" y="632.278281" transform="rotate(-0 422.626415 632.278281)">Microseconds per round trip</text>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-matplotlib.axis_2">
+    <g id="02-direct-and-phases-ytick_1">
+     <g id="02-direct-and-phases-line2d_8">
+      <path d="M 244.8 151.217143 
+L 600.45283 151.217143 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_9">
+      <defs>
+       <path id="02-direct-and-phases-me857624dff" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="151.217143" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_9">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="155.015971" transform="rotate(-0 237.8 155.015971)">JSPI / EH on</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_2">
+     <g id="02-direct-and-phases-line2d_10">
+      <path d="M 244.8 183.392967 
+L 600.45283 183.392967 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_11">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="183.392967" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_10">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="187.192186" transform="rotate(-0 237.8 187.192186)">JSPI / EH on / traced</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_3">
+     <g id="02-direct-and-phases-line2d_12">
+      <path d="M 244.8 215.568791 
+L 600.45283 215.568791 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_13">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="215.568791" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_11">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="219.367619" transform="rotate(-0 237.8 219.367619)">ASYNCIFY / EH on</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_4">
+     <g id="02-direct-and-phases-line2d_14">
+      <path d="M 244.8 247.744615 
+L 600.45283 247.744615 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_15">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="247.744615" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_12">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="251.543834" transform="rotate(-0 237.8 251.543834)">ASYNCIFY / EH on / traced</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_5">
+     <g id="02-direct-and-phases-line2d_16">
+      <path d="M 244.8 279.92044 
+L 600.45283 279.92044 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_17">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="279.92044" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_13">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="283.719658" transform="rotate(-0 237.8 283.719658)">JSPI / EH off</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_6">
+     <g id="02-direct-and-phases-line2d_18">
+      <path d="M 244.8 312.096264 
+L 600.45283 312.096264 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_19">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="312.096264" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_14">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="315.895482" transform="rotate(-0 237.8 315.895482)">JSPI / EH off / traced</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_7">
+     <g id="02-direct-and-phases-line2d_20">
+      <path d="M 244.8 344.272088 
+L 600.45283 344.272088 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_21">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="344.272088" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_15">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="348.071307" transform="rotate(-0 237.8 348.071307)">ASYNCIFY / EH off</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_8">
+     <g id="02-direct-and-phases-line2d_22">
+      <path d="M 244.8 376.447912 
+L 600.45283 376.447912 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_23">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="376.447912" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_16">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="380.247131" transform="rotate(-0 237.8 380.247131)">ASYNCIFY / EH off / traced</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_9">
+     <g id="02-direct-and-phases-line2d_24">
+      <path d="M 244.8 408.623736 
+L 600.45283 408.623736 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_25">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="408.623736" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_17">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="412.422955" transform="rotate(-0 237.8 412.422955)">JSPI / ordinary page</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_10">
+     <g id="02-direct-and-phases-line2d_26">
+      <path d="M 244.8 440.79956 
+L 600.45283 440.79956 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_27">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="440.79956" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_18">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="444.598779" transform="rotate(-0 237.8 444.598779)">JSPI / ordinary page / traced</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_11">
+     <g id="02-direct-and-phases-line2d_28">
+      <path d="M 244.8 472.975385 
+L 600.45283 472.975385 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_29">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="472.975385" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_19">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="476.774603" transform="rotate(-0 237.8 476.774603)">ASYNCIFY / ordinary page</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_12">
+     <g id="02-direct-and-phases-line2d_30">
+      <path d="M 244.8 505.151209 
+L 600.45283 505.151209 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_31">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="505.151209" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_20">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="508.950428" transform="rotate(-0 237.8 508.950428)">ASYNCIFY / ordinary page / traced</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_13">
+     <g id="02-direct-and-phases-line2d_32">
+      <path d="M 244.8 537.327033 
+L 600.45283 537.327033 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_33">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="537.327033" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_21">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="541.126252" transform="rotate(-0 237.8 541.126252)">JavaScript only</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_14">
+     <g id="02-direct-and-phases-line2d_34">
+      <path d="M 244.8 569.502857 
+L 600.45283 569.502857 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_35">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="244.8" y="569.502857" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_22">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="237.8" y="573.302076" transform="rotate(-0 237.8 573.302076)">JavaScript only / traced</text>
+     </g>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-patch_3">
+    <path d="M 244.8 140.76 
+L 470.528406 140.76 
+L 470.528406 161.674286 
+L 244.8 161.674286 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #2266a5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_4">
+    <path d="M 244.8 172.935824 
+L 514.373731 172.935824 
+L 514.373731 193.85011 
+L 244.8 193.85011 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #2266a5; opacity: 0.5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_5">
+    <path d="M 244.8 205.111648 
+L 508.01088 205.111648 
+L 508.01088 226.025934 
+L 244.8 226.025934 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #c25c16"/>
+   </g>
+   <g id="02-direct-and-phases-patch_6">
+    <path d="M 244.8 237.287473 
+L 554.190177 237.287473 
+L 554.190177 258.201758 
+L 244.8 258.201758 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #c25c16; opacity: 0.5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_7">
+    <path d="M 244.8 269.463297 
+L 468.639 269.463297 
+L 468.639 290.377582 
+L 244.8 290.377582 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #2266a5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_8">
+    <path d="M 244.8 301.639121 
+L 518.235899 301.639121 
+L 518.235899 322.553407 
+L 244.8 322.553407 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #2266a5; opacity: 0.5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_9">
+    <path d="M 244.8 333.814945 
+L 490.922873 333.814945 
+L 490.922873 354.729231 
+L 244.8 354.729231 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #c25c16"/>
+   </g>
+   <g id="02-direct-and-phases-patch_10">
+    <path d="M 244.8 365.990769 
+L 539.769566 365.990769 
+L 539.769566 386.905055 
+L 244.8 386.905055 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #c25c16; opacity: 0.5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_11">
+    <path d="M 244.8 398.166593 
+L 468.750142 398.166593 
+L 468.750142 419.080879 
+L 244.8 419.080879 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #2266a5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_12">
+    <path d="M 244.8 430.342418 
+L 513.206745 430.342418 
+L 513.206745 451.256703 
+L 244.8 451.256703 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #2266a5; opacity: 0.5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_13">
+    <path d="M 244.8 462.518242 
+L 507.64967 462.518242 
+L 507.64967 483.432527 
+L 244.8 483.432527 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #c25c16"/>
+   </g>
+   <g id="02-direct-and-phases-patch_14">
+    <path d="M 244.8 494.694066 
+L 553.773396 494.694066 
+L 553.773396 515.608352 
+L 244.8 515.608352 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #c25c16; opacity: 0.5"/>
+   </g>
+   <g id="02-direct-and-phases-patch_15">
+    <path d="M 244.8 526.86989 
+L 462.942993 526.86989 
+L 462.942993 547.784176 
+L 244.8 547.784176 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #29805f"/>
+   </g>
+   <g id="02-direct-and-phases-patch_16">
+    <path d="M 244.8 559.045714 
+L 513.151173 559.045714 
+L 513.151173 579.96 
+L 244.8 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: #29805f; opacity: 0.5"/>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_1">
+    <path d="M 466.221672 151.217143 
+L 475.168564 151.217143 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_36">
+    <defs>
+     <path id="02-direct-and-phases-m8447e48e1d" d="M 0 3 
+L 0 -3 
+" style="stroke: #283544"/>
+    </defs>
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="466.221672" y="151.217143" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_37">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="475.168564" y="151.217143" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_2">
+    <path d="M 509.539075 183.392967 
+L 517.124483 183.392967 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_38">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="509.539075" y="183.392967" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_39">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="517.124483" y="183.392967" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_3">
+    <path d="M 499.619696 215.568791 
+L 519.180601 215.568791 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_40">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="499.619696" y="215.568791" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_41">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="519.180601" y="215.568791" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_4">
+    <path d="M 551.939561 247.744615 
+L 562.025653 247.744615 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_42">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="551.939561" y="247.744615" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_43">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="562.025653" y="247.744615" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_5">
+    <path d="M 466.555097 279.92044 
+L 471.250825 279.92044 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_44">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="466.555097" y="279.92044" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_45">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="471.250825" y="279.92044" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_6">
+    <path d="M 511.345125 312.096264 
+L 520.069733 312.096264 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_46">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="511.345125" y="312.096264" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_47">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="520.069733" y="312.096264" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_7">
+    <path d="M 488.255476 344.272088 
+L 499.119559 344.272088 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_48">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="488.255476" y="344.272088" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_49">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="499.119559" y="344.272088" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_8">
+    <path d="M 539.769566 376.447912 
+L 540.130776 376.447912 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_50">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="539.769566" y="376.447912" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_51">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="540.130776" y="376.447912" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_9">
+    <path d="M 468.750142 408.623736 
+L 469.861557 408.623736 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_52">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="468.750142" y="408.623736" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_53">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="469.861557" y="408.623736" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_10">
+    <path d="M 510.983915 440.79956 
+L 516.540991 440.79956 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_54">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="510.983915" y="440.79956" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_55">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="516.540991" y="440.79956" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_11">
+    <path d="M 504.315425 472.975385 
+L 509.316792 472.975385 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_56">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="504.315425" y="472.975385" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_57">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="509.316792" y="472.975385" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_12">
+    <path d="M 549.883443 505.151209 
+L 557.107642 505.151209 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_58">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="549.883443" y="505.151209" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_59">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="557.107642" y="505.151209" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_13">
+    <path d="M 458.747392 537.327033 
+L 467.52759 537.327033 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_60">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="458.747392" y="537.327033" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_61">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="467.52759" y="537.327033" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-LineCollection_14">
+    <path d="M 510.372638 569.502857 
+L 516.263143 569.502857 
+" clip-path="url(#02-direct-and-phases-p1f5edf873d)" style="fill: none; stroke: #283544; stroke-width: 1.5"/>
+   </g>
+   <g id="02-direct-and-phases-line2d_62">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="510.372638" y="569.502857" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-line2d_63">
+    <g clip-path="url(#02-direct-and-phases-p1f5edf873d)">
+     <use xlink:href="#02-direct-and-phases-m8447e48e1d" x="516.263143" y="569.502857" style="fill: #283544; stroke: #283544"/>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-patch_17">
+    <path d="M 244.8 601.92 
+L 244.8 118.8 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="02-direct-and-phases-patch_18">
+    <path d="M 244.8 601.92 
+L 600.45283 601.92 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="02-direct-and-phases-text_23">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="479.058517" y="153.814799" transform="rotate(-0 479.058517 153.814799)">4.06</text>
+   </g>
+   <g id="02-direct-and-phases-text_24">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="521.014436" y="185.990623" transform="rotate(-0 521.014436 185.990623)">4.85</text>
+   </g>
+   <g id="02-direct-and-phases-text_25">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="523.070554" y="218.166447" transform="rotate(-0 523.070554 218.166447)">4.74</text>
+   </g>
+   <g id="02-direct-and-phases-text_26">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="565.915606" y="250.342272" transform="rotate(-0 565.915606 250.342272)">5.57</text>
+   </g>
+   <g id="02-direct-and-phases-text_27">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="475.140778" y="282.518096" transform="rotate(-0 475.140778 282.518096)">4.03</text>
+   </g>
+   <g id="02-direct-and-phases-text_28">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="523.959686" y="314.69392" transform="rotate(-0 523.959686 314.69392)">4.92</text>
+   </g>
+   <g id="02-direct-and-phases-text_29">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="503.009512" y="346.869744" transform="rotate(-0 503.009512 346.869744)">4.43</text>
+   </g>
+   <g id="02-direct-and-phases-text_30">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="544.020729" y="379.045568" transform="rotate(-0 544.020729 379.045568)">5.31</text>
+   </g>
+   <g id="02-direct-and-phases-text_31">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="473.751509" y="411.221393" transform="rotate(-0 473.751509 411.221393)">4.03</text>
+   </g>
+   <g id="02-direct-and-phases-text_32">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="520.430943" y="443.397217" transform="rotate(-0 520.430943 443.397217)">4.83</text>
+   </g>
+   <g id="02-direct-and-phases-text_33">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="513.206745" y="475.573041" transform="rotate(-0 513.206745 475.573041)">4.73</text>
+   </g>
+   <g id="02-direct-and-phases-text_34">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="560.997594" y="507.748865" transform="rotate(-0 560.997594 507.748865)">5.56</text>
+   </g>
+   <g id="02-direct-and-phases-text_35">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="471.417543" y="539.924689" transform="rotate(-0 471.417543 539.924689)">3.93</text>
+   </g>
+   <g id="02-direct-and-phases-text_36">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="520.153096" y="572.100513" transform="rotate(-0 520.153096 572.100513)">4.83</text>
+   </g>
+   <g id="02-direct-and-phases-text_37">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="244.8" y="105.8" transform="rotate(-0 244.8 105.8)">Direct latency: median of run means</text>
+   </g>
+  </g>
+  <g id="02-direct-and-phases-axes_2">
+   <g id="02-direct-and-phases-patch_19">
+    <path d="M 831.62717 601.92 
+L 1187.28 601.92 
+L 1187.28 118.8 
+L 831.62717 118.8 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="02-direct-and-phases-matplotlib.axis_3">
+    <g id="02-direct-and-phases-xtick_8">
+     <g id="02-direct-and-phases-line2d_64">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="831.62717" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_38">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="831.62717" y="617.277422" transform="rotate(-0 831.62717 617.277422)">0</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_9">
+     <g id="02-direct-and-phases-line2d_65">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="886.34299" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_39">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="886.34299" y="617.277422" transform="rotate(-0 886.34299 617.277422)">1</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_10">
+     <g id="02-direct-and-phases-line2d_66">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="941.05881" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_40">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="941.05881" y="617.277422" transform="rotate(-0 941.05881 617.277422)">2</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_11">
+     <g id="02-direct-and-phases-line2d_67">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="995.77463" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_41">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="995.77463" y="617.277422" transform="rotate(-0 995.77463 617.277422)">3</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_12">
+     <g id="02-direct-and-phases-line2d_68">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="1050.49045" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_42">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1050.49045" y="617.277422" transform="rotate(-0 1050.49045 617.277422)">4</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_13">
+     <g id="02-direct-and-phases-line2d_69">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="1105.20627" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_43">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1105.20627" y="617.277422" transform="rotate(-0 1105.20627 617.277422)">5</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-xtick_14">
+     <g id="02-direct-and-phases-line2d_70">
+      <g>
+       <use xlink:href="#02-direct-and-phases-m8e2098f89a" x="1159.92209" y="601.92" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_44">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1159.92209" y="617.277422" transform="rotate(-0 1159.92209 617.277422)">6</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-text_45">
+     <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle" x="1009.453585" y="632.278281" transform="rotate(-0 1009.453585 632.278281)">Microseconds, arithmetic means of traced runs</text>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-matplotlib.axis_4">
+    <g id="02-direct-and-phases-ytick_15">
+     <g id="02-direct-and-phases-line2d_71">
+      <path d="M 831.62717 160.723636 
+L 1187.28 160.723636 
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_72">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="831.62717" y="160.723636" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_46">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="824.62717" y="164.522464" transform="rotate(-0 824.62717 164.522464)">JSPI / EH on</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_16">
+     <g id="02-direct-and-phases-line2d_73">
+      <path d="M 831.62717 227.269091 
+L 1187.28 227.269091 
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_74">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="831.62717" y="227.269091" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_47">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="824.62717" y="231.067919" transform="rotate(-0 824.62717 231.067919)">ASYNCIFY / EH on</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_17">
+     <g id="02-direct-and-phases-line2d_75">
+      <path d="M 831.62717 293.814545 
+L 1187.28 293.814545 
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_76">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="831.62717" y="293.814545" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_48">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="824.62717" y="297.613764" transform="rotate(-0 824.62717 297.613764)">JSPI / EH off</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_18">
+     <g id="02-direct-and-phases-line2d_77">
+      <path d="M 831.62717 360.36 
+L 1187.28 360.36 
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_78">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="831.62717" y="360.36" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_49">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="824.62717" y="364.159219" transform="rotate(-0 824.62717 364.159219)">ASYNCIFY / EH off</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_19">
+     <g id="02-direct-and-phases-line2d_79">
+      <path d="M 831.62717 426.905455 
+L 1187.28 426.905455 
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_80">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="831.62717" y="426.905455" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_50">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="824.62717" y="430.704673" transform="rotate(-0 824.62717 430.704673)">JSPI / ordinary page</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_20">
+     <g id="02-direct-and-phases-line2d_81">
+      <path d="M 831.62717 493.450909 
+L 1187.28 493.450909 
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_82">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="831.62717" y="493.450909" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_51">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="824.62717" y="497.250128" transform="rotate(-0 824.62717 497.250128)">ASYNCIFY / ordinary page</text>
+     </g>
+    </g>
+    <g id="02-direct-and-phases-ytick_21">
+     <g id="02-direct-and-phases-line2d_83">
+      <path d="M 831.62717 559.996364 
+L 1187.28 559.996364 
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: none; stroke: #e2e6ea; stroke-width: 0.7; stroke-linecap: square"/>
+     </g>
+     <g id="02-direct-and-phases-line2d_84">
+      <g>
+       <use xlink:href="#02-direct-and-phases-me857624dff" x="831.62717" y="559.996364" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="02-direct-and-phases-text_52">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="824.62717" y="563.795582" transform="rotate(-0 824.62717 563.795582)">JavaScript only</text>
+     </g>
+    </g>
+   </g>
+   <g id="02-direct-and-phases-patch_20">
+    <path d="M 831.62717 140.76 
+L 843.210849 140.76 
+L 843.210849 180.687273 
+L 831.62717 180.687273 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #5965a7"/>
+   </g>
+   <g id="02-direct-and-phases-patch_21">
+    <path d="M 831.62717 207.305455 
+L 846.061924 207.305455 
+L 846.061924 247.232727 
+L 831.62717 247.232727 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #5965a7"/>
+   </g>
+   <g id="02-direct-and-phases-patch_22">
+    <path d="M 831.62717 273.850909 
+L 843.087352 273.850909 
+L 843.087352 313.778182 
+L 831.62717 313.778182 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #5965a7"/>
+   </g>
+   <g id="02-direct-and-phases-patch_23">
+    <path d="M 831.62717 340.396364 
+L 844.48591 340.396364 
+L 844.48591 380.323636 
+L 831.62717 380.323636 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #5965a7"/>
+   </g>
+   <g id="02-direct-and-phases-patch_24">
+    <path d="M 831.62717 406.941818 
+L 842.753587 406.941818 
+L 842.753587 446.869091 
+L 831.62717 446.869091 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #5965a7"/>
+   </g>
+   <g id="02-direct-and-phases-patch_25">
+    <path d="M 831.62717 473.487273 
+L 842.750912 473.487273 
+L 842.750912 513.414545 
+L 831.62717 513.414545 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #5965a7"/>
+   </g>
+   <g id="02-direct-and-phases-patch_26">
+    <path d="M 831.62717 540.032727 
+L 843.426242 540.032727 
+L 843.426242 579.96 
+L 831.62717 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #5965a7"/>
+   </g>
+   <g id="02-direct-and-phases-patch_27">
+    <path d="M 843.210849 140.76 
+L 901.119734 140.76 
+L 901.119734 180.687273 
+L 843.210849 180.687273 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #2b79a1"/>
+   </g>
+   <g id="02-direct-and-phases-patch_28">
+    <path d="M 846.061924 207.305455 
+L 907.265473 207.305455 
+L 907.265473 247.232727 
+L 846.061924 247.232727 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #2b79a1"/>
+   </g>
+   <g id="02-direct-and-phases-patch_29">
+    <path d="M 843.087352 273.850909 
+L 902.83702 273.850909 
+L 902.83702 313.778182 
+L 843.087352 313.778182 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #2b79a1"/>
+   </g>
+   <g id="02-direct-and-phases-patch_30">
+    <path d="M 844.48591 340.396364 
+L 903.077436 340.396364 
+L 903.077436 380.323636 
+L 844.48591 380.323636 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #2b79a1"/>
+   </g>
+   <g id="02-direct-and-phases-patch_31">
+    <path d="M 842.753587 406.941818 
+L 898.563723 406.941818 
+L 898.563723 446.869091 
+L 842.753587 446.869091 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #2b79a1"/>
+   </g>
+   <g id="02-direct-and-phases-patch_32">
+    <path d="M 842.750912 473.487273 
+L 906.586035 473.487273 
+L 906.586035 513.414545 
+L 842.750912 513.414545 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #2b79a1"/>
+   </g>
+   <g id="02-direct-and-phases-patch_33">
+    <path d="M 843.426242 540.032727 
+L 902.245751 540.032727 
+L 902.245751 579.96 
+L 843.426242 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #2b79a1"/>
+   </g>
+   <g id="02-direct-and-phases-patch_34">
+    <path d="M 901.119734 140.76 
+L 937.572194 140.76 
+L 937.572194 180.687273 
+L 901.119734 180.687273 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #319b9a"/>
+   </g>
+   <g id="02-direct-and-phases-patch_35">
+    <path d="M 907.265473 207.305455 
+L 945.441486 207.305455 
+L 945.441486 247.232727 
+L 907.265473 247.232727 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #319b9a"/>
+   </g>
+   <g id="02-direct-and-phases-patch_36">
+    <path d="M 902.83702 273.850909 
+L 939.487504 273.850909 
+L 939.487504 313.778182 
+L 902.83702 313.778182 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #319b9a"/>
+   </g>
+   <g id="02-direct-and-phases-patch_37">
+    <path d="M 903.077436 340.396364 
+L 940.712787 340.396364 
+L 940.712787 380.323636 
+L 903.077436 380.323636 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #319b9a"/>
+   </g>
+   <g id="02-direct-and-phases-patch_38">
+    <path d="M 898.563723 406.941818 
+L 933.217076 406.941818 
+L 933.217076 446.869091 
+L 898.563723 446.869091 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #319b9a"/>
+   </g>
+   <g id="02-direct-and-phases-patch_39">
+    <path d="M 906.586035 473.487273 
+L 943.975179 473.487273 
+L 943.975179 513.414545 
+L 906.586035 513.414545 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #319b9a"/>
+   </g>
+   <g id="02-direct-and-phases-patch_40">
+    <path d="M 902.245751 540.032727 
+L 940.39441 540.032727 
+L 940.39441 579.96 
+L 902.245751 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #319b9a"/>
+   </g>
+   <g id="02-direct-and-phases-patch_41">
+    <path d="M 937.572194 140.76 
+L 963.503578 140.76 
+L 963.503578 180.687273 
+L 937.572194 180.687273 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #a3bf69"/>
+   </g>
+   <g id="02-direct-and-phases-patch_42">
+    <path d="M 945.441486 207.305455 
+L 972.842387 207.305455 
+L 972.842387 247.232727 
+L 945.441486 247.232727 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #a3bf69"/>
+   </g>
+   <g id="02-direct-and-phases-patch_43">
+    <path d="M 939.487504 273.850909 
+L 966.544488 273.850909 
+L 966.544488 313.778182 
+L 939.487504 313.778182 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #a3bf69"/>
+   </g>
+   <g id="02-direct-and-phases-patch_44">
+    <path d="M 940.712787 340.396364 
+L 967.760652 340.396364 
+L 967.760652 380.323636 
+L 940.712787 380.323636 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #a3bf69"/>
+   </g>
+   <g id="02-direct-and-phases-patch_45">
+    <path d="M 933.217076 406.941818 
+L 955.832949 406.941818 
+L 955.832949 446.869091 
+L 933.217076 446.869091 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #a3bf69"/>
+   </g>
+   <g id="02-direct-and-phases-patch_46">
+    <path d="M 943.975179 473.487273 
+L 970.238776 473.487273 
+L 970.238776 513.414545 
+L 943.975179 513.414545 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #a3bf69"/>
+   </g>
+   <g id="02-direct-and-phases-patch_47">
+    <path d="M 940.39441 540.032727 
+L 966.239812 540.032727 
+L 966.239812 579.96 
+L 940.39441 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #a3bf69"/>
+   </g>
+   <g id="02-direct-and-phases-patch_48">
+    <path d="M 963.503578 140.76 
+L 1029.127392 140.76 
+L 1029.127392 180.687273 
+L 963.503578 180.687273 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #e6b651"/>
+   </g>
+   <g id="02-direct-and-phases-patch_49">
+    <path d="M 972.842387 207.305455 
+L 1055.932273 207.305455 
+L 1055.932273 247.232727 
+L 972.842387 247.232727 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #e6b651"/>
+   </g>
+   <g id="02-direct-and-phases-patch_50">
+    <path d="M 966.544488 273.850909 
+L 1032.322002 273.850909 
+L 1032.322002 313.778182 
+L 966.544488 313.778182 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #e6b651"/>
+   </g>
+   <g id="02-direct-and-phases-patch_51">
+    <path d="M 967.760652 340.396364 
+L 1044.873451 340.396364 
+L 1044.873451 380.323636 
+L 967.760652 380.323636 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #e6b651"/>
+   </g>
+   <g id="02-direct-and-phases-patch_52">
+    <path d="M 955.832949 406.941818 
+L 1028.604993 406.941818 
+L 1028.604993 446.869091 
+L 955.832949 446.869091 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #e6b651"/>
+   </g>
+   <g id="02-direct-and-phases-patch_53">
+    <path d="M 970.238776 473.487273 
+L 1055.960228 473.487273 
+L 1055.960228 513.414545 
+L 970.238776 513.414545 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #e6b651"/>
+   </g>
+   <g id="02-direct-and-phases-patch_54">
+    <path d="M 966.239812 540.032727 
+L 1031.234386 540.032727 
+L 1031.234386 579.96 
+L 966.239812 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #e6b651"/>
+   </g>
+   <g id="02-direct-and-phases-patch_55">
+    <path d="M 1029.127392 140.76 
+L 1084.448993 140.76 
+L 1084.448993 180.687273 
+L 1029.127392 180.687273 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #da8150"/>
+   </g>
+   <g id="02-direct-and-phases-patch_56">
+    <path d="M 1055.932273 207.305455 
+L 1112.008176 207.305455 
+L 1112.008176 247.232727 
+L 1055.932273 247.232727 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #da8150"/>
+   </g>
+   <g id="02-direct-and-phases-patch_57">
+    <path d="M 1032.322002 273.850909 
+L 1087.657937 273.850909 
+L 1087.657937 313.778182 
+L 1032.322002 313.778182 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #da8150"/>
+   </g>
+   <g id="02-direct-and-phases-patch_58">
+    <path d="M 1044.873451 340.396364 
+L 1100.628892 340.396364 
+L 1100.628892 380.323636 
+L 1044.873451 380.323636 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #da8150"/>
+   </g>
+   <g id="02-direct-and-phases-patch_59">
+    <path d="M 1028.604993 406.941818 
+L 1085.509444 406.941818 
+L 1085.509444 446.869091 
+L 1028.604993 446.869091 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #da8150"/>
+   </g>
+   <g id="02-direct-and-phases-patch_60">
+    <path d="M 1055.960228 473.487273 
+L 1111.952745 473.487273 
+L 1111.952745 513.414545 
+L 1055.960228 513.414545 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #da8150"/>
+   </g>
+   <g id="02-direct-and-phases-patch_61">
+    <path d="M 1031.234386 540.032727 
+L 1086.876458 540.032727 
+L 1086.876458 579.96 
+L 1031.234386 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #da8150"/>
+   </g>
+   <g id="02-direct-and-phases-patch_62">
+    <path d="M 1084.448993 140.76 
+L 1096.037462 140.76 
+L 1096.037462 180.687273 
+L 1084.448993 180.687273 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #ae5b79"/>
+   </g>
+   <g id="02-direct-and-phases-patch_63">
+    <path d="M 1112.008176 207.305455 
+L 1137.562861 207.305455 
+L 1137.562861 247.232727 
+L 1112.008176 247.232727 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #ae5b79"/>
+   </g>
+   <g id="02-direct-and-phases-patch_64">
+    <path d="M 1087.657937 273.850909 
+L 1099.196649 273.850909 
+L 1099.196649 313.778182 
+L 1087.657937 313.778182 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #ae5b79"/>
+   </g>
+   <g id="02-direct-and-phases-patch_65">
+    <path d="M 1100.628892 340.396364 
+L 1122.177293 340.396364 
+L 1122.177293 380.323636 
+L 1100.628892 380.323636 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #ae5b79"/>
+   </g>
+   <g id="02-direct-and-phases-patch_66">
+    <path d="M 1085.509444 406.941818 
+L 1096.269353 406.941818 
+L 1096.269353 446.869091 
+L 1085.509444 446.869091 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #ae5b79"/>
+   </g>
+   <g id="02-direct-and-phases-patch_67">
+    <path d="M 1111.952745 473.487273 
+L 1135.664743 473.487273 
+L 1135.664743 513.414545 
+L 1111.952745 513.414545 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #ae5b79"/>
+   </g>
+   <g id="02-direct-and-phases-patch_68">
+    <path d="M 1086.876458 540.032727 
+L 1095.451217 540.032727 
+L 1095.451217 579.96 
+L 1086.876458 579.96 
+z
+" clip-path="url(#02-direct-and-phases-p44772892db)" style="fill: #ae5b79"/>
+   </g>
+   <g id="02-direct-and-phases-patch_69">
+    <path d="M 831.62717 601.92 
+L 831.62717 118.8 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="02-direct-and-phases-patch_70">
+    <path d="M 831.62717 601.92 
+L 1187.28 601.92 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="02-direct-and-phases-text_53">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1099.320411" y="163.321293" transform="rotate(-0 1099.320411 163.321293)">4.83</text>
+   </g>
+   <g id="02-direct-and-phases-text_54">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1140.84581" y="229.866747" transform="rotate(-0 1140.84581 229.866747)">5.59</text>
+   </g>
+   <g id="02-direct-and-phases-text_55">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1102.479598" y="296.412202" transform="rotate(-0 1102.479598 296.412202)">4.89</text>
+   </g>
+   <g id="02-direct-and-phases-text_56">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1125.460243" y="362.957656" transform="rotate(-0 1125.460243 362.957656)">5.31</text>
+   </g>
+   <g id="02-direct-and-phases-text_57">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1099.552302" y="429.503111" transform="rotate(-0 1099.552302 429.503111)">4.84</text>
+   </g>
+   <g id="02-direct-and-phases-text_58">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1138.947692" y="496.048565" transform="rotate(-0 1138.947692 496.048565)">5.56</text>
+   </g>
+   <g id="02-direct-and-phases-text_59">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1098.734166" y="562.59402" transform="rotate(-0 1098.734166 562.59402)">4.82</text>
+   </g>
+   <g id="02-direct-and-phases-text_60">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: start" x="831.62717" y="105.8" transform="rotate(-0 831.62717 105.8)">Instrumented phases: means add to the total</text>
+   </g>
+   <g id="02-direct-and-phases-legend_1">
+    <g id="02-direct-and-phases-patch_71">
+     <path d="M 822.695108 676.492838 
+L 842.695108 676.492838 
+L 842.695108 669.492838 
+L 822.695108 669.492838 
+z
+" style="fill: #5965a7"/>
+    </g>
+    <g id="02-direct-and-phases-text_61">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="850.695108" y="676.492838" transform="rotate(-0 850.695108 676.492838)">Caller entry</text>
+    </g>
+    <g id="02-direct-and-phases-patch_72">
+     <path d="M 822.695108 691.493619 
+L 842.695108 691.493619 
+L 842.695108 684.493619 
+L 822.695108 684.493619 
+z
+" style="fill: #2b79a1"/>
+    </g>
+    <g id="02-direct-and-phases-text_62">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="850.695108" y="691.493619" transform="rotate(-0 850.695108 691.493619)">Channel construction</text>
+    </g>
+    <g id="02-direct-and-phases-patch_73">
+     <path d="M 822.695108 706.4944 
+L 842.695108 706.4944 
+L 842.695108 699.4944 
+L 822.695108 699.4944 
+z
+" style="fill: #319b9a"/>
+    </g>
+    <g id="02-direct-and-phases-text_63">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="850.695108" y="706.4944" transform="rotate(-0 850.695108 706.4944)">Handler + observer setup</text>
+    </g>
+    <g id="02-direct-and-phases-patch_74">
+     <path d="M 822.695108 721.495181 
+L 842.695108 721.495181 
+L 842.695108 714.495181 
+L 822.695108 714.495181 
+z
+" style="fill: #a3bf69"/>
+    </g>
+    <g id="02-direct-and-phases-text_64">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="850.695108" y="721.495181" transform="rotate(-0 850.695108 721.495181)">postMessage</text>
+    </g>
+    <g id="02-direct-and-phases-patch_75">
+     <path d="M 1000.077921 676.492838 
+L 1020.077921 676.492838 
+L 1020.077921 669.492838 
+L 1000.077921 669.492838 
+z
+" style="fill: #e6b651"/>
+    </g>
+    <g id="02-direct-and-phases-text_65">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1028.077921" y="676.492838" transform="rotate(-0 1028.077921 676.492838)">Post return to delivery</text>
+    </g>
+    <g id="02-direct-and-phases-patch_76">
+     <path d="M 1000.077921 691.493619 
+L 1020.077921 691.493619 
+L 1020.077921 684.493619 
+L 1000.077921 684.493619 
+z
+" style="fill: #da8150"/>
+    </g>
+    <g id="02-direct-and-phases-text_66">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1028.077921" y="691.493619" transform="rotate(-0 1028.077921 691.493619)">Close port + resolve</text>
+    </g>
+    <g id="02-direct-and-phases-patch_77">
+     <path d="M 1000.077921 706.4944 
+L 1020.077921 706.4944 
+L 1020.077921 699.4944 
+L 1000.077921 699.4944 
+z
+" style="fill: #ae5b79"/>
+    </g>
+    <g id="02-direct-and-phases-text_67">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="1028.077921" y="706.4944" transform="rotate(-0 1028.077921 706.4944)">Resume</text>
+    </g>
+   </g>
+  </g>
+  <g id="02-direct-and-phases-text_68">
+   <text style="font-weight: 700; font-size: 21px; font-family: 'DejaVu Sans'; text-anchor: start" x="73.44" y="35.756719" transform="rotate(-0 73.44 35.756719)">Direct round trips and observed phases</text>
+  </g>
+  <g id="02-direct-and-phases-text_69">
+   <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #475569" x="73.44" y="59.4" transform="rotate(-0 73.44 59.4)">Same Promise / MessageChannel mechanism | Untraced and traced measurements kept separate</text>
+  </g>
+  <g id="02-direct-and-phases-text_70">
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(73.44 747.53209)">Primary and JS-only controls: 7 runs; EH-off and ordinary-page controls: 3 runs.</text>
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(73.44 758.334551)">The observer adds cost. Post-to-delivery includes suspension and scheduling, not pure queue wait.</text>
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #475569" transform="translate(73.44 769.137012)">Sub-resolution phase values are aggregate estimates; individual clock steps are 5 or 100 us.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="02-direct-and-phases-p1f5edf873d">
+   <rect x="244.8" y="118.8" width="355.65283" height="483.12"/>
+  </clipPath>
+  <clipPath id="02-direct-and-phases-p44772892db">
+   <rect x="831.62717" y="118.8" width="355.65283" height="483.12"/>
+  </clipPath>
+ </defs>
+</svg>

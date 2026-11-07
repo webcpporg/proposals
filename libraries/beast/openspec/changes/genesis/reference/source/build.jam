@@ -1,0 +1,38 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project /webcpp/beast ;
+
+import feature ;
+import webcpp ;
+use-project /webcpp/asio-wasip3 : ../../tools/boost/asio-wasip3 ;
+
+# The hash-verified upstream Jamfiles belong to the reference corpus only.
+webcpp.source-only example/upstream ;
+
+feature.feature webcpp-beast-unsupported : error ignore : propagated ;
+
+# Data interfaces do not require a socket reactor or guest TLS library.
+alias beast : : : : <include>include <library>/webcpp/config//config
+  <webcpp-beast-unsupported>error:<define>WEBCPP_BEAST_UNSUPPORTED_ERROR
+  <webcpp-beast-unsupported>ignore:<define>WEBCPP_BEAST_UNSUPPORTED_IGNORE ;
+
+# Only a program using guest-owned sockets acquires the Asio dependency.
+alias sockets : : : : <library>beast <library>/webcpp/asio//asio ;
+
+# Source-built OpenSSL is optional and belongs only to guest-owned TLS.
+alias tls : : : : <library>sockets <library>/webcpp/asio//openssl ;
+
+# Browser APIs own the network connection and TLS; no guest OpenSSL is linked.
+alias browser : : : : <library>beast <library>/webcpp/asio//asio ;
+
+# Host HTTP bindings are independent of guest sockets and guest TLS.
+alias wasi-http : : : : <library>beast <library>/webcpp/wasi//host-http
+  <toolset>clang-wasip2:<library>/webcpp/asio-wasip3//host-headers
+  <toolset>clang-wasip3:<library>/webcpp/asio-wasip3//headers ;
+
+# Supplied CLI streams use the portable WASI resource layer, not guest sockets.
+alias wasi-streams : : : : <library>beast <library>/webcpp/wasi//wasi ;

@@ -9,6 +9,11 @@
 
 #include <webcpp/asio/config.hpp>
 
+#if !WEBCPP_ASIO_HAS_BROWSER_BRIDGE
+#error \
+    "webcpp::asio::browser::src requires the Emscripten browser bridge; use native/WASI Asio operations on this target"
+#else
+
 /**
  What a program on emscripten compiles once: the JavaScript functions asio calls
  (detail/browser_imports.hpp), the yield of the run family and the bridge's functions among them,
@@ -23,6 +28,9 @@
 #include <emscripten/em_js.h>
 #include <emscripten/emscripten.h>
 #include <emscripten/val.h>
+#ifdef __EMSCRIPTEN_PTHREADS__
+#include <emscripten/threading.h>
+#endif
 
 #include <cstdint>
 #include <exception>
@@ -31,6 +39,34 @@
 // stackSave and stackRestore keep WebAssembly's stack pointer; UTF8ToString reads a string; and
 // ExitStatus is what exit() throws. EM_JS_DEPS has Emscripten link them.
 EM_JS_DEPS(webcpp_asio, "$Emval,_emval_decref,$stackSave,$stackRestore,$UTF8ToString,$ExitStatus");
+
+#ifdef __EMSCRIPTEN_PTHREADS__
+// Emscripten 6.0.11 routes worker poll through its main-thread proxy, but main-runtime
+// poll takes the synchronous path even in a suspending entry stack. Reuse its own
+// descriptor wait queues there; keep worker calls on the original proxy path.
+EM_JS_DEPS(webcpp_asio_threaded_poll, "$doPollAsync");
+// clang-format off
+EM_ASYNC_JS(int, webcpp_asio_main_poll, (void* descriptors, unsigned count, int timeout), {
+    return await doPollAsync(descriptors, count, timeout);
+});
+// clang-format on
+
+// The linker reserves this spelling for its wrapped syscall import.
+// NOLINTNEXTLINE(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp,readability-identifier-naming)
+extern "C" int __real___syscall_poll(void* descriptors, unsigned count, int timeout);
+
+// --wrap=__syscall_poll selects this only in the pthread build. The pinned wasm32
+// libc import has three i32 arguments and an i32 result. Nonblocking poll uses a
+// different import and remains nonsuspending, including inside browser callbacks.
+// One definition is required, exactly as for the bridge export below.
+// NOLINTNEXTLINE(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp,readability-identifier-naming,misc-definitions-in-headers)
+extern "C" int __wrap___syscall_poll(void* descriptors, unsigned count, int timeout) {
+    if (emscripten_is_main_runtime_thread()) {
+        return webcpp_asio_main_poll(descriptors, count, timeout);
+    }
+    return __real___syscall_poll(descriptors, count, timeout);
+}
+#endif
 
 // clang-format off
 EM_ASYNC_JS(void, webcpp_asio_yield, (), {
@@ -63,8 +99,8 @@ EM_JS(emscripten::EM_VAL, webcpp_asio_function, (emscripten::EM_VAL token, void*
     const state = Emval.toValue(token);
     const address = bridge >>> 0;
     return Emval.toHandle(event => {
-        // After the runtime aborted, a trap or abort(), WebAssembly's heap may be what the trap
-        // left, so nothing enters it, as Emscripten's own callbacks do nothing then.
+        // Once Emscripten marks the runtime aborted, nothing enters WebAssembly, as its own
+        // callbacks do nothing then. A raw WebAssembly trap need not set ABORT.
         if (!state.alive || ABORT) {
             return;
         }
@@ -165,4 +201,5 @@ extern "C" EMSCRIPTEN_KEEPALIVE void webcpp_asio_deliver(void* bridge, std::uint
 #endif
 }
 
+#endif  // WEBCPP_ASIO_HAS_BROWSER_BRIDGE
 #endif  // WEBCPP_ASIO_BROWSER_SRC_HPP

@@ -1,0 +1,6 @@
+{
+    "name": "webcpp-beast-browser-tests",
+    "private": true,
+    "type": "module",
+    "description": "Controlled browser peers and Chrome driver using Node built-ins only."
+}

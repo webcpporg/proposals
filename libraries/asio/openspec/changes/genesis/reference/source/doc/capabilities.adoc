@@ -1,0 +1,280 @@
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+[#asio-capabilities]
+== Target and variant capabilities
+
+This reference covers the public feature families of `webcpp::asio` and its
+Cobalt build target. It does not promise every feature of the complete Boost
+installation. *Supported* means the implementation provides the feature;
+*limited* requires the qualification below; *unverified* is not a portability
+promise. Native behavior also depends on the operating system.
+
+For the explicit feature-by-feature intersection of threads and exception
+handling, use <<asio-feature-matrix>>. It separates Asio from Cobalt and
+distinguishes public support, isolated probes and unverified combinations.
+
+[#asio-capabilities-config]
+=== Build configurations
+
+[cols="2,2,2,3",options="header"]
+|===
+| Target and variant | Threads | Exceptions | Status
+| Native | OS threads, subject to Boost configuration | On or off
+| Existing integration; native controls run on macOS arm64.
+| Emscripten / JSPI | Single or pthread workers | On or off
+| Wasm exceptions when enabled; M requires isolation and creator-thread affinity.
+| Emscripten / Asyncify | Single or pthread workers | On or off
+| JavaScript exceptions when enabled; M has the raw pthread return-value limit below.
+| WASIp3 / `threading=single` | Disabled | On or off
+| Minimal port; both configurations tested with wasi-sdk 34.0 and Wasmtime 50.0.1.
+| WASIp3 / `threading=multi` | Experimental cooperative threads | Off
+| Minimal port; tested with wasi-sdk 34.0's cooperative sysroot and Wasmtime 50.0.1.
+| WASIp3 / `threading=multi` | Experimental cooperative threads | On
+| Unavailable with the tested SDK: its cooperative sysroot has no {cpp} exception runtime.
+| WASIp2 / `threading=single` | Disabled | On or off
+| Core, timers, TCP/UDP, forward DNS, CLI streams, Cobalt and TLS; see <<asio-wasip2>>.
+| WASIp2 / `threading=multi` | Unavailable | On or off
+| Rejected: the pinned SDK has no supported P2 pthread runtime/profile.
+|===
+
+`variant=debug` and `variant=release` select build optimization, not different
+APIs. The new WASIp3 runtime verification uses Release builds. JSPI and Asyncify
+are browser suspension variants; they are not WASIp3 variants. The WASIp3
+thread setting and exception setting are independent choices, subject to the
+SDK runtime availability above. Cooperative threads suspend at blocking WASI
+operations; this does not provide simultaneous CPU execution on multiple cores.
+
+include::feature-matrix.adoc[]
+
+[#asio-capability-guards]
+=== Require a capability at compile time
+
+`<webcpp/asio/config.hpp>` defines the following read-only macros as `0` or `1`.
+Use `#if`, not `#ifdef`, to inspect them. Do not define these capabilities on
+the command line: the header rejects attempts to override them.
+
+[cols="3,5",options="header"]
+|===
+| Macro suffix after `WEBCPP_ASIO_` | Meaning of `1`
+| `HAS_SOCKET_BACKEND` | Native/WASI TCP and UDP backend, subject to runtime grants and options.
+| `HAS_OPENSSL_BACKEND` | This target supports the optional source-built OpenSSL provider.
+| `HAS_HOST_DNS` | Forward lookup through the native/WASI host, subject to host DNS policy.
+| `HAS_REVERSE_DNS` | Native reverse lookup; the WASI interface is forward-only.
+| `HAS_THREADS` | Boost.Asio thread support is enabled in this build, including cooperative threads.
+| `HAS_BROWSER_BRIDGE` | Emscripten JavaScript events and Promises can reach the executor.
+| `HAS_BROWSER_WORKERS` | Emscripten pthread build with Asio thread support.
+| `HAS_WASI_STDIO` | The WASIp2 pollable CLI stream adapter is available.
+| `HAS_LOCAL_SOCKETS`, `HAS_SIGNALS`, `HAS_SERIAL_PORT`
+| Native target with the corresponding Boost.Asio facility enabled.
+|===
+
+`WEBCPP_ASIO_HAS_OPENSSL=1` is different: it declares that the optional compiled
+dependency was selected. `/webcpp/asio//openssl` and `//tls` supply it together
+with the matching provider. Outside B2, the application must also supply the
+matching OpenSSL headers and libraries. Merely defining it cannot satisfy the
+linker. `ssl.hpp` rejects native/WASI use without that dependency; Emscripten
+keeps its portable TLS settings record.
+
+Define a `WEBCPP_ASIO_REQUIRE_*` switch to a nonzero integer before the first
+WebCPP include, or on the compiler command line, to require `SOCKET_BACKEND`,
+`OPENSSL`, `THREADS`, `LOCAL_SOCKETS`, `SIGNALS`, `SERIAL_PORT` or `REVERSE_DNS`.
+An absent switch or a value of zero imposes no requirement. The default permits
+portable applications to select runtime alternatives, including browser transports.
+Apply configuration consistently to every translation unit.
+
+This compiled example requires a real socket backend and still handles a
+runtime refusal from the host:
+
+[source,cpp]
+----
+include::{examples}/asio_capabilities.cpp[tag=program,indent=0]
+----
+
+[listing]
+----
+include::{examples}/asio_capabilities.expected[]
+----
+
+The browser-specific headers diagnose a non-Emscripten target before including
+Emscripten headers. `wasi/stdio_stream.hpp` diagnoses targets without the P2 CLI
+adapter. B2 rejects unsupported SDK/thread/EH combinations and checks the private
+WASI descriptor ABI. A compiler cannot determine network grants, available peers,
+trust roots, a page's isolation headers or whether a host import will block.
+Those conditions retain runtime errors or the documented host behavior.
+
+[#asio-capabilities-core]
+=== Execution and integration features
+
+In the following tables, *browser* covers both JSPI and Asyncify. Their API
+capabilities are the same; their suspension and exception implementations differ.
+The separate <<asio-feature-wasip2>> table records the P2 profile.
+
+[cols="3,2,2,2,2",options="header"]
+|===
+| Feature | Native | Browser | WASIp3 single | WASIp3 cooperative
+| `io_context`, executors, `post`, `dispatch`, run/poll family
+| Supported | Supported | Supported | Supported
+| Steady/system timers, expiry changes and cancellation
+| Supported | Supported | Supported | Supported
+| Context and associated-handler allocators
+| Boost contract | Supported | Context/timer/post counters tested
+| Context/timer/post counters tested; named libc pipe allocations separate
+| Multiple threads posting or running a context
+| Boost contract | Cross-thread post in M; one creator-thread runner per context
+| Unavailable | Tested: wakeup and two runners
+| {cpp}20 Boost.Asio `awaitable` / `co_spawn`
+| Timer coroutine tested | Timer coroutine tested under Node and Chrome
+| Timer coroutine tested | Timer coroutine tested
+| Boost.Cobalt and the `co_main` runner
+| Supported with qualifications in <<asio-cobalt>>
+| Supported with the same qualifications
+| Supported with qualifications in <<asio-cobalt>>
+| Supported without exceptions; cooperative thread coroutine tested
+| Promise operations and DOM/event bridge
+| Not applicable | Supported | Not applicable | Not applicable
+| Browser turn limit, explicit browser yield
+| Not applied | Supported; default limit 100 | Not applied | Not applied
+| Browser loader and suspension-variant manifest
+| Not applicable | Supported | Not applicable | Not applicable
+|===
+
+WASIp3 keeps Boost.Asio's scheduler and select reactor. It does not use the
+JavaScript event bridge or the browser's handler-count limit. Its syscalls
+suspend through wasi-libc and the host's Component Model implementation.
+
+The public Cobalt target builds its static archive with checked compatibility
+headers and sources on WASIp3. Timers, TCP/UDP and cancellation are exercised
+through both Asio completion tokens and Cobalt's own wrappers. The optional
+`/webcpp/asio//cobalt_ssl` target adds Cobalt's SSL wrapper with verified TLS
+and handshake/transfer cancellation, including partial composed operations.
+Truncated and cancelled shutdown are also tested; see <<asio-cobalt-ssl>>. See
+<<asio-feature-cobalt-build-block>> for integration details and
+<<asio-feature-validation-pending>> for open tests.
+It has no automatic SIGINT/SIGTERM shutdown bridge on WASIp3; internal
+coroutine cancellation is a separate mechanism. See <<asio-cobalt-runner>>.
+
+[#asio-capabilities-network]
+=== Networking features
+
+[cols="3,2,2,2,2",options="header"]
+|===
+| Feature | Native | Browser | WASIp3 single | WASIp3 cooperative
+| TCP connect, accept, read/write, endpoint queries
+| Supported | Requires custom transport | Supported | Supported
+| TCP composed read/write with buffer sequences
+| Supported | Requires custom transport | Supported; partial transfers | Supported; partial transfers
+| UDP send/receive, including empty datagrams
+| Supported | Requires custom transport | Supported | Supported
+| UDP `send_to` / `async_send_to` with multiple nonempty buffers
+| Boost contract | Transport dependent | Supported; concatenated copy | Supported; concatenated copy
+| UDP receive or connected `send` / `async_send` with multiple nonempty buffers
+| Boost contract | Transport dependent | Supported; gather/scatter copy | Supported; gather/scatter copy
+| Asynchronous cancellation and TCP EOF
+| Supported | Transport dependent | Tested | Tested
+| IPv4 loopback TCP/UDP
+| Tested | Requires custom transport | Tested | Tested
+| IPv6 socket connections
+| OS dependent | Requires custom transport | Unverified | Unverified
+| IPv6 numeric scope parsing/formatting
+| Supported | Browser endpoint representation | Tested | Tested
+| IPv6 interface-name scopes
+| OS dependent | Not a host interface lookup | Unavailable | Unavailable
+| Synchronous resolver
+| Supported | Retains names; no DNS lookup | wasi-libc resolver | wasi-libc resolver
+| Asynchronous resolver
+| Boost thread pool | Retains names; no DNS lookup | Native async host lookup
+| Native async host lookup
+| `available()` / `FIONREAD`, peek, out-of-band marks
+| OS dependent | Transport dependent | Unavailable in tested libc | Unavailable in tested libc
+| Socket options
+| OS dependent | Transport dependent | Limited to libc's options | Limited to libc's options
+| TLS through `/webcpp/asio//openssl`
+| Source-built OpenSSL; native Clang/GCC recipe
+| Settings record only
+| Source-built OpenSSL; TLS 1.2/1.3
+| Source-built OpenSSL; TLS 1.2/1.3, exceptions off with SDK 34
+| Embedded CA defaults and complete replacement through `/webcpp/asio//tls`
+| Supported; no certificate files required
+| Helper returns `unsupported_target`; browser owns trust
+| Supported; no certificate directory preopen
+| Supported; no certificate directory preopen, exceptions off with SDK 34
+| WebSocket/HTTP browser streams
+| Separate Beast library | Separate adapter, not supplied here | Not supplied here | Not supplied here
+| Process signals, local sockets, serial ports from Boost
+| OS dependent | Not supplied here | Disabled | Disabled
+|===
+
+OpenSSL local coverage includes native macOS arm64 single/multi with exceptions
+on/off using Clang, WASIp2 and WASIp3 single with exceptions on/off, and WASIp3 cooperative
+with exceptions off. A GCC 15 native multi-threaded build with exceptions also
+passed the TLS tests. Linux Clang/GCC mappings are implemented but not runtime-tested
+on this macOS host. The native MSVC recipe is implemented; this local macOS matrix does not establish Windows runtime coverage. The source library
+uses OS threads natively and cooperative threads on WASIp3; it does not make
+cooperative execution CPU-parallel. TLS tests cover verified handshakes,
+asynchronous application data, clean shutdown and rejected peer identities.
+The embedded CA factory's trust policy, update procedure and local checks are
+documented in <<asio-ca-certificates>>.
+
+The browser's default socket transport reports `operation_not_supported` for
+network operations. The browser resolver does not perform DNS; see
+<<asio-sockets>>. A TLS settings record is not a TLS implementation.
+
+[#asio-wasip3-contract]
+=== WASIp3 limits and error behavior
+
+* TCP buffer sequences advance one nonempty buffer per syscall when necessary.
+  Partial reads and writes are valid Asio behavior; composed `async_read` and
+  `async_write` continue until their completion condition is met. No temporary
+  heap buffer is introduced to concatenate a sequence.
+* UDP `send_to` and `async_send_to` concatenate multiple nonempty buffers into
+  one datagram because the tested wasi-libc does not provide `sendmsg`.
+  Concatenation visits the entire sequence before Asio's native iovec limit.
+  It copies the payload once into temporary storage: the context allocator
+  supplies synchronous storage, and the handler's associated allocator supplies
+  asynchronous storage. The operation owns asynchronous storage until completion
+  or destruction and releases it before invoking the handler. Scalar, empty and
+  single-nonempty-buffer sends need no temporary allocation or payload copy.
+  The gather path rejects payloads above 65,535 bytes with `message_size` before
+  allocating or reading their data; the host may enforce a smaller IP limit.
+  Allocation failure follows the supplied allocator's failure behavior.
+* Connected `send` / `async_send` use the same single-datagram gather path.
+  Multi-buffer receives read one datagram into temporary storage and scatter the
+  received bytes across the destination sequence. A short destination truncates
+  the datagram; its remainder is not delivered as another packet. Empty buffers
+  do not split a datagram. Empty datagrams are delivered. Scratch allocation
+  follows the synchronous context or asynchronous handler allocator, as for sends.
+* Synchronous resolution uses wasi-libc. Actual hostname lookup requires host
+  permission; numeric resolution does not need DNS. Both thread profiles use
+  the native asynchronous forward-lookup import and a waitable-backed descriptor
+  for `async_resolve`. Initiation is deferred through the executor and other timers
+  progress while the lookup is pending. Resolver-wide and per-operation
+  cancellation preserve the normal completion channel. No hidden thread or
+  periodic DNS polling is introduced. Canonical names, mapped-address policies
+  and asynchronous reverse lookup are explicitly unsupported.
+* Interface-name scopes such as `%eth0` are rejected. Decimal IPv6 scopes in
+  the range 0 through 4294967295 are accepted.
+* Missing socket options, including linger, broadcast, debug, don't-route,
+  out-of-band-inline and low-water marks, report `operation_not_supported`.
+  Other options remain subject to wasi-libc and host support. Multicast and
+  detailed socket-option interoperability have not been validated.
+* WASI has no `ESHUTDOWN`. The port maps Asio's `shut_down` to `EPIPE`, which
+  wasi-libc uses; it therefore shares the numeric value of `broken_pipe`.
+* Error-code overloads and asynchronous completion retain their error channels.
+  With exceptions disabled, invoking a throwing overload on an error can still
+  reach Boost's fatal exception handler. Prefer explicit error-code/result paths.
+* Cobalt uses the same platform restrictions through its public B2 target.
+  Its async resolver uses the same native lookup in both thread profiles.
+  TLS through Asio/OpenSSL
+  with Cobalt tokens uses application-selected trust roots and host network
+  capabilities; embedded roots require no certificate filesystem preopen.
+  See <<asio-tls>> and <<asio-ca-certificates>>.
+
+These are current port boundaries, not claims that WASIp3 itself can never
+support the missing operations. The compatibility patch belongs to Boost.Asio's
+platform layer; implementing the missing POSIX entry points such as
+`sendmsg`/`recvmsg` belongs in wasi-libc. The current port avoids pretending those
+entry points or process signals exist.

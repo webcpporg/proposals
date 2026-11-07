@@ -1,0 +1,12 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project : requirements <library>/webcpp/beast//tls ;
+import webcpp ;
+webcpp.targets native wasip3 ;
+webcpp.original python3 ;
+webcpp.drive protocol : protocol.cpp : <webcpp-drive-timeout>90 : run.py ;
+webcpp.lane tls : protocol : native wasip3 ;
