@@ -8,10 +8,12 @@ need an independent library contract before extraction or broader support can be
 ## What Changes
 
 - Establish `webcpp::cobalt` as a wrapper in `webcpporg/cobalt`, integrated at `libs/cobalt`,
-  with its own configuration, build targets, tests, examples and documentation. Preserve
-  `boost::cobalt` headers, types, completion tokens, `co_main`, executor associations and
-  cancellation semantics; do not require users to rewrite their coroutine algorithms.
-- Extract the replacement runner, Cobalt-specific overlays, compiled-source recipe and
+  with its own configuration, build targets, tests, examples and documentation. Applications
+  use `<webcpp/cobalt/...>` and `webcpp::cobalt`, preserving coroutine algorithms, completion
+  tokens, `co_main` and supported executor/cancellation contracts. Native core/plain I/O
+  types are Boost aliases; Wasm selects shipped adaptations. The owner-approved corrected
+  native SSL wrapper is an explicit type-identity exception.
+- Extract target-specific runners, shipped implementation sources, source inventories and
   Cobalt-owned tests/examples from Asio and the superproject. Keep dependency direction
   Cobalt -> Asio, with no Asio core dependency on Cobalt. Retain the old
   `/webcpp/asio//cobalt` and `cobalt_ssl` names as compatibility aliases.
@@ -57,12 +59,13 @@ silently rewrite another root's specification or certify its implementation.
 - **Status:** `implementing`. Rodrigo approved the proposal and requested execution on
   2026-11-06. `decided` records that date; `release` remains null. Implementation tasks
   are checked only after their work and verification are committed.
-- **Dependencies:** `webcpp::asio`, `webcpp::config`, matching Boost headers/sources and
+- **Dependencies:** `webcpp::asio`, `webcpp::config`, matching Boost headers and explicitly shipped compiled sources, plus
   target toolchains. Optional TLS reuses the superproject provider. Application-only
   dependencies such as Beast, JSON, URL, Outcome and Python/nanobind are declared per example.
 - **Affected areas:** Asio's runner, Cobalt guide/example/tests and compatibility targets;
   `tools/boost/cobalt-common`, `cobalt-wasip3`, `cobalt-ssl` and `tools/boost/Jamfile`;
   documentation, install/discovery, capability reporting and local/CI lane declarations.
   Existing native, Asio, Beast and combined OpenSSL consumers must retain behavior.
-- **Evidence boundary:** this work inventories source and validates planning artifacts only.
-  Historical Asio test reports and measurements are not copied as Cobalt support claims.
+- **Evidence boundary:** `reference/STATUS.md` records the current uncommitted local
+  migration, matrices and Release measurements separately from committed historical results.
+  No remote CI, merged candidate or release is inferred from local evidence.

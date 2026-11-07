@@ -10,8 +10,9 @@ source compatibility, application evidence and reproducible measurements.
 
 The library SHALL be owned by `webcpporg/cobalt` and integrated at `libs/cobalt`, with its
 own build, configuration, tests, examples and documentation. It MUST depend on Asio rather
-than making Asio's core depend on Cobalt. Cobalt-specific implementation and checked overlay
-ownership MUST move to this library; shared provider/overlay utilities MUST have one owner.
+than making Asio's core depend on Cobalt. Cobalt-specific implementation, source inventories and maintainer provenance MUST belong
+to this library; shared providers MUST have one owner. Consumers MUST NOT apply patches
+or shadow installed Boost include paths.
 
 #### Scenario: Asio without Cobalt
 - **WHEN** a consumer builds only the public Asio core target
@@ -23,15 +24,21 @@ ownership MUST move to this library; shared provider/overlay utilities MUST have
 
 ### Requirement: Existing source and build entry points remain compatible
 
-The library SHALL preserve Boost.Cobalt's headers, namespace, coroutine types, `use_op`,
-executor/cancellation associations and `co_main` signature. Its public targets MUST support
-both `co_main` and custom-main consumers. Existing `/webcpp/asio//cobalt`, `cobalt_ssl`,
-`/webcpp//boost_cobalt` and `boost_cobalt_io_ssl` entry points MUST remain forwarding
-compatibility aliases without a dependency cycle or duplicate implementation.
+The public source interface SHALL use `<webcpp/cobalt/...>` and `webcpp::cobalt`,
+preserving supported coroutine operations, completion tokens, executor/cancellation
+associations and the `co_main` signature. Native core and plain I/O types MUST be
+actual Boost types; Wasm MUST select shipped adaptations through configuration.
+The corrected SSL wrapper SHALL be the explicitly documented native identity exception.
+Both `co_main` and custom-main consumers MUST be supported. The old Asio/root Cobalt
+B2 targets MUST remain forwarding aliases without duplicate implementation.
 
-#### Scenario: Existing coroutine source
-- **WHEN** an existing supported program using `<boost/cobalt/main.hpp>` and `boost::cobalt::main co_main` is built through old and new target names
-- **THEN** no coroutine API rewrite is required and output, cancellation and completion behavior agree
+#### Scenario: Existing coroutine algorithm
+- **WHEN** an existing supported Boost.Cobalt program changes its includes and namespace to WebCPP
+- **THEN** its coroutine algorithm, supported results and cancellation contracts are retained, with native upstream defects classified separately
+
+#### Scenario: Native SSL identity exception
+- **WHEN** a native application uses the corrected WebCPP SSL stream alongside Boost coroutine and plain socket types
+- **THEN** TLS state, cancellation and shutdown use the shipped corrected wrapper without patching Boost or altering native core types
 
 #### Scenario: Custom main
 - **WHEN** a program with its own `main` uses the core or optional I/O SSL target
@@ -50,12 +57,12 @@ Unknown source hashes, incompatible private SDK interfaces or mismatched source/
 versions MUST fail deterministically instead of applying a best-effort patch.
 
 #### Scenario: Changed upstream input
-- **WHEN** a checked overlay sees an unexpected Boost source hash
-- **THEN** the build names the mismatched file and expected version and refuses the unsupported overlay
+- **WHEN** the maintainer synchronizer sees an unexpected Boost source hash
+- **THEN** the synchronizer names the mismatched file and expected version and refuses to generate derived sources
 
 #### Scenario: Archive and consumer agreement
 - **WHEN** EH, threading or target changes
-- **THEN** both compiled sources and consumers use the same selected overlays and settings
+- **THEN** both compiled sources and consumers use the same shipped backend and settings
 
 ### Requirement: Preserved scheduling, completion and cancellation
 
@@ -102,7 +109,7 @@ Compile-only, inherited source and Asio-only results MUST NOT become Cobalt runt
 - **THEN** only that Node tuple gains runtime evidence and corresponding real-browser tuples remain unverified until run
 
 #### Scenario: Independent upstream run helper
-- **WHEN** `boost::cobalt::run(task)` or an experimental stackful adapter is evaluated
+- **WHEN** `webcpp::cobalt::run(task)` or an experimental stackful adapter is evaluated
 - **THEN** it receives its own behavior/dependency evidence and is not declared supported merely because the replacement `co_main` runner passed
 
 #### Scenario: SDK upgrade
@@ -297,3 +304,14 @@ release from artifact existence alone.
 #### Scenario: Accepted support claim
 - **WHEN** an implementation task or matrix cell is marked complete
 - **THEN** exact committed evidence exists for its scope and no unrun configuration is included in the claim
+
+### Requirement: Independent source-distribution consumers
+
+The library MUST ship explicit source and dependency inventories usable by B2, a direct
+compiler and a CMake consumer. An extracted source archive MUST work without Git, B2,
+patch tools, checkout overlays or undeclared developer caches. Toolchains, external
+providers and optional WIT generation remain explicit requirements.
+
+#### Scenario: Extracted CMake consumer
+- **WHEN** an application builds core, runner and optional SSL from a clean source archive with explicit dependencies
+- **THEN** its compiler dependency records name only the archive, selected toolchain and declared dependencies, and the runtime witness validates the chosen configuration

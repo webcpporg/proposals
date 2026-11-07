@@ -1,3 +1,9 @@
+Current contract: the owner-approved 2026-11-06 architecture in `design.md` and
+`specs/cobalt/spec.md` supersedes the original overlay-based reference plan.
+Unchecked tasks may have local evidence in `reference/STATUS.md`; they remain
+unchecked until the coordinated implementation is committed. Historical checked
+items do not certify the later source migration.
+
 ## 1. Acceptance, baseline and inventory
 
 - [x] 1.1 After acceptance and an implementation request, freeze the working revisions and capture existing user-facing Cobalt build/run and dependency-graph baselines; verify old targets reproduce their documented behavior before edits. (plan: 1.1)
@@ -7,7 +13,7 @@
 ## 2. Independent ownership and compatibility
 
 - [ ] 2.1 Add failing public-target/Asio-only/mixed-alias build witnesses, then establish the independent library skeleton, configuration and metadata; verify Asio-only consumers do not resolve Cobalt or OpenSSL. (plan: 2.1)
-- [ ] 2.2 Transfer the runner and Cobalt overlay/source recipes with matching consumer/archive settings; verify exact source provenance, hash/version refusals and one definition per support unit. (plan: 2.2)
+- [ ] 2.2 Transfer the runner and Cobalt shipped source inventories and maintainer provenance with matching consumer/archive settings; verify exact source provenance, hash/version refusals and one definition per support unit. (plan: 2.2)
 - [ ] 2.3 Forward the four legacy target names and migrate Cobalt-owned tests/examples while splitting mixed fixtures; verify old/new/custom-main consumers and combined Asio/Beast/Cobalt links have no graph cycle, duplicate runner or provider. (plan: 2.3)
 
 ## 3. Core behavior and capabilities

@@ -614,3 +614,19 @@ The 53-example manifest SHALL record the original implementation and each reques
 #### Scenario: Unix sockets are unavailable but the stream counterpart works
 - **WHEN** the original local-socket application cannot run but its supplied-stream counterpart passes the exchange tests
 - **THEN** the matrix reports application portability as passed with adaptation and Unix-domain transport compatibility as unavailable
+
+### Requirement: Explicit native and Wasm dependency selection
+
+Native upstream-equivalent public types SHALL be actual Boost.Beast types. Wasm
+MUST select versioned WebCPP protocol/data adaptations over the same shipped Asio
+backend used by Cobalt. Browser WebSocket/fetch and WASI host HTTP/streams MUST keep
+their independent host semantics. Consumers MUST NOT apply patches or shadow Boost
+headers; source-archive recipes MUST declare WIT, SDK and optional TLS dependencies.
+
+#### Scenario: Native interoperability
+- **WHEN** a consumer includes native Boost and WebCPP headers in either order
+- **THEN** message/WebSocket type identities hold and real protocol witnesses use the same native Asio family
+
+#### Scenario: Independent Wasm consumer
+- **WHEN** an extracted source consumer builds a supported socket or host-HTTP program
+- **THEN** declared WebCPP sources and bindings suffice without B2, Git, patch tools or a developer checkout

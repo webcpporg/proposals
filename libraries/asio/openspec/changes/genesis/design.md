@@ -55,17 +55,26 @@ Constraints every decision below works within, from the superproject's rulebook 
 
 ## Decisions
 
-### D1. A class derived from Boost's io_context, and every other name Boost's
+### D1. Actual native Boost types and explicit Wasm source distribution
 
-`webcpp::asio::io_context` derives from `boost::asio::io_context` on both targets, shares its
-executor type and converts to `boost::asio::io_context&`; the timers are aliases of Boost's; a
-program keeps naming `post`, `co_spawn`, `use_awaitable` and `bind_executor` from Boost.
+The owner-approved 2026-11-06 migration supersedes the former derived native
+context and include-overlay approach. Native equivalents are aliases of actual
+Boost types. Wasm uses versioned implementation files under explicit WebCPP paths,
+with one backend across Asio, Cobalt and Beast. Browser turn options are target
+extensions, not extra native constructors. Applications migrate includes/namespaces
+and use the selected backend's executors, traits and completion tokens consistently.
 
-- **Why:** a program sets its options the same way everywhere, and code written against either
-  interoperates; Cobalt and Beast are templates over Boost's executor.
-- **Alternatives:** a fork of Asio's scheduler (a maintenance burden and incompatible with
-  every library on Asio); a free function that runs a Boost context (nowhere to keep the
-  options).
+`sources.json` identifies compiled support units and feeds the B2 source list.
+Direct compiler and CMake consumers use an extracted archive with explicit SDK and
+provider inputs, without Git, B2, patch programs or undeclared checkout paths.
+Maintainer generators retain upstream hashes/licenses; consumers never execute them.
+Known native Boost defects remain documented under the native identity contract.
+Cobalt owns its core, runner and corrected SSL wrapper, including the separately
+approved native SSL identity exception. Old Asio Cobalt names only forward.
+
+The earlier decisions below record browser algorithm and integration history;
+references to Boost's internals mean the selected Wasm backend, not permission to
+restore native derived types, consumer overlays or Cobalt ownership inside Asio.
 
 ### D2. The run family is a composition of Boost's calls
 

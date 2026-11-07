@@ -2,7 +2,7 @@ schema: spec-driven
 created: 2026-10-10
 webcpp:
   library: asio
-  title: "asio: Boost.Asio and Cobalt across native, browsers and WASI"
+  title: "asio: Boost.Asio across native, browsers and WASI"
   kind: wrapper
   port_of: null
   status: implementing

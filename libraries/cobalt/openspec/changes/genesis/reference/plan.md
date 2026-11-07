@@ -1,5 +1,15 @@
 # Cobalt extraction and validation plan
 
+## Owner-approved execution amendment, 2026-11-06
+
+The current design/spec supersedes the original Boost-namespace and consumer-overlay
+instructions below. Implement explicit `webcpp::cobalt` source distribution, actual
+Boost native core/runner identity, and the approved corrected native SSL exception.
+Use the superproject's `2026-11-06-portable-network-libraries` plan for the coordinated
+Asio/Cobalt/Beast migration. Retain every original application/benchmark obligation.
+The numbered task bodies below remain the historical extraction plan, not authority
+to restore consumer patching. Current evidence and uncommitted gates are in STATUS.md.
+
 This is an implementation plan, not work performed. Every entry maps to `../tasks.md`.
 Execute only after proposal acceptance and an explicit implementation request. Commands
 below are from the superproject root unless a different directory is stated. Planned target

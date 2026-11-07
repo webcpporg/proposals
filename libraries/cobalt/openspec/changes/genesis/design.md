@@ -39,20 +39,32 @@ Boost programs are portable regardless of their dependencies.
 
 ## Decisions
 
-### D1. Independent wrapper, with upstream names and explicit support units
+### D1. Explicit WebCPP entry points and shipped support units
 
-The repository is `webcpporg/cobalt`, checked out at `libs/cobalt`, `kind: wrapper` and
-`port-of: null`. Public packaging/configuration is `webcpp::cobalt`; application coroutine
-types stay `boost::cobalt::task`, `promise`, `generator`, `channel`, `thread`, `use_op` and
-`main`. `<webcpp/cobalt.hpp>` is a convenience entry, not a renamed implementation.
-`<webcpp/cobalt/config.hpp>` includes collection and Asio configuration first and exposes
-derived Cobalt capabilities and `WEBCPP_COBALT_NO_EXCEPTIONS` consistently with the collection.
+Owner approval on 2026-11-06 supersedes the original requirement to preserve Boost
+include paths in Wasm applications. The public entry is `<webcpp/cobalt/...>` and
+`webcpp::cobalt`. Native coroutine and plain I/O types are aliases of actual Boost
+1.92 types, with the unchanged compiled core and entry-point behavior. WebAssembly
+uses versioned adaptations shipped in this library under explicit WebCPP paths.
+Applications migrate includes/namespaces and keep the supported coroutine model.
+Native and Wasm types have distinct ABIs and cannot be mixed across binary boundaries.
 
-The runner and Boost's compiled sources are explicit once-per-program units. A header-only
-claim would be false. Duplicate upstream/replacement runners are rejected by link checks,
-and build usage requirements keep consumer and archive headers, EH and thread settings equal.
-A renamed `co_main`, copied coroutine implementation or broad namespace rewrite is rejected
-because each breaks existing programs without improving target capability.
+The owner approved one native exception after reproducing upstream TLS state and
+cancellation defects: `webcpp::cobalt::io::ssl::stream` uses the corrected WebCPP
+wrapper on native and WASI. Its headers/source ship explicitly, while native core,
+runner and plain I/O remain upstream. Other native Boost defects stay named negative
+probes, not silently corrected implementations or positive conformance results.
+
+Core, runner and SSL are explicit once-per-program units. A header-only claim would
+be false. `sources.json` and generated B2 lists declare one source inventory, with
+matching executor/PMR/EH/thread settings in every translation unit. Arbitrary
+cross-translation-unit ABI mismatches are a caller contract, not a promised universal
+linker diagnostic. Clean compiler/CMake archive consumers audit actual dependencies.
+
+Maintainer generators verify upstream hashes, preserve licenses and produce checked-in
+files. Consumer builds run neither these generators nor patches and never shadow an
+installed `boost/` tree. The original include-preserving overlay architecture is
+rejected because it hid essential implementation behind the chosen build system.
 
 ### D2. One-way ownership and compatible B2 entry points
 
@@ -70,17 +82,15 @@ one another's build files. An Asio-only build must work when Cobalt is unselecte
 not compile Cobalt or resolve OpenSSL. A graph witness checks actual source/object lists,
 including old and new target names in the same program.
 
-Cobalt owns its runner and Cobalt-specific patches/recipes under `libs/cobalt/build-support/`.
-The generic verified-overlay preparation utility remains shared if other libraries use it.
-Asio's own WASI/Windows overlays and the shared Boost source acquisition stay with their
-current owners. Leaving Cobalt implementation permanently inside Asio is rejected because
-independent repository ownership would then be cosmetic. Duplicating the providers or
-making Asio core depend on Cobalt is rejected because it introduces conflicting archives or
-a dependency cycle.
+Cobalt owns native originals, Wasm adaptations, runner and corrected SSL source.
+Asio owns its shipped reactor and SDK adapters. Shared OpenSSL, CA and WIT providers
+have one owner. Historical patch inputs under `upstream/` are maintainer provenance,
+not a consumer step. Plain Asio must build without Cobalt or TLS, and old/new aliases
+must resolve one core, one selected runner and at most one optional SSL provider.
 
 ### D3. Preserve the established scheduling contract
 
-The runner uses `webcpp::asio::io_context`, preserves upstream executor initialization,
+The browser runner uses `webcpp::asio::io_context`, preserves upstream executor initialization,
 initial posting, result propagation and final suspension, and reads the existing
 `WEBCPP_ASIO_DEFAULT_MAX_HANDLERS_PER_TURN` setting. Its default stays 100. Explicit context
 users retain `io_context_options{max_handlers_per_turn}`; all current allowed values,
@@ -96,9 +106,9 @@ not guarantee a frame deadline. Native process signal behavior remains upstream-
 WASI has explicit application cancellation and no automatic host signal delivery. Browser
 page cancellation is a C++ cancellation operation, never a pretend POSIX signal.
 
-`boost::cobalt::run(task)` owns an upstream Asio context in its header, independently of
+`webcpp::cobalt::run(task)` owns a separate context in its header, independently of
 `co_main`. Its behavior, task move/future path and browser fairness require separate probes;
-replacing `co_main` does not establish its support. Any necessary checked adaptation must
+changing the runner does not establish its support. Native/WASI retain their target reactor; the browser helper uses the bounded WebCPP context. Any necessary checked adaptation must
 preserve its signature and document its behavior, or retain an explicit missing/blocked
 feature cell. The same audit applies to user-supplied executors and custom-main applications.
 
@@ -304,7 +314,7 @@ discover Cobalt without duplicated reference pages or Cobalt files installed by 
 - Existing no-EH defects and runtime restrictions may prevent full conformance. Retain
   precise blocked cells and feasible result-path work rather than hiding the failures.
 - Source-compatible source selection is delicate across Windows, P2/P3 and pthread builds.
-  Public-target source lists, overlay precedence and compiled archive flags are tested.
+  Public-target source lists, include order and compiled archive flags are tested.
 
 ## Migration Plan
 

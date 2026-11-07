@@ -75,11 +75,12 @@ completion tokens directly to host HTTP services; browser WebSocket uses the bro
 Application compatibility does not require that the implementation be Boost.Beast. A raw
 stream/socket backend can retain upstream protocol algorithms where useful and supported.
 
-The owner authorized implementation after the recommendation to reuse upstream data
-types while delegating operations to the environment. The initial implementation therefore
-retains Boost.Beast headers and type identity for portable data; host operations remain
-separate adapters. This is not a dependency-free Wasm library. Compatible observable
-operations, allocator/error contracts and inspectable application changes remain required.
+The owner-approved 2026-11-06 architecture makes native type identity literal.
+Wasm protocol/data adaptations ship under explicit WebCPP paths and share Asio's
+selected backend with Cobalt. Browser host APIs remain independent of the guest
+protocol engine. Source archive consumers declare their bindings, provider and
+compiler requirements, without consumer-time patches or replacement Boost include
+paths. Native and Wasm types do not promise binary interoperability.
 
 ### D3. What the browser cannot honour fails as a value, by default
 

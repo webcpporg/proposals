@@ -1,5 +1,71 @@
 # webcpp::beast: implementation status
 
+## Coordinated publication in progress, 2026-11-07
+
+The owner authorized publication and remote CI for the reviewed migration.
+The immutable library candidates are Asio `e7cf267b4ab43437a09ce68f40a3994ca63b9054`,
+Cobalt `36b9f2475aab1171e0898ab87d5b9630a8e04d71`, and Beast
+`6c53f854070a4eebd844f21c29692e938181f8f6`. Superproject commit
+`c411965` records those three revisions and the new public Cobalt submodule.
+All three candidate branches are published. No main integration is claimed.
+
+CI environment preparation is running at
+https://github.com/webcpporg/webcpp/actions/runs/42370588658 . The complete
+combined CI and library CI remain pending. The preceding local validation
+records remain evidence for their stated scope, not remote-CI certification.
+No release or proposal archival is part of this publication step. The release
+packaging check still rejects the prepared 0.1.0 freeze together with these
+libraries' Unreleased entries; reconcile that state in the release procedure.
+
+## Current local migration, 2026-11-07
+
+The owner-approved 2026-11-06 distribution contract is now implemented locally in
+the coordinated Asio/Cobalt/Beast candidate. Native equivalents are actual Boost
+types; Wasm selects explicitly shipped sources, without consumer patches or Boost
+include overlays. Cobalt's corrected native SSL wrapper is the approved exception.
+Direct compiler/CMake consumers passed from an extracted source archive, including
+custom executor/PMR settings, multiple translation units and optional TLS.
+
+This candidate remains uncommitted. The starting revisions are superproject
+`d3a67959cbe52e6d972ef575be8870cc79da1312`, Asio
+`db4f7fc6afc516fdef057614cc971cdc39484099`, Beast
+`31af69150d61776e7699cb89125f79d103e11ac8`, and local Cobalt
+`58701c7dd22777c84c17ac9bbeea6d517c0c7f38`. These hashes identify bases, not the
+edited tree. Dated evidence includes source snapshots and artifact hashes.
+Historical remote CI below does not certify this local candidate. No new remote
+CI, push, merge, repository publication or release is claimed.
+
+The 53 pinned applications cover 1,855 cells across 35 profiles:
+843 passes, 816 platform-unavailable and 196 explicitly blocked, with zero
+planned or failed cells. Controlled native upstream peers and namespace
+counterparts both passed all 53 applications; these are endpoint adaptations,
+not claims of unchanged external services. Real page/worker browser coverage
+includes 256 successful observations. P2 supplied-stream WebSocket and P2/P3
+guest socket/TLS contracts retain separate evidence from host HTTP.
+See `libs/beast/doc/application-matrix.adoc` and the shared application evidence
+under `libs/cobalt/test/applications/results/2026-11-07/`. The shared Release
+HTTP parser workload measures in-memory parsing, not network/TLS throughput.
+
+Documentation and proposal records have been reconciled with the shipped-source
+contract. All three strict MrDocs/AsciiDoc builds passed again. A fresh independent
+whole-candidate review, followed by focused reviews of every correction, has no
+open findings. Local closure items 4 and 5 are complete: the lint covered 831
+translation units and 1,528 compilation commands. The complete run found two
+final style issues; both were corrected and their exact checks passed again.
+Its original exit status and diagnostics are retained, alongside the successful
+follow-ups, in `closure-lint-reconciled.json`. All other lint rules and the tooling
+regression suites passed. SDK 34 P2 pthread/P3 cooperative EH limits, versioned P3
+LTO diagnostics, Boost.Context restrictions and native Boost
+defects remain explicit, not passing support cells. The local execution ledger is
+`.superpowers/sdd/2026-11-06-portable-network-libraries/progress.md` in the
+superproject. New implementation boxes remain unchecked until coordinated commits;
+publication/CI is a separate step. No proposal is archived or marked implemented.
+
+## Historical records
+
+The following snapshots and task states describe their dates, not the migration above.
+
+
 Updated 2026-11-04. The owner approved submission with status `proposed`, with
 no formal acceptance date, release or tag. The source is integrated in the
 superproject. The original 53-application inventory remains in scope.

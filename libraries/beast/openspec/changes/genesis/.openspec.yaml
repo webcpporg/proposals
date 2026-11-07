@@ -5,7 +5,7 @@ webcpp:
   title: "beast: existing Boost.Beast applications on WASIp2, WASIp3 and Emscripten"
   kind: wrapper
   port_of: null
-  status: proposed
+  status: implementing
   release: null
   implementation: https://github.com/webcpporg/beast
-  decided: null
+  decided: 2026-11-06

@@ -16,7 +16,8 @@ so compatibility has to state the platform boundaries rather than promise imposs
 
 The original specification of 2026-10-10 is preserved in `reference/spec.md`. This revision
 supersedes its native/Emscripten-only scope and its three-example acceptance criterion.
-The owner has approved submission with status `proposed`, with no release or acceptance decision. The committed
+The owner authorized the coordinated Asio/Cobalt/Beast implementation contract on
+2026-11-06. Status is `implementing`, with no release or publication claim. The committed
 implementation and measured backend/application results are recorded in `reference/STATUS.md`;
 remaining prerequisites and acceptance gates stay explicit in `tasks.md`.
 

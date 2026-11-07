@@ -1,5 +1,96 @@
 # Cobalt genesis status
 
+## Coordinated publication in progress, 2026-11-07
+
+The owner authorized publication and remote CI for the reviewed migration.
+The immutable library candidates are Asio `e7cf267b4ab43437a09ce68f40a3994ca63b9054`,
+Cobalt `36b9f2475aab1171e0898ab87d5b9630a8e04d71`, and Beast
+`6c53f854070a4eebd844f21c29692e938181f8f6`. Superproject commit
+`c411965` records those three revisions and the new public Cobalt submodule.
+All three candidate branches are published. No main integration is claimed.
+
+CI environment preparation is running at
+https://github.com/webcpporg/webcpp/actions/runs/42370588658 . The complete
+combined CI and library CI remain pending. The preceding local validation
+records remain evidence for their stated scope, not remote-CI certification.
+No release or proposal archival is part of this publication step. The release
+packaging check still rejects the prepared 0.1.0 freeze together with these
+libraries' Unreleased entries; reconcile that state in the release procedure.
+
+## Current local migration, 2026-11-07
+
+The owner-approved 2026-11-06 distribution contract is now implemented locally in
+the coordinated Asio/Cobalt/Beast candidate. Native equivalents are actual Boost
+types; Wasm selects explicitly shipped sources, without consumer patches or Boost
+include overlays. Cobalt's corrected native SSL wrapper is the approved exception.
+Direct compiler/CMake consumers passed from an extracted source archive, including
+custom executor/PMR settings, multiple translation units and optional TLS.
+
+This candidate remains uncommitted. The starting revisions are superproject
+`d3a67959cbe52e6d972ef575be8870cc79da1312`, Asio
+`db4f7fc6afc516fdef057614cc971cdc39484099`, Beast
+`31af69150d61776e7699cb89125f79d103e11ac8`, and local Cobalt
+`58701c7dd22777c84c17ac9bbeea6d517c0c7f38`. These hashes identify bases, not the
+edited tree. Dated evidence includes source snapshots and artifact hashes.
+Historical remote CI below does not certify this local candidate. No new remote
+CI, push, merge, repository publication or release is claimed.
+
+All 12 pinned original applications remain represented in 432 cells:
+181 passes, 17 controlled network counterparts, 29 dependency-unavailable,
+72 platform-unavailable, 32 profile-unavailable, 36 SDK/runtime-blocked,
+46 source-requires-exceptions and 19 upstream-defect. Seventeen feasible
+conformance jobs, 88 original browser observations and 32 HTTP/WSS browser
+counterpart observations passed. Original/namespace-migrated sources, controlled
+peers, finite counterparts and negative probes retain separate identities.
+
+The shared Release report audits 136 builds, 2,176 payload checks and 15,906
+runtime observations. It covers O2/O3/Os/Oz with LTO off/on, with runtime sampling
+at O3 without LTO. Memory counters, linear capacity and process RSS have distinct
+boundaries; unavailable browser CPU/RSS are not zero. The native comparison is
+explicitly for applications with an initialized reactor on macOS, not a universal
+Wasm speed claim. All five upstream benchmark source files remain classified;
+matched workloads do not conceal original compile defects.
+See `libs/cobalt/doc/application-matrix.adoc`, `doc/release-measurements.adoc`,
+`bench/results/2026-11-07/` and `test/applications/results/2026-11-07/`.
+
+Documentation and proposal records have been reconciled with the shipped-source
+contract. All three strict MrDocs/AsciiDoc builds passed again. A fresh independent
+whole-candidate review, followed by focused reviews of every correction, has no
+open findings. Local closure items 4 and 5 are complete: the lint covered 831
+translation units and 1,528 compilation commands. The complete run found two
+final style issues; both were corrected and their exact checks passed again.
+Its original exit status and diagnostics are retained, alongside the successful
+follow-ups, in `closure-lint-reconciled.json`. All other lint rules and the tooling
+regression suites passed. SDK 34 P2 pthread/P3 cooperative EH limits, versioned P3
+LTO diagnostics, Boost.Context restrictions and native Boost
+defects remain explicit, not passing support cells. The local execution ledger is
+`.superpowers/sdd/2026-11-06-portable-network-libraries/progress.md` in the
+superproject. New implementation boxes remain unchecked until coordinated commits;
+publication/CI is a separate step. No proposal is archived or marked implemented.
+
+## Historical records
+
+The following snapshots and task states describe their dates, not the migration above.
+
+
+## Owner-directed architecture revision, 2026-11-06
+
+The owner now requires native WebCPP Asio/Cobalt/Beast interfaces to use the actual
+Boost implementations, and Wasm adaptations to be shipped explicitly rather than
+applied by B2 during consumer builds. The public Cobalt entry becomes
+`webcpp::cobalt`; a requirement to keep application spelling `boost::cobalt` is
+superseded. Work proceeds Asio first, with coordinated Cobalt delivery and Beast
+verification. The superproject design and execution plan are
+`docs/superpowers/{specs,plans}/2026-11-06-portable-network-libraries.md`.
+
+The genesis design/spec/plan below describe the previous overlay architecture and
+must be reconciled during the migration. Their committed examples and observations
+remain baseline evidence, not certification of the new distribution. All original
+application, benchmark and Diataxis/AsciiDoc/MrDocs obligations remain in scope.
+No remote CI or publication is authorized by this revision.
+
+## Previous implementation milestone
+
 Updated 2026-11-06. Status is `implementing`, with `decided: 2026-11-06` and `release: null`.
 Rodrigo approved the proposal and requested execution in this session. Implementation has
 started in the isolated superproject checkout on branch `work/cobalt-genesis`.
