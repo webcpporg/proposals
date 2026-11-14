@@ -4,8 +4,8 @@ Resumed on 2026-10-14 against library main `957eae5`. The original patch history
 preserved; new tasks are checked only after their changes are committed. The owner resolved
 the authentication contract conflict on 2026-10-14 by approving immutable app password domains, preserving the JS
 0.26.0 wire. See `reference/password-domains.md`; its implementation, local checks and
-integration are recorded below. A release remains required before the proposal can become `implemented` and be archived. No CI may run in
-this session.
+integration are recorded below. That session ran no CI. On 2026-11-14 CONTRIBUTING made merged
+code with the CI green on GitHub, not a release, the condition of `implemented`; group 9 records it.
 
 The checklist follows `reference/plan.md` in its order and numbering (22 tasks in five
 increments). Tasks through 5c are recorded in the original 25 patches, `0001` to `0025`, based
@@ -89,8 +89,10 @@ Implementation amendment and review fixes are committed in library `ea184f8` and
 24/24. All 50 shared cases pass in the applicable compiler, exceptions-off, hardened and
 sanitizer variants. See `reference/STATUS.md` for scope and limitations.
 
-## 9. Release follow-up
+## 9. Implemented
 
-- [ ] 9.1 Publish the next Trystero release through the release workflow, record that version,
-  then mark the proposal `implemented` and archive it according to CONTRIBUTING. Release
-  publication is outside this implementation task.
+- [x] 9.1 Confirm what CONTRIBUTING requires of an implemented proposal: trystero's `main`
+  (`af301ba`, the tree of `e9326e9`) and the superproject's `main` (`d0a501a`, which records
+  trystero `e9326e9`) hold the change, and every GitHub check of both passed on 2026-11-08;
+  then mark the proposal `implemented` with release 0.1.0, the version `<webcpp/version.hpp>`
+  names, and archive it.

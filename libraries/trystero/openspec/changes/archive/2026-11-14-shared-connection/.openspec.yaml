@@ -5,7 +5,7 @@ webcpp:
   title: "trystero: one connection shared by the rooms of an app"
   kind: port
   port_of: "Trystero 0.26.0"
-  status: implementing
-  release: null
-  implementation: "https://github.com/webcpporg/trystero/tree/2e2dcd465fbc13b77ff6dc9939bdea29a0f86af1"
+  status: implemented
+  release: "0.1.0"
+  implementation: "https://github.com/webcpporg/trystero/tree/e9326e94c06cfa9ffdbd0a8d3c8d72b80b3b9b59"
   decided: 2026-10-11
