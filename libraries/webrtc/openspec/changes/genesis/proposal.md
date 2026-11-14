@@ -82,7 +82,7 @@ None.
   against the same OpenSSL as Asio and Beast, with `threading=multi`; the browser's
   `RTCPeerConnection` and `RTCDataChannel` on Emscripten. It knows nothing of xactor or of
   webcpp::beast.
-- **Status:** proposed, for its public discussion on the pull request; no release; not decided.
+- **Status:** accepted by the owner on 2026-11-14 (`decided`); no release; not built.
 - **Other proposals:** depends on webcpp::asio's genesis (`libraries/asio`, implementing) for the
   executors and the browser bridge, and follows webcpp::beast's genesis (`libraries/beast`) in its
   browser patterns; webcpp::beast may later use a byte stream of this library (beast's D6).

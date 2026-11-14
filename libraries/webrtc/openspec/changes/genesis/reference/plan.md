@@ -332,8 +332,9 @@ runtime's precondition (D6); exceptions (D4); allocation and what is outside the
    headers-alone units, with and without exceptions (`STATUS.md` says how it was run); the whole
    lint, `tools/lint/lint.sh`, runs once the library is a submodule.
 2. The superproject's change: register `libs/webrtc` (`.gitmodules`, `meta`, the CI's lanes),
-   word `third_party`'s libdatachannel refusal of `threading=single` for every consumer, not for
-   trystero alone, and move webrtc from chapter 18 to chapter 15 of `CODING-GUIDELINES.md`.
+   and move webrtc from chapter 17 to chapter 15 of `CODING-GUIDELINES.md`. `third_party`'s
+   libdatachannel refusal of `threading=single` is already worded for every consumer, not for
+   trystero alone (webcpporg/webcpp#15).
 3. The review of the increment, then the owner's merge.
 
 ## Increment 2: the browser implementation and the interop lane

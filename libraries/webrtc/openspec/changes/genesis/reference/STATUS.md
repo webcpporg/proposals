@@ -1,8 +1,9 @@
 # webcpp::webrtc: where the proposal stands, and how to resume
 
 Written 2026-11-14, when the draft of 2026-10-13 was brought up to date and given its plan and
-its reference code, and proposed the same day (tasks.md 0.8): its status is `proposed`, for its
-public discussion on webcpporg/proposals#12 and the maintainers' decision.
+its reference code. It was proposed the same day on webcpporg/proposals#12 (tasks.md 0.8), and
+the owner accepted it that day: its status is `accepted`, with `decided: 2026-11-14` and
+`release: null`.
 
 ## What exists
 
@@ -68,15 +69,15 @@ trystero `e9326e9`, libdatachannel `6b1e2e6`, OpenSSL `45e844f`), with `source/`
 - tasks.md 1.11: the C API's cost on receipt, measured against the C++ API's `receive()`.
 - tasks.md 1.12: the documentation (the library's page, Doc Comments checked by MrDocs).
 - tasks.md 1.13: the repository `webcpporg/webrtc` from one import commit of `source/`, the
-  superproject's change (submodule, CI lanes, the libdatachannel target's threading message, which
-  names trystero, worded for every consumer; webrtc moved from chapter 18 to chapter 15 of
-  `CODING-GUIDELINES.md`), the whole lint, the review.
+  superproject's change (submodule, CI lanes; webrtc moved from chapter 17 to chapter 15 of
+  `CODING-GUIDELINES.md`), the whole lint, the review. The libdatachannel target's refusal of
+  `threading=single` already names libdatachannel's own threads, for every consumer
+  (webcpporg/webcpp#15, merged 2026-11-14).
 - Increments 2 and 3 (tasks.md groups 2 and 3).
-- The superproject's `CODING-GUIDELINES.md` chapter 18 still summarizes the draft of 2026-10-13
-  (the stale WASI reason, libdatachannel found through `-sLIBDATACHANNEL_ROOT`, the open
-  questions on the licence and on the message without exceptions): it is updated with this
-  revision, in the superproject.
 - Open questions O1 to O3 (design.md).
+
+The superproject's `CODING-GUIDELINES.md` summarizes this revision since webcpporg/webcpp#15;
+webcpporg/webcpp#16 moves it from chapter 18 to chapter 17, accepted and not built.
 
 ## How to resume
 
@@ -86,5 +87,5 @@ trystero `e9326e9`, libdatachannel `6b1e2e6`, OpenSSL `45e844f`), with `source/`
    `.local/` as the superproject's `AGENTS.md` chapter 1 says; link this `source/` as
    `libs/webrtc`.
 3. Run the commands above; expect the same 25 passes.
-4. Go on with tasks.md 1.11, then 1.12 and 1.13 once the owner accepts the proposal and creates
-   the repository; then increment 2, then trystero's change.
+4. Go on with tasks.md 1.11, then 1.12 and 1.13 once the owner creates the repository (the
+   proposal is accepted); then increment 2, then trystero's change.

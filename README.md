@@ -62,7 +62,7 @@ tag is placed.
 | wasi | [genesis](libraries/wasi/openspec/changes/archive/2026-10-08-genesis) | wasi: the HTTP handler a WebAssembly component exports, for C++ on wasip2 and wasip3 | own | implemented | 0.1.0 | 2026-10-08 | [code](https://github.com/webcpporg/wasi/tree/6e3c529) |
 | wasi | [redesign](libraries/wasi/openspec/changes/redesign) | wasi: one namespace per WASI version, one entry point, target features and run scripts | own | accepted |  | 2026-10-09 |  |
 | wasi | [wasm-bindgen](libraries/wasi/openspec/changes/wasm-bindgen) | wasm: evolve wasi into WebAssembly integration and generate C++ bindings | own | accepted |  | 2026-11-03 | [code](https://github.com/webcpporg/wasi) |
-| webrtc | [genesis](libraries/webrtc/openspec/changes/genesis) | webrtc: the W3C WebRTC API in Asio's model, native and in the browser | own | proposed |  |  |  |
+| webrtc | [genesis](libraries/webrtc/openspec/changes/genesis) | webrtc: the W3C WebRTC API in Asio's model, native and in the browser | own | accepted |  | 2026-11-14 |  |
 | xactor | [genesis](libraries/xactor/openspec/changes/archive/2026-10-07-genesis) | xactor: a deterministic actor system for C++20 | own | implemented | 0.1.0 | 2026-10-07 | [code](https://github.com/webcpporg/xactor/tree/62f3e77) |
 | xstate | [genesis](libraries/xstate/openspec/changes/archive/2026-10-07-genesis) | xstate: XState's state machines and actors for C++20 | port of XState 5.33.2 (TypeScript, MIT) | implemented | 0.1.0 | 2026-10-07 | [code](https://github.com/webcpporg/xstate/tree/5299db2) |
 <!-- proposals:end -->
