@@ -1,41 +1,31 @@
 # webcpp::crypto: where the implementation stands, and how to resume
 
 Written 2026-10-13, when this proposal was made from the owner-approved specification and the
-plan. `spec.md` is the specification (approved by the owner on 2026-10-11); `plan.md` is the
-implementation plan of 43 tasks in five increments (status draft, written 2026-10-11), every task
-with its files, interfaces, steps and code; `../tasks.md` is the checklist. **The reference code
-is the code written in the plan's tasks:** Task 1 (`build.jam`, the test Jamfile's `crypto-run`,
-`config.hpp`), Task 2 (`error.hpp`), Task 3 (`equal.hpp`, `detail/wipe.hpp`), Task 4
-(`random_device.hpp`, `detail/entropy.hpp`, `detail/windows.hpp`), Task 5 (`third_party/Jamfile`,
-`src/canary_bearssl.c`, `detail/canary.h`), Tasks 6 to 8 (`backends/bearssl.hpp`, `aes.hpp`,
-`gcm.hpp`), Task 12 (`backends/openssl.hpp`), Task 14 (`aes256_gcm.hpp`), Task 15 (the memory
-adapter), Task 21 (`webcpp.same-program`), Task 27 (`secp256k1.hpp`), Task 29
-(`backends/ctaes.hpp`), Task 35 (`chacha20_poly1305.hpp`) and Task 38 (`backends/botan.hpp`).
-There is no `source/` directory: nothing is implemented.
+plan; revised 2026-11-14, when the owner set version 0.1's scope and the plan was patched to the
+superproject's `main` of that day. `spec.md` is the specification (approved by the owner on
+2026-10-11); `plan.md` is the implementation plan, whose section "The revision of 2026-11-14"
+rules over the rest of it; `../tasks.md` is the checklist; `../design.md` D22 records the
+revision. **The reference code is the code written in the plan's tasks.** There is no `source/`
+directory: nothing is implemented.
 
 ## Where it stands
 
 - **The library's repository has no commit,** and `libs/crypto` does not exist anywhere.
-  `webcpporg/crypto` has not been created (the plan's gate G1) and the submodule has not been
-  added (G2). The plan's "Global Constraints" say that until then the superproject
-  ignores the library through its `.git/info/exclude`.
-- **No task is done.** The plan has 240 unchecked steps and none checked.
-- **What exists on this machine** (observed on 2026-10-13): a superproject worktree
-  `~/dev/webcpp-crypto` on branch `lib/crypto` at `a4e5bc8`, with a clean status, holding
-  `third_party/Jamfile` and `tools/node-test/include/webcpp/test/exit_status.hpp` (the header
-  Task 1's first test needs). It has no `libs/crypto` and no `.superpowers/sdd/WEBCPP_CRYPTO_PLAN/`
-  ledger, so Task 0's first step looks made and its ledger steps are not. Whether that base
-  satisfies Task 0a's gates (the owner's rewrite of `main`, the identity check) is not
-  established here; run the plan's checks.
-- **Specification status:** accepted by the owner on 2026-10-11 after an independent review and a
-  second review of the memory option; two departures were answered by the owner the same day
-  (OpenSSL's and Botan's `make` allocate outside the user's allocator; OpenSSL's shared or
-  static link is a b2 feature), the other rulings are the controller's, listed in spec
-  section 10.
-- **Owner gates the plan waits on:** the rewrite of `main`'s history (before Task 0a); O2, the
-  heavy lanes at a nightly level (before Task 25b); O3, NIST's archives pinned by URL and
-  SHA-256 (before Task 9); O5, the departures C14, C16 and C17 and `brew install botan` (before
-  Tasks 22, 18 and 37); G1 and G2, the repository and its submodule.
+  `webcpporg/crypto` has not been created (gate G1) and the submodule has not been added (G2).
+- **No task is done.**
+- **Version 0.1 is increment 1 lean and increment 2** (Tasks 0 to 14, 17 to 19, 21, 24 to 30a).
+  Deferred: OpenSSL's memory option, constant time, sizes and throughput, the browser lane, the
+  nightly level, NIST CAVP, and increments 3 to 5.
+- **The base exists:** the superproject's `main` (`f085d79` on 2026-11-14) holds `third_party/`,
+  asio with `webcpp::test::exit_status`, the source-built OpenSSL 3.5.9 and trystero's shared
+  connection. The gates the plan once waited on (the rewrite of `main`'s history, Task 0a,
+  asio's Task 2) are past.
+- **The upstream pins were re-read on 2026-11-14 and hold:** BearSSL's mirror at `7bea48e`,
+  libsecp256k1 v0.8.0 (still the latest release), ctaes in Bitcoin Core v31.1 (unchanged in
+  v31.2 and v32.1), Wycheproof `12fd3aaf`, BIP340's vectors at `927b6de9`.
+- **Specification status:** accepted by the owner on 2026-10-11. The source-built OpenSSL
+  (provider amendment of 2026-11-03) and the revision's decisions amend it; `design.md` D22
+  lists them.
 
 ## What was measured, and when
 
@@ -67,24 +57,19 @@ Everything below is stated in `spec.md` or `plan.md`; none of it was re-run for 
 
 ## How to resume
 
-Prerequisites are the superproject's (its `AGENTS.md`, chapter 1): Boost 1.92, b2 5.5.3, a
-C++20 compiler, wasi-sdk 34, wasmtime 47.0.3, Emscripten 6.0.11 with node 26.7.0, chrome-headless-shell
-155.0.8059.39, Python 3.9 or newer, a `.local/user-config.jam`, and for the optional lanes Valgrind
-and a machine OpenSSL 3 (and, for Botan, `brew install botan` once the owner agrees).
+Prerequisites are the superproject's (AGENTS.md chapter 1, "Prerequisites"): Boost 1.92, b2
+5.5.3, a C++20 compiler, wasi-sdk 34, wasmtime 50.0.1, Emscripten 6.0.11 with node 26.7.0,
+Python 3.9 or newer, and a `.local/user-config.jam`.
 
-1. **Settle the base** as the plan's "The base, the order of the tracks" says: the owner's
-   rewrite of `main`, then Task 0a (integrate `infra/shared` into `main`), then asio's Task 2
-   (the track that provides `webcpp::test::exit_status`), then Task 0 (the worktree, the
-   ledger, the baseline).
-2. **Start with Tasks 1 to 4** (skeleton, errors, `equal`, `random_device`), each: the failing
-   test first and seen failing, the implementation, the lanes, the lint, the commit, with the
-   plan's commit rules (every commit as `R <github.overboard312@passmail.net>`, no trailer,
-   staged by path).
-3. **Follow the plan's order** through increment 1 (Tasks 5 to 25b), then increments 2 to 5
-   (Tasks 26 to 39). Increment 3 (trystero) waits for trystero's shared-connection change to have
-   integrated; Task 25a waits for asio's Task 21.
-4. **Gates:** the controller alone, with the owner's agreement, creates `webcpporg/crypto`,
-   adds the submodule and pushes (G1, G2, G4).
+1. **Gate G1:** the owner creates `webcpporg/crypto`.
+2. **Task 0:** a worktree of the superproject from `origin/main`, the ledger, the baseline.
+3. **Tasks 1 to 14, 17 to 19, 21, 24, 25** (increment 1), each: the failing test first and seen
+   failing, the implementation, the lanes, the lint, the commit (the contributor's own identity,
+   no trailer, staged by path).
+4. **Tasks 26 to 30, then 30a** (increment 2, then trystero's build).
+5. **Pull requests** in the plan's order ("The base and the order of the work", point 4): the
+   library's, one superproject pull request with the submodule `libs/crypto` (G2), trystero's,
+   then this repository's, which records version 0.1.
 
 ### The commands
 
@@ -96,37 +81,36 @@ From the superproject worktree's root. The plan writes `$B2` for
 | one test, while working on it | `$B2 libs/crypto/test//<name>` |
 | native, from scratch | `$B2 -a --build-dir=bin/lane-native libs/crypto/test libs/crypto/example` |
 | native with gcc 15 | `$B2 -a --build-dir=bin/lane-gcc toolset=gcc-15 libs/crypto/test libs/crypto/example` |
-| wasip2 | `$B2 -a --build-dir=bin/lane-wasip2 toolset=clang-wasip2 testing.launcher=wasmtime libs/crypto/test libs/crypto/example` |
-| wasip3 | the same with `clang-wasip3` and `bin/lane-wasip3` |
+| wasip2 | `$B2 -a --build-dir=bin/lane-wasip2 toolset=clang-wasip2 testing.launcher=tools/boost/asio-wasip2/run.sh libs/crypto/test libs/crypto/example` |
+| wasip3 | the same with `clang-wasip3`, `tools/boost/asio-wasip3/run.sh` and `bin/lane-wasip3` |
 | Emscripten | `$B2 -a --build-dir=bin/lane-emscripten toolset=emscripten libs/crypto/test libs/crypto/example` |
-| an own lane on a target | the target's command with `libs/crypto/test//<lane>` in place of the two directories |
+| the own lane `c-suites` on a target | the target's command with `libs/crypto/test/c_suites//c-suites` in place of the two directories |
 | the user's Jamfiles | `python3 tools/test/crypto_jamfiles_test.py` |
 | the lint | `tools/lint/lint.sh --clang-format .local/wasi-sdk/bin/clang-format --clang-tidy .local/wasi-sdk/bin/clang-tidy`, last line `lint: clean` |
 
-Only a build from scratch (`-a`) counts as evidence.
+Only a build from scratch (`-a`) counts as evidence. MSVC and Apple clang run in the CI only.
 
 ## What to verify first
 
-1. `git -C <superproject> log --format='%an %ae %cn %ce'` on the base: every commit authored and
-   committed by `R`, and `f7c96d3` not an ancestor (the plan's identity check prints
-   `identity: ok`).
-2. `webcpp::test::exit_status` exists on the base (`tools/node-test/include/webcpp/test/exit_status.hpp`).
-3. After Task 1: `python3 tools/test/jamroot_test.py test_third_party_has_both_ids` passes, and
-   `libs/crypto/test//config` builds with and without exceptions.
-4. After Task 7: the 18 cases of the GCM specification pass on BearSSL on native and wasip2.
+1. `tools/node-test/include/webcpp/test/exit_status.hpp`, `third_party/Jamfile` and
+   `tools/webcpp-openssl.jam` exist on the base.
+2. After Task 1: `python3 tools/test/jamroot_test.py` passes with its case for both third-party
+   ids, and `libs/crypto/test//config` builds with and without exceptions.
+3. After Task 7: the 18 cases of the GCM specification pass on BearSSL on native and wasip2.
+4. After Task 11: the fixture that names `/webcpp/asio//openssl` and `/webcpp/crypto//openssl`
+   links each OpenSSL archive once.
 
 ## Known issues
 
-- **The plan is a draft** and was written on one machine (macOS arm64); the Linux, Windows and
-  arm64 counts are the CI's to establish.
-- **Plan departures for the owner (O5):** C17 (sizes at b2's `speed` and `space`), C16 (webcpp's
-  own throughput program in place of a workflow no tree holds), C14 (MSVC's messages checked in
-  the tools test), and `brew install botan`.
-- **The CI has no level, no Linux arm64 lane and no "without exceptions" lane** at the plan's
-  base; the plan builds the nightly level of the own lanes (Task 25b) and declares exception-off
-  twins itself (`crypto-run`).
-- **Botan has no hook** for its allocations (3.13.0), and no Botan exists for WebAssembly: both
-  are recorded limits, not defects.
+- **The plan was written on one machine** (macOS arm64); the Linux, Windows and arm64 facts are
+  the CI's to establish. MSVC's and Apple clang's evidence comes from the CI only.
+- **The source-built OpenSSL is compiled without assembly on MSVC, wasip2 and wasip3,** so its
+  AES there is table code; the owner kept the spec's default (OpenSSL natively when linked) and
+  the documentation explains it.
+- **Each exception twin of a test may build OpenSSL again,** since the provider fingerprints
+  `<exception-handling>`; Task 12 measures it once.
+- **Recorded limits:** MSVC's message text is not checked (its cases only fail), and crypto has
+  no size table until Task 22.
 - **Not carried:** the controller's ledger and the independent reviews of the specification
   (findings I1 to I8, M1 to M14, and the second review's C1, I1 to I5, M1 to M12), private notes
   of the original machine; the spec cites their rulings and the plan records each in its
@@ -134,7 +118,7 @@ Only a build from scratch (`-a`) counts as evidence.
 
 ## Decisions pending
 
-- The base: the owner's rewrite of `main`'s history, then Task 0a.
 - G1 and G2: the repository `webcpporg/crypto` and its submodule.
-- O2 (nightly level), O3 (NIST's archives), O5 (C14, C16, C17, Botan on the development machine).
+- After version 0.1: O2 (nightly level), O3 (NIST's archives), O5 (C16, C17, Botan on the
+  development machine).
 - Whether `webcpp::webrtc` and `webcpp::beast` adopt the library.

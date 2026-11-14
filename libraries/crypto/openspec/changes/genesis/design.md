@@ -273,6 +273,41 @@ twice by `crypto-run`, the second with `<exception-handling>off`; sizes are meas
 workflow no tree holds) and C14 (MSVC's messages checked by building the cases with MSVC in the
 tools test).
 
+### D22. Version 0.1, and the tree of 2026-11-14 (the revision of the plan)
+
+On 2026-11-14 the owner set the first version's scope and the plan was revised against the
+superproject's `main` of that day (`reference/plan.md`, "The revision of 2026-11-14"):
+
+- **Version 0.1 is increment 1 without OpenSSL's memory option (D16, D17's OpenSSL half), the
+  constant-time lane, sizes and throughput, the browser lane, the nightly level and NIST CAVP,
+  plus increment 2.** Those, and increments 3 to 5, come after it. The error values 13 and 14
+  stay reserved for the memory option.
+- **OpenSSL is built from source, which supersedes D15 for OpenSSL** (the provider amendment of
+  2026-11-03, CODING-GUIDELINES.md chapter 5 rule 7): OpenSSL 3.5.9, static, on native, wasip2
+  and wasip3, never a system copy. A program names `/webcpp/crypto//openssl`, crypto's alias over
+  `/webcpp/third_party//openssl`, which defines `WEBCPP_CRYPTO_HAS_OPENSSL`; on Emscripten the
+  alias stops the compile with the fix. OpenSSL has no canary, since the provider injects
+  nothing into upstream; its layers are the compile-time messages and MSVC's
+  `detect_mismatch`. Botan keeps D15.
+- **D9 holds, MSVC included:** OpenSSL is the native default when linked. On wasip2 and wasip3
+  OpenSSL may be linked and chosen with `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`; the default there
+  stays BearSSL. The source-built OpenSSL is compiled without assembly on MSVC, wasip2 and wasip3
+  (table AES, no AES-NI, not constant time); the documentation says so and how to choose BearSSL.
+- **trystero's build moves onto `/third_party//secp256k1` in version 0.1**, its code unchanged,
+  which removes the CI's external libsecp256k1 (Migration Plan, step 3's build half).
+- **Two limits are recorded instead of built:** MSVC's message cases fail on the MSVC lanes and
+  their text is checked on clang and the GNU and wasm linkers; crypto has no size table until
+  the sizes lane.
+- **The superproject's newer rules apply:** `config.hpp` includes `<webcpp/config.hpp>` and reads
+  `WEBCPP_TARGET_*`; `webcpp-own`, `webcpp.external-root` and `webcpp.external-looked` (D21) are
+  not built, since every backend of version 0.1 is built by b2; every lane runs on every push;
+  commits use the contributor's own identity.
+- **Alternatives:** the whole of increment 1 first (rejected by the owner for a first version);
+  OpenSSL's HAS define in the shared provider's usage requirements (rejected: it ties the
+  provider to one library and leaves the Emscripten stop without an instruction); BearSSL as the
+  default on MSVC because of `no-asm` (rejected by the owner: the spec's rule holds and the page
+  explains the choice).
+
 ## Risks / Trade-offs
 
 - [The Windows branch of the memory option is unmeasured] -> recognising OpenSSL's defaults
@@ -295,8 +330,11 @@ tools test).
   when the program calls the install; nothing else in the process may call
   `CRYPTO_set_mem_functions`, and a replacement after the install is detected only when it
   finishes before the next `make`.
-- [Two copies of libcrypto in one process] -> `/third_party//openssl` gives libssl and libcrypto
-  as one choice, shared or static, and asio's OpenSSL moves onto it (Task 25a).
+- [Two copies of libcrypto in one process] -> asio and crypto both link the one source-built
+  provider, whose archives come from one build directory per configuration (D22).
+- [OpenSSL without assembly on MSVC and WebAssembly] -> table AES, not constant time, is the
+  native default on MSVC when OpenSSL is linked; the documentation says so and how to choose
+  BearSSL (D22).
 - [Two files of one program choose different default backends] -> `aes256_gcm.hpp` carries
   `detect_mismatch("webcpp_crypto_default_backend", ...)` on MSVC.
 - [Large heavy lanes] -> BearSSL's own 88 tests take 28 to 46 s per target; the heavy lanes run
@@ -305,8 +343,8 @@ tools test).
   -> every error case has a directory of its own.
 - [The upstream pins move] -> a later Bitcoin Core release moves the ctaes pin as a change of its
   own; the CI compares each canary commit with its submodule's HEAD.
-- [The base of the plan is not yet there] -> the track waits for the owner's rewrite of `main`'s
-  history, `infra/shared`'s integration and asio's Task 2.
+- [The superproject moves under the work] -> the work branch rebases onto `origin/main` when a
+  pull request touching the same files merges, and at the end of each increment.
 
 ## Migration Plan
 
@@ -323,20 +361,16 @@ shared-connection change has integrated:
 4. Its direct use of OpenSSL goes; natively OpenSSL stays a transitive dependency through
    libdatachannel's DTLS and Beast's TLS.
 
-To start the implementation (details in `reference/STATUS.md`): wait for the base (the owner's
-rewrite of `main`, Task 0a, asio's Task 2), then follow the plan from Task 0. Rollback: the
+To start the implementation (details in `reference/STATUS.md`): the base is the superproject's
+`origin/main`; follow the plan from Task 0, after the owner has created `webcpporg/crypto` (G1). Rollback: the
 change is a proposal; withdrawing it deletes `openspec/changes/genesis/`.
 
 ## Open Questions
 
-- The base: the owner's rewrite of `main`'s history (a committer identity that must not be
-  published), after which Task 0a integrates `infra/shared`; nothing of the plan starts before.
 - Gate G1 and G2: the owner creates `webcpporg/crypto` and adds it as the submodule `libs/crypto`.
-- Owner gate O2: the heavy own lanes at the CI's nightly level (recommended), built by Task 25b.
-- Owner gate O3: NIST CAVP's archives pinned by URL and SHA-256 and fetched into
-  `.local/nist-cavp` (recommended), or a mirror repository.
-- Owner item O5: the departures C14, C16 and C17, and `brew install botan` on the development
-  machine.
+- After version 0.1: owner gate O2 (the heavy own lanes at the CI's nightly level, Task 25b),
+  O3 (NIST CAVP's archives pinned by URL and SHA-256, or a mirror), O5 (the departures C16 and
+  C17, and `brew install botan` on the development machine).
 - Whether `webcpp::webrtc` and `webcpp::beast` use this library, and how.
 - A later increment: an incremental `open` with the plaintext withheld until the tag verifies,
   an incremental ChaCha20-Poly1305, and a Botan WebAssembly build.

@@ -3,82 +3,136 @@ title: "webcpp::crypto, increments 1 to 5: Implementation Plan"
 tags: [webcpp, crypto, bearssl, openssl, secp256k1, ctaes, botan, b2, wasm, emscripten, plan]
 status: draft
 created: 2026-10-11
+revised: 2026-11-14
 ---
 
 # webcpp::crypto, increments 1 to 5: Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** a new library, webcpp::crypto, at `libs/crypto`: authenticated encryption (AES-GCM,
-ChaCha20-Poly1305), the AES block cipher, a `random_device` on the system's or the browser's
-generator, a constant-time `equal`, and secp256k1 (BIP340, ECDSA, ECDH), each running on a
-backend that is a C or C++ library itself (BearSSL, OpenSSL, ctaes, libsecp256k1, Botan),
-built from its own sources by `third_party/Jamfile` or found on the machine, on native,
-wasip2, wasip3 and Emscripten; then trystero moved onto it.
+**Goal of version 0.1:** a new library, webcpp::crypto, at `libs/crypto`: AES-GCM and the AES
+block cipher, a `random_device` on the system's generator, a constant-time `equal`, and
+secp256k1 (BIP340, ECDSA, ECDH), each running on a backend that is a C library itself (BearSSL,
+OpenSSL, libsecp256k1, ctaes), every one built from its own sources by b2, on native, wasip2,
+wasip3 and Emscripten (OpenSSL on native, wasip2 and wasip3); and trystero's build moved onto
+the libsecp256k1 this library brings. Increments 3 to 5 (trystero's code moved onto the
+library, ChaCha20-Poly1305, Botan) and the deferred parts of increment 1 come after 0.1.
+
+## The revision of 2026-11-14: version 0.1
+
+The plan was written on 2026-10-11 against a tree that has since changed, and the owner set the
+scope of the first version on 2026-11-14. This section rules over everything below it; the tasks
+of version 0.1 were patched to it, and the deferred tasks carry a note under their heading.
+
+**What changed in the tree** (superproject `main` at `f085d79`, 2026-11-14):
+- The base the plan waited on exists: `third_party/` (project `/webcpp/third_party`), asio
+  integrated with `webcpp::test::exit_status`, the shared infrastructure merged. The identity
+  incident's commits are not in the history. Work reaches `main` by pull request. Tasks 0a and
+  25a are obsolete; Task 0 is rewritten.
+- OpenSSL is no longer found on the machine: since 2026-11-03 it is built from the submodule
+  `third_party/libs/openssl` (OpenSSL 3.5.9 at `45e844f`) as `/webcpp/third_party//openssl`,
+  static, for native Clang, GCC and MSVC, wasip2 single and wasip3; Emscripten stops; never a
+  system OpenSSL (CODING-GUIDELINES.md chapter 5 rule 7; chapter 17, crypto's "Provider
+  amendment, 2026-11-03"). Task 11 is rewritten around it.
+- The rules of the old AGENTS.md are split between AGENTS.md and CODING-GUIDELINES.md, renumbered
+  on 2026-10-26; the citations below are the current ones.
+- A library's `config.hpp` includes `<webcpp/config.hpp>` first and reads the target from
+  `WEBCPP_TARGET_*` (CODING-GUIDELINES.md chapter 6, and config's section of chapter 15).
+- The WASI lanes run through `tools/boost/asio-wasip2/run.sh` and `tools/boost/asio-wasip3/run.sh`
+  (wasmtime 50.0.1), as `tools/ci/matrix.py` `wasm_lane` does.
+- The CI has no levels: every lane and every own lane runs on every push.
+
+**The owner's decisions of 2026-11-14:**
+1. **Version 0.1 is increment 1 lean and increment 2.** Deferred, kept as written and re-read
+   before they run: OpenSSL's memory option (Tasks 15, 16, 33), constant time (Task 20), sizes,
+   throughput and `runners.yml` (Task 22), the browser lane (Task 23), the nightly level (Task
+   25b), NIST CAVP (gate O3), increments 3, 4 and 5 (Tasks 31 to 39).
+2. **The default backend is the spec's, MSVC included:** BearSSL on WebAssembly; natively OpenSSL
+   when it is linked, else BearSSL. The documentation says that the source-built OpenSSL is
+   compiled `no-asm` on MSVC, wasip2 and wasip3 (T-table AES and 4-bit GHASH, no AES-NI, not
+   constant time), and how a program chooses BearSSL there.
+3. **New submodules,** each with its row in CODING-GUIDELINES.md chapter 10 in the task that
+   adds it: `third_party/libs/bearssl` (Task 5), `wycheproof` (Task 9, shallow), `secp256k1`
+   (Task 26), `bips` (Task 28, shallow), `bitcoin` for ctaes (Task 29, shallow; only
+   `src/crypto/ctaes` is used, and its `src/secp256k1/` subtree is never on an include path).
+4. **trystero's build moves onto `/third_party//secp256k1` in version 0.1** (Task 30a), its code
+   unchanged; the CI's external libsecp256k1 goes with it.
+5. **Limits recorded instead of deferred machinery:** MSVC's message cases fail on the MSVC lanes
+   every push, and their exact text is checked on clang, GNU ld and wasm-ld; ld64's on a
+   developer's macOS. crypto has no size table until Task 22. Task 25 records both in
+   CODING-GUIDELINES.md chapter 19.
+
+**The controller's rulings of 2026-11-14:**
+- **A program names `/webcpp/crypto//openssl`,** crypto's alias over the provider, as asio's
+  `/webcpp/asio//openssl` does: on native, wasip2 and wasip3 it links
+  `/webcpp/third_party//openssl` and defines `WEBCPP_CRYPTO_HAS_OPENSSL=1`; on Emscripten it
+  stops the compile with the fix (Task 11).
+- **OpenSSL has no canary:** the provider injects nothing into upstream (CODING-GUIDELINES.md
+  chapter 5 rule 7, and chapter 19's "Asio/Beast closure"). Its layers are the compile-time
+  `#error`s and MSVC's `detect_mismatch` on the default backend. BearSSL, libsecp256k1 and ctaes
+  keep the three layers.
+- **Both project ids:** Task 1 registers `/third_party` beside `/webcpp/third_party`.
+- **No `webcpp-own`, `webcpp.external-root` or `webcpp.external-looked`:** every backend of
+  version 0.1 is built by b2. Botan brings them back if it needs them.
+- **The error values 13 and 14** (`memory_functions_*`) are reserved for the memory option and
+  not declared in version 0.1 (spec 2.9: values are never reused).
+- **The error category has pratt's form;** the test Jamfile's `crypto-run` stays; the empty seam
+  `detail/declassify.hpp` stays; ctaes's refusal names no Botan.
+- **Commits use the contributor's own identity**, with no trailer of any kind (proposals'
+  CONTRIBUTING.md, "Commit identity in older plans").
+
+**The tasks of version 0.1:** 0, 1 to 14, 17 to 19, 21, 24, 25 (increment 1); 26 to 30 and 30a
+(increment 2). Every other task is deferred or obsolete, as its heading's note says.
 
 **Architecture:**
 - **The library is header-only** (`/webcpp/crypto//crypto`, an alias). Its algorithm types
-  (`aes128/192/256<Backend>`, `gcm<Cipher>`, `chacha20_poly1305<Backend>`,
-  `secp256k1::basic_keypair<Backend>`) do every guard, the moved-from state, the incremental
-  seal's state machine, the length accounting and the zeroing of a failed `open` themselves,
-  once, for every backend; a backend's header supplies only the work, as specialisations of
-  six traits in `webcpp::crypto::detail` (`block_state`, `block_engine`, `gcm_state`,
-  `gcm_engine`, `chacha_state`, `chacha_engine`). A state trait is what an object stores and
-  never refuses, so `aes256<backends::bearssl>` is a complete type that `gcm` can name; an
-  engine trait is used only inside member functions, so a backend without the algorithm
-  refuses with its `static_assert` only where the algorithm is called.
+  (`aes128/192/256<Backend>`, `gcm<Cipher>`, `secp256k1::basic_keypair<Backend>`, and later
+  `chacha20_poly1305<Backend>`) do every guard, the moved-from state, the incremental seal's
+  state machine, the length accounting and the zeroing of a failed `open` themselves, once, for
+  every backend; a backend's header supplies only the work, as specialisations of the traits in
+  `webcpp::crypto::detail` (`block_state`, `block_engine`, `gcm_state`, `gcm_engine`; later
+  `chacha_state`, `chacha_engine`). A state trait is what an object stores and never refuses,
+  so `aes256<backends::bearssl>` is a complete type that `gcm` can name; an engine trait is used
+  only inside member functions, so a backend without the algorithm refuses with its
+  `static_assert` only where the algorithm is called.
 - **The C libraries** are submodules under `third_party/libs/`, built file by file by
   `third_party/Jamfile` into static libraries whose usage requirements give
-  `WEBCPP_CRYPTO_HAS_<NAME>=1`; webcpp's `libs/crypto/src/canary_<name>.c` joins each. OpenSSL
-  and Botan are found by `webcpp.external` and linked shared or static by a propagated
-  feature; a program that names one the machine lacks stops with an instruction.
+  `WEBCPP_CRYPTO_HAS_<NAME>=1`; webcpp's `libs/crypto/src/canary_<name>.c` joins each. OpenSSL is
+  the superproject's source-built provider, which crypto's alias `/webcpp/crypto//openssl` links.
 - **The superproject** gains: the project id `/third_party` beside `/webcpp/third_party`;
-  the incidental feature `webcpp-own` that tells webcpp's own tests from a user's program;
-  `webcpp.external-root` and `webcpp.external-looked`; `webcpp.same-program`, two `exe`s of
-  one program with and without a library under one output name, compared byte for byte, in
-  b2 itself (spec 8.7); a Python test of the tools, `tools/test/crypto_jamfiles_test.py`, which
-  builds the user's Jamfiles of the documentation and every build stop as fixtures, the
-  pattern of `tools/test/fixtures/` and `tools/test/emscripten_test.py` (no new kind of
-  library directory, no b2 inside b2; owner item O4); a lint rule on the entropy header and
-  one on the canary's pins; the CI's per-library list of external libraries, own lanes
-  included; OpenSSL's libssl and libcrypto as one target, shared or static, which asio's and
-  trystero's OpenSSL move onto; NIST's archives pinned by URL and SHA-256; Botan's action; the
-  nightly level of the own lanes (owner gate O2).
-- **The lanes:** the ordinary ones (every native compiler, wasip2, wasip3, emscripten) run
-  the tests of `libs/crypto/test` and the examples on every push; own lanes, each naming its
-  targets, run what is heavy or needs a tool: `c-suites` (the C libraries' own test programs),
-  `constant-time` (Valgrind, MemorySanitizer, dudect; Linux), `browser` (Chrome: WebCrypto as
-  an oracle, the audio worklet, throughput), `sizes`, `throughput`; with O2's recommendation,
-  the heavy ones (`c-suites`, `constant-time`, `browser`, `throughput`) at the CI's nightly
-  level, which this track builds for own lanes. The library's own workflow `runners.yml`,
-  nightly, runs what needs a runner the matrix lacks: Linux arm64 and macOS throughput, and
-  the deterministic constant-time checks on arm64. The user's Jamfiles run in the tools job
-  of the superproject's CI (`tools/test/crypto_jamfiles_test.py`).
+  `webcpp.same-program`, two `exe`s of one program with and without a library under one output
+  name, compared byte for byte, in b2 itself (spec 8.7); a Python test of the tools,
+  `tools/test/crypto_jamfiles_test.py`, which builds the user's Jamfiles of the documentation and
+  every build stop as fixtures, the pattern of `tools/test/fixtures/` and
+  `tools/test/emscripten_test.py`; a lint rule on the entropy header and one on the canary's
+  pins; the submodules of decision 3.
+- **The lanes:** the ordinary ones (every native compiler of the matrix, MSVC and Apple clang
+  included, wasip2, wasip3, emscripten) run the tests of `libs/crypto/test` and the examples on
+  every push; the own lane `c-suites` (the C libraries' own test programs) runs on its targets on
+  every push. The user's Jamfiles run in the tools job of the superproject's CI
+  (`tools/test/crypto_jamfiles_test.py`).
 
 **Tech Stack:**
 - C++20, b2 5.5.3, Boost 1.92 (System, Hash2, Core's lightweight_test, JSON in tests),
-  wasi-sdk 34 with wasmtime 47.0.3, Emscripten 6.0.11 with node 26.7.0,
-  chrome-headless-shell 155.0.8059.39, Python 3.9+ for the tools.
+  wasi-sdk 34 with wasmtime 50.0.1, Emscripten 6.0.11 with node 26.7.0, Python 3.9+ for the
+  tools (the versions of AGENTS.md chapter 1, "Prerequisites").
 - BearSSL at `7bea48e5e850ab4cafbe68d3765cdaba13a86d6f` (the mirror `webcpporg/bearssl`),
   libsecp256k1 v0.8.0 at `6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d`, ctaes as Bitcoin Core
-  v31.1 ships it (`9be056a8a72b624dae9623b2f7bded92c2a21c91`), OpenSSL 3 (3.0.13 on the CI's
-  Linux, 3.6.4 on macOS, 3.6.5 on Windows), Botan 3.13.0.
+  v31.1 ships it (`9be056a8a72b624dae9623b2f7bded92c2a21c91`), OpenSSL 3.5.9 at `45e844f`,
+  source-built by the superproject (`tools/openssl/pin.json`). Later: Botan 3.13.0.
 - Test data: Wycheproof at `12fd3aaf33eb5fa1f52e026912ee00c054f9d984`, BIP340's
-  `test-vectors.csv` from `bitcoin/bips` at `927b6de9915c9262615a6399de51b200f81e5aa4`, NIST
-  CAVP's `gcmtestvectors.zip` and `KAT_AES.zip` pinned by URL and SHA-256 and fetched once
-  into `.local/nist-cavp` (owner gate O3).
+  `test-vectors.csv` from `bitcoin/bips` at `927b6de9915c9262615a6399de51b200f81e5aa4`. Later:
+  NIST CAVP's `gcmtestvectors.zip` and `KAT_AES.zip` (gate O3).
 
-**Spec:** `~/.buzz/PLANS/WEBCPP_CRYPTO_SPEC.md` (approved by the owner on
-2026-10-11; "the spec" below, cited by section). The owner's decisions:
-`~/.buzz/PLANS/WEBCPP_DESIGN.md`, cited by date and title. Its sources, cited by the spec's
-short names: C-LIBS (`~/.buzz/RESEARCH/C_LIBRARIES_IN_WEBCPP.md`), PROBES
-(`~/dev/webcpp/.superpowers/sdd/plan-reviews/c-backends/`), CR-PROBES
-(`.../plan-reviews/crypto-review/`), PROBE-R3 (`~/.claude/jobs/fcf3a902/tmp/crypto-r3/probe/`,
-not durable), crypto-r3-review (`.../plan-reviews/crypto-r3-review/`).
+**Spec:** `reference/spec.md` beside this plan (approved by the owner on 2026-10-11; "the spec"
+below, cited by section), with the proposal's `design.md` and the provider amendment of
+CODING-GUIDELINES.md chapter 17. The owner's decisions it cites by date and title, and the
+research it cites by short name (C-LIBS is `reference/research/C_LIBRARIES_IN_WEBCPP.md`), were
+private notes of the original machine; the spec quotes what they ruled.
 
 This plan's own measurements, taken on 2026-10-11 for it (macOS arm64, b2 5.5.3, Apple clang
-21, Homebrew OpenSSL 3.6.4); scratch under `~/.claude/jobs/fcf3a902/tmp/crypto-plan/`
-(not durable; each result is copied here):
+21, Homebrew OpenSSL 3.6.4), recorded here as they were; M5 and M7's OpenSSL lines describe the
+old provisioning and belong to the deferred memory option:
 - **M1, two project ids.** A Jamroot with `use-project /webcpp/third_party : third_party ;`
   and `use-project /third_party : third_party ;`, the Jamfile declaring
   `project /webcpp/third_party ;`: `/third_party//bearssl` and `/webcpp/third_party//bearssl`
@@ -130,202 +184,145 @@ This plan's own measurements, taken on 2026-10-11 for it (macOS arm64, b2 5.5.3,
   lint's world rule matches `random_device`, `getentropy`, `RAND_bytes`, `<sys/random.h>` and
   `<unistd.h>` on any line of a library header without `lint-world:`.
 
-**Not in this plan:**
-- **The CI's levels, whole** (DESIGN, 2026-10-10 "CI in three levels"): the fast set, the
-  native lanes without exceptions and the release level are the levels' own change. This plan
-  builds only the nightly level of the own lanes (Task 25b, owner gate O2); the ordinary lanes
-  keep running on every push.
+
+**Not in version 0.1:**
+- **Everything decision 1 defers:** OpenSSL's memory option, constant time, sizes and
+  throughput, the browser lane, the nightly level, NIST CAVP, increments 3 to 5.
+- **The CI's levels, whole** (spec section 8's table): the CI runs every lane on every push.
 - **The `asyncify` suspension variant for crypto's emscripten tests** (spec 8: "Emscripten in
   both suspension variants"): crypto's tests are synchronous and never suspend, so the variant
-  changes nothing they do; it is a release-level lane of the levels' change, recorded in
-  AGENTS.md chapter 13 by Task 25 (m16).
+  changes nothing they do.
 - **A Botan WebAssembly build** (spec section 3.6, "a later increment's, if a user needs it").
 - **An incremental `open`** (spec section 2.4: "a later increment may add it").
 - **webcpp::webrtc** and **webcpp::beast**, which may use this library later.
 
-## The base, the order of the tracks, and the rebase points
+## The base and the order of the work
 
-The controller's rulings of the first two review rounds (C1, O1, I17; N2, N3, n3, n4):
-
-0. **The base is webcpp's `main` after the owner's force push.** The 13 commits
-   `dd4b1b3..f7c96d3` of today's `main` carry a committer identity that must not be published
-   (the controller's ledger, "2026-10-11 INCIDENT"); `fix/ci-site` re-commits them (its tip
-   `536d899`), and the owner force-pushes `main` to it. After that, `f7c96d3` is not an
-   ancestor of `main`, and no branch of this track, nor any rebase in this plan, ever has one
-   of the 13 commits as its base or in its history. Nothing of this plan starts before the
-   force push: Task 0a's Step 1 checks it.
-1. **`infra/shared` is integrated first** (Task 0a): rebased onto that `main`, following the
-   shared infrastructure plan's own "Integration" steps, its lanes run, and integrated into
-   `main` before anything of this track, and before config's Task 12 (the controller's ruling
-   on n4: config waits on stage 4 anyway, and config rebases onto `main` after infra, taking
-   the conflicts in `Jamroot`, `README.md`, `AGENTS.md`, `tools/lint/lint.sh`,
-   `tools/lint/lint_test.py` and `tools/test/harness.py`). The crypto track is never based on
-   the stale `infra/shared`.
-2. **The asio track** (`~/dev/webcpp-asio`, branch `asio`) rebases onto the `main` of point 1
-   (its controller's rebase, off `f7c96d3`) and goes through its Task 2. It writes the same
-   superproject files as this track: `Jamroot`, `tools/webcpp.jam` (its Task 2:
-   `webcpp-suspend`, `/webcpp//node-test` on `webcpp.run`, `run-fail` and `example`; its
-   Task 3: `variants`, `size-table`), `tools/node-test/`, `tools/ci/matrix.py`,
-   `.github/workflows/library.yml`, `tools/test/emscripten_test.py`,
-   `tools/test/webcpp_jam_test.py` and AGENTS.md chapters 1, 9 and 13.
-3. **This track's base and rebase points** (N2). `lib/crypto` is created at Task 0 from asio's
-   Task 2 commit on the rebased `asio` (the commit asio's ledger,
-   `~/dev/webcpp-asio/.superpowers/sdd/WEBCPP_ASIO_PLAN/progress.md`, records as Task 2's
-   last), so `<webcpp/test/exit_status.hpp>` exists before this plan's Task 1 writes its first
-   test; if asio has integrated into `main` by then, `lib/crypto` starts from that `main`. The
-   rebase points:
-   - onto `main` each time asio or another track that writes the same files integrates; the
-     tracks that do: asio (the files of point 2), the site plan
-     (`~/.buzz/PLANS/WEBCPP_SITE_PLAN_4_5.md`, worktree `~/dev/webcpp-site`, branch `site`; its
-     Tasks 23 and 31 edit `tools/webcpp.jam`, `Jamroot` and AGENTS.md chapter 9, n3), and
-     trystero's shared-connection track (point 5);
-   - after Task 25 (end of increment 1), after Task 30, before Task 31, after Task 36.
-
-   Every rebase in this plan is written
-   `git -c user.name=R -c user.email=github.overboard312@passmail.net rebase <base>`, and at each
-   point, before anything else runs, the identity check (N3):
-
-```bash
-test "$(git log --format='%an %ae %cn %ce' HEAD | grep -vc '^R github.overboard312@passmail.net R github.overboard312@passmail.net$')" = 0 \
-  && ! git merge-base --is-ancestor f7c96d3 HEAD \
-  && echo 'identity: ok' || echo 'identity: stop'
-```
-
-   The check passes when it prints `identity: ok`: every commit of the whole history, base
-   included, is authored and committed by `R <github.overboard312@passmail.net>`, and `f7c96d3` is not
-   in it. Its first two lines, without the `echo`s, are a command whose exit status is 0
-   exactly then, which a script chains with `&&` (r1: `grep -vc` alone exits 1 when it prints
-   `0`, so its count is compared by `test`; a clone that never had `f7c96d3` makes
-   `merge-base` exit 128, which `!` also reads as absent). Measured on 2026-10-11 with this
-   text: today's `main` gives `identity: stop`, `fix/ci-site` and `infra/shared` give
-   `identity: ok`. Then the lint, whose banned-word rule reads every tracked file, and the
-   track's lanes; the ledger records the base's commit and the check's output. A check that fails stops the track and is reported; nothing is pushed.
-4. **Every test of crypto uses asio's test support**, on the base from Task 0 (point 3): every
-   `main` of a test ends `return webcpp::test::exit_status(boost::report_errors());` with
+1. **The base is the superproject's `origin/main`** of the day Task 0 runs (at the revision,
+   `f085d79`). It already holds `third_party/`, `libs/asio` with
+   `tools/node-test/include/webcpp/test/exit_status.hpp`, the source-built OpenSSL and trystero's
+   shared connection.
+2. **Every test of crypto uses asio's test support:** every `main` of a test ends
+   `return webcpp::test::exit_status(boost::report_errors());` with
    `#include <webcpp/test/exit_status.hpp>`, which `/webcpp//node-test` puts on every program;
-   under node the pre-js bounds each test (120 s by default; a test that needs longer, the
-   C suites and dudect, calls `webcpp::test::bound` with its own and says why) and turns a
-   `main` that never finished into a failure (m16). Natively `exit_status` returns its argument.
-5. **trystero's shared-connection track goes first** (`~/.buzz/PLANS/WEBCPP_TRYSTERO_SHARED_SPEC.md`,
-   approved; its plan `~/.buzz/PLANS/WEBCPP_TRYSTERO_SHARED_PLAN.md`, worktree
-   `~/dev/webcpp-trystero-shared`, branch `trystero-shared`): it moves connections, self ids and negotiations from
-   the room to an `app`, in the files increment 3 changes. Increment 3 starts after that track
-   has integrated, with a rebase onto it and a re-read of Task 31's table of call sites
-   (I17); the table names today's functions, and the precondition before Task 31 maps each to
-   where that track put it.
-6. **asio's OpenSSL moves onto `/third_party//openssl`** (Task 25a, I14) once asio's Task 21
-   is on the base; the asio plan's departure 4 names this move as webcpp::crypto's.
+   under node the pre-js bounds each test (120 s by default; a test that needs longer, the C
+   suites, calls `webcpp::test::bound` with its own and says why) and turns a `main` that never
+   finished into a failure. Natively `exit_status` returns its argument.
+3. **Rebases.** The work branch rebases onto `origin/main` whenever a pull request that touches
+   the same superproject files (`Jamroot`, `tools/webcpp.jam`, `third_party/Jamfile`,
+   `tools/test/harness.py`, `tools/ci/matrix.py`, `tools/lint/`, AGENTS.md, CODING-GUIDELINES.md)
+   merges, and at the end of each increment. After a rebase the lint and the lanes the branch
+   touches run again before anything else.
+4. **The pull requests, in order** (Task 25 for increment 1, Task 30 for increment 2):
+   1. the owner creates `webcpporg/crypto` (G1); the library's pull request into its `main`;
+   2. one superproject pull request with the third-party submodules and `third_party/Jamfile`,
+      `/third_party`, `webcpp.same-program`, `crypto_jamfiles_test.py`, the lint rules, the
+      rulebook, and the submodule `libs/crypto` (G2): the third-party targets compile
+      `libs/crypto/src/canary_<name>.c`, so they cannot land before the submodule;
+   3. after increment 2, trystero's pull request and the superproject's that records it
+      (Task 30a);
+   4. the proposals' pull request that records version 0.1 (proposals' CONTRIBUTING.md,
+      "Implemented": the code in the library's `main`, recorded by the superproject's `main`, the
+      CI green on both).
+   The library's CI reads the superproject's `main`, so the library's pull request is green
+   only once the superproject's has merged; until then the evidence is the local lanes, and the
+   library's CI is re-run after the merge.
 
 ## Owner gates
 
-Each is resolved by the controller with the owner before the task that needs it; until then the
-plan is written with the controller's recommendation.
+- **G1:** the owner creates `webcpporg/crypto`, public, BSL-1.0.
+- **G2:** the owner adds the submodule (`git submodule add ../crypto.git libs/crypto`).
+- **G4:** the owner merges every pull request; an agent never pushes to `main`, creates a
+  repository or changes a setting.
+- Later, with the deferred tasks: O2 (the CI's nightly level, Task 25b), O3 (NIST's archives,
+  Task 9's deferred half), O5 (the departures below, and `brew install botan` for Task 37).
 
-- **The force push of `main`** (before Task 0a, N3): the owner's pending act for the identity
-  incident, which this plan waits on; not a decision the plan asks for. O1 itself is settled
-  by the controller's ruling (n4): `infra/shared` integrates first, before config's Task 12.
-- **O2, the heavy lanes and the owner's CI levels** (before Task 25b). Recommendation: this
-  track builds the CI's nightly level for own lanes: `matrix.py own-lanes --level push|nightly`
-  and a scheduled workflow that runs, each night and nothing else, the heavy own lanes
-  (crypto's `c-suites`, `constant-time`, `browser`, `throughput`, and asio's `asyncify`, as
-  the owner's asio decision puts it, N5), `runners.yml`, and the tools job's macOS and Windows
-  legs; it reruns no library's ordinary lanes. Every push keeps the ordinary lanes, the Linux
-  tools tests and the light own lanes (`sizes`, asio's `browser` and `tls`, trystero's,
-  wasi's, xstate's).
-- **O3, NIST's archives** (before Task 9). Recommendation: no public mirror; the two archives
-  pinned by URL and SHA-256 (M3), fetched once into `.local/nist-cavp` by an action and a local
-  script, as `.local/` holds what webcpp does not track; a mirror only if NIST moves or removes
-  them.
-- **O4 is no longer a gate** (the controller's ruling O4'): the user's Jamfiles are fixtures
-  and a Python test of the tools (Task 10), and the tools job's `macos-15` and `windows-2022`
-  legs, which ld64's and MSVC's messages need (spec 8.6), run `crypto_jamfiles_test.py
-  --target native` at the nightly level (Task 25b): free minutes on the public repository,
-  the cost being macOS concurrency and wall time, which every push would pay.
-- **O5, the departures below** (before Task 22, Task 18 and Task 37): the owner's nod on each.
-- **The machine-wide `brew install botan`** (before Task 37 Step 5), part of O5.
-
-## Departures for the owner (O5)
+## Departures for the owner (O5, with the deferred tasks)
 
 1. **C17.** Sizes at b2's `speed` (`-O3`) and `space` (`-Os`) where spec 8.8 says -O2 and -Os:
    b2 has no -O2 that reaches the libraries a program names.
 2. **C16.** webcpp's own throughput program in `runners.yml` in place of "the job of run
    38113681987", whose workflow no tree holds.
-3. **C14.** MSVC's messages (`C1189`, `C2338`, `LNK2001`, `LNK2038`) checked by building the
-   cases with MSVC in the tools test (its nightly Windows leg, O4') in place of the Compiler Explorer
-   method, which calls a public service from the CI.
+3. **C14** is settled for version 0.1 by decision 5 (MSVC's cases fail on its lanes; their text
+   is checked on clang and the GNU and wasm linkers).
 4. **`brew install botan`** on the development machine, for Botan's local runs (Task 37).
 
 ## Conflicts with the spec
 
-Each is a place where the tree, a measurement or a rule of AGENTS.md disagrees with the
-spec's prose, with this plan's ruling. The departures among them are listed above for the
-owner (O5); C3 and C11 are owner gates O2 and O3.
+Each is a place where the tree, a measurement or a rule disagrees with the spec's prose, with
+this plan's ruling. Rows marked "later" belong to deferred tasks.
 
 | # | The spec says | The tree or a measurement says | Ruling |
 | --- | --- | --- | --- |
-| C1 | A program names `/third_party//<backend>` (sections 4, 7; AGENTS rule 5) | `infra/shared`'s `third_party/Jamfile` declares `project /webcpp/third_party`, and its consumers write `/webcpp/third_party//srell` | The Jamroot registers the one project under both ids (M1): `use-project /third_party : third_party ;` beside the existing line. The user's form is `/third_party//<name>`, as the owner's decision and AGENTS write it; `/webcpp/third_party//<name>` keeps working for SRELL's and the suite's consumers (Task 1) |
-| C2 | The submodules go under `third_party/libs/` of the superproject | `main` had no `third_party/`; `infra/shared` has it and lags `main` by 54 commits (review C1) | `infra/shared` is rebased onto `main` and integrated first (Task 0a); this track bases on that `main` ("The base, the order of the tracks") |
-| C3 | Each lane has a level: fast, nightly or release (section 8's table) | `matrix.py` has no level (M7) | Owner gate O2: this track builds the nightly level of the own lanes (Task 25b); the ordinary lanes run on every push until the levels' change |
-| C4 | Constant time and throughput on Linux arm64 (sections 8.3, 8.8) | The matrix has no arm64 lane (M7) | The library's workflow `runners.yml` runs them on `ubuntu-24.04-arm`, beside `ubuntu-24.04` and `macos-15` (Task 22) |
-| C5 | On macOS the counting test interposes the C library's allocator through `DYLD_INSERT_LIBRARIES` (section 8.5) | Linking the interposer into the program, loaded at launch, counts the same (M5) | The test links the interposer as a shared library of its own; no environment variable, which `webcpp.run` cannot set (Task 16) |
-| C6 | Static OpenSSL is `lib/libcrypto.a` under the root; "with MSVC the library is `libcrypto.lib` in `lib/VC/x64/MD`" (section 4.4) | The CI's `.local/openssl` holds only the shared libraries (M7); on Windows `libcrypto.lib` in `lib/VC/x64/MD` is the import library of the DLL | The OpenSSL action also links `libcrypto.a` where the prefix holds it, and on Windows copies the installer's static library; its name is measured on the Windows runner first (Task 11, with what happens when it is absent) |
-| C7 | The exit test "passes only with that line" written by the resource after `main` (section 8.5) | `webcpp.run` judges by the exit status alone; `webcpp.example`'s comparison would count the program as an example | The resource writes the line and then ends the process with `_exit(0)`; `main` returns 3, so a cleanup that never frees everything fails the test, and the resource's destructor writes its line and ends with `_exit(4)` (Task 16) |
-| C8 | Sizes and throughput go "into the report" (section 8.8) | `tools/report/report.py` writes a test matrix, which has no place for a table | The tables go to the job's summary and an artifact; the documentation's size table is regenerated from the sizes lane, whose WebAssembly rows (pinned toolchains) are checked byte for byte and whose native rows are reported (Task 22) |
+| C1 | A program names `/third_party//<backend>` (sections 4, 7; CODING-GUIDELINES.md chapter 5 rule 5) | `third_party/Jamfile` declares `project /webcpp/third_party`, and the Jamroot registers that id alone | The Jamroot registers the one project under both ids (M1): `use-project /third_party : third_party ;` beside the existing line. The user's form is `/third_party//<name>`; `/webcpp/third_party//<name>` keeps working for the existing consumers (Task 1) |
+| C2 | OpenSSL is found on the machine, linked shared or static, native only (sections 3.3, 4.4, 5) | The superproject builds OpenSSL 3.5.9 from source, static, on native, wasip2 and wasip3, and never uses a system copy (CODING-GUIDELINES.md chapter 5 rule 7; the provider amendment of 2026-11-03) | crypto's alias `/webcpp/crypto//openssl` over the provider, refused on Emscripten; no canary; the default backend as the spec says (Task 11) |
+| C3 | Each lane has a level: fast, nightly or release (section 8's table) | `matrix.py` has no level | Every lane runs on every push; the nightly level is Task 25b's, later |
+| C4 | Constant time and throughput on Linux arm64 (sections 8.3, 8.8) | The matrix has no arm64 lane | Later: `runners.yml` (Task 22) |
+| C5 | The macOS counting test interposes through `DYLD_INSERT_LIBRARIES` (section 8.5) | Linking the interposer counts the same (M5) | Later: Task 16 |
+| C7 | The exit test "passes only with that line" (section 8.5) | `webcpp.run` judges by the exit status alone | Later: Task 16 |
+| C8 | Sizes and throughput go "into the report" (section 8.8) | `tools/report/report.py` has no place for a table | Later: Task 22. Version 0.1 has no size table, a limit recorded in chapter 19 (decision 5) |
 | C9 | `webcpp.same-program <name> : <sources> : <library> : <targets>` (section 8.7) | A program of crypto also needs `/webcpp/crypto//crypto`, which is neither its source nor the library compared | One more, last parameter, `: <requirements> *`, the program's other libraries; the rule is b2 alone, two `exe`s and a comparison (Task 21) |
-| C10 | Section 7's Jamfiles were "built and run with b2" and section 8.6's stops are "run on a fixture project" | The lint refuses b2's raw `exe` in a library's `test/` and `example/` Jamfiles, `tools/test/fixtures/<x>/test/` included (AGENTS chapter 6, "raw b2 rules") | The existing pattern (owner item O4): fixtures `tools/test/fixtures/crypto_jamfiles/<case>/`, a user's Jamfile each, outside the raw-rules pattern, built by `tools/test/crypto_jamfiles_test.py` on a scratch superproject as `emscripten_test.py` builds its fixtures (Task 10; the cases in Tasks 11, 16, 18, 24, 29, 37) |
-| C11 | NIST CAVP's `gcmtestvectors` and AESAVS (section 8.1) | Published as zip archives on csrc.nist.gov only (M3); AGENTS rule 1's mirror is for C libraries, not test data | Owner gate O3: the archives pinned by URL and SHA-256, fetched into `.local/nist-cavp` by an action and a script, no repository (Task 9) |
+| C10 | Section 7's Jamfiles were "built and run with b2" and section 8.6's stops are "run on a fixture project" | The lint refuses b2's raw `exe` in a library's `test/` and `example/` Jamfiles (CODING-GUIDELINES.md chapter 9) | Fixtures `tools/test/fixtures/crypto_jamfiles/<case>/`, a user's Jamfile each, built by `tools/test/crypto_jamfiles_test.py` on a scratch superproject as `emscripten_test.py` builds its fixtures (Task 10; the cases in Tasks 11, 18, 24, 29) |
+| C11 | NIST CAVP's `gcmtestvectors` and AESAVS (section 8.1) | Published as zip archives on csrc.nist.gov only (M3) | Later: gate O3. Version 0.1 checks AES-GCM against the spec's GCM cases and Wycheproof (Task 9) |
 | C12 | BIP340's `test-vectors.csv` (section 8.1) | It lives only in `bitcoin/bips` (M6) | A shallow submodule `third_party/libs/bips` at `927b6de9` (Task 28) |
-| C13 | `webcpp.external crypto : OpenSSL ...` sits in `third_party/Jamfile` (section 4.4) | The index's "left out" reads the declarations of every library's `build.jam`, which the Jamroot loads at start (`tools/webcpp.jam` `left-out`); `third_party/Jamfile` loads only when a target names it | The declaration is in `libs/crypto/build.jam`; `third_party/Jamfile` reads the root through a new `webcpp.external-root` (Task 11) |
-| C14 | MSVC's `C1189` text is checked "by the Compiler Explorer probe's method" (section 8.6) | That method calls a public service from the CI, unpinned | The tools test builds the same cases with MSVC on the tools job's nightly Windows leg (O4', Task 25b), its outcome holding `C1189` and the message (Task 18); departure 3 for the owner |
-| C15 | Every suite runs with exceptions on and off (section 8) | No lane of the matrix builds without exceptions | The test Jamfile's rule `crypto-run` declares each program twice, the second `<exception-handling>off` with the suffix `_no_exceptions` (Task 1 onwards); Botan's with exceptions only |
-| C16 | The throughput job is "the one of run 38113681987" (section 8.8) | No tree holds that job's workflow (searched `~/.buzz`, `~/dev/webcpp`) | `runners.yml` runs webcpp's own throughput program, built by b2, on the same three runners (Task 22) |
-| C17 | Sizes at -O2 and -Os (section 8.8) | b2's `<optimization>speed` is `-O3` with clang and gcc, and b2 has no -O2 that reaches the libraries a program names (`<cflags>` is free and not propagated) | The table measures `<variant>release` at `speed` and at `space`, what a user's b2 builds, and the documentation names the flags (Task 22) |
+| C14 | MSVC's `C1189` text is checked "by the Compiler Explorer probe's method" (section 8.6) | That method calls a public service from the CI, unpinned; the tools job runs on Linux only | Decision 5: the cases fail on the MSVC lanes; the text is checked on clang, GNU ld and wasm-ld (Task 18) |
+| C15 | Every suite runs with exceptions on and off (section 8) | No lane of the matrix builds without exceptions | The test Jamfile's rule `crypto-run` declares each program twice, the second `<exception-handling>off` with the suffix `_no_exceptions` (Task 1 onwards) |
+| C16 | The throughput job is "the one of run 38113681987" (section 8.8) | No tree holds that job's workflow | Later: Task 22 |
+| C17 | Sizes at -O2 and -Os (section 8.8) | b2 has no -O2 that reaches the libraries a program names | Later: Task 22 |
+| C18 | `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` and the errors 13 and 14 (sections 2.9, 3.7) | Deferred by decision 1 | Values 13 and 14 are reserved, not declared; the option and its errors come with Task 15 |
+| C19 | OpenSSL is the native default (section 5) | The provider builds OpenSSL `no-asm` on MSVC, wasip2 and wasip3 | Decision 2: the default stays; the backend's page says what `no-asm` means and how to choose BearSSL (Tasks 14, 24) |
+
+C6 and C13 (OpenSSL's static library on the machine, and where `webcpp.external` declares it)
+are gone with the source-built provider.
 
 ## Global Constraints
 
 **Repositories and paths:**
-- `~/dev/webcpp` is the superproject (M). This track works in the worktree
-  `~/dev/webcpp-crypto`, branch `lib/crypto`, based on asio's Task 2 on top of `main` after
-  the force push and Task 0a ("The base, the order of the tracks", points 0 to 3), its `.local`
-  a link to M's. Every rebase is `git -c user.name=R -c user.email=github.overboard312@passmail.net
-  rebase`, followed by the identity check of point 3.
-- `~/dev/webcpp-crypto/libs/crypto` is the library's own git repository, created in Task 1,
-  branch `main`. Until the owner creates `webcpporg/crypto` and the submodule is added (gates
-  G1, G2), the superproject ignores it through `.git/info/exclude` (the common git directory's,
-  shared by M's worktrees), never through a tracked line.
-- trystero (increment 3) is changed in `~/dev/webcpp-crypto/libs/trystero`, its own
-  repository, on a branch `crypto` of it.
-- Every b2 command runs from `~/dev/webcpp-crypto`, as
+- The superproject is `webcpporg/webcpp`, checked out with its submodules; the work happens in
+  a worktree of it on a branch `crypto/v0.1` from `origin/main` (Task 0), its `.local` a link
+  to the main checkout's. Paths below are relative to that worktree.
+- `libs/crypto` is the library's own git repository, created in Task 1, branch `main`, whose
+  remote is `webcpporg/crypto` once the owner creates it (G1). Until the submodule is added
+  (G2), the superproject ignores it through the common git directory's `info/exclude`
+  (`/libs/crypto/`), never through a tracked line.
+- trystero (Task 30a) is changed in `libs/trystero`, its own repository, on a branch
+  `crypto/secp256k1`.
+- Every b2 command runs from the worktree's root, as
   `env -u CPATH -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH b2 --user-config=.local/user-config.jam ...`
-  (written `$B2` below). A verdict is `-a`. Each lane has its own `--build-dir`. No cap on concurrent builds (owner, 2026-10-11): a test that fails under load is flaky and is fixed, never protected by running less at once.
-- The lanes, as the CI runs them:
+  (written `$B2` below). A verdict is `-a`. Each lane has its own `--build-dir`. No cap on
+  concurrent builds: a test that fails under load is flaky and is fixed, never protected by
+  running less at once.
+- The lanes, as the CI runs them (`tools/ci/matrix.py`):
   - native: `$B2 -a --build-dir=bin/lane-native libs/crypto/test libs/crypto/example`;
-  - wasip2: `$B2 -a --build-dir=bin/lane-wasip2 toolset=clang-wasip2 testing.launcher=wasmtime libs/crypto/test libs/crypto/example`;
-  - wasip3: the same with `clang-wasip3` and `bin/lane-wasip3`;
+  - wasip2: `$B2 -a --build-dir=bin/lane-wasip2 toolset=clang-wasip2 testing.launcher=tools/boost/asio-wasip2/run.sh libs/crypto/test libs/crypto/example`;
+  - wasip3: the same with `clang-wasip3`, `tools/boost/asio-wasip3/run.sh` and `bin/lane-wasip3`;
   - emscripten: `$B2 -a --build-dir=bin/lane-emscripten toolset=emscripten libs/crypto/test libs/crypto/example`;
   - gcc: `$B2 -a --build-dir=bin/lane-gcc toolset=gcc-15 libs/crypto/test libs/crypto/example`;
-  - an own lane `<lane>` on target `<t>`: the target's lane command with
-    `libs/crypto/test//<lane>` (or the directory that declares it) in place of the two
-    directories; every own lane of crypto names its targets (I2), so that the CI runs it on
-    each;
+  - MSVC and Apple clang run in the CI only (`msvc-14.3`, `msvc-14.5`, `apple-clang` lanes of
+    the matrix); their evidence is the CI's;
+  - the own lane `c-suites` on target `<t>`: the target's lane command with
+    `libs/crypto/test/c_suites//c-suites` in place of the two directories; it names its targets,
+    so that the CI runs it on each;
   - the user's Jamfiles: `python3 tools/test/crypto_jamfiles_test.py` (Task 10), which the
     superproject's tools job runs.
 - The lint: `tools/lint/lint.sh --clang-format .local/wasi-sdk/bin/clang-format --clang-tidy .local/wasi-sdk/bin/clang-tidy`,
   ending `lint: clean`.
 
-**The library's rules (AGENTS.md chapters 2, 3, 6, 7, 8, 9, 11; the spec):**
+**The library's rules (CODING-GUIDELINES.md chapters 2, 3, 5 to 9; the spec):**
 - Names: namespace `webcpp::crypto`, `webcpp::crypto::backends`, `webcpp::crypto::secp256k1`;
   `detail` for what is not public; macros `WEBCPP_CRYPTO_*`, test macros `WEBCPP_TEST_*`;
   include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C
   header); b2 target `/webcpp/crypto//crypto`; error category `webcpp.crypto`; `snake_case`.
-- `<webcpp/crypto/config.hpp>` first in every public header, with `WEBCPP_CRYPTO_NO_EXCEPTIONS`;
-  an API that throws sits behind `#ifndef WEBCPP_CRYPTO_NO_EXCEPTIONS` and raises through
-  `boost::throw_exception`, never a bare `throw`.
+- `<webcpp/crypto/config.hpp>` first in every public header; it includes `<webcpp/config.hpp>`
+  first and derives `WEBCPP_CRYPTO_NO_EXCEPTIONS` from `WEBCPP_HAS_EXCEPTIONS` and
+  `WEBCPP_CRYPTO_WEBASSEMBLY` from `WEBCPP_TARGET_*`; no header under `include/` reads
+  `__wasi__` or `__EMSCRIPTEN__` (tests and `src/` may). An API that throws sits behind `#ifndef WEBCPP_CRYPTO_NO_EXCEPTIONS` and
+  raises through `boost::throw_exception`, never a bare `throw`.
 - Every line of a library header that names `random_device`, `getentropy`, `RAND_bytes`,
-  `<sys/random.h>` or `<unistd.h>` says why after `lint-world:` (M7), the class's own name
+  `<sys/random.h>` or `<unistd.h>` says why after `lint-world:`, the class's own name
   included: `// lint-world: random_device reads the system's entropy, its purpose`.
 - Every operation that can fail returns `boost::system::result<T>`; the values of `error` are
-  those of spec section 2.9, fixed, never reused.
+  those of spec section 2.9, fixed, never reused (13 and 14 reserved, C18).
 - Data, keys and outputs are `std::span<std::uint8_t const>` and `std::span<std::uint8_t>`;
   sizes `std::size_t`; a limit wider than `size_t` on wasm32 is `std::uint64_t`, compared
   through `detail::exceeds(std::uint64_t, std::uint64_t)` so that no comparison is
@@ -335,73 +332,65 @@ owner (O5); C3 and C11 are owner gates O2 and O3.
   No global or static mutable state in a header. A test's counters and replaced allocation
   functions are global, each line with
   `// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)` and the reason.
+- No C array in C++ code (`modernize-avoid-c-arrays`): `std::array`.
 - A function starts with its guards. A comment says what the code does not. Doc Comments: a
   one-sentence brief, `@param`, `@tparam`, `@return`, only the allowed commands; every
-  public symbol documented.
+  public symbol documented, deleted members included (CODING-GUIDELINES.md chapter 7).
 - `(max)()`, `(min)()` and `(std::numeric_limits<T>::max)()` in every header (spec 2.2).
+- Every header under `include/webcpp/crypto/`, `detail/` included, is in the test Jamfile's
+  headers-alone list and in `meta/include-boundaries.json` once it exists, added by the task
+  that creates it.
 - Tests use `<boost/core/lightweight_test.hpp>` and `test/require.hpp` (xactor's), and end
   `return webcpp::test::exit_status(boost::report_errors());` with
-  `#include <webcpp/test/exit_status.hpp>` (asio's Task 2, on the base from Task 0, N2; under
-  node it bounds the test and fails a `main` that never finished; natively it returns its
-  argument); every code block of this plan does. Every test
-  program is declared through the test Jamfile's `crypto-run` (C15), on every target its backend has.
+  `#include <webcpp/test/exit_status.hpp>`. Every test program is declared through the test
+  Jamfile's `crypto-run` (C15), on every target its backend has.
 - A message's test is a `webcpp.compile-diagnostic` in a directory of its own (spec 4.3's
   pitfall), whose source states the whole text on the header that raises it, as wasi's tests
-  do: `// expected-error@webcpp/crypto/<header>:* {{<the text>}}`; on MSVC the same case is a
-  fixture of `tools/test/crypto_jamfiles_test.py` (C14).
+  do: `// expected-error@webcpp/crypto/<header>:* {{<the text>}}`. `compile-diagnostic` is
+  clang's, and skips Emscripten: a message raised on Emscripten is a fixture of
+  `tools/test/crypto_jamfiles_test.py`. On MSVC the same case is a `webcpp.compile-fail` or
+  `webcpp.link-fail` (decision 5).
 
 **Commits and text:**
-- Every commit is `git -c user.name=R -c user.email=github.overboard312@passmail.net commit -m "<message>" -- <paths>`
-  (in the library `git -C libs/crypto -c user.name=R -c user.email=github.overboard312@passmail.net commit ...`,
-  in trystero `git -C libs/trystero ...`), with no trailer of any kind and never an agent
-  co-author. After each, `git log -1 --format='%an %ae %cn %ce'` prints
-  `R github.overboard312@passmail.net R github.overboard312@passmail.net` and
+- Every commit is made with the contributor's own git identity, with no trailer of any kind and
+  never an agent co-author: `git commit -m "<message>" -- <paths>` (in the library
+  `git -C libs/crypto commit ...`, in trystero `git -C libs/trystero ...`). After each,
   `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
 - Stage by path: a new file is added first, `git add -- <new paths>`, since
-  `commit -- <paths>` refuses a path git does not track (m9). Never `git add -A`, `git add .`
+  `commit -- <paths>` refuses a path git does not track. Never `git add -A`, `git add .`
   or `git add libs`.
 - Subjects: `crypto: <what>` in the library; `third_party: <what>`, `tools: <what>`,
-  `Jamroot: <what>`, `tools/ci: <what>`, `AGENTS.md: <what>` in the superproject;
+  `Jamroot: <what>`, `tools/ci: <what>`, `guidelines: <what>` in the superproject;
   `trystero: <what>` in trystero.
+- A change a user can see adds its changelog line in the same commit: the library's
+  `doc/changelog.adoc` (from Task 1), the superproject's `doc/releases/0.1.0.adoc`, "Tools and
+  build", for a tool or a b2 target (AGENTS.md chapter 5).
 - Everything written to a file is English. No em dash (U+2014) anywhere. The word the lint's
-  banned-word rule matches (`tools/lint/rules.py`) appears nowhere, in files or commits.
+  banned-word rule matches (`tools/lint/rules.py`) appears nowhere, in files or commits. No
+  home directory path in a tracked file.
 - Every source file opens with the licence notice (`//` for C++ and AsciiDoc, `/* */` for C,
   `#` for Jam, Python, shell and YAML, `<!-- -->` for HTML, `//` for JavaScript).
 - No environment variable is ever printed (no bare `env`, `export`, `printenv`, `set`).
-
-**Gates (the controller alone, each with the owner's agreement first; never a subagent):**
-- **G1:** the owner creates `webcpporg/crypto`, public, BSL-1.0.
-- **G2:** the owner adds the submodule `git submodule add ../crypto.git libs/crypto`, and the
-  exclude line goes.
-- **G3:** none any more: NIST's archives are pinned by URL and SHA-256 (owner gate O3); a
-  mirror repository is made only if the owner asks.
-- **G4:** pushes: the library, trystero, then the superproject.
 
 **Names fixed by this plan:**
 
 | Name | What it is |
 | --- | --- |
-| `/webcpp/crypto//crypto` | the library: `include`, Boost's headers, and on Windows `bcrypt` |
-| `/third_party//bearssl`, `//openssl`, `//ctaes`, `//secp256k1`, `//botan` | the backends' libraries (spec 4.1, 4.4) |
-| `/third_party//wycheproof`, `//nist-cavp`, `//bips` | test data: a define naming the directory, and the directory under wasmtime |
-| `webcpp-crypto-openssl-link`, `webcpp-crypto-botan-link` | `shared` (default) or `static`, propagated |
+| `/webcpp/crypto//crypto` | the library: `include`, Boost's headers, `/webcpp/config//config`, and on Windows `bcrypt` |
+| `/webcpp/crypto//openssl` | crypto's alias over `/webcpp/third_party//openssl`, with `WEBCPP_CRYPTO_HAS_OPENSSL=1`; refused on Emscripten (Task 11) |
+| `/third_party//bearssl`, `//ctaes`, `//secp256k1` | the backends' libraries (spec 4.1); later `//botan` |
+| `/third_party//wycheproof`, `//bips` | test data: a define naming the directory, and the directory under wasmtime |
 | `webcpp-secp256k1-tables` | `auto` (default), `small`, `large`, propagated |
-| `webcpp-own` | `on`, optional, incidental, propagated: set by every webcpp test and example rule |
-| `webcpp.external-root <owner> : <library> : <target>` | the directory `webcpp.external` returned for it |
-| `webcpp.external-looked <owner> : <library> : <properties> *` | where it looked and did not find it, or nothing |
 | `webcpp.same-program <name> : <sources> + : <library> : <targets> * : <requirements> *` | a test: `<sources>` built with and without `<library>` under one output name, byte-identical, in b2 (`tools/same_program/same_program.jam`) |
 | `tools/test/crypto_jamfiles_test.py`, `tools/test/fixtures/crypto_jamfiles/<case>/` | the user's Jamfiles and the build's stops, each a fixture with its `<case>.outcome`, built on a scratch superproject |
-| `tools/ci/actions/nist-cavp/`, `.local/nist-cavp`, `-sNIST_CAVP_ROOT` | NIST's two archives, pinned by URL and SHA-256 |
-| `WEBCPP_CRYPTO_DETAIL_DECLASSIFY(address, size)` | the constant-time checks' seam: empty unless a test defines it (Task 20) |
-| `test/support/counting.hpp`, `test/support/c_allocations.{hpp,cpp}` | every `operator new` form and the C library's allocator, counted (Task 17) |
-| `webcpp::crypto::detail::{block,gcm,chacha}_{state,engine}<Backend, ...>` | the traits a backend specialises |
+| `WEBCPP_CRYPTO_DETAIL_DECLASSIFY(address, size)` | the constant-time checks' seam: empty unless a test defines it (Task 20, later) |
+| `test/support/counting.hpp` | every `operator new` form and the C library's allocator, counted (Task 17) |
+| `webcpp::crypto::detail::{block,gcm}_{state,engine}<Backend, ...>` | the traits a backend specialises; later `chacha_{state,engine}` |
 | `WEBCPP_CRYPTO_DETAIL_TEST_ENTROPY` | the test seam of `random_device`: the source becomes `webcpp_test_entropy` |
 | `WEBCPP_CRYPTO_DETAIL_BEARSSL_PORTABLE` | the test seam that keeps BearSSL on `aes_ct64` and `ghash_ctmul64` |
 | `WEBCPP_CRYPTO_<NAME>_CANARY_COMMIT`, `_CANARY_CONFIGURATION` | the canary's test seams (`detail/canary.h`) |
-| own lanes `c-suites`, `constant-time`, `browser`, `sizes`, `throughput` | `libs/crypto/test/...`, each naming its targets |
-| `matrix.py own-lanes --level push\|nightly`, `.github/workflows/nightly.yml` | the nightly level of the own lanes (Task 25b, O2) |
-| `libs/crypto/.github/workflows/runners.yml` | throughput and constant time on three runners |
-| `~/dev/webcpp-crypto/.superpowers/sdd/WEBCPP_CRYPTO_PLAN/progress.md` | the ledger |
+| own lane `c-suites` | `libs/crypto/test/c_suites`, naming its targets; later `constant-time`, `browser`, `sizes`, `throughput` |
+| `.superpowers/sdd/WEBCPP_CRYPTO_PLAN/progress.md` | the ledger, in the worktree, untracked |
 
 ## Review Focus
 
@@ -411,175 +400,99 @@ owner (O5); C3 and C11 are owner gates O2 and O3.
    them run would silently abandon the message, whose encrypted pieces then get a tag of
    another message. A reasonable person expects a refusal that leaves both the call's `data`
    and the message as they were: `invalid_state`, the message still in progress, its
-   `result()` still correct. Task 8 tests it on BearSSL, Task 12 on OpenSSL, Task 38 on Botan.
+   `result()` still correct. Task 8 tests it on BearSSL, Task 12 on OpenSSL.
 2. **Spans that alias.** A wire format that appends the tag (trystero's, WebCrypto's) invites
    an `open` whose `tag` is a subspan right after `data`, or overlapping its end, and a `seal`
    whose IV or additional data sits in the same buffer. A failed `open` zeroes `data`, which
    would wipe an overlapping tag while the backend reads it, and in-place decryption would
    overwrite an overlapping IV. Expected: correct results when the spans touch, and an
    overlapping tag is an `authentication_failed` with `data` zeroed and nothing else
-   corrupted. `gcm` and `chacha20_poly1305` copy the tag into a local array and consume the IV
-   and the additional data before the first byte of `data` is written; Task 7 tests adjacent
-   and overlapping spans.
+   corrupted. `gcm` copies the tag into a local array and consumes the IV and the additional
+   data before the first byte of `data` is written; Task 7 tests adjacent and overlapping
+   spans.
 3. **Empty inputs.** An empty plaintext with empty additional data (GCM case 1), an `update`
    with an empty span, `fill` of 0 bytes, `equal` of two empty spans, `encrypt` of zero
    blocks, a span whose `data()` is null. OpenSSL reads `EVP_EncryptUpdate` with a null output
-   as additional data, and BearSSL and Botan take a null pointer with length 0 differently;
-   every backend must give the same tag. Tasks 3, 4, 7, 8 and 12 test them on each backend.
+   as additional data, and BearSSL takes a null pointer with length 0 differently; every
+   backend must give the same tag. Tasks 3, 4, 7, 8 and 12 test them on each backend.
 4. **Two translation units that choose different default backends.** One file compiled with
    `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and one without, with OpenSSL linked, makes
    `aes256_gcm` two types under one name; a function of the program's that names it in a
-   header is then an ODR violation that links silently. A reasonable person expects layer 3's
-   kind of net: `<webcpp/crypto/aes256_gcm.hpp>` carries
+   header is then an ODR violation that links silently. Expected: layer 3's kind of net:
+   `<webcpp/crypto/aes256_gcm.hpp>` carries
    `#pragma detect_mismatch("webcpp_crypto_default_backend", "<name>")` on MSVC, which fails
    such a program with LNK2038, and the documentation says to give the define in the project's
-   requirements. Task 14 adds it and Task 18 tests it on MSVC.
-5. **OpenSSL on a second thread under the memory option.** A thread that has never touched
-   OpenSSL's error queue makes, seals and opens; its first `ERR_*` call would allocate the
-   thread's error state (6 blocks, PROBE-R3 `errmark.log`). Expected: `make` may allocate
-   through the resource (its mark), `seal` and `open` allocate nothing on that thread, and
-   the counts and the exit check hold. Task 16 tests it.
-6. **Moving an object that was moved from** (I1). `aead c = std::move(b)` with `b` already
-   empty, a move-assignment from it, `std::swap` of an empty and a live object: BearSSL's move
-   would run `br_gcm_init` through a wiped, null vtable. Expected: the destination is empty
-   too, and every function of both answers `invalid_state`. Tasks 7, 12, 29, 35 and 38 test it
-   on every type and backend.
-7. **A lane or a check that passes having built nothing** (I2, I11). An own lane that names no
-   target runs natively only; a `make` whose sources a target skips is skipped whole and the
-   lane is green. Expected: every own lane names its targets, and a lane that builds nothing on
-   a target it names fails. Tasks 5, 22 and 25 test it.
-8. **A constant-time tool that cannot give a verdict** (I8, I9). A harness that reports the
-   library's public branch on a tag's verdict, or dudect classes that differ by outcome,
-   fail every run whatever the code. Expected: the verdict is declassified where webcpp's code
-   branches on it, each harness fails on a planted leak, and dudect's classes differ only in
-   the secret. Task 20 tests it.
-9. **A root given to a case that must not find the library** (I5). The CI gives
-   `-sOPENSSL_ROOT` to its lanes; a "not found" case that saw it would find OpenSSL. Expected:
-   each case of the user's Jamfiles states the roots it gets, and no other reaches it. Task 10
-   tests it.
-10. **Allocation outside webcpp's sight** (I3, I14). A `malloc` in C code never reaches
-   `operator new`, and a program with a static libcrypto and a shared libssl holds two
-   libcryptos. Expected: the allocation tests count the C library's allocator where a program
-   can see it, with a control that moves the counter, and `/third_party//openssl` gives libssl
-   and libcrypto as one choice. Tasks 11, 17 and 33 test it.
+   requirements. Task 14 adds it and Task 18 tests it on the MSVC lanes.
+5. **OpenSSL on two threads.** The ordinary lanes build OpenSSL `no-threads` (b2's default
+   `threading=single`), where OpenSSL's error queue is the process's; a program that builds
+   `<threading>multi` gets the threaded build. Expected: two threads, each with its own `aead`,
+   seal and open correctly and each leaves the error queue as it found it. Task 12 tests it
+   natively with `<threading>multi`.
+6. **Moving an object that was moved from.** `aead c = std::move(b)` with `b` already empty, a
+   move-assignment from it, `std::swap` of an empty and a live object: BearSSL's move would
+   run `br_gcm_init` through a wiped, null vtable. Expected: the destination is empty too, and
+   every function of both answers `invalid_state`. Tasks 7, 12 and 29 test it on every type and
+   backend.
+7. **A lane or a check that passes having built nothing.** An own lane that names no target
+   runs natively only; a `make` whose sources a target skips is skipped whole and the lane is
+   green; `webcpp.compile-diagnostic` skips Emscripten. Expected: every own lane names its
+   targets, a lane that builds nothing on a target it names fails, and every Emscripten message
+   is a fixture. Tasks 5, 10 and 25 test it.
+8. **One copy per program.** asio and crypto both link the source-built OpenSSL, and trystero
+   and crypto both reach libsecp256k1. Expected: a program that names `/webcpp/asio//openssl`
+   and `/webcpp/crypto//openssl` links `libssl.a` and `libcrypto.a` once each, from one build
+   directory, and after Task 30a no program sees a second `secp256k1.h`. Tasks 11 and 30a test
+   it.
+9. **Allocation outside webcpp's sight.** A `malloc` in C code never reaches `operator new`.
+   Expected: the allocation tests count the C library's allocator where a program can see it,
+   with a control that moves the counter. Task 17 tests it.
 
 ---
 
 # Increment 1: the foundation, and AES-GCM on BearSSL and OpenSSL
 
-## Task 0a: `infra/shared` integrated into `main` first (controller)
+## Task 0a: `infra/shared` integrated into `main` first (obsolete)
 
-The controller's rulings on review findings C1, N3 and n4 and owner item O1: the crypto track
-never starts from the stale `infra/shared`, nor from a `main` that holds the 13 commits of the
-identity incident. This task runs the shared infrastructure plan's own "Integration" section
-(`~/.buzz/PLANS/WEBCPP_SHARED_INFRA_PLAN.md`, "Integration (controller)", steps 1 to 5) on
-`main` after the owner's force push ("The base, the order of the tracks", point 0), before any
-other task of this plan, and before config's Task 12.
-
-- [ ] **Step 1: The gates.**
-  - The force push is done: in `~/dev/webcpp`, after `git fetch origin`,
-    the identity check of "The base, the order of the tracks", point 3, on `origin/main`
-    gives `identity: ok`:
-
-```bash
-cd ~/dev/webcpp && git fetch origin
-test "$(git log --format='%an %ae %cn %ce' origin/main | grep -vc '^R github.overboard312@passmail.net R github.overboard312@passmail.net$')" = 0 \
-  && ! git merge-base --is-ancestor f7c96d3 origin/main \
-  && echo 'identity: ok' || echo 'identity: stop'
-test -z "$(git log --oneline origin/main..main ^f7c96d3)" && echo 'local main: nothing of its own'
-git switch main && git reset --hard origin/main
-```
-
-    Local `main` still holds the 13 old commits after the force push, so what must be empty
-    before the reset is what it holds beyond both `origin/main` and those commits
-    (`origin/main..main ^f7c96d3`, r1; empty on 2026-10-11 against `fix/ci-site`, the force
-    push's target); the reset runs only after both lines print. Until they do, this plan
-    waits, and its ledger says so.
-  - The infra plan's step 1, its stage-4 half: the stage-4 ledger shows no task dispatched or
-    committing to the superproject (its last line is a `complete`). Its config half does not
-    apply: by the controller's ruling (n4), `infra/shared` integrates before config's Task 12,
-    and config rebases onto `main` after it. The ruling and the time of the check go into the
-    infra, config and stage-4 ledgers and this plan's.
-- [ ] **Step 2: Rebase** onto that `main`, the infra plan's step 2:
-
-```bash
-cd ~/dev/webcpp-infra
-git -C ~/dev/webcpp rev-parse main            # recorded in the ledger
-git checkout -B infra/integrate infra/shared  # Task 5 (SRELL) is complete on infra/shared
-git -c user.name=R -c user.email=github.overboard312@passmail.net rebase main
-test "$(git log --format='%an %ae %cn %ce' infra/integrate | grep -vc '^R github.overboard312@passmail.net R github.overboard312@passmail.net$')" = 0 \
-  && ! git merge-base --is-ancestor f7c96d3 infra/integrate \
-  && echo 'identity: ok' || echo 'identity: stop'
-```
-
-  Expected: `identity: ok` from the identity check over the whole history
-  (`infra/shared` holds none of the 13 commits: its history printed `0` on 2026-10-11, its
-  fork point from `main` being `14a5191`, before them; a rebase that would replay one of them
-  is aborted and reported). A
-  conflict is resolved as that section says (additions kept from both sides), then the task's
-  own tests run again. If the SRELL mirror's publication (that plan's Task 7) is not done, the
-  rebase stops at Task 4's commit, as that section's step 2 shows, and
-  `third_party/libs/srell` waits; this plan needs none of SRELL.
-- [ ] **Step 3: The changelog and the check,** that section's steps 3 and 4: every lane from
-  scratch, every own lane `python3 tools/ci/matrix.py own-lanes` lists, the lint, the tools'
-  tests. Expected: all green; a failure is fixed on `infra/integrate` first, in its own
-  commit.
-- [ ] **Step 4: Integrate,** that section's step 5:
-  `git -C ~/dev/webcpp -c user.name=R -c user.email=github.overboard312@passmail.net merge --ff-only infra/integrate`.
-  Nothing is pushed (the owner's go, gate G4). The asio track then rebases its branch onto
-  this `main` (its controller), as "The base, the order of the tracks" says.
-- [ ] **Step 5: Measure M7 again on `main`**, into this plan's ledger:
-  `grep -c 'rule external\b' tools/webcpp.jam` (1 or more), `grep -n 'rule data ( directories + )' tools/webcpp.jam`
-  (one line), `git ls-tree main libs/trystero` (a submodule), `ls third_party/Jamfile
-  tools/test/external_test.py tools/ci/actions/openssl/install.sh` (all three),
-  `grep -n '^project' third_party/Jamfile` (`project /webcpp/third_party ;`). Any missing one
-  stops the track and is reported.
+Obsolete since the revision of 2026-11-14: `infra/shared` has integrated into `main`, and the
+identity incident's commits are not in its history. Nothing of this task runs.
 
 ## Task 0: The worktree, the ledger and the baseline
 
 **Files:**
-- Create: `~/dev/webcpp-crypto/.superpowers/sdd/WEBCPP_CRYPTO_PLAN/progress.md`
+- Create: `.superpowers/sdd/WEBCPP_CRYPTO_PLAN/progress.md` in the worktree (untracked).
 
-- [ ] **Step 1: Make the worktree on asio's Task 2** (N2, "The base, the order of the
-  tracks", point 3): the rebased `asio` branch, which holds `main` after Task 0a, at the commit
-  asio's ledger records as Task 2's last, or `main` itself once asio has integrated. Every
-  submodule from its usual place (the shared infrastructure's two from their local clones, as
-  that plan's "Consumer interface" does until SRELL's mirror is published):
+- [ ] **Step 1: Make the worktree from `origin/main`.**
 
 ```bash
-BASE=<the commit: asio's Task 2 on the rebased asio branch, or main once asio integrated>
-git -C ~/dev/webcpp merge-base --is-ancestor main "$BASE" || echo 'asio is not on main: stop'
-git -C ~/dev/webcpp worktree add ~/dev/webcpp-crypto -b lib/crypto "$BASE"
-test "$(git -C ~/dev/webcpp-crypto log --format='%an %ae %cn %ce' HEAD | grep -vc '^R github.overboard312@passmail.net R github.overboard312@passmail.net$')" = 0 \
-  && ! git -C ~/dev/webcpp-crypto merge-base --is-ancestor f7c96d3 HEAD \
-  && echo 'identity: ok' || echo 'identity: stop'
-ls ~/dev/webcpp-crypto/tools/node-test/include/webcpp/test/exit_status.hpp
-git -C ~/dev/webcpp-crypto -c protocol.file.allow=always \
-  -c submodule.third_party/libs/JSON-Schema-Test-Suite.url="$HOME/.buzz/REPOS/JSON-Schema-Test-Suite" \
-  -c submodule.third_party/libs/srell.url="$HOME/.buzz/REPOS/srell.git" \
-  submodule update --init
-git -C ~/dev/webcpp-crypto submodule status
-ln -s ~/dev/webcpp/.local ~/dev/webcpp-crypto/.local
+git -C <superproject> fetch origin
+git -C <superproject> worktree add <worktree> -b crypto/v0.1 origin/main
+cd <worktree>
+ls tools/node-test/include/webcpp/test/exit_status.hpp third_party/Jamfile tools/webcpp-openssl.jam
+git submodule update --init
+git submodule status
+ln -s <superproject>/.local .local
 ```
 
-  Expected: no `stop` line, `identity: ok`, the header listed (a missing one
-  stops the task: asio's Task 2 is not on the base, and Task 1 cannot write a test), one line
-  per submodule without a leading `-` or `+`, `libs/trystero` among them; `ls -l .local`
-  shows the link. The base's commit goes into the ledger.
+  Expected: the three files listed (a missing one stops the task and is reported), one line
+  per submodule without a leading `-` or `+`, `libs/asio`, `libs/trystero` and
+  `third_party/libs/openssl` among them; `ls -l .local` shows the link. The base's commit goes
+  into the ledger.
 - [ ] **Step 2: Create the ledger** with the first line
-  `# SDD ledger - plan: ~/.buzz/PLANS/WEBCPP_CRYPTO_PLAN.md`.
+  `# SDD ledger - plan: libraries/crypto/openspec/changes/genesis/reference/plan.md (proposals)`.
 - [ ] **Step 3: Record the baseline** in the ledger, each with its output:
-  - `git -C ~/dev/webcpp-crypto rev-parse HEAD` (expected: Step 1's base);
-  - `grep -n 'rule data ( directories + )' tools/webcpp.jam` (one line) and
-    `grep -n '^project' third_party/Jamfile` (expected: `project /webcpp/third_party ;`);
+  - `git rev-parse HEAD` (expected: Step 1's base);
+  - `grep -n '^project' third_party/Jamfile` (expected: `project /webcpp/third_party ;`) and
+    `grep -n 'use-project /webcpp/third_party' Jamroot` (one line);
   - `$B2 -d0 declared-targets` and `$B2 -d0 declared-lanes`;
-  - `.local/wasi-sdk/bin/clang --version | head -1`, `wasmtime --version` (47.0.3),
+  - `.local/wasi-sdk/bin/clang --version | head -1`, `wasmtime --version` (50.0.1),
     `.local/emsdk/upstream/emscripten/em++ --version | head -1` (6.0.11),
-    `.local/emscripten/node --version` (v26.7.0),
-    `ls .local/openssl/include/openssl/evp.h .local/openssl/lib`;
+    `.local/emscripten/node --version` (v26.7.0);
+  - the provider: `$B2 --build-dir=bin/lane-native libs/asio/test//tls_client_context` builds
+    OpenSSL and passes (its first build takes minutes);
   - the lint: expected `lint: clean`; the native lane of trystero
     (`$B2 -a --build-dir=bin/lane-native libs/trystero/test`): expected all passed.
-  A failure found here is fixed first, in its own commit, as AGENTS.md chapter 10 asks.
+  A failure found here is fixed first, in its own pull request, as CODING-GUIDELINES.md chapter 1
+  asks.
 
 ## Task 1: The library's skeleton, the second project id and the test Jamfile's rule
 
@@ -590,14 +503,16 @@ ln -s ~/dev/webcpp/.local ~/dev/webcpp-crypto/.local
   `include/webcpp/crypto.hpp`, `include/webcpp/crypto/config.hpp`, `test/Jamfile`,
   `test/config_test.cpp`, `test/require.hpp`, `test/.clang-tidy`, `example/Jamfile`,
   `example/.clang-tidy`, `doc/Jamfile`, `doc/crypto.adoc`, `doc/overview.adoc`,
-  `doc/testing.adoc`, `doc/mrdocs.yml`.
+  `doc/testing.adoc`, `doc/changelog.adoc`, `doc/mrdocs.yml`.
 - Modify (superproject): `Jamroot` (one `use-project` line), `tools/test/jamroot_test.py`
-  (one case), the common git directory's `info/exclude` (`/libs/crypto/`).
+  (one case and its docstring), `CODING-GUIDELINES.md` (chapter 10's "Third-party code" and a
+  bullet of chapter 19), `doc/releases/0.1.0.adoc` (its line), the common git directory's
+  `info/exclude` (`/libs/crypto/`).
 
 **Interfaces:**
 - Produces: the project `/webcpp/crypto` and its alias `crypto`; the macros
   `WEBCPP_CRYPTO_NO_EXCEPTIONS` and `WEBCPP_CRYPTO_WEBASSEMBLY`; the forward declarations
-  `webcpp::crypto::backends::{bearssl, openssl, ctaes, secp256k1, botan}`; the project id
+  `webcpp::crypto::backends::{bearssl, openssl, ctaes, secp256k1}`; the project id
   `/third_party`; the test Jamfile's rule `crypto-run <name> : <sources> + : <requirements> * : <targets> *`.
 
 - [ ] **Step 1: Write the failing tools test.** In `tools/test/jamroot_test.py`, a case that
@@ -605,31 +520,39 @@ ln -s ~/dev/webcpp/.local ~/dev/webcpp-crypto/.local
 
 ```python
 def test_third_party_has_both_ids(root):
-    # A user's Jamfile names /third_party//<name> (AGENTS.md chapter 6, rule 5); the libraries
-    # of the shared infrastructure name /webcpp/third_party//<name>: both reach one project.
-    (root / 'third_party').mkdir(exist_ok=True)
-    (root / 'third_party/Jamfile').write_text(
-        'project /webcpp/third_party ;\n\nalias probe : : : : <define>WEBCPP_TEST_PROBE=1 ;\n'
-        'explicit probe ;\n')
+    # A user's Jamfile names /third_party//<name> (CODING-GUIDELINES.md chapter 5, rule 5);
+    # the existing consumers name /webcpp/third_party//<name>: both reach one project. The probe
+    # is appended to the real third_party/Jamfile, whose targets the Jamroot names.
+    with (root / 'third_party/Jamfile').open('a') as jamfile:
+        jamfile.write('\nalias probe : : : : <define>WEBCPP_TEST_PROBE=1 ;\nexplicit probe ;\n')
     harness.add_library(root, 'ids', 'alias one : /third_party//probe ;\n'
                         'alias two : /webcpp/third_party//probe ;\n', {})
     result = harness.run_b2(root, '-n', 'libs/ids/test//one', 'libs/ids/test//two')
     harness.expect(result, True)
 ```
 
-  and add it to `CASES`. Run `python3 tools/test/jamroot_test.py test_third_party_has_both_ids`.
+  and add it to `CASES`; the module's docstring gains "reaches third_party/ through both of
+  its project ids". Run `python3 tools/test/jamroot_test.py test_third_party_has_both_ids`.
   Expected: FAIL, "Unable to find file or target named '/third_party//probe'".
 - [ ] **Step 2: Register the id.** In the Jamroot, after
   `use-project /webcpp/third_party : third_party ;`:
 
 ```jam
 # The same project under the id a user's Jamfile writes, /third_party//<name>
-# (AGENTS.md chapter 6, "Bringing a C library into webcpp"): b2 resolves
-# both ids to the one Jamfile.
+# (CODING-GUIDELINES.md chapter 5, "Bringing a C library into webcpp"): b2
+# resolves both ids to the one Jamfile.
 use-project /third_party : third_party ;
 ```
 
-  Run the case again. Expected: PASS.
+  Run the case again. Expected: PASS. Then, in `CODING-GUIDELINES.md` chapter 10, "Third-party
+  code", the sentence "`third_party/Jamfile` declares it as `/webcpp/third_party//<target>`"
+  says that the Jamroot registers the project under both ids, `/webcpp/third_party//<target>`
+  and `/third_party//<target>`, the latter the form a user's Jamfile writes (chapter 5, rule 5);
+  and chapter 19's bullet "Chapter 10 registers the project `/webcpp/third_party` (`Jamroot`),
+  while chapter 5's rule 5 writes `/third_party//bearssl` and crypto's plan
+  `/third_party//<name>`." is removed. `doc/releases/0.1.0.adoc`, under "Tools and build",
+  gains `* Added the project id /third_party, the form a user's Jamfile writes for third-party
+  code.`
 - [ ] **Step 3: Create the repository.**
 
 ```bash
@@ -638,8 +561,9 @@ cp LICENSE_1_0.txt libs/crypto/
 echo /libs/crypto/ >> "$(git rev-parse --git-common-dir)/info/exclude"
 ```
 
-- [ ] **Step 4: Write the failing test** `test/config_test.cpp`, pratt's with the names
-  changed, plus the classification of the target:
+- [ ] **Step 4: Write the failing test** `test/config_test.cpp`, document's
+  (`libs/document/test/config_test.cpp`) with the names changed, plus the classification of
+  the target:
 
 ```cpp
 // Copyright (c) 2026 WebCpp.org
@@ -648,33 +572,38 @@ echo /libs/crypto/ >> "$(git rev-parse --git-common-dir)/info/exclude"
 // accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 
-// <webcpp/crypto/config.hpp> defines WEBCPP_CRYPTO_NO_EXCEPTIONS exactly when the
-// build has no exceptions, keeps the developer's own definition, and defines
-// WEBCPP_CRYPTO_WEBASSEMBLY exactly on wasip2, wasip3 and Emscripten. test/Jamfile
-// builds this file as the build asks and with the macro defined on the command line,
-// which WEBCPP_TEST_CRYPTO_DEVELOPER_DEFINED tells this file.
+// <webcpp/crypto/config.hpp> defines WEBCPP_CRYPTO_NO_EXCEPTIONS exactly when
+// webcpp has no exceptions, keeps the developer's own definition in a build that
+// has them, and defines WEBCPP_CRYPTO_WEBASSEMBLY exactly on wasip2, wasip3 and
+// Emscripten. test/Jamfile builds this file as the build asks; without exceptions;
+// with WEBCPP_NO_EXCEPTIONS defined as a developer defines it for every webcpp
+// library, which WEBCPP_TEST_CRYPTO_ALL_OFF tells this file; and with the macro
+// itself defined on the command line, which WEBCPP_TEST_CRYPTO_DEVELOPER_DEFINED
+// tells this file.
 
 #include <webcpp/crypto/config.hpp>
 
-#if defined(__GNUC__) && defined(__cpp_exceptions) == defined(BOOST_NO_EXCEPTIONS)
-#error "config.hpp does not include <boost/config.hpp>, which defines BOOST_NO_EXCEPTIONS"
+// webcpp's configuration, which config.hpp includes, has said whether webcpp
+// has exceptions and which target the program is for.
+#ifndef WEBCPP_CONFIG_HPP
+#error "config.hpp does not include <webcpp/config.hpp>"
 #endif
 
-#ifdef WEBCPP_TEST_CRYPTO_DEVELOPER_DEFINED
+#ifdef WEBCPP_TEST_CRYPTO_ALL_OFF
+#ifndef WEBCPP_CRYPTO_NO_EXCEPTIONS
+#error "WEBCPP_NO_EXCEPTIONS does not define WEBCPP_CRYPTO_NO_EXCEPTIONS"
+#endif
+#elif defined(WEBCPP_TEST_CRYPTO_DEVELOPER_DEFINED)
 #ifndef WEBCPP_CRYPTO_NO_EXCEPTIONS
 #error "config.hpp drops WEBCPP_CRYPTO_NO_EXCEPTIONS, which the developer defined"
 #endif
-#elif defined(BOOST_NO_EXCEPTIONS) != defined(WEBCPP_CRYPTO_NO_EXCEPTIONS)
-#error "WEBCPP_CRYPTO_NO_EXCEPTIONS is not defined exactly when the build has no exceptions"
+#elif defined(WEBCPP_HAS_EXCEPTIONS) == defined(WEBCPP_CRYPTO_NO_EXCEPTIONS)
+#error "WEBCPP_CRYPTO_NO_EXCEPTIONS is not defined exactly when webcpp has no exceptions"
 #endif
 
-#if (defined(__wasi__) || defined(__EMSCRIPTEN__)) != defined(WEBCPP_CRYPTO_WEBASSEMBLY)
+#if defined(WEBCPP_TARGET_NATIVE) == defined(WEBCPP_CRYPTO_WEBASSEMBLY)
 #error "WEBCPP_CRYPTO_WEBASSEMBLY is not defined exactly on WebAssembly"
 #endif
-
-int main() {
-    return 0;
-}
 ```
 
 - [ ] **Step 5: Write `build.jam`:**
@@ -688,17 +617,18 @@ int main() {
 #
 # crypto: authenticated encryption, randomness and secp256k1 over C backends.
 # A program names /webcpp/crypto//crypto and the library of each backend it
-# uses, /third_party//<backend> (third_party/Jamfile):
+# uses, /third_party//<backend> (third_party/Jamfile), or, for OpenSSL,
+# /webcpp/crypto//openssl (Task 11):
 #
 #     exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ;
 
 project /webcpp/crypto ;
 
-# Header-only. random_device reads Windows' generator through bcrypt
-# (BCryptGenRandom), a system library.
+# Header-only, on webcpp's configuration. random_device reads Windows'
+# generator through bcrypt (BCryptGenRandom), a system library.
 # tag::crypto[]
 alias crypto : : : : <include>include <library>/boost//headers
-  <target-os>windows:<find-shared-library>bcrypt ;
+  <library>/webcpp/config//config <target-os>windows:<find-shared-library>bcrypt ;
 # end::crypto[]
 ```
 
@@ -722,32 +652,36 @@ alias crypto : : : : <include>include <library>/boost//headers
 #ifndef WEBCPP_CRYPTO_CONFIG_HPP
 #define WEBCPP_CRYPTO_CONFIG_HPP
 
-#include <boost/config.hpp>
+#include <webcpp/config.hpp>
 
-// MrDocs parses crypto as a build with exceptions does, where the macro is not
-// defined: this definition, undone at once, is the one the reference lists.
+// MrDocs parses crypto natively, as a build with exceptions does, where neither
+// macro is defined: these definitions, each undone at once, are the ones the
+// reference lists.
 #ifdef __MRDOCS__
 /**
- Defined when webcpp::crypto is built without exceptions: automatically when the
- compiler has none (`BOOST_NO_EXCEPTIONS`), or by the developer.
+ Defined when webcpp::crypto is built without exceptions: when webcpp has none (the
+ compiler has none, or the developer defined `WEBCPP_NO_EXCEPTIONS` for every webcpp
+ library), or when the developer defines it alone.
 
- Every operation reports its errors as values whether or not it is defined. Three
- things depend on it: the system generator's `operator()`, declared only without it; the
- backend Botan, which exists only without it; and the `try` of OpenSSL's memory
- adapter, absent with it, so that a resource that throws ends the process.
+ Every operation reports its errors as values whether or not it is defined. The random
+ device's `operator()`, whose failure could not be reported, is declared only when it is
+ not defined.
 
  @see "Exceptions", in the guide.
 */
 #define WEBCPP_CRYPTO_NO_EXCEPTIONS
 #undef WEBCPP_CRYPTO_NO_EXCEPTIONS
+/** Defined on the WebAssembly targets, wasip2, wasip3 and Emscripten. */
+#define WEBCPP_CRYPTO_WEBASSEMBLY 1
+#undef WEBCPP_CRYPTO_WEBASSEMBLY
 #endif
 
-#if defined(BOOST_NO_EXCEPTIONS) && !defined(WEBCPP_CRYPTO_NO_EXCEPTIONS)
+#if !defined(WEBCPP_HAS_EXCEPTIONS) && !defined(WEBCPP_CRYPTO_NO_EXCEPTIONS)
 #define WEBCPP_CRYPTO_NO_EXCEPTIONS
 #endif
 
-#if defined(__EMSCRIPTEN__) || defined(__wasi__)
-/** Defined on the WebAssembly targets, wasip2, wasip3 and Emscripten. */
+#if defined(WEBCPP_TARGET_WASIP2) || defined(WEBCPP_TARGET_WASIP3) || \
+    defined(WEBCPP_TARGET_EMSCRIPTEN)
 #define WEBCPP_CRYPTO_WEBASSEMBLY 1
 #endif
 
@@ -755,14 +689,12 @@ namespace webcpp::crypto::backends {
 
 /** BearSSL, built from its sources by `/third_party//bearssl`. */
 struct bearssl;
-/** OpenSSL's libcrypto 3, found on the machine by `/third_party//openssl`. */
+/** OpenSSL 3.5, built from its pinned sources, named by `/webcpp/crypto//openssl`. */
 struct openssl;
 /** ctaes as Bitcoin Core ships it, built from its source by `/third_party//ctaes`. */
 struct ctaes;
 /** libsecp256k1, built from its sources by `/third_party//secp256k1`. */
 struct secp256k1;
-/** Botan 3, found on the machine by `/third_party//botan`. */
-struct botan;
 
 }  // namespace webcpp::crypto::backends
 
@@ -817,10 +749,14 @@ rule crypto-run ( name : sources + : requirements * : targets * )
 
 webcpp.headers-alone crypto : ../include : crypto.hpp crypto/config.hpp ;
 
-# config.hpp defines WEBCPP_CRYPTO_NO_EXCEPTIONS exactly when the build has no
-# exceptions, keeps it when a developer defines it, and classifies the target.
-crypto-run config : config_test.cpp ;
-webcpp.run config_developer_defined : config_test.cpp
+# config.hpp defines WEBCPP_CRYPTO_NO_EXCEPTIONS exactly when webcpp has no
+# exceptions, keeps it when a developer defines it, defines it when
+# WEBCPP_NO_EXCEPTIONS is, and classifies the target.
+webcpp.compile config : config_test.cpp ;
+webcpp.compile config_no_exceptions : config_test.cpp : <exception-handling>off ;
+webcpp.compile config_all_off : config_test.cpp
+  : <define>WEBCPP_NO_EXCEPTIONS <define>WEBCPP_TEST_CRYPTO_ALL_OFF ;
+webcpp.compile config_developer_defined : config_test.cpp
   : <define>WEBCPP_CRYPTO_NO_EXCEPTIONS <define>WEBCPP_TEST_CRYPTO_DEVELOPER_DEFINED ;
 ```
 
@@ -843,9 +779,9 @@ webcpp.targets native wasip2 wasip3 emscripten ;
 ```
 
 - [ ] **Step 8: Run** `$B2 -a --build-dir=bin/lane-native libs/crypto/test`. Expected: PASS,
-  `alone-crypto`, `alone-crypto-config`, `config`, `config_no_exceptions`,
+  `alone-crypto`, `alone-crypto-config`, `config`, `config_no_exceptions`, `config_all_off`,
   `config_developer_defined`. Then the wasip2 and emscripten lanes. Expected: PASS, the
-  same five.
+  same six.
 - [ ] **Step 9: Write the repository's files:**
   - `meta/libraries.json`:
 
@@ -854,7 +790,7 @@ webcpp.targets native wasip2 wasip3 emscripten ;
     "key": "crypto",
     "name": "crypto",
     "authors": ["R"],
-    "description": "Authenticated encryption, randomness and secp256k1 for C++20 on every target, over BearSSL, OpenSSL, ctaes, libsecp256k1 and Botan.",
+    "description": "Authenticated encryption, randomness and secp256k1 for C++20 on every target, over BearSSL, OpenSSL, ctaes and libsecp256k1.",
     "category": ["Cryptography"],
     "maintainers": ["R <github.overboard312@passmail.net>"],
     "cxxstd": "20",
@@ -863,35 +799,41 @@ webcpp.targets native wasip2 wasip3 emscripten ;
 ```
 
   - `meta/include-boundaries.json`, which keeps the backend-free headers free of every C
-    library:
+    library. Its `headers` list names only headers that exist, since the lint fails a glob
+    that matches no file: `config.hpp` now, and each later task adds its own (`error.hpp` in
+    Task 2, `equal.hpp` in Task 3, `random_device.hpp` in Task 4, `aes.hpp` and `gcm.hpp`
+    with theirs):
 
 ```json
 {
     "boundaries": [
         {
-            "headers": ["include/webcpp/crypto/config.hpp", "include/webcpp/crypto/error.hpp", "include/webcpp/crypto/equal.hpp", "include/webcpp/crypto/random_device.hpp", "include/webcpp/crypto/aes.hpp", "include/webcpp/crypto/gcm.hpp", "include/webcpp/crypto/chacha20_poly1305.hpp"],
-            "must-not-include": ["bearssl", "openssl/", "ctaes", "secp256k1", "botan/", "webcpp/crypto/backends/"],
+            "headers": ["include/webcpp/crypto/config.hpp"],
+            "must-not-include": ["bearssl", "openssl/", "ctaes", "secp256k1", "webcpp/crypto/backends/"],
             "why": "a program that only draws random bytes or compares tags names no backend library (spec section 2.2)"
         }
     ]
 }
 ```
 
-  - `.gitignore`: `doc/html/`, `node_modules`, `.node-modules/`;
+  - `.gitignore`: `doc/html/` (crypto has no oracle, so no `node_modules` or `.node-modules/`);
   - `.gitattributes`: pratt's two lines (`* text=auto eol=lf`, `*.bat text eol=crlf`);
   - `.github/workflows/ci.yml`: pratt's, with `library: crypto`;
   - `README.md`: what crypto is (spec 1.1 in four sentences), the backends' table (spec 3.1's
     first four columns), how to build and test it in the superproject (the lane commands of
     Global Constraints), where its page is published
-    (`https://webcpporg.github.io/webcpp/libs/crypto/`), its licence (BSL-1.0) and the
-    backends' (BearSSL MIT, ctaes MIT, libsecp256k1 MIT, OpenSSL Apache-2.0, Botan
-    BSD-2-Clause), and where OpenSSL is looked for (the text of spec 7.3's second paragraph);
-  - `AGENTS.md`: pratt's opening paragraph; "What crypto is" (webcpp's own library over C
+    (`https://webcpporg.github.io/libs/crypto/`), its licence (BSL-1.0) and the backends'
+    (BearSSL MIT, ctaes MIT, libsecp256k1 MIT, OpenSSL Apache-2.0), and where OpenSSL comes
+    from: the superproject builds it from `third_party/libs/openssl` (OpenSSL 3.5.9 at
+    `45e844f`), static, natively and on wasip2 and wasip3, never a system copy, and refuses it
+    on Emscripten (CODING-GUIDELINES.md chapter 5, rule 7);
+  - `AGENTS.md`: document's opening ("# Working on crypto", with the links to
+    `../../CODING-GUIDELINES.md` and `../../AGENTS.md`); "What crypto is" (webcpp's own library over C
     backends, `"port-of": null`, no oracle); "Cautions": a backend's header supplies only the
     six traits, and every guard lives in the algorithm types; a test of a backend is a `.cpp`
     of its own per backend, never a define that changes the backend of one source (spec 4.3's
     pitfall); every C library is unchanged upstream code; a moved pin is a change of its own
-    (AGENTS rule 12).
+    (CODING-GUIDELINES.md chapter 5, rule 12).
 - [ ] **Step 10: Write the page.** `doc/Jamfile`:
 
 ```jam
@@ -908,14 +850,19 @@ webcpp.reference crypto ;
 ```
 
   `doc/mrdocs.yml` is pratt's (`show-enum-constants: true`, the error's values being fixed).
-  `doc/crypto.adoc` opens with the licence notice and the attributes of AGENTS.md chapter 8
+  `doc/crypto.adoc` opens with the licence notice and the attributes of AGENTS.md chapter 3
   (`= crypto: authenticated encryption, randomness and secp256k1 for {cpp}`, `:toc: left`,
   `:toclevels: 1`, `:idprefix:`, `:sectanchors:`, `:example-caption!:`,
   `:attribute-missing: warn`), one paragraph (what crypto is, one of the libraries of webcpp),
-  `include::overview.adoc[]`, `include::testing.adoc[]` and the reference section of
-  AGENTS.md chapter 8. `overview.adoc` (`[#crypto-overview]`, "Why crypto") holds spec 1.1 and
-  1.2 as prose. `testing.adoc` (`[#crypto-testing]`) says how crypto is tested: the lanes and
-  their commands, `{n-tests}` tests, the report's address.
+  `include::overview.adoc[]`, `include::testing.adoc[]`, the reference section of
+  AGENTS.md chapter 3 ("The page") and, last, `include::changelog.adoc[]`. `overview.adoc`
+  (`[#crypto-overview]`, "Why crypto") holds spec 1.1 and 1.2 as prose. `testing.adoc` (`[#crypto-testing]`) says how crypto is tested: the lanes and
+  their commands, `{n-tests}` tests, the report's address. `changelog.adoc` is the form of
+  AGENTS.md chapter 5: `[appendix]`, `[#crypto-changelog]`, `== Changelog`, a paragraph, then
+  `[#crypto-changelog-unreleased]`, `=== Unreleased` and, between `// tag::unreleased[]` and
+  `// end::unreleased[]`, the line `* Added crypto: authenticated encryption, randomness and
+  secp256k1 over C backends.` From Task 2 on, each change a user sees adds its line there in
+  its own commit.
 - [ ] **Step 11: Run** `$B2 -a --build-dir=bin/b-doc libs/crypto/doc`. Expected: PASS, the
   page written. Then the lint. Expected: `lint: clean`.
 - [ ] **Step 12: Commit** (library), then (superproject):
@@ -923,11 +870,11 @@ webcpp.reference crypto ;
 ```bash
 git -C libs/crypto add -- LICENSE_1_0.txt README.md AGENTS.md .gitattributes .gitignore \
     .github meta build.jam include test example doc
-git -C libs/crypto -c user.name=R -c user.email=github.overboard312@passmail.net commit \
+git -C libs/crypto commit \
     -m "crypto: the library's skeleton: its configuration, its page and its CI"
-git -c user.name=R -c user.email=github.overboard312@passmail.net commit \
+git commit \
     -m "Jamroot: third_party also as /third_party, the id a user's Jamfile writes" \
-    -- Jamroot tools/test/jamroot_test.py
+    -- Jamroot tools/test/jamroot_test.py CODING-GUIDELINES.md doc/releases/0.1.0.adoc
 ```
 
 ## Task 2: The errors
@@ -937,7 +884,9 @@ git -c user.name=R -c user.email=github.overboard312@passmail.net commit \
 - Modify: `test/Jamfile`, `include/webcpp/crypto.hpp` (the include).
 
 **Interfaces:**
-- Produces: `enum class webcpp::crypto::error`, values 1 to 14 of spec 2.9;
+- Produces: `enum class webcpp::crypto::error`, values 1 to 12 of spec 2.9 (13 and 14,
+  `memory_functions_refused` and `memory_functions_not_installed`, are reserved for OpenSSL's
+  memory option, deferred after v0.1, and not declared);
   `webcpp::crypto::error_category()`; `webcpp::crypto::make_error_code(error)`;
   `boost::system::is_error_code_enum<webcpp::crypto::error>`.
 
@@ -959,6 +908,7 @@ git -c user.name=R -c user.email=github.overboard312@passmail.net commit \
 #include <boost/core/lightweight_test.hpp>
 #include <boost/system/result.hpp>
 
+#include <array>
 #include <string_view>
 
 namespace crypto = webcpp::crypto;
@@ -977,8 +927,6 @@ int main() {
     BOOST_TEST_EQ(static_cast<int>(error::invalid_public_key), 10);
     BOOST_TEST_EQ(static_cast<int>(error::invalid_signature), 11);
     BOOST_TEST_EQ(static_cast<int>(error::backend_failure), 12);
-    BOOST_TEST_EQ(static_cast<int>(error::memory_functions_refused), 13);
-    BOOST_TEST_EQ(static_cast<int>(error::memory_functions_not_installed), 14);
 
     boost::system::error_code const code = error::authentication_failed;
     BOOST_TEST_EQ(std::string_view(code.category().name()), "webcpp.crypto");
@@ -988,29 +936,30 @@ int main() {
     BOOST_TEST(!failed);
     BOOST_TEST(failed.error() == error::invalid_state);
 
-    BOOST_TEST_EQ(crypto::make_error_code(error::memory_functions_refused).message(),
-                  "OpenSSL's memory functions cannot be installed: OpenSSL has already allocated, "
-                  "or another party installed its own. Call "
-                  "backends::openssl::install_memory_functions() as the first statement of main, "
-                  "before anything uses OpenSSL.");
-    BOOST_TEST_EQ(crypto::make_error_code(error::memory_functions_not_installed).message(),
-                  "OpenSSL's memory functions are not webcpp::crypto's. Call "
-                  "backends::openssl::install_memory_functions() as the first statement of main, "
-                  "and let nothing else call CRYPTO_set_mem_functions.");
+    BOOST_TEST_EQ(crypto::make_error_code(error::authentication_failed).message(),
+                  "the authentication tag does not match");
+    // 13 and 14 are reserved, not declared: their messages are the unknown one.
+    BOOST_TEST_EQ(crypto::make_error_code(static_cast<error>(13)).message(),
+                  "unknown webcpp.crypto error");
     BOOST_TEST_EQ(crypto::make_error_code(static_cast<error>(99)).message(),
                   "unknown webcpp.crypto error");
-    char buffer[8];
-    BOOST_TEST_EQ(std::string_view(crypto::error_category().message(6, buffer, sizeof buffer)),
-                  "the authentication tag does not match");
+    // The form that allocates nothing returns the whole message, and copies into the buffer
+    // what fits, with its terminating zero.
+    std::array<char, 8> buffer{};
+    BOOST_TEST_EQ(
+        std::string_view(crypto::error_category().message(6, buffer.data(), buffer.size())),
+        "the authentication tag does not match");
+    BOOST_TEST_EQ(std::string_view(buffer.data()), "the aut");
     return webcpp::test::exit_status(boost::report_errors());
 }
 ```
 
   In `test/Jamfile`: `crypto-run error : error_test.cpp ;`. Run the native lane. Expected:
   FAIL, `webcpp/crypto/error.hpp` not found.
-- [ ] **Step 2: Write `include/webcpp/crypto/error.hpp`**, trystero's form
-  (`libs/trystero/include/webcpp/trystero/error.hpp`), each enumerator with a Doc Comment
-  that says who raises it (spec 2.9's third column):
+- [ ] **Step 2: Write `include/webcpp/crypto/error.hpp`**, pratt's form
+  (`libs/pratt/include/webcpp/pratt/errors.hpp`: a `constexpr` category with a fixed identity,
+  which holds no state, CODING-GUIDELINES.md chapter 15, pratt), each enumerator with a Doc
+  Comment that says who raises it (spec 2.9's third column):
 
 ```cpp
 // Copyright (c) 2026 WebCpp.org
@@ -1029,19 +978,28 @@ int main() {
 
 #include <webcpp/crypto/config.hpp>
 
+#include <boost/system/error_category.hpp>
 #include <boost/system/error_code.hpp>
 
 #include <cstddef>
+#include <cstring>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 namespace webcpp::crypto {
 
-/** Why an operation of webcpp::crypto failed. The values are fixed and never reused. */
-enum class error {
+/**
+ Why an operation of webcpp::crypto failed.
+
+ The values are fixed and never reused.
+
+ @see "Errors", in the guide.
+*/
+enum class error : int {
     /** A key of another size than the algorithm's `key_size`, or a secret key not of 32 bytes. */
     invalid_key_size = 1,
-    /** A GCM IV that is empty or longer than 128 bytes, or a ChaCha20-Poly1305 nonce not of 12. */
+    /** A GCM IV that is empty or longer than 128 bytes. */
     invalid_iv_size = 2,
     /** A tag given to `open` that is not of 16 bytes. */
     invalid_tag_size = 3,
@@ -1063,102 +1021,107 @@ enum class error {
     invalid_signature = 11,
     /** A backend failed where its contract says it does not. */
     backend_failure = 12,
-    /** `backends::openssl::install_memory_functions` found OpenSSL already in use or customised. */
-    memory_functions_refused = 13,
-    /** OpenSSL's memory functions are not webcpp's adapter, under the memory option. */
-    memory_functions_not_installed = 14,
+    // 13 and 14 are reserved for OpenSSL's memory option (spec 2.9: memory_functions_refused
+    // and memory_functions_not_installed), which declares them; never reused.
 };
 
-/** The category of @ref error, named `webcpp.crypto`. */
-class error_category_impl final : public boost::system::error_category {
-public:
-    /**
-     * The category's name.
-     *
-     * @return "webcpp.crypto".
-     */
-    const char* name() const noexcept override { return "webcpp.crypto"; }
+namespace detail {
 
-    /**
-     * The message of a value of @ref error.
-     *
-     * @param ev The value, an @ref error as an `int`.
-     * @return The message, or "unknown webcpp.crypto error".
-     */
-    std::string message(int ev) const override { return text(ev); }
-
-    /**
-     * The message of a value of @ref error, a static text, without allocating.
-     *
-     * @param ev The value, an @ref error as an `int`.
-     * @return The message, a static text.
-     */
-    const char* message(int ev, char* /*buffer*/, std::size_t /*length*/) const noexcept override {
-        return text(ev);
+/** The message of a value of @ref error, or the unknown message for a value it does not define. */
+inline const char* message_of(int value) noexcept {
+    switch (static_cast<error>(value)) {
+        case error::invalid_key_size: return "the key is not of the algorithm's size";
+        case error::invalid_iv_size: return "the IV is not of a size the algorithm accepts";
+        case error::invalid_tag_size: return "the tag is not of 16 bytes";
+        case error::invalid_input_size: return "the data is not a whole number of blocks";
+        case error::message_too_long: return "the message is longer than the algorithm allows";
+        case error::authentication_failed: return "the authentication tag does not match";
+        case error::invalid_state: return "the object was moved from, or the call is out of order";
+        case error::entropy_unavailable: return "the system's generator of entropy failed";
+        case error::invalid_secret_key:
+            return "the secret key is zero or not below the group order";
+        case error::invalid_public_key: return "the public key is not a point of the curve";
+        case error::invalid_signature: return "the signature does not verify";
+        case error::backend_failure: return "the backend failed where it should not";
     }
-
-private:
-    static const char* text(int ev) noexcept {
-        switch (static_cast<error>(ev)) {
-            case error::invalid_key_size: return "the key is not of the algorithm's size";
-            case error::invalid_iv_size: return "the IV is not of a size the algorithm accepts";
-            case error::invalid_tag_size: return "the tag is not of 16 bytes";
-            case error::invalid_input_size: return "the data is not a whole number of blocks";
-            case error::message_too_long: return "the message is longer than the algorithm allows";
-            case error::authentication_failed: return "the authentication tag does not match";
-            case error::invalid_state:
-                return "the object was moved from, or the call is out of order";
-            case error::entropy_unavailable: return "the system's generator of entropy failed";
-            case error::invalid_secret_key:
-                return "the secret key is zero or not below the group order";
-            case error::invalid_public_key: return "the public key is not a point of the curve";
-            case error::invalid_signature: return "the signature does not verify";
-            case error::backend_failure: return "the backend failed where it should not";
-            case error::memory_functions_refused:
-                return "OpenSSL's memory functions cannot be installed: OpenSSL has already "
-                       "allocated, or another party installed its own. Call "
-                       "backends::openssl::install_memory_functions() as the first statement of "
-                       "main, before anything uses OpenSSL.";
-            case error::memory_functions_not_installed:
-                return "OpenSSL's memory functions are not webcpp::crypto's. Call "
-                       "backends::openssl::install_memory_functions() as the first statement of "
-                       "main, and let nothing else call CRYPTO_set_mem_functions.";
-        }
-        return "unknown webcpp.crypto error";
-    }
-};
-
-/**
- * The category of @ref error.
- *
- * @return The one category object.
- */
-const inline boost::system::error_category& error_category() noexcept {
-    static const error_category_impl category;
-    return category;
+    return "unknown webcpp.crypto error";
 }
 
 /**
- * An error code of the category `webcpp.crypto`.
- *
- * @param e The error.
- * @return The error code.
- */
+ A constant category with a fixed identity, so it holds no mutable state.
+
+ @note The identity is the ASCII of "crypto" followed by two zero bytes.
+*/
+class category final : public boost::system::error_category {
+public:
+    /** Constructs the category with its fixed identity. */
+    constexpr category() noexcept : boost::system::error_category(0x63727970746f0000ULL) {}
+
+    /** The category's name, "webcpp.crypto". */
+    const char* name() const noexcept override { return "webcpp.crypto"; }
+
+    /** The message of the error `value`, as @ref message_of spells it. */
+    std::string message(int value) const override { return message_of(value); }
+
+    /**
+     Copies the message of the error `value` into `buffer`, cut to fit `size` bytes with its
+     terminating zero, and returns the whole message, a static text.
+    */
+    const char* message(int value, char* buffer, std::size_t size) const noexcept override {
+        const char* text = message_of(value);
+        if (buffer != nullptr && size != 0) {
+            const std::string_view spelling(text);
+            const std::size_t limit = size - 1;
+            const std::size_t count = spelling.size() < limit ? spelling.size() : limit;
+            std::memcpy(buffer, spelling.data(), count);
+            buffer[count] = '\0';
+        }
+        return text;
+    }
+};
+
+/** The one category of crypto's errors, which @ref error_category returns. */
+inline constexpr category the_category{};
+
+}  // namespace detail
+
+/**
+ The category of every @ref error.
+
+ Its `name()` is "webcpp.crypto", and its `message(value)` the message of the error, or
+ "unknown webcpp.crypto error" for a value @ref error does not define.
+
+ @return The category, a constant with a fixed identity.
+ @see "Errors", in the guide.
+*/
+inline const boost::system::error_category& error_category() noexcept {
+    return detail::the_category;
+}
+
+/**
+ Makes the `error_code` of an @ref error, as its implicit conversion does.
+
+ @param e The error.
+ @return `e` as an `error_code` of the category @ref error_category.
+*/
 inline boost::system::error_code make_error_code(error e) noexcept {
     return {static_cast<int>(e), error_category()};
 }
 
 }  // namespace webcpp::crypto
 
-/** Makes @ref webcpp::crypto::error convertible to `boost::system::error_code`. */
+namespace boost::system {
 template <>
-struct boost::system::is_error_code_enum<webcpp::crypto::error> : std::true_type {};
+struct is_error_code_enum<webcpp::crypto::error> : std::true_type {};
+}  // namespace boost::system
 
 #endif  // WEBCPP_CRYPTO_ERROR_HPP
 ```
 
-  Add `#include <webcpp/crypto/error.hpp>` to `crypto.hpp`, and `crypto/error.hpp` to the
-  headers-alone call's list.
+  Add `#include <webcpp/crypto/error.hpp>` to `crypto.hpp`, `crypto/error.hpp` to the
+  headers-alone call's list and `include/webcpp/crypto/error.hpp` to the `headers` of
+  `meta/include-boundaries.json`; `doc/changelog.adoc` gains, under "Unreleased", `* Added
+  the errors of crypto, with fixed values, in the category webcpp.crypto.`
 - [ ] **Step 3: Run** the native and wasip2 lanes. Expected: PASS, `error` and
   `error_no_exceptions` among them.
 - [ ] **Step 4: Commit:** `"crypto: the errors, their fixed values and their messages"`.
@@ -1265,8 +1228,8 @@ int main() {
         BOOST_TEST_EQ(bytes[i], 0);
     }
     struct schedule {
-        std::uint32_t words[4];
-    } object{{1, 2, 3, 4}};
+        std::array<std::uint32_t, 4> words;
+    } object{{{1, 2, 3, 4}}};
     detail::wipe_object(object);
     BOOST_TEST_EQ(object.words[0] | object.words[1] | object.words[2] | object.words[3], 0U);
     detail::wipe(nullptr, 0);
@@ -1442,7 +1405,12 @@ bool equal(boost::hash2::digest<N> const& a, boost::hash2::digest<N> const& b) n
 #endif  // WEBCPP_CRYPTO_EQUAL_HPP
 ```
 
-  Add `equal.hpp` to `crypto.hpp` and `crypto/equal.hpp` to the headers-alone list.
+  Add `equal.hpp` to `crypto.hpp`; the headers-alone list gains `crypto/equal.hpp`,
+  `crypto/detail/wipe.hpp` and `crypto/detail/limits.hpp` (every `.hpp` under
+  `webcpp/crypto/`, `detail/` included, needs a headers-alone unit, or the lint's compile
+  database fails, `tools/lint/compile_commands.py`); `meta/include-boundaries.json`'s
+  `headers` gains `include/webcpp/crypto/equal.hpp`; `doc/changelog.adoc` gains `* Added
+  equal, a constant-time comparison of tags and Boost.Hash2 digests.`
 - [ ] **Step 4: Run** the native, wasip2, wasip3 and emscripten lanes. Expected: PASS,
   `equal`, `wipe` and their `_no_exceptions` twins on each. If the digest-against-array call
   does not compile (a `digest<16>` not converting to `std::span<std::uint8_t const>`), the
@@ -1457,8 +1425,10 @@ bool equal(boost::hash2::digest<N> const& a, boost::hash2::digest<N> const& b) n
 - Create: `include/webcpp/crypto/random_device.hpp`, `include/webcpp/crypto/detail/entropy.hpp`,
   `include/webcpp/crypto/detail/windows.hpp`, `test/random_device_test.cpp`,
   `test/random_device_failing_test.cpp`, `test/random_device_no_call_test.cpp`.
-- Modify: `test/Jamfile`, `include/webcpp/crypto.hpp`; (superproject) `tools/lint/lint.sh`
-  (the rule `entropy sources`), `tools/lint/lint_test.py` (its case).
+- Modify: `test/Jamfile`, `include/webcpp/crypto.hpp`, `meta/include-boundaries.json`,
+  `doc/changelog.adoc`; (superproject) `tools/lint/lint.sh` (the rule `entropy sources`),
+  `tools/lint/lint_test.py` (its case), `CODING-GUIDELINES.md` (chapter 9's table of rules),
+  `doc/releases/0.1.0.adoc` (its line).
 
 **Interfaces:**
 - Consumes: `error::entropy_unavailable`, `detail::wipe`.
@@ -1481,7 +1451,7 @@ bool equal(boost::hash2::digest<N> const& a, boost::hash2::digest<N> const& b) n
 // system's generator, two fills differ, and with exceptions it is a
 // UniformRandomBitGenerator (spec sections 2.7 and 8.4).
 
-#include <webcpp/crypto/random_device.hpp>  // lint-world: the test of random_device
+#include <webcpp/crypto/random_device.hpp>
 #include <webcpp/test/exit_status.hpp>
 
 #include <boost/core/lightweight_test.hpp>
@@ -1545,7 +1515,7 @@ int main() {
 // piece of 256 included; ENOTSUP is not_supported, Emscripten's answer in an audio
 // worklet; operator() throws the error with exceptions on.
 
-#include <webcpp/crypto/random_device.hpp>  // lint-world: the test of random_device
+#include <webcpp/crypto/random_device.hpp>
 #include <webcpp/test/exit_status.hpp>
 
 #include <boost/core/lightweight_test.hpp>
@@ -1626,7 +1596,7 @@ int main() {
 // Built with WEBCPP_CRYPTO_NO_EXCEPTIONS defined: random_device has no operator(), whose
 // failure could not be reported, and fill is its interface.
 
-#include <webcpp/crypto/random_device.hpp>  // lint-world: the test of random_device
+#include <webcpp/crypto/random_device.hpp>
 
 int main() {
     webcpp::crypto::random_device device;
@@ -1849,7 +1819,9 @@ public:
 
     /** Makes the device, which holds nothing. */
     random_device() noexcept = default;  // lint-world: reads the system's entropy
-    random_device(random_device const&) = delete;             // lint-world: not copyable
+    /** Not copyable: the device holds nothing to copy. */
+    random_device(random_device const&) = delete;  // lint-world: not copyable
+    /** Not copyable: the device holds nothing to copy. */
     random_device& operator=(random_device const&) = delete;  // lint-world: not copyable
 
     /**
@@ -1915,28 +1887,36 @@ public:
 
   `crypto.hpp` includes it on the line
   `#include <webcpp/crypto/random_device.hpp>  // lint-world: the system's entropy, a purpose of crypto`,
-  and the headers-alone list gains `crypto/random_device.hpp`.
+  and the headers-alone list gains `crypto/random_device.hpp`, `crypto/detail/entropy.hpp`
+  and `crypto/detail/windows.hpp`; `meta/include-boundaries.json`'s `headers` gains
+  `include/webcpp/crypto/random_device.hpp`; `doc/changelog.adoc` gains `* Added
+  random_device, which reads the system's or the browser's generator and nothing else.`
 - [ ] **Step 5: Run** the four lanes. Expected: PASS: `random_device`,
   `random_device_failing` and their twins on every target; `random_device_no_call` on native
   and wasip2. On MSVC (the CI's lanes) the Windows branch compiles and fills.
-- [ ] **Step 6: Write the lint rule** (spec 8.4's last item). Its failing case first, in
-  `tools/lint/lint_test.py`, as the file's other cases do (a scratch tree with one header):
-  a header `libs/x/include/webcpp/x/detail/entropy.hpp` holding the line
-  `int r = rand();  // lint-world: a test` must fail, the lint printing what the rule below
-  prints, the section `== entropy sources ==`, the line
-  `libs/x/include/webcpp/x/detail/entropy.hpp:<line>:int r = rand();  // lint-world: a test: a header that reads entropy names rand, time, clock or __rdrand`
-  and, at the end, `lint: failed: entropy sources`; and one holding only
-  `int r = getentropy(p, 16);  // lint-world: a test` must pass. Run `python3 tools/lint/lint_test.py`.
-  Expected: FAIL. Then in `tools/lint/lint.sh`, after rule 8:
+- [ ] **Step 6: Write the lint rule** (spec 8.4's last item). Its failing case first,
+  `test_entropy_sources` in `tools/lint/lint_test.py`, in the form of `test_world_rule`:
+  `prepare(root)` on the fixture `demo`, then `write(root, header, ...)` of
+  `header = 'libs/demo/include/webcpp/demo/entropy.hpp'`, a header that compiles alone (the
+  licence notice, an include guard) and holds only comment lines, so that no other rule
+  fails: `// Calls rand(). lint-world: a test` and `// Calls getentropy(p, 16). lint-world: a
+  test`. Then `expect_alone(lint(root), 'entropy sources', [at(root, header, 'rand()')],
+  spared=(at(root, header, 'getentropy'),))`: the lint prints the section
+  `== entropy sources ==`, the `rand()` line with the suffix ": a header that reads entropy
+  names rand, time, clock or __rdrand", and ends `lint: failed: entropy sources`; the
+  `getentropy` line is not named. Run `python3 tools/lint/lint_test.py test_entropy_sources`.
+  Expected: FAIL. Then in `tools/lint/lint.sh`, after rule 8 (its list of headers is
+  NUL-separated, so the rule takes its own through `files_matching`):
 
 ```bash
-# 8b. A header that reads entropy names no weaker source: no rand, time, clock or
+# 8a. A header that reads entropy names no weaker source: no rand, time, clock or
 #    __rdrand, even with lint-world:, in any header whose path ends entropy.hpp or
 #    random_device.hpp (DESIGN, 2026-10-11 "entropy, safest and readable").
 rule 'entropy sources'
+files_matching '^(libs|tools/test/fixtures)/[^/]+/include/.*(entropy|random_device)\.hpp$' \
+    > "${work_directory}/entropy_headers"
 weak='(^|[^_[:alnum:]])(s?rand|time|clock|__rdrand(16|32|64)?_step|__rdrand)[[:space:]]*\('
-weak_found="$(grep -E '(entropy|random_device)\.hpp$' "${work_directory}/headers" \
-    | while IFS= read -r header; do grep -nHE -e "${weak}" "${header}" || true; done)"
+weak_found="$(on_files "${work_directory}/entropy_headers" grep -nHE -e "${weak}" || true)"
 if [ -n "${weak_found}" ]; then
     printf '%s\n' "${weak_found}" \
         | sed 's/$/: a header that reads entropy names rand, time, clock or __rdrand/'
@@ -1946,17 +1926,25 @@ else
 fi
 ```
 
-  Run the lint test again. Expected: PASS. Run the lint. Expected: `lint: clean`.
+  `CODING-GUIDELINES.md` chapter 9's table of the lint's rules gains, after the row
+  `no clock, disk or network`, the row "entropy sources", whose "what fails" column reads: a
+  library header whose path ends `entropy.hpp` or `random_device.hpp` that names `rand`,
+  `srand`, `time`, `clock` or `__rdrand`, even with `lint-world:`;
+  `doc/releases/0.1.0.adoc`, under "Tools and build", gains `* Added the lint rule entropy sources, which refuses a weaker source in a
+  header that reads entropy.` Run the lint test again. Expected: PASS. Run the lint.
+  Expected: `lint: clean`.
 - [ ] **Step 7: Commit** (library) `"crypto: random_device on the system's one generator,
   in readable code"`; (superproject) `"tools: the lint refuses a weaker source in a header
-  that reads entropy"` with `tools/lint/lint.sh tools/lint/lint_test.py`.
+  that reads entropy"` with `tools/lint/lint.sh tools/lint/lint_test.py CODING-GUIDELINES.md
+  doc/releases/0.1.0.adoc`.
 
 ## Task 5: BearSSL from the mirror, file by file, with its canary
 
 **Files:**
-- Create (superproject): the submodule `third_party/libs/bearssl`;
-  `tools/test/third_party_test.py`.
-- Modify (superproject): `.gitmodules`, `third_party/Jamfile`.
+- Create (superproject): the submodule `third_party/libs/bearssl`.
+- Modify (superproject): `.gitmodules`, `third_party/Jamfile`, `tools/test/third_party_test.py`
+  (its cases of BearSSL), `CODING-GUIDELINES.md` (chapter 10, "Third-party code": the row
+  `bearssl`), `doc/releases/0.1.0.adoc` ("Tools and build": a line).
 - Create (library): `src/canary_bearssl.c`, `include/webcpp/crypto/detail/canary.h`,
   `test/c_suites/Jamfile`, `LICENSE-BEARSSL.txt`.
 - Modify (library): `test/Jamfile` (`build-project c_suites ;`).
@@ -1969,18 +1957,28 @@ fi
   `WEBCPP_CRYPTO_DETAIL_MISMATCH_VALUE(name, commit, configuration)`,
   `WEBCPP_CRYPTO_BEARSSL_COMMIT` (`7bea48e`).
 
-- [ ] **Step 1: Add the submodule** from the mirror, pinned:
+The superproject's pull request of this task compiles `libs/crypto/src/canary_bearssl.c`, and
+the CI checks out the superproject's submodules alone: it lands only after G2 (the submodule
+`libs/crypto` added by the owner), or carries that gitlink itself. The library's pull request
+(the canary and the suite) goes first.
+
+- [ ] **Step 1: Add the submodule** from the mirror, pinned, with a relative URL as webcpporg's
+  other repositories have in `.gitmodules`:
 
 ```bash
-git submodule add https://github.com/webcpporg/bearssl.git third_party/libs/bearssl
+git submodule add ../bearssl.git third_party/libs/bearssl
 git -C third_party/libs/bearssl checkout 7bea48e5e850ab4cafbe68d3765cdaba13a86d6f
 find third_party/libs/bearssl/src -name '*.c' | wc -l
 ```
 
   Expected: 294.
-- [ ] **Step 2: Write the failing test** `tools/test/third_party_test.py` (harness's style,
-  run in the real superproject, since the archive is the point): it builds
-  `/third_party//bearssl` natively with `-a -d+2 --build-dir=bin/third-party-test` and
+- [ ] **Step 2: Write the failing cases** in the existing `tools/test/third_party_test.py`
+  (`harness.run_cases`, each case on a scratch superproject of its own): a scratch copy leaves
+  `libs/` out and links `third_party/libs` to the checkout's (`tools/test/harness.py`,
+  `copy_tree`), so each case first calls `harness.copy_integration_libraries(root, 'crypto')`,
+  which copies crypto's `build.jam`, `include` and `src`, the canary among them, and the archive
+  is built from the real BearSSL sources. The case builds
+  `/third_party//bearssl` natively with `-a -d+2` and
   asserts that b2 compiled 295 C files (the 294 of `src/` and the canary; count the lines
   `clang -x c` or `gcc -x c` b2 prints at `-d+2`), that every one has
   `-ffunction-sections -fdata-sections`, `-DBR_RDRAND=0`, `-DBR_USE_URANDOM=0`,
@@ -2070,14 +2068,15 @@ const char WEBCPP_CRYPTO_DETAIL_CANARY(bearssl, WEBCPP_CRYPTO_BEARSSL_COMMIT,
 ```
 
 - [ ] **Step 5: Write the target** in `third_party/Jamfile`. After the header's existing
-  paragraph (extended with one sentence: "and the C libraries webcpp::crypto's backends are,
-  built here from their own sources, file by file"), the imports gain `feature`, and:
+  paragraph, which ends "a build that needs none never looks" (extended with one sentence:
+  "The C libraries of webcpp::crypto's backends are built here from their own sources, file by
+  file."), the targets of the existing form, each with a `<name>-checked-out` rule of its own:
 
 ```jam
 # The C libraries of webcpp::crypto's backends: each a static library compiled
 # file by file in the library's own C dialect (no -std), every function and
 # datum in a section of its own, so that a program keeps only what it calls
-# (AGENTS.md chapter 6, "Bringing a C library into webcpp"). Upstream's
+# (CODING-GUIDELINES.md chapter 5, "Bringing a C library into webcpp"). Upstream's
 # warnings are not ours. webcpp's libs/crypto/src/canary_<name>.c joins each:
 # it defines the symbol the backend's header reads, which names the commit
 # and the configuration.
@@ -2085,10 +2084,10 @@ path-constant CRYPTO : ../libs/crypto ;
 
 # The canaries and their header are webcpp::crypto's: a checkout without
 # libs/crypto stops the build of a C library of crypto's, naming the command,
-# and leaves SRELL's and the suite's targets as they are.
+# and leaves the other targets of this Jamfile as they are.
 rule crypto-checked-out ( properties * )
 {
-    if ! [ path.exists $(CRYPTO)/src/canary_bearssl.c ]
+    if ! [ path.exists [ path.native $(CRYPTO)/src/canary_bearssl.c ] ]
     {
         errors.user-error "libs/crypto is not checked out: it holds no"
             "src/canary_bearssl.c, which the C libraries of webcpp::crypto's backends"
@@ -2111,19 +2110,6 @@ rule crypto-checked-out ( properties * )
     <target-os>linux:<linkflags>-Wl,--gc-sections
     <toolset>msvc:<linkflags>/OPT:REF ;
 
-rule c-library-checked-out ( properties * )
-{
-    local name = [ feature.get-values <webcpp-c-library> : $(properties) ] ;
-    if ! [ path.exists $(LIBS)/$(name)/$(.marker.$(name)) ]
-    {
-        errors.user-error "third_party/libs/$(name) is not checked out: it holds no"
-            "$(.marker.$(name)). Check it out with `git submodule update --init"
-            "third_party/libs/$(name)`." ;
-    }
-}
-feature.feature webcpp-c-library : bearssl ctaes secp256k1 : optional incidental ;
-path-constant LIBS : libs ;
-
 # BearSSL (MIT), from webcpp's unmodified mirror webcpporg/bearssl. Every .c
 # of src/, the POWER8 ones too, which off POWER compile to the stubs other
 # files call. One source of entropy, getentropy, with RDRAND and /dev/urandom
@@ -2132,10 +2118,21 @@ path-constant LIBS : libs ;
 # <sys/random.h>, which src/rand/sysrng.c does not include. On Windows
 # BearSSL's only seeder is CryptGenRandom, not the system's BCryptGenRandom,
 # so every seeder is off there and BearSSL has none.
-.marker.bearssl = inc/bearssl.h ;
+path-constant BEARSSL : libs/bearssl ;
+
+rule bearssl-checked-out ( properties * )
+{
+    if ! [ path.exists [ path.native $(BEARSSL)/inc/bearssl.h ] ]
+    {
+        errors.user-error "third_party/libs/bearssl is not checked out: it holds no"
+            "inc/bearssl.h. Check it out with `git submodule update --init"
+            "third_party/libs/bearssl`." ;
+    }
+}
+
 lib bearssl
   : [ glob libs/bearssl/src/*.c libs/bearssl/src/*/*.c ] $(CRYPTO)/src/canary_bearssl.c
-  : $(.c-library) <webcpp-c-library>bearssl <conditional>@c-library-checked-out
+  : $(.c-library) <conditional>@bearssl-checked-out
     <include>libs/bearssl/inc <include>libs/bearssl/src
     <define>BR_RDRAND=0 <define>BR_USE_URANDOM=0
     <target-os>windows:<define>BR_USE_GETENTROPY=0
@@ -2153,7 +2150,7 @@ explicit bearssl ;
   `BR_USE_GETENTROPY=1`; the MSVC lanes are the Windows ones, and a `msvc` toolset gets the
   `windows` lines alone. Step 7 checks the canary's name on every lane.
 - [ ] **Step 6: Write BearSSL's own suite** (spec 8.1, "the C libraries' own suites",
-  AGENTS rule 11) in `test/c_suites/Jamfile`:
+  CODING-GUIDELINES.md chapter 5, rule 11) in `test/c_suites/Jamfile`:
 
 ```jam
 # Copyright (c) 2026 WebCpp.org
@@ -2163,7 +2160,7 @@ explicit bearssl ;
 # https://www.boost.org/LICENSE_1_0.txt)
 
 # The C libraries' own test programs, built against webcpp's build of each, on
-# every target (AGENTS.md chapter 6, rule 11). BearSSL's 88 tests take 28 to
+# every target (CODING-GUIDELINES.md chapter 5, rule 11). BearSSL's 88 tests take 28 to
 # 46 s per target, so they are the own lane c-suites, outside the ordinary
 # lanes.
 import webcpp ;
@@ -2184,16 +2181,24 @@ webcpp.lane c-suites : bearssl_test_crypto : native wasip2 wasip3 emscripten ;
   `third_party/libs/bearssl/LICENSE.txt`, which the README names.
 - [ ] **Step 7: Run** `python3 tools/test/third_party_test.py`. Expected: PASS. Then the own
   lane on each target, e.g.
-  `$B2 -a --build-dir=bin/lane-c-suites-wasip2 toolset=clang-wasip2 testing.launcher=wasmtime libs/crypto/test//c-suites`.
+  `$B2 -a --build-dir=bin/lane-c-suites-wasip2 toolset=clang-wasip2 testing.launcher=tools/boost/asio-wasip2/run.sh libs/crypto/test/c_suites//c-suites`
+  (the lane is declared in `test/c_suites/Jamfile`, so its target is that directory's; WASI
+  runs through `tools/boost/asio-<target>/run.sh`, as `tools/ci/matrix.py`'s `wasm_lane` does).
   Expected: PASS, `bearssl_test_crypto`'s output ending "All tests OK." (its own last line) on
   native, wasip2, wasip3 and emscripten. A test of BearSSL's that fails on a target is
   investigated as a build difference (a define, a dialect) before anything else; BearSSL's
   code is never changed. The Emscripten stack size is measured: start without
   `-sSTACK_SIZE`, and keep the line only if the run overflows Emscripten's 64 KiB default,
   with the measured size.
-- [ ] **Step 8: Commit** (superproject)
+- [ ] **Step 8: Document and commit.** `CODING-GUIDELINES.md` chapter 10, "Third-party code",
+  gains the row `bearssl`: "BearSSL from webcpp's unmodified mirror `webcpporg/bearssl` at
+  `7bea48e`; a static library built file by file by `third_party/Jamfile` with
+  webcpp::crypto's canary, on every target; `WEBCPP_CRYPTO_HAS_BEARSSL=1` | MIT".
+  `doc/releases/0.1.0.adoc`, "Tools and build", gains a line: BearSSL, built from source as
+  `/third_party//bearssl`. Commit (superproject)
   `"third_party: BearSSL from the mirror webcpporg/bearssl, built file by file with webcpp::crypto's canary"`
-  (`.gitmodules third_party/libs/bearssl third_party/Jamfile tools/test/third_party_test.py`);
+  (`.gitmodules third_party/libs/bearssl third_party/Jamfile tools/test/third_party_test.py
+  CODING-GUIDELINES.md doc/releases/0.1.0.adoc`);
   (library) `"crypto: BearSSL's canary, and its own test suite on webcpp's build"`.
 
 ## Task 6: The configuration's refusals, the default backend, and BearSSL's three layers
@@ -2221,19 +2226,25 @@ webcpp.lane c-suites : bearssl_test_crypto : native wasip2 wasip3 emscripten ;
 | Directory | Requirements | Targets | Expected error, stated on the header that raises it |
 | --- | --- | --- | --- |
 | `no_backend_wasm` | none | wasip2 wasip3 | spec 4.3's first row, the whole text |
-| `no_backend_native` | none | native | spec 4.3's second row |
-| `bearssl_not_linked` | `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` | native wasip2 | spec 4.3's third row |
-| `openssl_on_wasm` | `<define>WEBCPP_CRYPTO_HAS_OPENSSL=1` | wasip2 wasip3 | spec 4.3's seventh row |
-| `default_openssl_on_wasm` | `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` | wasip2 wasip3 | spec 4.3's eighth row |
+| `no_backend_native` | none | native | the second `#error` of Step 4 (spec 4.3's second row, with `/webcpp/crypto//openssl`) |
+| `bearssl_not_linked` | `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` | native wasip2 | the third `#error` of Step 4 |
+| `openssl_only_on_wasi` | `<define>WEBCPP_CRYPTO_HAS_OPENSSL=1` | wasip2 wasip3 | the third `#error` of Step 4: BearSSL is WebAssembly's default, and it names the define that selects OpenSSL |
 | `two_defaults` | `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` | native | spec 4.3's ninth row |
-| `memory_option_on_wasm` | `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` | wasip2 wasip3 | spec 3.7's first refusal |
-| `memory_option_without_openssl` | `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` | native | spec 3.7's second refusal |
 
-  Each source includes `<webcpp/crypto/backends/bearssl.hpp>` (the first three, through the
-  default's header) or `<webcpp/crypto/config.hpp>` (the others), and states its error on the
+  OpenSSL is a backend on native, wasip2 and wasip3, where the provider builds it
+  (CODING-GUIDELINES.md chapter 5, rule 7), and `config.hpp` refuses it on Emscripten alone.
+  The two refusals on Emscripten (spec 4.3's seventh and eighth rows, Emscripten's text) are not
+  cases here: `webcpp.compile-diagnostic` is clang's alone and skips the toolset `emscripten`,
+  so they are fixtures of `tools/test/crypto_jamfiles_test.py` (Task 10). A positive case,
+  `openssl_on_wasi`, a `webcpp.compile` on wasip2 and wasip3 with
+  `<define>WEBCPP_CRYPTO_HAS_OPENSSL=1 <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` that
+  includes `<webcpp/crypto/config.hpp>`, must compile.
+
+  Each source includes `<webcpp/crypto/backends/bearssl.hpp>` (the first four, through the
+  default's header) or `<webcpp/crypto/config.hpp>` (`two_defaults`), and states its error on the
   header that raises it, as wasi's tests do (`libs/wasi/test/neither_target_refused.cpp`):
-  `// expected-error@webcpp/crypto/backends/bearssl.hpp:* {{...}}` for the first three,
-  `// expected-error@webcpp/crypto/config.hpp:* {{...}}` for the others, each with the whole
+  `// expected-error@webcpp/crypto/backends/bearssl.hpp:* {{...}}` for the first four,
+  `// expected-error@webcpp/crypto/config.hpp:* {{...}}` for `two_defaults`, each with the whole
   text. `no_backend_wasm.cpp`:
 
 ```cpp
@@ -2276,28 +2287,24 @@ webcpp.compile-diagnostic no_backend_wasm : no_backend_wasm.cpp : : wasip2 wasip
 - [ ] **Step 2: Complete `config.hpp`.** After `WEBCPP_CRYPTO_WEBASSEMBLY`:
 
 ```cpp
-// The refusals of impossible combinations (spec sections 3.7 and 4.3). Clang and gcc go on
-// after an #error, so the first error is the instruction; MSVC stops at it.
-#if defined(WEBCPP_CRYPTO_WEBASSEMBLY) && defined(WEBCPP_CRYPTO_HAS_OPENSSL)
-#error "webcpp::crypto: OpenSSL is a native backend and this program is built for WebAssembly. In the program's Jamfile, replace /third_party//openssl with /third_party//bearssl."
+// The refusals of impossible combinations (spec section 4.3). Clang and gcc go on after an
+// #error, so the first error is the instruction; MSVC stops at it. OpenSSL is built for
+// native, wasip2 and wasip3 (/webcpp/crypto//openssl), never for Emscripten; with b2,
+// /webcpp/crypto//openssl stops an Emscripten build first, and these say it without b2.
+#if defined(WEBCPP_TARGET_EMSCRIPTEN) && defined(WEBCPP_CRYPTO_HAS_OPENSSL)
+#error "webcpp::crypto: OpenSSL is not built for Emscripten. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl."
 #endif
-#if defined(WEBCPP_CRYPTO_WEBASSEMBLY) && defined(WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL)
-#error "webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects a native backend and this program is built for WebAssembly. Remove that define, or make it WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL."
-#endif
-#if defined(WEBCPP_CRYPTO_WEBASSEMBLY) && defined(WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE)
-#error "webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE configures OpenSSL, a native backend, and this program is built for WebAssembly. Remove that define from the program's Jamfile."
-#endif
-#if !defined(WEBCPP_CRYPTO_WEBASSEMBLY) && defined(WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE) && \
-    !defined(WEBCPP_CRYPTO_HAS_OPENSSL)
-#error "webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. In the program's Jamfile, add /third_party//openssl beside /webcpp/crypto//crypto, or remove that define. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)"
+#if defined(WEBCPP_TARGET_EMSCRIPTEN) && defined(WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL)
+#error "webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects OpenSSL, which is not built for Emscripten. Remove that define, or make it WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL."
 #endif
 #if defined(WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL) && defined(WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL)
 #error "webcpp::crypto: both WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL and WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL are defined. Keep one."
 #endif
 
 // The default backend of the AEADs (spec section 5): the one the program selects; else
-// natively the first linked of OpenSSL, BearSSL; else BearSSL, whose header then says
-// that no backend is linked.
+// natively the first linked of OpenSSL, BearSSL; else BearSSL, whose header then says that
+// no backend is linked when neither is, and that BearSSL is not linked when OpenSSL alone is
+// (on WebAssembly, where the program selects OpenSSL with its define).
 #if defined(WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL)
 #define WEBCPP_CRYPTO_DETAIL_DEFAULT_OPENSSL 1
 #elif defined(WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL)
@@ -2306,7 +2313,7 @@ webcpp.compile-diagnostic no_backend_wasm : no_backend_wasm.cpp : : wasip2 wasip
 #define WEBCPP_CRYPTO_DETAIL_DEFAULT_OPENSSL 1
 #else
 #define WEBCPP_CRYPTO_DETAIL_DEFAULT_BEARSSL 1
-#if !defined(WEBCPP_CRYPTO_HAS_BEARSSL)
+#if !defined(WEBCPP_CRYPTO_HAS_BEARSSL) && !defined(WEBCPP_CRYPTO_HAS_OPENSSL)
 #define WEBCPP_CRYPTO_DETAIL_NONE_LINKED 1
 #endif
 #endif
@@ -2324,8 +2331,7 @@ using default_backend = backends::bearssl;
 ```
 
   Each macro the program may define (`WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL`,
-  `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`, `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE`,
-  `WEBCPP_CRYPTO_HAS_<NAME>`) gets a Doc Comment under `#ifdef __MRDOCS__`, defined and
+  `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`, `WEBCPP_CRYPTO_HAS_<NAME>`) gets a Doc Comment under `#ifdef __MRDOCS__`, defined and
   undefined at once, as `WEBCPP_CRYPTO_NO_EXCEPTIONS`'s is.
 - [ ] **Step 3: Write `include/webcpp/crypto/detail/engines.hpp`:**
 
@@ -2404,8 +2410,8 @@ inline void read_canary(char const volatile& canary) noexcept {
 
 /**
  The backend BearSSL: BearSSL's own C code, built from its sources by
- `/third_party//bearssl`. It serves `gcm<aes128/192/256<backends::bearssl>>` and
- `chacha20_poly1305<backends::bearssl>`, and has no block cipher.
+ `/third_party//bearssl`. It serves `gcm<aes128/192/256<backends::bearssl>>`, and has no
+ block cipher.
 
  @see "The backends", in the guide.
 */
@@ -2418,9 +2424,9 @@ inline void read_canary(char const volatile& canary) noexcept {
 #if defined(WEBCPP_CRYPTO_DETAIL_NONE_LINKED) && defined(WEBCPP_CRYPTO_WEBASSEMBLY)
 #error "webcpp::crypto: no backend is linked. On WebAssembly the backend is BearSSL: in the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ; (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"
 #elif defined(WEBCPP_CRYPTO_DETAIL_NONE_LINKED)
-#error "webcpp::crypto: no backend is linked. In the program's Jamfile, add /third_party//openssl (the system's OpenSSL) or /third_party//bearssl (built from source) beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl ; (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto, or define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"
+#error "webcpp::crypto: no backend is linked. In the program's Jamfile, add /webcpp/crypto//openssl (OpenSSL built from source) or /third_party//bearssl (built from source) beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl ; (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto, or define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"
 #else
-#error "webcpp::crypto: the backend BearSSL is used and not linked. In the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto. (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"
+#error "webcpp::crypto: the backend BearSSL is used and not linked. In the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, or, with /webcpp/crypto//openssl linked, select OpenSSL with <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL. (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"
 #endif
 #else
 
@@ -2508,8 +2514,7 @@ template <> struct gcm_engine<B, KeySize> {
     static void reset(gcm_state<B, KeySize>&) noexcept;  // wipes and releases; the state is empty
 };
 // check returns error::authentication_failed or error::backend_failure; start and run may
-// return backend_failure; init may return not_enough_memory, backend_failure or (OpenSSL
-// under the option) memory_functions_not_installed.
+// return backend_failure; init may return not_enough_memory or backend_failure.
 ```
 
 - [ ] **Step 1: Write the test support.** `test/support/hex.hpp`:
@@ -3108,7 +3113,7 @@ private:
 }  // namespace detail
 
 /**
- * AES-128, the block cipher, on a backend that exports it: ctaes, OpenSSL, Botan.
+ * AES-128, the block cipher, on a backend that exports it: ctaes, OpenSSL.
  *
  * @tparam Backend The backend; the default is the AEADs' (`default_backend`), which on
  * WebAssembly is BearSSL and has none: name `aes128<backends::ctaes>` there.
@@ -3184,7 +3189,7 @@ namespace webcpp::crypto {
 
 /**
  * AES-GCM (NIST SP 800-38D) with the key size of `Cipher`, on the backend of `Cipher`, which
- * must export GCM over its own AES: BearSSL, OpenSSL or Botan.
+ * must export GCM over its own AES: BearSSL or OpenSSL.
  *
  * An object holds a key and the state of one message: it is used by one thread at a time,
  * and it is not shareable. An IV is never reused under one key, and with random IVs, or IVs
@@ -3222,8 +3227,7 @@ public:
      * Expands a key into a new object.
      *
      * @param key `key_size` bytes.
-     * @return The object; `invalid_key_size`; on OpenSSL, `memory_functions_not_installed`
-     * under the memory option, `errc::not_enough_memory` or `backend_failure`.
+     * @return The object; `invalid_key_size`, `errc::not_enough_memory` or `backend_failure`.
      */
     static boost::system::result<gcm> make(std::span<std::uint8_t const> key) noexcept {
         if (key.size() != key_size) {
@@ -3547,9 +3551,9 @@ struct block_engine<backends::bearssl, KeySize> {
 
     template <bool Never = false>
     static void refuse() noexcept {
-        static_assert(Never || KeySize != 16, "webcpp::crypto: aes128<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes128<backends::ctaes>, aes128<backends::openssl> or aes128<backends::botan>, and add its library to the program's Jamfile.");
-        static_assert(Never || KeySize != 24, "webcpp::crypto: aes192<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes192<backends::ctaes>, aes192<backends::openssl> or aes192<backends::botan>, and add its library to the program's Jamfile.");
-        static_assert(Never || KeySize != 32, "webcpp::crypto: aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes256<backends::ctaes>, aes256<backends::openssl> or aes256<backends::botan>, and add its library to the program's Jamfile.");
+        static_assert(Never || KeySize != 16, "webcpp::crypto: aes128<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes128<backends::ctaes> or aes128<backends::openssl>, and add its library to the program's Jamfile.");
+        static_assert(Never || KeySize != 24, "webcpp::crypto: aes192<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes192<backends::ctaes> or aes192<backends::openssl>, and add its library to the program's Jamfile.");
+        static_assert(Never || KeySize != 32, "webcpp::crypto: aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes256<backends::ctaes> or aes256<backends::openssl>, and add its library to the program's Jamfile.");
     }
 
     template <bool Never = false>
@@ -3584,7 +3588,7 @@ struct block_engine<backends::bearssl, KeySize> {
   template is instantiated.
 - [ ] **Step 6: Write the message test** `test/messages/aes_on_bearssl/` (spec 2.3's text,
   native and wasip2): its source calls `aes256<backends::bearssl>::make(key)` and states
-  `// expected-error@webcpp/crypto/backends/bearssl.hpp:* {{webcpp::crypto: aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes256<backends::ctaes>, aes256<backends::openssl> or aes256<backends::botan>, and add its library to the program's Jamfile.}}`;
+  `// expected-error@webcpp/crypto/backends/bearssl.hpp:* {{webcpp::crypto: aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes256<backends::ctaes> or aes256<backends::openssl>, and add its library to the program's Jamfile.}}`;
   its Jamfile names `<library>/third_party//bearssl`. A second source of the same directory,
   `gcm_names_aes_on_bearssl.cpp`, declared with `webcpp.compile`, names
   `gcm<aes256<backends::bearssl>>`, makes it and seals, and must compile: the block cipher's
@@ -3928,98 +3932,29 @@ void check_limits() {
 - [ ] **Step 5: Commit:** `"crypto: GCM's incremental seal, its machine, and the limits
   refused before any byte is read"`.
 
-## Task 9: Wycheproof and NIST CAVP, through BearSSL
-
-Owner gate O3 is resolved before this task; it is written with the recommendation (no mirror:
-NIST's archives pinned by URL and SHA-256). If the owner chooses the mirror instead, Step 1's
-action is replaced by a submodule `third_party/libs/nist-cavp` of `webcpporg/nist-cavp`, and the
-target of Step 3 reads that directory; nothing else of the task changes.
+## Task 9: Wycheproof, through BearSSL
 
 **Files:**
-- Create (superproject): the submodule `third_party/libs/wycheproof`;
-  `tools/ci/actions/nist-cavp/action.yml`, `tools/ci/actions/nist-cavp/install.sh`.
-- Modify (superproject): `.gitmodules`, `third_party/Jamfile` (the targets `wycheproof` and
-  `nist-cavp`), `tools/ci/matrix.py` (`EXTERNAL_DEPENDENCIES['crypto']` gains `nist-cavp`, on
-  every target, WebAssembly included, and `EXTERNAL_VARIABLES` `NIST_CAVP_ROOT`),
-  `tools/ci/matrix_test.py`, `tools/ci/actions_test.py`, `.github/workflows/library.yml` (the
-  step `nist-cavp`, on its name, in the lanes', own lanes' and tools' jobs).
+- Create (superproject): the submodule `third_party/libs/wycheproof`.
+- Modify (superproject): `.gitmodules`, `third_party/Jamfile` (the target `wycheproof`),
+  `tools/test/third_party_test.py` (its case `test_wycheproof_is_pinned`), `CODING-GUIDELINES.md`
+  (chapter 10, "Third-party code": the row `wycheproof`), `doc/releases/0.1.0.adoc` ("Tools and
+  build": a line). The CI needs no change: every job checks out the superproject's submodules
+  (`.github/workflows/library.yml`, `submodules: true`).
 - Create (library): `test/support/test_data.hpp`, `test/support/wycheproof_gcm.hpp`,
-  `test/support/cavp_gcm.hpp`, `test/gcm_wycheproof_bearssl_test.cpp`,
-  `test/gcm_cavp_bearssl_test.cpp`.
+  `test/gcm_wycheproof_bearssl_test.cpp`.
 - Modify (library): `test/Jamfile`.
 
 **Interfaces:**
 - Produces: `/third_party//wycheproof` (define `WEBCPP_TEST_WYCHEPROOF`, the checkout's
-  absolute path with forward slashes, as a string literal; the directory under wasmtime);
-  `/third_party//nist-cavp` (define `WEBCPP_TEST_NIST_CAVP`, the directory that holds
-  `gcmtestvectors/` and `KAT_AES/`, likewise; webcpp's own tests left out with one line when
-  it is absent, the build stopped under `webcpp-require-external=on`);
-  `tools/ci/actions/nist-cavp/install.sh`, which lays the archives out in `.local/nist-cavp`;
+  absolute path with forward slashes, as a string literal; the directory under wasmtime; a
+  `<dependency>` on the files the tests read);
   `std::string webcpp::test::read_file(std::string const& path)`;
-  `template <class Backend> void webcpp::test::check_wycheproof_gcm()`;
-  `template <class Backend> void webcpp::test::check_cavp_gcm()`.
+  `template <class Backend> void webcpp::test::check_wycheproof_gcm()`.
 
-- [ ] **Step 1: Pin NIST's archives** (O3), in `tools/ci/actions/nist-cavp/install.sh`, the
-  OpenSSL action's form (its licence notice, `set -euo pipefail`, `helpers.sh`, a `refuse` that
-  removes what it made):
+(Deferred after v0.1: NIST CAVP's archives, their action, target and tests, with owner gate O3.)
 
-```bash
-#!/usr/bin/env bash
-# Copyright (c) 2026 WebCpp.org
-#
-# Distributed under the Boost Software License, Version 1.0. (See
-# accompanying file LICENSE_1_0.txt or copy at
-# https://www.boost.org/LICENSE_1_0.txt)
-
-# The step of tools/ci/actions/nist-cavp, and what a developer runs once: NIST CAVP's two
-# archives of test vectors, gcmtestvectors.zip and KAT_AES.zip, downloaded from csrc.nist.gov,
-# checked against the SHA-256 pinned here, and laid out in .local/nist-cavp as
-# gcmtestvectors/ and KAT_AES/, where third_party/Jamfile's target nist-cavp reads them when
-# NIST_CAVP_ROOT names no other directory. The archives are public-domain works of the US
-# government; nothing of them is tracked. When NIST moves or changes them, download.sh fails
-# naming the URL, and the pins move as a change of their own.
-#
-# Usage, from the superproject's root: install.sh
-set -euo pipefail
-
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-base=https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents
-gcm_url="${base}/mac/gcmtestvectors.zip"
-gcm_sha256=f9fc479e134cde2980b3bb7cddbcb567b2cd96fd753835243ed067699f26a023
-kat_url="${base}/aes/KAT_AES.zip"
-kat_sha256=a203b16c9246b2ebae31dee5de21a606be80cf78ceabaca37150236fa098eb60
-
-refuse() {
-    printf 'install.sh: %s\n' "$1" >&2
-    rm -rf .local/nist-cavp
-    exit 1
-}
-
-command -v unzip >/dev/null 2>&1 || refuse 'unzip is not on PATH'
-rm -rf .local/nist-cavp
-mkdir -p .local/nist-cavp/gcmtestvectors .local/nist-cavp/KAT_AES
-"${here}/../../download.sh" "${gcm_url}" "${gcm_sha256}" .local/nist-cavp/gcmtestvectors.zip \
-    || refuse "${gcm_url} could not be downloaded as pinned"
-"${here}/../../download.sh" "${kat_url}" "${kat_sha256}" .local/nist-cavp/KAT_AES.zip \
-    || refuse "${kat_url} could not be downloaded as pinned"
-unzip -q .local/nist-cavp/gcmtestvectors.zip -d .local/nist-cavp/gcmtestvectors
-unzip -q .local/nist-cavp/KAT_AES.zip -d .local/nist-cavp/KAT_AES
-[ -f .local/nist-cavp/gcmtestvectors/gcmDecrypt128.rsp ] || refuse 'gcmtestvectors.zip holds no gcmDecrypt128.rsp'
-[ -f .local/nist-cavp/KAT_AES/ECBVarTxt256.rsp ] || refuse 'KAT_AES.zip holds no ECBVarTxt256.rsp'
-if [ -n "${GITHUB_ENV-}" ]; then
-    printf 'NIST_CAVP_ROOT=%s\n' "${PWD}/.local/nist-cavp" >> "${GITHUB_ENV}"
-fi
-printf 'install.sh: NIST CAVP in .local/nist-cavp\n'
-```
-
-  `action.yml` is the OpenSSL action's with this script, its description the first paragraph
-  above. On a CI runner the action is cached by `actions/cache` (pinned as library.yml pins it)
-  under a key of the two SHA-256 digests, so that csrc.nist.gov is reached once per key, not
-  per run. `tools/ci/actions_test.py` gains a case: with `download.sh` replaced by a fake that
-  copies two fixture archives, the layout is made; with a wrong digest it refuses and leaves
-  no `.local/nist-cavp`. Run it locally once: `bash tools/ci/actions/nist-cavp/install.sh`.
-  Expected: `install.sh: NIST CAVP in .local/nist-cavp`.
-- [ ] **Step 2: Add Wycheproof's submodule:**
+- [ ] **Step 1: Add Wycheproof's submodule:**
 
 ```bash
 git submodule add --depth 1 https://github.com/C2SP/wycheproof.git third_party/libs/wycheproof
@@ -4028,21 +3963,23 @@ git -C third_party/libs/wycheproof checkout 12fd3aaf33eb5fa1f52e026912ee00c054f9
 git config -f .gitmodules submodule.third_party/libs/wycheproof.shallow true
 ```
 
-  Check: `ls third_party/libs/wycheproof/testvectors_v1/aes_gcm_test.json .local/nist-cavp/gcmtestvectors/gcmDecrypt256.rsp`.
-- [ ] **Step 3: Write the targets** in `third_party/Jamfile`, the JSON Schema Test Suite's
-  form for Wycheproof, and the left-out rule of webcpp's own tests for NIST's archives, which
-  the machine may lack:
+  Check: `ls third_party/libs/wycheproof/testvectors_v1/aes_gcm_test.json`.
+- [ ] **Step 2: Write the target** in `third_party/Jamfile`, the JSON Schema Test Suite's
+  form, with a `<dependency>` on the files a test reads, so that a changed file runs it again
+  (CODING-GUIDELINES.md chapter 8):
 
 ```jam
 # Wycheproof (Apache-2.0), C2SP/wycheproof: test data, never compiled. A test
 # that names wycheproof reads it from the directory WEBCPP_TEST_WYCHEPROOF
-# names, with forward slashes, the directory given to wasmtime on WASI.
+# names, with forward slashes, the directory given to wasmtime on WASI
+# (webcpp.data), and runs again when one of its files changes.
 path-constant WYCHEPROOF : libs/wycheproof ;
 .wycheproof = [ regex.replace $(WYCHEPROOF) "\\\\" "/" ] ;
+.wycheproof-files = [ glob libs/wycheproof/testvectors_v1/*.json ] ;
 
 rule wycheproof-checked-out ( properties * )
 {
-    if ! [ path.exists $(WYCHEPROOF)/testvectors_v1/aes_gcm_test.json ]
+    if ! [ path.exists [ path.native $(WYCHEPROOF)/testvectors_v1/aes_gcm_test.json ] ]
     {
         errors.user-error "third_party/libs/wycheproof is not checked out: it holds no"
             "testvectors_v1/aes_gcm_test.json. Check it out with `git submodule update"
@@ -4052,55 +3989,16 @@ rule wycheproof-checked-out ( properties * )
 
 alias wycheproof : : <conditional>@wycheproof-checked-out : :
     <define>"\"WEBCPP_TEST_WYCHEPROOF=\\\"$(.wycheproof)\\\"\""
-    [ webcpp.data $(WYCHEPROOF) ] ;
+    [ webcpp.data $(WYCHEPROOF) ]
+    <dependency>$(.wycheproof-files) ;
 explicit wycheproof ;
-
-# NIST's CAVP vectors (public domain), which webcpp does not track: the two
-# archives tools/ci/actions/nist-cavp/install.sh downloads, checks against
-# their pinned SHA-256 and lays out in .local/nist-cavp, or the directory
-# -sNIST_CAVP_ROOT=<dir> names. Only webcpp's own tests read them, so a
-# machine without them leaves those tests out with one line, and the CI, with
-# webcpp-require-external=on, stops instead.
-.nist-cavp-given = [ MATCH "^-sNIST_CAVP_ROOT=(.+)$" : [ modules.peek : ARGV ] ] ;
-path-constant NIST_CAVP_LOCAL : ../.local/nist-cavp ;
-.nist-cavp = $(.nist-cavp-given[-1]) ;
-.nist-cavp ?= $(NIST_CAVP_LOCAL) ;
-.nist-cavp-forward = [ regex.replace $(.nist-cavp) "\\\\" "/" ] ;
-
-rule nist-cavp-found ( properties * )
-{
-    if [ path.exists $(.nist-cavp)/gcmtestvectors/gcmDecrypt128.rsp ]
-    {
-        return ;
-    }
-    local text = "NIST CAVP's archives are not in $(.nist-cavp): run `bash"
-        "tools/ci/actions/nist-cavp/install.sh` from the superproject's root, or give"
-        "-sNIST_CAVP_ROOT=<dir>, a directory that holds gcmtestvectors/ and KAT_AES/" ;
-    if <webcpp-require-external>on in $(properties)
-    {
-        errors.user-error "/third_party//nist-cavp: $(text:J= )." ;
-    }
-    if ! $(.nist-cavp-told)
-    {
-        .nist-cavp-told = true ;
-        ECHO "webcpp: crypto's tests of NIST's vectors are left out: $(text:J= )." ;
-    }
-    return <build>no ;
-}
-
-alias nist-cavp : : <conditional>@nist-cavp-found : :
-    <define>"\"WEBCPP_TEST_NIST_CAVP=\\\"$(.nist-cavp-forward)\\\"\""
-    [ webcpp.data $(.nist-cavp) ] ;
-explicit nist-cavp ;
 ```
 
-  The Jamfile's imports gain `modules`. A conditional of an alias that returns `<build>no`
-  skips the tests that name it (M2's measurement of the same mechanism). A `.nist-cavp-told`
-  variable of the module is b2's load-time state, as `webcpp.jam`'s `.left-out` is, not a
-  library's. The tools test `tools/test/third_party_test.py` gains two cases: with
-  `-sNIST_CAVP_ROOT=<an empty directory>` a test naming the target is skipped and the line is
-  printed once; with `webcpp-require-external=on` the build stops with the text.
-- [ ] **Step 4: Write the failing tests.** `test/support/test_data.hpp`:
+  The glob may be narrowed to the files crypto's tests read (`aes_gcm_test.json` here; the
+  secp256k1 files of Task 28) if the whole directory's dependency costs too much.
+  `tools/test/third_party_test.py` gains `test_wycheproof_is_pinned`, the form of
+  `test_the_suite_is_pinned`: the submodule is at `12fd3aaf33eb5fa1f52e026912ee00c054f9d984`.
+- [ ] **Step 3: Write the failing tests.** `test/support/test_data.hpp`:
 
 ```cpp
 // Copyright (c) 2026 WebCpp.org
@@ -4225,142 +4123,8 @@ void check_wycheproof_gcm() {
 #endif
 ```
 
-  `test/support/cavp_gcm.hpp`, the `.rsp` reader and the 6,750 cases with 128-bit tags (M3):
-
-```cpp
-// Copyright (c) 2026 WebCpp.org
-//
-// Distributed under the Boost Software License, Version 1.0. (See
-// accompanying file LICENSE_1_0.txt or copy at
-// https://www.boost.org/LICENSE_1_0.txt)
-
-// NIST CAVP's gcmtestvectors (spec section 8.1): the cases with 128-bit tags, sealed from
-// gcmEncryptExtIV*.rsp and opened from gcmDecrypt*.rsp, where FAIL is an
-// authentication_failed with data zeroed. The other tag lengths are skipped: the interface
-// offers only 16-byte tags.
-
-#ifndef WEBCPP_TEST_CRYPTO_SUPPORT_CAVP_GCM_HPP
-#define WEBCPP_TEST_CRYPTO_SUPPORT_CAVP_GCM_HPP
-
-#include "gcm_checks.hpp"
-#include "hex.hpp"
-#include "test_data.hpp"
-
-#include <cstddef>
-#include <map>
-#include <sstream>
-#include <string>
-
-namespace webcpp::test {
-
-/** One case of an .rsp file: its fields by name, and whether it says FAIL. */
-struct cavp_case {
-    std::map<std::string, std::string> fields;
-    bool fail = false;
-    std::size_t tag_bits = 0;
-};
-
-/** Calls each(case) for every case of the .rsp text, with the section's Taglen. */
-template <class F>
-void each_cavp_case(std::string const& text, F&& each) {
-    std::istringstream lines(text);
-    std::string line;
-    std::size_t tag_bits = 0;
-    cavp_case current;
-    bool open_case = false;
-    auto const flush = [&] {
-        if (open_case) {
-            current.tag_bits = tag_bits;
-            each(current);
-        }
-        current = {};
-        open_case = false;
-    };
-    while (std::getline(lines, line)) {
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
-        if (line.rfind("[Taglen = ", 0) == 0) {
-            tag_bits = std::stoul(line.substr(10));
-        } else if (line.rfind("Count = ", 0) == 0) {
-            flush();
-            open_case = true;
-        } else if (line == "FAIL") {
-            current.fail = true;
-        } else if (auto const eq = line.find(" = "); open_case && eq != std::string::npos) {
-            current.fields[line.substr(0, eq)] = line.substr(eq + 3);
-        }
-    }
-    flush();
-}
-
-template <class Backend>
-void check_cavp_gcm() {
-    std::string const root = std::string(WEBCPP_TEST_NIST_CAVP) + "/gcmtestvectors/";
-    for (char const* bits : {"128", "192", "256"}) {
-        std::size_t sealed = 0;
-        each_cavp_case(read_file(root + "gcmEncryptExtIV" + bits + ".rsp"), [&](cavp_case const& c) {
-            if (c.tag_bits != 128) {
-                return;
-            }
-            auto const key = from_hex(c.fields.at("Key"));
-            with_gcm<Backend>(key, [&](auto made) {
-                auto const plaintext = from_hex(c.fields.at("PT"));
-                auto data = plaintext;
-                auto const iv = from_hex(c.fields.at("IV"));
-                auto const additional_data = from_hex(c.fields.at("AAD"));
-                auto const tag = made->seal(iv, additional_data, data);
-                BOOST_TEST_EQ(to_hex(data), c.fields.at("CT"));
-                BOOST_TEST(tag && to_hex(*tag) == c.fields.at("Tag"));
-                // Incrementally as well (I4), in pieces bounded to six sizes for 3,375 cases.
-                for (std::size_t piece : {1, 7, 15, 16, 17, 0}) {
-                    check_in_pieces(*made, iv, additional_data, plaintext, c.fields.at("CT"),
-                                    c.fields.at("Tag"),
-                                    piece == 0 ? (std::max)(plaintext.size(), std::size_t{1}) : piece);
-                }
-            });
-            ++sealed;
-        });
-        BOOST_TEST_EQ(sealed, 1125U);
-        std::size_t opened = 0;
-        std::size_t refused = 0;
-        each_cavp_case(read_file(root + "gcmDecrypt" + bits + ".rsp"), [&](cavp_case const& c) {
-            if (c.tag_bits != 128) {
-                return;
-            }
-            auto const key = from_hex(c.fields.at("Key"));
-            with_gcm<Backend>(key, [&](auto made) {
-                auto data = from_hex(c.fields.at("CT"));
-                auto const result = made->open(from_hex(c.fields.at("IV")),
-                                               from_hex(c.fields.at("AAD")), data,
-                                               from_hex(c.fields.at("Tag")));
-                if (c.fail) {
-                    BOOST_TEST(result.error() == crypto::error::authentication_failed);
-                    BOOST_TEST(all_zero(data));
-                    ++refused;
-                } else {
-                    BOOST_TEST(result.has_value());
-                    BOOST_TEST_EQ(to_hex(data), c.fields.at("PT"));
-                    ++opened;
-                }
-            });
-        });
-        BOOST_TEST_EQ(opened + refused, 1125U);
-        std::string const name(bits);
-        BOOST_TEST_EQ(refused, name == "128" ? 590U : name == "192" ? 568U : 566U);
-    }
-}
-
-}  // namespace webcpp::test
-
-#endif
-```
-
-  The `.rsp` files have CRLF line ends, lower-case hex, and write an empty field with the
-  space after `=` (`PT = `, 1,575 such lines in `gcmEncryptExtIV128.rsp`, measured with M3's
-  files): the reader drops the `\r` and keeps what follows `" = "`, and `from_hex("")` is
-  empty. `test/gcm_wycheproof_bearssl_test.cpp` and `test/gcm_cavp_bearssl_test.cpp` include
-  `backends/bearssl.hpp` and their support header, and call the check for `bearssl`. In
+  `test/gcm_wycheproof_bearssl_test.cpp` includes
+  `backends/bearssl.hpp` and its support header, and calls the check for `bearssl`. In
   `test/Jamfile`:
 
 ```jam
@@ -4368,24 +4132,28 @@ void check_cavp_gcm() {
 crypto-run gcm_wycheproof_bearssl : gcm_wycheproof_bearssl_test.cpp
   : <library>/third_party//bearssl <library>/third_party//wycheproof
     <library>/webcpp//boost_json ;
-crypto-run gcm_cavp_bearssl : gcm_cavp_bearssl_test.cpp
-  : <library>/third_party//bearssl <library>/third_party//nist-cavp ;
 ```
 
   Run the native lane. Expected: FAIL first on the missing support headers; once written,
-  PASS. Then wasip2, wasip3 and emscripten. Expected: PASS on each (wasmtime given the two
-  directories by `webcpp.data`; node reading them under `-sNODERAWFS=1`).
-- [ ] **Step 5: Commit** (superproject)
-  `"third_party: Wycheproof, and NIST CAVP's archives pinned by URL and SHA-256"` (after
-  `git add -- tools/ci/actions/nist-cavp`); (library) `"crypto: AES-GCM against Wycheproof
-  and NIST CAVP on BearSSL"`.
+  PASS. Then wasip2, wasip3 and emscripten. Expected: PASS on each (wasmtime given the
+  directory by `webcpp.data`; node reading it under `-sNODERAWFS=1`).
+- [ ] **Step 4: Document and commit.** `CODING-GUIDELINES.md` chapter 10, "Third-party code",
+  gains the row `wycheproof`: "C2SP's Wycheproof at `12fd3aaf` (2026-10-06), shallow, test
+  data: crypto's tests read its `testvectors_v1/` at run time under the directory its define
+  `WEBCPP_TEST_WYCHEPROOF` gives, on every target (wasmtime is given it, `webcpp.data`), and
+  run again when one of its files changes | Apache-2.0". `doc/releases/0.1.0.adoc`, "Tools and
+  build", gains a line: Wycheproof's test vectors, as `/third_party//wycheproof`. Commit
+  (superproject) `"third_party: Wycheproof, pinned and shallow"` (`.gitmodules
+  third_party/libs/wycheproof third_party/Jamfile tools/test/third_party_test.py
+  CODING-GUIDELINES.md doc/releases/0.1.0.adoc`); (library) `"crypto: AES-GCM against
+  Wycheproof on BearSSL"`.
 
-## Task 10: The user's Jamfiles as fixtures of a test of the tools, and webcpp's own programs marked
+## Task 10: The user's Jamfiles as fixtures of a test of the tools
 
 **Why this form** (owner item O4, the controller's ruling). The superproject already tests b2
 projects that are not a library's ordinary tests: fixtures under `tools/test/fixtures/`, built
 on a scratch copy of the superproject by a Python test of `tools/test/` (`harness.py`,
-`emscripten_test.py`, `external_test.py`), which the CI's tools job runs. A user's Jamfile
+`emscripten_test.py`, `third_party_test.py`), which the CI's tools job runs. A user's Jamfile
 (spec section 7, every build stop of section 8.6) is such a project: b2's raw `exe`, built as a
 user builds it, its outcome checked. So this plan adds no kind of library directory and runs no
 b2 inside b2: the cases are fixtures `tools/test/fixtures/crypto_jamfiles/<case>/` (a path the
@@ -4397,29 +4165,30 @@ so a user's `exe` is allowed there, as it is not under a library's `test/`), and
 (`.github/workflows/library.yml`, job `tools`), so on the CI it builds the cases with Linux's
 native toolset (GNU ld), wasip2, wasip3 and Emscripten (wasm-ld), and never with ld64 or
 MSVC's `link.exe` and `cl`. Spec 8.6 asks for the canary's link messages "on ld64, wasm-ld,
-Emscripten and MSVC", for MSVC's `C1189`, and for LNK2038. A developer's run on macOS covers
-ld64 (recorded in the ledger), and nothing covers MSVC. The controller's ruling (O4'): the
-tools job gains two legs, `macos-15` and `windows-2022`, that run
-`tools/test/crypto_jamfiles_test.py --target native` alone (the same test, the same fixtures)
-at the nightly level, built in Task 25b. Until then, the outcomes' `[native-darwin]` blocks
-run locally on macOS and the `[native-windows]` ones wait, which the ledger records.
+Emscripten and MSVC", for MSVC's `C1189`, and for LNK2038. The recorded limit (the owner's
+decision): MSVC's cases run on the MSVC lanes, on every push, as `webcpp.compile-fail` and
+`webcpp.link-fail` of the library's tests, each failing, and their exact text is checked on
+clang, GNU ld and wasm-ld alone; ld64's text is checked by a developer's run on macOS, which
+the ledger records. The tools job gains no macOS or Windows leg, and an outcome's
+`[native-darwin]` blocks apply only to such a local run.
 
 **Files (superproject):**
 - Create: `tools/test/crypto_jamfiles_test.py`; the fixtures of the test itself,
   `tools/test/fixtures/crypto_jamfiles/hello/` (`Jamfile`, `hello.cpp`, `hello.outcome`) and
   `tools/test/fixtures/crypto_jamfiles/broken/` (`Jamfile`, `broken.cpp`, `broken.outcome`).
-- Modify: `tools/webcpp.jam` (the feature `webcpp-own`; `program` sets it),
-  `tools/test/webcpp_jam_test.py` (one case), `tools/test/harness.py` (`scratch_superproject`
-  takes the paths a test leaves out of the copy) and `tools/test/harness_test.py` (its case),
-  AGENTS.md (chapter 9: `webcpp-own`; the fixtures of `crypto_jamfiles` and their outcome
-  files, under "Tests").
+- Modify: `CODING-GUIDELINES.md` (chapter 8, "Tests": the fixtures of `crypto_jamfiles` and
+  their outcome files; chapter 1, "Process": the list of the tests of the build and of the
+  tools, which names `emscripten_test.py`),
+  `doc/releases/0.1.0.adoc` ("Tools and build": a line).
+
+Every v0.1 backend is built by b2 (BearSSL, ctaes and libsecp256k1 by `third_party/Jamfile`,
+OpenSSL by its provider), so no case finds a library on the machine or is left out without
+one: the test has no roots, no requirements of the machine and no `--require-external`.
 
 **Interfaces:**
-- Produces: the feature `<webcpp-own>on`, which every program of `webcpp.run`, `run-fail`,
-  `compile`, `compile-fail`, `compile-diagnostic`, `boost-test`, `example`, `headers-alone`,
-  `link`, `serve` and `drive` carries; `harness.scratch_superproject(*fixtures, left_out=())`;
-  `tools/test/crypto_jamfiles_test.py` and its outcome files, which Tasks 11, 16, 18, 24, 29
-  and 37 add cases to (a directory under `tools/test/fixtures/crypto_jamfiles/` each).
+- Produces: `tools/test/crypto_jamfiles_test.py` and its outcome files, which this task's
+  Emscripten refusals and Tasks 11, 18, 24 and 29 add cases to (a directory under
+  `tools/test/fixtures/crypto_jamfiles/` each).
 
 **The outcome file** (`<case>.outcome`, beside the case's Jamfile):
 
@@ -4439,54 +4208,30 @@ aes256_gcm ok backend=bearssl
 - after `build: fails`, every other line of the applying blocks must appear, whole, in b2's
   output, in any order (a compiler's or linker's message, an `error:` of b2's);
 - `run: <program>`, after `build: succeeds`: the program the build made is run as the lane
-  runs one (natively itself, `wasmtime` for a `.wasm` of wasip2 or wasip3, the latter with
-  `-W component-model-async=y -S p3=y`, `node` for emscripten's `.js`), and every other line
-  of the applying blocks is its standard output, exactly, line for line;
-- `no-dependency: <program> <library>` natively: `otool -L` on macOS, `ldd` on Linux,
-  `dumpbin /DEPENDENTS` with MSVC must not name the library;
+  runs one (natively itself, `tools/boost/asio-wasip2/run.sh` or `tools/boost/asio-wasip3/run.sh`
+  for a `.wasm` of wasip2 or wasip3, as `tools/ci/matrix.py`'s `wasm_lane` gives them,
+  `node` for emscripten's `.js`), and every other line of the applying blocks is its standard
+  output, exactly, line for line;
 - `arguments: <word> ...`: words given to b2 for this case alone, each `@scratch` replaced by
-  the case's scratch directory (a directory the test makes empty, for "not found" cases);
-- `root: OPENSSL_ROOT` (or `BOTAN_ROOT`): the case gets `-s<variable>=<dir>` with the directory
-  the test found for that library (below), placed last; no case gets a root it does not ask
-  for (I5), and the test itself never receives a `-s` from the CI;
-- `requires: static-libcrypto` (or `botan`): the case needs that on the machine; without it the
-  test prints `crypto_jamfiles: <case> is left out: <why>` and goes on, and with the test's
-  argument `--require-external` (which the CI's tools job passes) it fails instead (the left-out
-  rule of webcpp's own tests, I6).
+  the case's scratch directory (a directory the test makes empty).
 
-- [ ] **Step 1: Write the failing cases.** In `tools/test/webcpp_jam_test.py`,
-  `test_webcpp_programs_are_marked_own`: a fixture alias whose `<conditional>` rule writes,
-  with `ECHO`, whether `<webcpp-own>on` is among its properties, named by a `webcpp.run`: the
-  output holds `own: on`. In `tools/test/harness_test.py`,
-  `test_a_scratch_copy_leaves_out_what_it_is_told`: `scratch_superproject(left_out=('third_party/libs/wycheproof',))`
-  has no such directory and every other one. The fixtures of the test itself:
+- [ ] **Step 1: Write the fixtures.** The fixtures of the test itself:
   `hello/Jamfile` is `exe hello : hello.cpp ;` (with the licence notice), `hello.cpp` prints
   `hello from a user's Jamfile`, `hello.outcome` is `[all]`, `targets: native wasip2`,
   `build: succeeds`, `run: hello`, `hello from a user's Jamfile`; `broken/Jamfile` is
   `exe broken : broken.cpp ;`, `broken.cpp` `#error "broken on purpose"`, and its outcome
-  `build: fails`, `broken on purpose`. Run
-  `python3 tools/test/webcpp_jam_test.py test_webcpp_programs_are_marked_own` and
-  `python3 tools/test/harness_test.py test_a_scratch_copy_leaves_out_what_it_is_told`.
-  Expected: FAIL.
-- [ ] **Step 2: Mark webcpp's own programs.** In `tools/webcpp.jam`, beside the other
-  features:
-
-```jam
-# webcpp-own=on: a program of webcpp's own tests and examples, which every
-# rule of this file declares, so that a library webcpp does not build may
-# leave it out when the machine lacks the library, while a user's program
-# that names that library stops the build (AGENTS.md chapter 6, rule 7).
-# Incidental, so that it plays no part in a build directory, and propagated,
-# so that it reaches the library's alias.
-feature.feature webcpp-own : on : optional incidental propagated ;
-```
-
-  and in `program`'s last line,
-  `return <webcpp-targets>$(targets) <conditional>@webcpp%filter <webcpp-own>on ;`.
-  `harness.scratch_superproject` gains `left_out: Sequence[str] = ()`, paths relative to the
-  superproject removed from the copy's `ignore` (a directory named there is not copied). Run
-  the two cases. Expected: PASS.
-- [ ] **Step 3: Write `tools/test/crypto_jamfiles_test.py`:**
+  `build: fails`, `broken on purpose`. The refusals of OpenSSL on Emscripten, which
+  `webcpp.compile-diagnostic` cannot test (it is clang's alone and skips the toolset
+  `emscripten`), as Task 6 writes them in `config.hpp`, each a program that includes
+  `<webcpp/crypto/config.hpp>`, given the define without b2's alias, as a user without b2 would:
+  `openssl_on_emscripten/Jamfile` is
+  `exe app : app.cpp /webcpp/crypto//crypto : <define>WEBCPP_CRYPTO_HAS_OPENSSL=1 ;`, and its
+  outcome `[all]`, `targets: emscripten`, `build: fails`,
+  `webcpp::crypto: OpenSSL is not built for Emscripten. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl.`;
+  `default_openssl_on_emscripten/Jamfile` the same with
+  `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`, and its outcome's line
+  `webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects OpenSSL, which is not built for Emscripten. Remove that define, or make it WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL.`
+- [ ] **Step 2: Write `tools/test/crypto_jamfiles_test.py`:**
 
 ```python
 #!/usr/bin/env python3
@@ -4498,16 +4243,14 @@ feature.feature webcpp-own : on : optional incidental propagated ;
 
 """Builds every fixture of tools/test/fixtures/crypto_jamfiles, a Jamfile as a user of
 webcpp::crypto writes it (b2's raw exe), with b2 as a user runs it, and checks its outcome file:
-the build's status, the lines a failure prints, a program's output, and the libraries a program
-does not depend on (AGENTS.md chapter 9, "Tests"). One scratch superproject per target, with
-libs/crypto and the fixtures in it and the test data's submodules left out; every case of a
-target shares one build directory, so BearSSL's 295 files are compiled once per target. Run
-with the names of some cases to run only those; --require-external makes a case whose library
-the machine lacks fail instead of being left out."""
+the build's status, the lines a failure prints, and a program's output (CODING-GUIDELINES.md
+chapter 8). One scratch superproject per target, with libs/crypto and the fixtures in it; every
+case of a target shares one build directory, so BearSSL's 295 files are compiled once per
+target. Run with the names of some cases to run only those, and with --target <name> to run one
+target."""
 
 from __future__ import annotations
 
-import os
 import platform
 import shutil
 import subprocess
@@ -4519,11 +4262,14 @@ from pathlib import Path
 import harness
 
 CASES = harness.FIXTURES / 'crypto_jamfiles'
-LEFT_OUT = ('third_party/libs/wycheproof', 'third_party/libs/bips',
-            'third_party/libs/JSON-Schema-Test-Suite')
 TOOLSETS = {'native': [], 'wasip2': ['toolset=clang-wasip2'], 'wasip3': ['toolset=clang-wasip3'],
             'emscripten': ['toolset=emscripten']}
 SYSTEM = {'Linux': 'linux', 'Darwin': 'darwin', 'Windows': 'windows'}[platform.system()]
+
+
+def launcher(target: str) -> Path:
+    """The script the lanes run a WASI program with (tools/ci/matrix.py, wasm_lane)."""
+    return harness.ROOT / f'tools/boost/asio-{target}/run.sh'
 
 
 @dataclass
@@ -4534,9 +4280,6 @@ class Outcome:
     run: str | None = None
     lines: list[str] = field(default_factory=list)
     arguments: list[str] = field(default_factory=list)
-    roots: list[str] = field(default_factory=list)
-    requires: list[str] = field(default_factory=list)
-    no_dependency: list[tuple[str, str]] = field(default_factory=list)
 
 
 def outcome(path: Path, target: str) -> Outcome:
@@ -4563,40 +4306,13 @@ def outcome(path: Path, target: str) -> Outcome:
             result.run = value
         elif key == 'arguments':
             result.arguments += value.split()
-        elif key == 'root':
-            result.roots.append(value)
-        elif key == 'requires':
-            result.requires.append(value)
-        elif key == 'no-dependency':
-            program, library = value.split()
-            result.no_dependency.append((program, library))
         else:
             result.lines.append(raw)
     return result
 
 
-def found_root(variable: str) -> Path | None:
-    """The directory the test gives a case that asks for variable: the developer's .local
-    layout, as the CI's actions make it, else nothing."""
-    local = {'OPENSSL_ROOT': 'openssl', 'BOTAN_ROOT': 'botan'}[variable]
-    candidate = harness.ROOT / '.local' / local
-    return candidate if candidate.is_dir() else None
-
-
-def available(requirement: str) -> str | None:
-    """Why the machine lacks requirement, or None when it has it."""
-    if requirement == 'static-libcrypto':
-        root = found_root('OPENSSL_ROOT')
-        name = 'libcrypto_static.lib' if SYSTEM == 'windows' else 'libcrypto.a'
-        if root is None or not (root / 'lib' / name).exists():
-            return f'no {name} in .local/openssl/lib (tools/ci/actions/openssl/install.sh links it)'
-    if requirement == 'botan' and found_root('BOTAN_ROOT') is None:
-        return 'no .local/botan (tools/ci/actions/botan/install.sh lays it out)'
-    return None
-
-
 def program_command(build_dir: Path, name: str, target: str) -> list[str]:
-    """The command that runs the program name the case's build made."""
+    """The command that runs the program name the case's build made, as its lane runs one."""
     suffix = {'native': '.exe' if SYSTEM == 'windows' else '', 'wasip2': '.wasm',
               'wasip3': '.wasm', 'emscripten': '.js'}[target]
     found = [p for p in build_dir.rglob(name + suffix) if p.is_file()]
@@ -4604,21 +4320,12 @@ def program_command(build_dir: Path, name: str, target: str) -> list[str]:
         raise AssertionError(f'the build made {len(found)} files named {name}{suffix}')
     if target == 'emscripten':
         return ['node', str(found[0])]
-    if target == 'wasip3':
-        return ['wasmtime', '-W', 'component-model-async=y', '-S', 'p3=y', str(found[0])]
-    if target == 'wasip2':
-        return ['wasmtime', str(found[0])]
+    if target.startswith('wasi'):
+        return [str(launcher(target)), str(found[0])]
     return [str(found[0])]
 
 
-def dependencies(program: Path) -> str:
-    """What the system's tool says program depends on."""
-    tool = {'darwin': ['otool', '-L'], 'linux': ['ldd'], 'windows': ['dumpbin', '/DEPENDENTS']}
-    return subprocess.run([*tool[SYSTEM], str(program)], capture_output=True, text=True,
-                          check=False).stdout
-
-
-def run_target(root: Path, target: str, names: list[str], require: bool) -> list[str]:
+def run_target(root: Path, target: str, names: list[str]) -> list[str]:
     """Builds every case of target in root and returns the faults, one line each."""
     faults: list[str] = []
     build_dir = root / 'bin' / f'user-{target}'
@@ -4628,20 +4335,11 @@ def run_target(root: Path, target: str, names: list[str], require: bool) -> list
         expected = outcome(next(case.glob('*.outcome')), target)
         if target not in expected.targets:
             continue
-        missing = [why for why in map(available, expected.requires) if why]
-        if missing:
-            line = f'crypto_jamfiles: {case.name} is left out: {"; ".join(missing)}'
-            if require:
-                faults.append(line + ' (and --require-external was given)')
-            else:
-                print(line)
-            continue
         scratch = root / 'scratch' / case.name
         scratch.mkdir(parents=True, exist_ok=True)
         arguments = [a.replace('@scratch', str(scratch)) for a in expected.arguments]
-        arguments += [f'-s{variable}={found_root(variable)}' for variable in expected.roots]
-        built = harness.run_b2(root, f'--build-dir={build_dir}', *TOOLSETS[target],
-                               *(['testing.launcher=wasmtime'] if target.startswith('wasi') else []),
+        launch = [f'testing.launcher={launcher(target)}'] if target.startswith('wasi') else []
+        built = harness.run_b2(root, f'--build-dir={build_dir}', *TOOLSETS[target], *launch,
                                *arguments, f'user/{case.name}')
         output = built.stdout
         if (built.returncode == 0) != expected.succeeds:
@@ -4659,15 +4357,10 @@ def run_target(root: Path, target: str, names: list[str], require: bool) -> list
             if ran.returncode != 0 or printed != expected.lines:
                 faults.append(f'{case.name} on {target}: {expected.run} exited {ran.returncode} '
                               f'and printed {printed!r}; the outcome says {expected.lines!r}')
-        for program, library in expected.no_dependency:
-            path = Path(program_command(build_dir / 'user' / case.name, program, 'native')[0])
-            if library in dependencies(path):
-                faults.append(f'{case.name}: {program} depends on {library}')
     return faults
 
 
 def main(argv: list[str]) -> int:
-    require = '--require-external' in argv
     targets = list(TOOLSETS)
     if '--target' in argv:
         targets = [argv[argv.index('--target') + 1]]
@@ -4678,15 +4371,15 @@ def main(argv: list[str]) -> int:
     faults: list[str] = []
     for target in targets:
         started = time.monotonic()
-        root = harness.scratch_superproject(left_out=LEFT_OUT)
+        root = harness.scratch_superproject()
         try:
-            shutil.copytree(harness.ROOT / 'libs/crypto', root / 'libs/crypto', ignore=harness.built)
+            harness.copy_integration_libraries(root, 'crypto')
             shutil.copytree(CASES, root / 'user', ignore=harness.built)
             if target == 'emscripten':
                 harness.link_emsdk(root)
             elif target.startswith('wasi'):
                 harness.link_wasi_tools(root)
-            faults += run_target(root, target, names, require)
+            faults += run_target(root, target, names)
         finally:
             shutil.rmtree(root)
         print(f'{target}: done in {time.monotonic() - started:.0f} s')
@@ -4700,388 +4393,255 @@ if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
 ```
 
-  A target whose toolset the machine lacks (`clang-wasip2` not registered, no emsdk) stops
-  the run with `harness`'s own message, never a silent skip. The CI's tools job runs every
-  `tools/**/*_test.py` without arguments: its step gains `--require-external` for this test
-  alone (the line that runs it is `python3 "$test" $( [ "$test" = tools/test/crypto_jamfiles_test.py ] && echo --require-external )`,
-  in the job's loop), and the job's setup gains the actions `openssl` and `nist-cavp`, so that
-  `.local/openssl` holds the static library there.
+  A scratch copy links `third_party/libs` to the checkout's and leaves `libs/` out
+  (`tools/test/harness.py`, `copy_tree`); `copy_integration_libraries` brings crypto's
+  `build.jam`, `include` and `src`. A target whose toolset the machine lacks (`clang-wasip2`
+  not registered, no emsdk) stops the run with `harness`'s own message, never a silent skip.
+  The CI's tools job runs it as it runs every `tools/**/*_test.py`: a test that does not call
+  `harness.run_cases` runs whole, without arguments, in one of the job's eight shards
+  (`.github/workflows/library.yml`, job `tools`); the job needs no new step.
 
   The cost (m20): the cases of a target run one after another, never two inner b2 at once,
   so each inner b2 keeps its default of every CPU and no outer `-j` multiplies it; and they
   share one build directory per target (`bin/user-<target>` in the scratch root), so
-  BearSSL's 295 files and libsecp256k1's are compiled once per target, not once per case.
-  The tools job runs every tools test in one 90-minute job; the test prints each target's
+  BearSSL's 295 files, libsecp256k1's and OpenSSL's provider are built once per target, not
+  once per case. A shard of the tools job has 90 minutes; the test prints each target's
   time (`native: done in <s> s`), Task 25's green records the four in the ledger, and when
   their sum passes 30 minutes the test moves to a job of its own in `library.yml`, one
-  matrix entry per target (`crypto_jamfiles_test.py --target <name>`, which `main` takes), and the tools job's loop leaves it out by name.
-- [ ] **Step 4: Run** `python3 tools/test/crypto_jamfiles_test.py hello broken`. Expected:
+  matrix entry per target (`crypto_jamfiles_test.py --target <name>`, which `main` takes), and
+  the tools job's loop leaves it out by name.
+- [ ] **Step 3: Run** `python3 tools/test/crypto_jamfiles_test.py hello broken`. Expected:
   `native: done in <s> s` and `wasip2: done in <s> s`, then `crypto_jamfiles_test: ok`. Change `hello.outcome`'s
   last line to `hello from elsewhere`: expected `crypto_jamfiles_test: failed` with the
   printed and the expected lines; put it back. Change `broken.outcome`'s message to `not this`:
-  expected a fault naming the missing line; put it back.
-- [ ] **Step 5: Run** `python3 tools/test/webcpp_jam_test.py`,
-  `python3 tools/test/external_test.py`, `python3 tools/test/harness_test.py` and the lint.
-  Expected: PASS and `lint: clean` (the fixtures' raw `exe` is outside the raw-rules pattern;
-  `webcpp-own` is incidental and changes no build directory).
-- [ ] **Step 6: Document** in AGENTS.md chapter 9: `webcpp-own` in "Libraries webcpp does not
-  build", and under "Tests" the fixtures of `crypto_jamfiles` (a user's Jamfile per case,
-  its outcome file's format, the test that builds them, and why they are fixtures of the
-  tools' test and not a library's tests).
-- [ ] **Step 7: Commit** (after `git add -- tools/test/crypto_jamfiles_test.py tools/test/fixtures/crypto_jamfiles`):
-  `"tools: the user's Jamfiles of webcpp::crypto as fixtures of a test of the tools, and
-  webcpp's own programs carry webcpp-own"`.
+  expected a fault naming the missing line; put it back. Then
+  `python3 tools/test/crypto_jamfiles_test.py --target emscripten openssl_on_emscripten default_openssl_on_emscripten`.
+  Expected: `crypto_jamfiles_test: ok`.
+- [ ] **Step 4: Run** `python3 tools/test/third_party_test.py`, `python3 tools/test/harness_test.py`
+  and the lint. Expected: PASS and `lint: clean` (the fixtures' raw `exe` is outside the
+  raw-rules pattern).
+- [ ] **Step 5: Document** in `CODING-GUIDELINES.md` chapter 8, "Tests", the fixtures of
+  `crypto_jamfiles` (a user's Jamfile per case, its outcome file's format, the test that builds
+  them, and why they are fixtures of the tools' test and not a library's tests), and name
+  `crypto_jamfiles_test.py` in chapter 1's list of the tests of the build and of the tools,
+  beside `emscripten_test.py`; `doc/releases/0.1.0.adoc`, "Tools and build", gains a line: the user's
+  Jamfiles of webcpp::crypto, tested as fixtures.
+- [ ] **Step 6: Commit** (after `git add -- tools/test/crypto_jamfiles_test.py tools/test/fixtures/crypto_jamfiles`):
+  `"tools: the user's Jamfiles of webcpp::crypto as fixtures of a test of the tools"`
+  (`tools/test/crypto_jamfiles_test.py tools/test/fixtures/crypto_jamfiles CODING-GUIDELINES.md
+  doc/releases/0.1.0.adoc`).
 
-## Task 11: OpenSSL, found or stopping, linked shared or static
+## Task 11: crypto's OpenSSL alias over the source-built provider
 
-**Files (superproject):**
-- Modify: `tools/webcpp.jam` (`external-root`, `external-looked`; the knobs
-  `-sWEBCPP_LOCAL=<dir>` and `-sWEBCPP_SYSTEM_INCLUDE=<dir>`), `tools/test/external_test.py`
-  (cases), `third_party/Jamfile` (the feature and the target `openssl`),
-  `tools/ci/actions/openssl/install.sh` (the static library), `tools/ci/actions_test.py`
-  (its case), `tools/ci/matrix.py` and `tools/ci/matrix_test.py` (crypto's externals, a
-  lane's list), `.github/workflows/library.yml` (each external action on its name),
-  `AGENTS.md` (chapter 9: the knobs, the stop), `tools/test/crypto_jamfiles_test.py` (the
-  `make_root.py` hook, Step 4).
-- Create (superproject): the fixtures `tools/test/fixtures/crypto_jamfiles/openssl_on_wasm/`,
-  `openssl_not_found/`, `openssl_wrong_root/`, `openssl_static_missing/` (with its
-  `make_root.py`), `openssl_shared/`, `openssl_static/`, each a `Jamfile`, an `app.cpp` and
-  an outcome file.
-- Modify (library): `build.jam` (the declaration, C13).
+OpenSSL is not found on the machine: the superproject builds OpenSSL 3.5.9 (`45e844f`) from
+the submodule `third_party/libs/openssl` as `/webcpp/third_party//openssl`, static, through
+`tools/webcpp-openssl.jam` (CODING-GUIDELINES.md chapter 5 rule 7), for native Clang, GCC and
+MSVC, wasip2 single-threaded and wasip3 single or cooperative; Emscripten stops. The provider's
+usage requirements give its generated include directory, `libssl` and `libcrypto` in link order
+and their link flags, and no define (`tools/webcpp-openssl.jam:96-133`). crypto's backend needs
+`WEBCPP_CRYPTO_HAS_OPENSSL`, so crypto wraps the provider in an alias of its own, as asio does
+(`libs/asio` at `6c4e2c8`, `build.jam:104-126`). No OpenSSL canary: the provider forbids
+injecting into upstream, and its archives are named by exact path (chapter 5 rule 7; chapter 19,
+"Asio/Beast closure").
+
+**Files:**
+- Modify (library): `build.jam` (the alias `openssl`), `test/Jamfile` (`openssl_one_copy`),
+  `doc/changelog.adoc`.
+- Create (library): `src/openssl_on_emscripten.hpp`, `test/openssl_one_copy_test.cpp`.
+- Create (superproject): the fixtures `tools/test/fixtures/crypto_jamfiles/openssl_on_emscripten/`
+  and `openssl_linked/`, each a `Jamfile`, an `app.cpp` and an outcome file.
+- Modify (superproject): `CODING-GUIDELINES.md` (chapter 10's `openssl` row, chapter 17's
+  crypto section; Step 5).
 
 **Interfaces:**
-- Consumes: `webcpp-own` (Task 10).
-- Produces: `/third_party//openssl`, OpenSSL's libssl and libcrypto, one choice (I14); the
-  feature `webcpp-crypto-openssl-link` (`shared`, `static`, propagated); `webcpp.external-root <owner> : <library> : <target>` (the
-  directory, native form, or nothing); `webcpp.external-looked <owner> : <library> : <properties> *`
-  (the "where it looked" text, or nothing when found); the matrix entry's `"externals"`, a
-  list of the names of `tools/ci/actions/` a lane installs.
+- Consumes: `/webcpp/third_party//openssl` (the provider); `webcpp-target.target-of`
+  (`tools/target.jam:26`); Task 10's `tools/test/crypto_jamfiles_test.py`.
+- Produces: `/webcpp/crypto//openssl`: on native, wasip2 and wasip3,
+  `<library>/webcpp/third_party//openssl <define>WEBCPP_CRYPTO_HAS_OPENSSL=1`; on Emscripten,
+  `src/openssl_on_emscripten.hpp` forced into every C and C++ source, whose `#error` names the
+  fix. Every later task names OpenSSL this way, never the provider directly.
 
-- [ ] **Step 1: Write the failing tools tests** in `tools/test/external_test.py`, on the
-  scratch library `needs_ext` of the file:
-  - `test_external_root_gives_the_directory`: a `build.jam` line
-    `ECHO "root: [ webcpp.external-root needs_ext : libfake : native ]" ;` prints the `-s`
-    directory, then the `.local/fake` one, then an empty root;
-  - `test_external_looked_names_where`: the same with `external-looked` and
-    `<toolset>clang`, printing the text `missing` returns, then nothing once `.local/fake`
-    holds `fake.h`;
-  - `test_the_local_and_system_knobs`: with `-sWEBCPP_LOCAL=<root>/other` and
-    `-sWEBCPP_SYSTEM_INCLUDE=<root>/sys`, a `fake.h` in `<root>/sys` is found and one in
-    `<root>/.local/fake` is not; the left-out message names `<root>/other/fake/include` and
-    `<root>/sys`.
-  Run `python3 tools/test/external_test.py`. Expected: FAIL.
-- [ ] **Step 2: Write the rules** in `tools/webcpp.jam`. `local-root` reads
-  `-sWEBCPP_LOCAL=<dir>` when given (a test's machine without the CI's installs), else
-  `.local/`:
-
-```jam
-local rule local-root ( directory )
-{
-    local base = [ given WEBCPP_LOCAL ] ;
-    base ?= [ path.join [ path.root $(.root) [ path.pwd ] ] .local ] ;
-    return [ path.join $(base) $(directory) ] ;
-}
-```
-
-  `missing` takes its system directories from `-sWEBCPP_SYSTEM_INCLUDE=<dir>` when given (one
-  directory, on any system, written in the text as `nor does <dir>`), else
-  `/usr/include /usr/local/include` natively outside Windows, as today (`nor does
-  /usr/include or /usr/local/include`). Both knobs serve a test that must run as on a
-  machine without the library; they read b2's command line, never the environment. Then:
-
-```jam
-# webcpp.external-root <owner> : <library> : <target> ; the directory
-# webcpp.external returned for library, which a target of another project
-# (third_party/Jamfile) links: the -s directory, else .local/<directory> when
-# it holds the header, else nothing; nothing too when owner declared none.
-rule external-root ( owner : library : target )
-{
-    local declared = $(.external.$(owner).$(library).$(target)) ;
-    if ! $(declared)
-    {
-        return ;  # the owner's build.jam is not checked out: its caller says so (m8)
-    }
-    local root = [ given $(declared[1]) ] ;
-    if $(root)
-    {
-        return [ path.native $(root) ] ;
-    }
-    root = [ local-root $(declared[2]) ] ;
-    if [ path.exists [ path.native $(root)/include/$(declared[3]) ] ]
-    {
-        return [ path.native $(root) ] ;
-    }
-}
-
-# webcpp.external-looked <owner> : <library> : <properties> * ; where it
-# looked for library on the target of properties and did not find it, as the
-# left-out message writes it, or nothing when it is there.
-rule external-looked ( owner : library : properties * )
-{
-    local target = native ;
-    if <toolset>emscripten in $(properties)
-    {
-        target = emscripten ;
-    }
-    local declared = $(.external.$(owner).$(library).$(target)) ;
-    if $(declared)
-    {
-        return [ missing $(library) $(declared) : $(target) ] ;
-    }
-}
-```
-
-  and `external` returns `[ external-root $(owner) : $(library) : $(target) ]` after
-  recording the declaration. Run the tools test. Expected: PASS, the existing cases too.
-- [ ] **Step 3: Declare OpenSSL in crypto's `build.jam`** (C13), before the alias:
-
-```jam
-import webcpp ;
-
-# OpenSSL, which webcpp does not build, is the backend /third_party//openssl
-# links: found where -sOPENSSL_ROOT=<dir> says, else in .local/openssl, else,
-# natively outside Windows, in /usr/include or /usr/local/include. Declared
-# here, which the Jamroot loads at start, so that the index can say when the
-# page is left out for want of it.
-webcpp.external crypto : OpenSSL : OPENSSL_ROOT : openssl : openssl/evp.h : native ;
-```
-
-- [ ] **Step 4: Write the failing build cases**, each a fixture of Task 10's test,
-  `tools/test/fixtures/crypto_jamfiles/<case>/`, a user's Jamfile with its licence notice, an
-  `app.cpp` that makes a `gcm<aes256<backends::openssl>>` and prints `HAS_OPENSSL=1` when the
-  define is set, and an outcome:
+- [ ] **Step 1: Write the failing fixtures**, each a user's Jamfile with its licence notice
+  (Task 10's format):
 
 | Case | Its Jamfile | Outcome |
 | --- | --- | --- |
-| `openssl_on_wasm` | `exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl ;` | `targets: wasip2 wasip3 emscripten`; `build: fails`; `error: /third_party//openssl: OpenSSL is a native backend, and this build is for WebAssembly. In the program's Jamfile, name /third_party//bearssl in its place.` |
-| `openssl_not_found` | the same | `arguments: -sWEBCPP_LOCAL=@scratch -sWEBCPP_SYSTEM_INCLUDE=@scratch` (no root: the CI's `-sOPENSSL_ROOT` never reaches it, I5); `build: fails`; three lines, the parts of spec 4.4's fourth block around the directory, which varies: `error: /third_party//openssl: the program names OpenSSL, and it was not found: -sOPENSSL_ROOT=<dir> was not given, and `; `/openssl/include holds no openssl/evp.h, nor does `; `. Install it (apt install libssl-dev; brew install openssl@3, then give -sOPENSSL_ROOT=<the directory that brew --prefix openssl@3 prints>; or OpenSSL's Windows installer), give -sOPENSSL_ROOT=<dir>, the directory of its include/ and lib/, or name /third_party//bearssl in its place.` |
-| `openssl_wrong_root` | the same | `arguments: -sOPENSSL_ROOT=@scratch`; `build: fails`; `holds no include/openssl/evp.h: give the directory of OpenSSL's include/ and lib/, or no -sOPENSSL_ROOT to look for OpenSSL in` |
-| `openssl_static_missing` | `exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl : <webcpp-crypto-openssl-link>static ;` | `arguments: -sOPENSSL_ROOT=@scratch/root`, a root the test makes with `include/openssl` linked from `.local/openssl` and an empty `lib/` (the outcome's line `arguments` cannot make it, so the case's directory holds `make_root.py`, which the test runs first when present, given the scratch directory); `build: fails`; `error: /third_party//openssl: <webcpp-crypto-openssl-link>static links ` and `, which does not exist: give -sOPENSSL_ROOT=<dir>, the directory of an OpenSSL whose lib/ holds it, or link OpenSSL shared.` |
-| `openssl_shared` | `exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl ;` | `root: OPENSSL_ROOT`; `build: succeeds`; `run: app`; `HAS_OPENSSL=1` |
-| `openssl_static` | the same with `<webcpp-crypto-openssl-link>static` | `root: OPENSSL_ROOT`; `requires: static-libcrypto`; `build: succeeds`; `run: app`; `HAS_OPENSSL=1`; `no-dependency: app libcrypto`; `no-dependency: app libssl` |
+| `openssl_on_emscripten` | `exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl ;` | `targets: emscripten`; `build: fails`; `webcpp::crypto: /webcpp/crypto//openssl is named in a build for Emscripten, where webcpp does not build OpenSSL.` |
+| `openssl_linked` | the same | `targets: native wasip2 wasip3`; `build: succeeds`; `run: app`; `HAS_OPENSSL=1`; `tag 530f8afbc74536b9a963b4f1c4cb738b` |
 
-  Task 10's test gains the hook its table names: a case directory holding `make_root.py` has it
-  run as `python3 make_root.py <scratch>` before b2, with a case of its own in the test's
-  self-check (`hello`'s directory gains none). Run
-  `python3 tools/test/crypto_jamfiles_test.py openssl_on_wasm openssl_shared`. Expected: FAIL,
-  no target `openssl` in `/third_party`.
-- [ ] **Step 5: Link the static libraries locally** (I6): the development machine's
-  `.local/openssl/lib` holds the shared libraries alone (M7). Before any static program is
-  declared, `ln -s /opt/homebrew/opt/openssl@3/lib/libcrypto.a /opt/homebrew/opt/openssl@3/lib/libssl.a .local/openssl/lib/`
-  (on Linux the files `pkg-config --variable=libdir openssl` names), the change Step 8 makes
-  the CI's action make, recorded in the ledger. Without them, webcpp's own static programs are
-  left out with a line (Step 6), never a stop of the build.
-- [ ] **Step 6: Write the target** in `third_party/Jamfile`: OpenSSL's libssl and libcrypto as
-  one choice (I14), so that no program holds a static libcrypto beside a shared one, under one
-  link feature:
+  Both cases share one `app.cpp`: it prints `HAS_OPENSSL=1` when the define is set, then seals
+  an empty message under the zero key of 32 bytes and the zero IV of 12 bytes with
+  `gcm<aes256<backends::openssl>>` and prints `tag <hex>` (McGrew and Viega's test case 13).
+  Until Task 12 writes the backend's header, `openssl_linked`'s app prints the define and calls
+  `OpenSSL_version_num()` alone; Task 12 Step 3 gives it the seal. Run
+  `python3 tools/test/crypto_jamfiles_test.py openssl_on_emscripten openssl_linked`. Expected:
+  FAIL, no target `openssl` in `/webcpp/crypto`.
+- [ ] **Step 2: Write `src/openssl_on_emscripten.hpp`:**
 
-```jam
-# OpenSSL 3 (Apache-2.0), libssl and libcrypto together, which webcpp does not
-# build: found where libs/crypto/build.jam declares it, natively only, linked
-# shared (the default) or static (DESIGN, 2026-10-11 "webcpp::crypto's two
-# departures accepted"). Both libraries follow the one feature, so that a
-# process never holds two copies of libcrypto, a static one and a shared one
-# under libssl, whose memory functions would be two (spec section 3.7;
-# AGENTS.md chapter 6, rule 10). Propagated, so that a program's request
-# reaches the library; not free, so that the two builds get directories of
-# their own.
-feature.feature webcpp-crypto-openssl-link : shared static : propagated ;
+```cpp
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
 
-# What the static libraries are called under a root's lib/: OpenSSL's own
-# build names them libcrypto.a and libssl.a; the Windows installer's, as the
-# OpenSSL action copies them, libcrypto_static.lib and libssl_static.lib
-# (measured in this task, C6).
-rule openssl-static-files ( properties * )
-{
-    if <toolset>msvc in $(properties)
-    {
-        return libcrypto_static.lib libssl_static.lib ;
-    }
-    return libcrypto.a libssl.a ;
-}
+#ifndef WEBCPP_CRYPTO_SRC_OPENSSL_ON_EMSCRIPTEN_HPP
+#define WEBCPP_CRYPTO_SRC_OPENSSL_ON_EMSCRIPTEN_HPP
 
-# Nothing when OpenSSL is there for a native build. On WebAssembly the build
-# stops, naming the backend to use. Natively, when OpenSSL or its static
-# libraries are not found, webcpp's own programs are left out with one line
-# (or the build stops under webcpp-require-external=on, as the CI builds),
-# and a user's program stops with the instruction (DESIGN, 2026-10-11 "an
-# external library a program names and the machine lacks stops the build").
-rule openssl-found ( properties * )
-{
-    if ! [ path.exists $(CRYPTO)/build.jam ]
-    {
-        errors.user-error "libs/crypto is not checked out: it declares where OpenSSL is"
-            "found. Check it out with `git submodule update --init libs/crypto`." ;
-    }
-    if <toolset>emscripten in $(properties) || <toolset-clang:version>wasip2 in $(properties)
-        || <toolset-clang:version>wasip3 in $(properties)
-    {
-        errors.user-error "/third_party//openssl: OpenSSL is a native backend, and this"
-            "build is for WebAssembly. In the program's Jamfile, name /third_party//bearssl"
-            "in its place." ;
-    }
-    local own = ;
-    if <webcpp-own>on in $(properties)
-    {
-        own = true ;
-    }
-    local looked = [ webcpp.external-looked crypto : OpenSSL : $(properties) ] ;
-    if $(looked) && $(own)
-    {
-        return [ webcpp.external-found crypto : OpenSSL : $(properties) ] ;
-    }
-    if $(looked)
-    {
-        errors.user-error "/third_party//openssl: the program names OpenSSL, and it was not"
-            "found: $(looked). Install it (apt install libssl-dev; brew install openssl@3,"
-            "then give -sOPENSSL_ROOT=<the directory that brew --prefix openssl@3 prints>; or"
-            "OpenSSL's Windows installer), give -sOPENSSL_ROOT=<dir>, the directory of its"
-            "include/ and lib/, or name /third_party//bearssl in its place." ;
-    }
-    if <webcpp-crypto-openssl-link>static in $(properties)
-    {
-        local root = [ webcpp.external-root crypto : OpenSSL : native ] ;
-        local missing ;
-        for local name in [ openssl-static-files $(properties) ]
-        {
-            local file = <OPENSSL_ROOT>/lib/$(name) ;
-            if $(root)
-            {
-                file = $(root)/lib/$(name) ;
-            }
-            if ! $(root) || ! [ path.exists $(file) ]
-            {
-                missing += $(file) ;
-            }
-        }
-        if $(missing) && $(own) && ! <webcpp-require-external>on in $(properties)
-        {
-            if ! $(.openssl-static-told)
-            {
-                .openssl-static-told = true ;
-                ECHO "webcpp: crypto's programs of a static OpenSSL are left out:"
-                    "$(missing:J=, ) does not exist. Give -sOPENSSL_ROOT=<dir>, the directory"
-                    "of an OpenSSL whose lib/ holds them, or link them into .local/openssl/lib." ;
-            }
-            return <build>no ;
-        }
-        if $(missing)
-        {
-            errors.user-error "/third_party//openssl: <webcpp-crypto-openssl-link>static links"
-                "$(missing:J=, ), which does not exist: give -sOPENSSL_ROOT=<dir>, the"
-                "directory of an OpenSSL whose lib/ holds it, or link OpenSSL shared." ;
-        }
-    }
-}
-
-.openssl-root = [ webcpp.external-root crypto : OpenSSL : native ] ;
-lib openssl-crypto : : <name>libcrypto <toolset>msvc <webcpp-crypto-openssl-link>shared
-    <search>$(.openssl-root)/lib <search>$(.openssl-root)/lib/VC/x64/MD
-  : : <include>$(.openssl-root)/include ;
-lib openssl-crypto : : <file>$(.openssl-root)/lib/libcrypto_static.lib <toolset>msvc
-    <webcpp-crypto-openssl-link>static
-  : : <include>$(.openssl-root)/include
-    <find-shared-library>ws2_32 <find-shared-library>crypt32
-    <find-shared-library>user32 <find-shared-library>advapi32 ;
-lib openssl-crypto : : <name>crypto <webcpp-crypto-openssl-link>shared
-    <search>$(.openssl-root)/lib
-  : : <include>$(.openssl-root)/include <dll-path>$(.openssl-root)/lib ;
-lib openssl-crypto : : <file>$(.openssl-root)/lib/libcrypto.a
-    <webcpp-crypto-openssl-link>static
-  : : <include>$(.openssl-root)/include
-    <target-os>linux:<linkflags>-pthread <target-os>linux:<find-shared-library>dl ;
-lib openssl-ssl : : <name>libssl <toolset>msvc <webcpp-crypto-openssl-link>shared
-    <search>$(.openssl-root)/lib <search>$(.openssl-root)/lib/VC/x64/MD ;
-lib openssl-ssl : : <file>$(.openssl-root)/lib/libssl_static.lib <toolset>msvc
-    <webcpp-crypto-openssl-link>static ;
-lib openssl-ssl : : <name>ssl <webcpp-crypto-openssl-link>shared <search>$(.openssl-root)/lib ;
-lib openssl-ssl : : <file>$(.openssl-root)/lib/libssl.a <webcpp-crypto-openssl-link>static ;
-explicit openssl-crypto openssl-ssl ;
-
-# libssl before libcrypto on the link line, which a static link needs.
-alias openssl : openssl-ssl openssl-crypto : <conditional>@openssl-found
-  : : <define>WEBCPP_CRYPTO_HAS_OPENSSL=1 $(.gc) ;
-explicit openssl ;
+// Forced into every source when an Emscripten program names /webcpp/crypto//openssl.
+#if defined(__EMSCRIPTEN__)
+#error \
+    "webcpp::crypto: /webcpp/crypto//openssl is named in a build for Emscripten, where webcpp does not build OpenSSL. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl, or name OpenSSL for native and WASI builds alone, by a condition in the project's requirements: project : requirements <conditional>@native-openssl ; rule native-openssl ( properties * ) { if ! <toolset>emscripten in $(properties) { return <library>/webcpp/crypto//openssl ; } } (without b2: link OpenSSL into native and WASI programs only)"
+#endif
+#endif  // WEBCPP_CRYPTO_SRC_OPENSSL_ON_EMSCRIPTEN_HPP
 ```
 
-  The message holds no `$(` of the shell's (b2 would expand it, AGENTS chapter 12).
-  `webcpp.external-root` returns nothing, never an error, when its owner has declared nothing
-  (a checkout without `libs/crypto`, review m8): `openssl-found`'s first check then names the
-  checkout. A program that names `/third_party//openssl` gets libssl beside libcrypto; a shared
-  libssl a program does not call adds its dependency at run time and no code (spec 4.2), which
-  the documentation says. `tools/test/third_party_test.py` gains three cases: a static program
-  of webcpp's own on a root without `libcrypto.a` is left out with the line and the build
-  succeeds; with `webcpp-require-external=on` it stops; `/third_party//openssl` links
-  `libssl` and `libcrypto` in that order (`-d+2`'s link line).
-- [ ] **Step 7: The static libraries on the CI** (C6). In
-  `tools/ci/actions/openssl/install.sh`, `link` also links `libcrypto.a` and `libssl.a` when
-  `${libdir}` holds them (Ubuntu's `libssl-dev` and Homebrew's `openssl@3` do), and `windows`
-  first prints `ls "${found}"` into the step's log, then copies `libcrypto_static.lib` and
-  `libssl_static.lib` from `${found}` when they exist. The first CI run of this change on the
-  Windows runners is the measurement:
-  - the log lists both: the Jamfile's names stand;
-  - it lists other static libraries (a `MT` directory's, or names of another form): the
-    action copies those files under the Jamfile's names, their source named in the action's
-    comment;
-  - it lists none: the Windows static lane of OpenSSL cannot run on the image; the action
-    copies nothing, webcpp's own static programs are left out there with Step 6's line (the
-    CI's lanes give `webcpp-require-external=on`, so the Jamfiles of Tasks 15 and 16 declare
-    their static twins `<build>no` on Windows through a conditional of their own, with the
-    reason), and the owner is told (spec 8.5 asks for them on Windows).
-  `tools/ci/actions_test.py` gains a case: on a fake Linux prefix holding `libcrypto.a` and
-  `libssl.a`, the action links both.
-- [ ] **Step 8: Crypto's externals on the CI, own lanes included** (I15).
-  `tools/ci/matrix.py`:
-  `EXTERNAL_DEPENDENCIES = {'trystero': ('secp256k1', 'libdatachannel', 'openssl'), 'crypto': ('openssl', 'nist-cavp')}`,
-  `nist-cavp` marked as needed on every target (WebAssembly included: its files are test data),
-  the others natively; a lane's entry gains `"externals"`, the sorted union of the actions its
-  libraries need on its target (`[]` when none), beside the boolean `"external"`, which stays
-  for the docs and lint jobs; and `own_lane_entry` gains the same `"externals"`, so that an
-  own lane installs what its library needs, as a lane does. `.github/workflows/library.yml`:
-  each external action's step is conditioned on its own name,
-  `if: contains(matrix.externals, 'openssl') && !matrix.emsdk` (and `'secp256k1'`,
-  `'libdatachannel'`, `'nist-cavp'` without the `!matrix.emsdk`), in the lanes' job and the
-  own lanes' job alike, which share the anchors. `tools/ci/matrix_test.py` gains three cases:
-  a plan for `--library crypto` lists `["nist-cavp", "openssl"]` on its native lanes and
-  `["nist-cavp"]` on the WebAssembly ones; `own-lanes --library crypto` gives each entry the
-  same `externals` as its target's lane; trystero's own lanes `oracle` and `interop` keep
-  `["libdatachannel", "openssl", "secp256k1"]` natively. Run `python3 tools/ci/matrix_test.py`
-  and `actionlint`. Expected: PASS.
-- [ ] **Step 9: Run** `python3 tools/test/crypto_jamfiles_test.py openssl_on_wasm openssl_not_found openssl_wrong_root openssl_static_missing openssl_shared openssl_static`.
-  Expected: `crypto_jamfiles_test: ok` (the Linux run of the CI's tools job covers the same on
-  GNU ld).
-- [ ] **Step 10: Commit** (superproject, after `git add` of the new fixtures)
-  `"tools: webcpp.external-root and external-looked; OpenSSL's libssl and libcrypto found or stopping, shared or static, in third_party"`,
-  `"tools/ci: crypto needs OpenSSL and NIST's archives, and each lane and own lane installs only the external libraries its libraries name"`;
-  (library) `"crypto: OpenSSL declared for its backend"`.
+  The text holds `$(properties)` as b2 source the user copies; in the header it is a string, and
+  b2 never reads it.
+- [ ] **Step 3: Write the alias** in `libs/crypto/build.jam`, after `alias crypto`, with
+  `import webcpp-target ;` among its imports:
+
+```jam
+# tag::openssl[]
+# OpenSSL, the backend backends::openssl: the superproject's source-built
+# OpenSSL 3.5.9 (/webcpp/third_party//openssl, static; CODING-GUIDELINES.md
+# chapter 5 rule 7) with the define the backend's header checks, on native,
+# wasip2 and wasip3. Never a system OpenSSL, never shared.
+rule openssl-linked ( properties * )
+{
+    if [ webcpp-target.target-of $(properties) ] in native wasip2 wasip3
+    {
+        return <library>/webcpp/third_party//openssl
+            <define>WEBCPP_CRYPTO_HAS_OPENSSL=1 ;
+    }
+}
+
+# Refused on Emscripten: every source of a program built for emscripten that
+# names it stops at the forced include, whose message says what to write.
+# Quoted, as the Jamroot quotes Boost's directory, for a path that holds a
+# space.
+path-constant WEBCPP_CRYPTO_ROOT : . ;
+alias openssl : : : : <conditional>@openssl-linked
+    <toolset>emscripten:<cflags>"-include \"$(WEBCPP_CRYPTO_ROOT)/src/openssl_on_emscripten.hpp\""
+    <toolset>emscripten:<cxxflags>"-include \"$(WEBCPP_CRYPTO_ROOT)/src/openssl_on_emscripten.hpp\"" ;
+# end::openssl[]
+```
+
+  A program that names both `/webcpp/asio//openssl` and `/webcpp/crypto//openssl` gets the one
+  provider target under one property set, so each archive once (chapter 5 rule 10). The test
+  of that, `test/openssl_one_copy_test.cpp`, prints both defines and the version:
+
+```cpp
+// Copyright (c) 2026 WebCpp.org
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+
+// asio's and crypto's OpenSSL aliases in one program: both defines, one OpenSSL 3.5.9.
+
+#include <webcpp/test/exit_status.hpp>
+
+#include <boost/core/lightweight_test.hpp>
+
+#include <openssl/crypto.h>
+
+int main() {
+#if !defined(WEBCPP_CRYPTO_HAS_OPENSSL) || !defined(WEBCPP_ASIO_HAS_OPENSSL)
+    BOOST_ERROR("both aliases give their define");
+#endif
+    BOOST_TEST_EQ(OpenSSL_version_num(), 0x30500090UL);  // tools/openssl/pin.json: 3.5.9
+    return webcpp::test::exit_status(boost::report_errors());
+}
+```
+
+  and in `test/Jamfile`:
+
+```jam
+# asio's and crypto's OpenSSL in one program: one provider, each archive once
+# (CODING-GUIDELINES.md chapter 5 rule 10).
+crypto-run openssl_one_copy : openssl_one_copy_test.cpp
+  : <library>/webcpp/crypto//openssl <library>/webcpp/asio//openssl : native wasip2 wasip3 ;
+```
+
+  `doc/changelog.adoc` gains `* /webcpp/crypto//openssl links the superproject's OpenSSL 3.5.9
+  on native, wasip2 and wasip3, and refuses Emscripten with the line to write.`
+- [ ] **Step 4: Run** the fixtures, the test and the link line:
+
+```bash
+python3 tools/test/crypto_jamfiles_test.py openssl_on_emscripten openssl_linked
+$B2 -a --build-dir=bin/lane-native libs/crypto/test//openssl_one_copy
+$B2 -a -d+2 --build-dir=bin/lane-native libs/crypto/test//openssl_one_copy \
+  | grep -oE '[^ "]*/lib(ssl|crypto)\.a' | sort | uniq -c
+$B2 -a --build-dir=bin/lane-wasip2 toolset=clang-wasip2 \
+  testing.launcher=tools/boost/asio-wasip2/run.sh libs/crypto/test//openssl_one_copy
+$B2 -a --build-dir=bin/lane-wasip3 toolset=clang-wasip3 \
+  testing.launcher=tools/boost/asio-wasip3/run.sh libs/crypto/test//openssl_one_copy
+```
+
+  Expected: `crypto_jamfiles_test: ok`; `openssl_one_copy` and its `_no_exceptions` twin pass
+  on the three targets; the `grep` prints one line per archive and program, each count 1, both
+  archives under one `config-<fingerprint>` directory (the twin has its own: measure there
+  whether it reconfigures OpenSSL, and record the seconds in the ledger). With
+  `third_party/libs/openssl` not checked out, the build stops with the provider's
+  `OpenSSL sources are missing. Run: git submodule update --init third_party/libs/openssl`
+  (`tools/webcpp-openssl.jam:44-46`).
+- [ ] **Step 5: The rulebook.** In `CODING-GUIDELINES.md`:
+  - chapter 10, "Third-party code", the `openssl` row: "for native Clang/GCC/MSVC and WASIp3"
+    becomes "for native Clang/GCC/MSVC, WASIp2 single and WASIp3 single/cooperative" (what
+    `tools/openssl/build.py:186-209` builds, and chapter 15's asio section says);
+  - chapter 17, crypto, "Provider amendment, 2026-11-03": "whose current support is native and
+    WASIp3" becomes "whose current support is native, WASIp2 single and WASIp3, and which crypto
+    names through its own alias `/webcpp/crypto//openssl`";
+  - the bullet "OpenSSL is the machine's libcrypto, 3.0 or later, found and never built, native
+    only, ..." becomes: "**OpenSSL is the superproject's source-built OpenSSL 3.5.9, static,
+    named through `/webcpp/crypto//openssl`, which gives `WEBCPP_CRYPTO_HAS_OPENSSL` on native,
+    wasip2 and wasip3 and refuses Emscripten by a forced `#error`; the backend's header stops
+    with an `#error` when it is not linked or older than 3.0.** Version 3 is needed for
+    `EVP_CIPHER_fetch`; the alias follows asio's, and OpenSSL has no canary (chapter 5 rule 7).
+    Source: `libs/crypto/build.jam`, `tools/webcpp-openssl.jam` (superproject).";
+  - the bullet "OpenSSL and Botan are found by `webcpp.external` ..." keeps Botan alone:
+    "**Botan is found by `webcpp.external` ... (later work, increment 5).**", OpenSSL's half and
+    `webcpp-own` removed;
+  - the bullet "OpenSSL's link, shared or static, is the propagated feature
+    `webcpp-crypto-openssl-link` ..." is removed (Botan's feature returns with increment 5);
+  - the bullet "One copy per program ...": "and asio's OpenSSL moves onto
+    `/third_party//openssl`" becomes "and asio and crypto name the one source-built OpenSSL";
+    "a process with two copies of libcrypto has two memory hooks, and the install sets only the
+    one webcpp's backend calls" becomes "two copies of libcrypto would be two error queues and
+    two allocation hooks in one process".
+- [ ] **Step 6: Commit** (library, after `git add` of the new files)
+  `git -C libs/crypto commit -m "crypto: /webcpp/crypto//openssl over the source-built OpenSSL, refused on Emscripten" -- build.jam src/openssl_on_emscripten.hpp test/Jamfile test/openssl_one_copy_test.cpp doc/changelog.adoc`;
+  (superproject, after `git add` of the fixtures)
+  `git commit -m "tools: crypto's OpenSSL fixtures; CODING-GUIDELINES.md: crypto names the source-built OpenSSL" -- tools/test/fixtures/crypto_jamfiles/openssl_on_emscripten tools/test/fixtures/crypto_jamfiles/openssl_linked CODING-GUIDELINES.md`.
+  After each, `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
 
 ## Task 12: The OpenSSL backend: AES and AES-GCM, and OpenSSL's error queue
 
 **Files:**
 - Create: `include/webcpp/crypto/backends/openssl.hpp`, `test/support/aes_checks.hpp`,
   `test/gcm_openssl_test.cpp`, `test/gcm_limits_openssl_test.cpp`,
-  `test/gcm_wycheproof_openssl_test.cpp`, `test/gcm_cavp_openssl_test.cpp`,
-  `test/aes_openssl_test.cpp`, `test/openssl_error_queue_test.cpp`,
+  `test/gcm_wycheproof_openssl_test.cpp`, `test/aes_openssl_test.cpp`,
+  `test/openssl_error_queue_test.cpp`, `test/gcm_openssl_threads_test.cpp`,
   `test/messages/openssl_not_linked/`, `test/messages/openssl_old/` (with
   `include/openssl/opensslv.h`).
 - Modify: `test/Jamfile`, `test/messages/Jamfile`, `include/webcpp/crypto.hpp` (Task 14 adds
-  the conditional includes; nothing here).
+  the conditional includes; nothing here), `doc/changelog.adoc`; (superproject)
+  `tools/test/fixtures/crypto_jamfiles/openssl_linked/app.cpp` (the seal, Task 11).
 
 **Interfaces:**
-- Consumes: Task 7's and Task 8's engine contracts; `/third_party//openssl`.
+- Consumes: Task 7's and Task 8's engine contracts; `/webcpp/crypto//openssl` (Task 11).
 - Produces: `struct webcpp::crypto::backends::openssl { static constexpr std::string_view name = "openssl"; };`
-  (Task 15 adds the install); the specialisations `gcm_state`, `gcm_engine`, `block_state`,
+  the specialisations `gcm_state`, `gcm_engine`, `block_state`,
   `block_engine` for `backends::openssl` and key sizes 16, 24, 32;
-  `boost::system::result<void> webcpp::crypto::detail::openssl_memory_guard() noexcept`
-  (empty here; Task 15 fills it);
   `boost::system::result<EVP_CIPHER_CTX*> webcpp::crypto::detail::openssl_context(char const* cipher, std::span<std::uint8_t const> key, bool encrypting, bool padding) noexcept`;
   the checks of `test/support/aes_checks.hpp`: `check_fips197<Backend>()`,
-  `check_aes_kat<Backend>()`, `check_aes_guards<Backend>()`, `check_aes_moved_from<Backend>()`.
+  `check_aes_guards<Backend>()`, `check_aes_moved_from<Backend>()`.
 
 - [ ] **Step 1: Write the failing tests.** `test/gcm_openssl_test.cpp` is
   `gcm_bearssl_test.cpp` with `backends/openssl.hpp` and `openssl` in place of BearSSL's, every
-  check of Tasks 7 and 8 called; `gcm_limits_openssl_test.cpp`,
-  `gcm_wycheproof_openssl_test.cpp` and `gcm_cavp_openssl_test.cpp` likewise. The block
+  check of Tasks 7 and 8 called; `gcm_limits_openssl_test.cpp` and
+  `gcm_wycheproof_openssl_test.cpp` likewise. The block
   cipher's checks, `test/support/aes_checks.hpp`:
 
 ```cpp
@@ -5091,15 +4651,13 @@ explicit openssl ;
 // accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 
-// The checks of the AES block cipher on one backend: FIPS-197's appendix C, NIST's AESAVS
-// known answers (ECB*.rsp of KAT_AES.zip, M3), the guards and moved-from objects (spec
-// sections 2.3 and 8.1).
+// The checks of the AES block cipher on one backend: FIPS-197's appendix C, the guards and
+// moved-from objects (spec sections 2.3 and 8.1).
 
 #ifndef WEBCPP_TEST_CRYPTO_SUPPORT_AES_CHECKS_HPP
 #define WEBCPP_TEST_CRYPTO_SUPPORT_AES_CHECKS_HPP
 
 #include "hex.hpp"
-#include "test_data.hpp"
 
 #include <webcpp/crypto/aes.hpp>
 #include <webcpp/crypto/error.hpp>
@@ -5109,9 +4667,8 @@ explicit openssl ;
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <map>
-#include <sstream>
-#include <string>
+#include <span>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -5155,50 +4712,6 @@ void check_fips197() {
             BOOST_TEST(block == plain);
         });
     }
-}
-
-/** Every case of the 12 ECB files, encrypt and decrypt sections, counted. */
-template <class Backend>
-void check_aes_kat() {
-    std::string const root = std::string(WEBCPP_TEST_NIST_CAVP) + "/KAT_AES/";
-    std::size_t cases = 0;
-    for (char const* kind : {"GFSbox", "KeySbox", "VarKey", "VarTxt"}) {
-        for (char const* bits : {"128", "192", "256"}) {
-            std::istringstream lines(read_file(root + "ECB" + kind + bits + ".rsp"));
-            std::string line;
-            bool decrypting = false;
-            std::map<std::string, std::string> fields;
-            auto const run = [&] {
-                if (fields.count("KEY") == 0) {
-                    return;
-                }
-                auto const key = from_hex(fields.at("KEY"));
-                with_aes<Backend>(key, [&](auto made) {
-                    auto block = from_hex(fields.at(decrypting ? "CIPHERTEXT" : "PLAINTEXT"));
-                    auto const result = decrypting ? made->decrypt(block) : made->encrypt(block);
-                    BOOST_TEST(result.has_value());
-                    BOOST_TEST_EQ(to_hex(block), fields.at(decrypting ? "PLAINTEXT" : "CIPHERTEXT"));
-                });
-                ++cases;
-                fields.clear();
-            };
-            while (std::getline(lines, line)) {
-                if (!line.empty() && line.back() == '\r') {
-                    line.pop_back();
-                }
-                if (line == "[ENCRYPT]" || line == "[DECRYPT]") {
-                    run();
-                    decrypting = line == "[DECRYPT]";
-                } else if (line.rfind("COUNT = ", 0) == 0) {
-                    run();
-                } else if (auto const eq = line.find(" = "); eq != std::string::npos) {
-                    fields[line.substr(0, eq)] = line.substr(eq + 3);
-                }
-            }
-            run();
-        }
-    }
-    BOOST_TEST_EQ(cases, 2'078U);  // M3: 14+12+10+42+48+32+256+384+512+256+256+256
 }
 
 /** The block cipher's guards, in their order (spec section 2.3). */
@@ -5252,8 +4765,9 @@ void check_aes_moved_from() {
 #endif
 ```
 
-  The AESAVS total is 2,078 (M3's counts, both sections of each file). `test/aes_openssl_test.cpp`
-  calls the four checks for `openssl`. `test/openssl_error_queue_test.cpp`:
+  (Deferred after v0.1: NIST's AESAVS known answers, `check_aes_kat`, and
+  `gcm_cavp_openssl`, with Task 9's NIST CAVP.) `test/aes_openssl_test.cpp` calls the three
+  checks for `openssl`. `test/openssl_error_queue_test.cpp`:
 
 ```cpp
 // Copyright (c) 2026 WebCpp.org
@@ -5314,32 +4828,45 @@ int main() {
 }
 ```
 
-  The two message tests, each a directory with a `webcpp.compile-diagnostic` on native:
+  The two message tests, each a directory with a `webcpp.compile-diagnostic` on native and
+  wasip2:
   `openssl_not_linked` (`<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`, the source including
   `backends/openssl.hpp`, stating spec 4.3's fourth row) and `openssl_old`
   (`<define>WEBCPP_CRYPTO_HAS_OPENSSL=1 <include>include`, whose `include/openssl/opensslv.h`
   is `#define OPENSSL_VERSION_NUMBER 0x1010117fL` under its licence notice and a guard, and
   whose source states
-  `webcpp::crypto: the backend OpenSSL needs OpenSSL 3.0 or later, and the headers found are of an older OpenSSL. Give -sOPENSSL_ROOT=<dir>, the directory of OpenSSL 3's include/ and lib/.`).
-  In `test/Jamfile`, each OpenSSL test declared `native` with `<library>/third_party//openssl`
-  (and `<library>/third_party//wycheproof <library>/webcpp//boost_json` or
-  `<library>/third_party//nist-cavp` for the vectors):
+  `webcpp::crypto: the backend OpenSSL needs OpenSSL 3.0 or later, and the headers found are of an older OpenSSL. In the program's Jamfile, name /webcpp/crypto//openssl, which builds OpenSSL 3.5.9. (without b2: put OpenSSL 3's include/ first)`).
+
+  `test/gcm_openssl_threads_test.cpp`: two `std::thread`s, each with an `aead` of its own made
+  on that thread, seal and open 1,000 messages of 1 KiB with the error queue test's check that
+  nothing is left in the thread's queue. It is built `<threading>multi`, natively only (wasip2
+  has no threads, `tools/webcpp-openssl.jam:146-149`): the provider follows the consumer's
+  `<threading>`, so that the ordinary lanes' OpenSSL is configured `no-threads`
+  (`tools/openssl/build.py:177-178`), whose error queue is the process's, and a program that
+  runs OpenSSL on two threads must be built `<threading>multi` (the backend's page says so,
+  Task 24).
+
+  In `test/Jamfile`, each OpenSSL test declared on native, wasip2 and wasip3 with
+  `<library>/webcpp/crypto//openssl` (and `<library>/third_party//wycheproof
+  <library>/webcpp//boost_json` for the vectors):
 
 ```jam
-# The backend OpenSSL, native only; on WebAssembly these programs are skipped
-# and /third_party//openssl's stop is never reached (M2).
-crypto-run gcm_openssl : gcm_openssl_test.cpp : <library>/third_party//openssl : native ;
-crypto-run gcm_limits_openssl : gcm_limits_openssl_test.cpp : <library>/third_party//openssl
-  : native ;
+# The backend OpenSSL: the source-built OpenSSL 3.5.9 on native, wasip2 and
+# wasip3 (Task 11); Emscripten has none.
+crypto-run gcm_openssl : gcm_openssl_test.cpp : <library>/webcpp/crypto//openssl
+  : native wasip2 wasip3 ;
+crypto-run gcm_limits_openssl : gcm_limits_openssl_test.cpp
+  : <library>/webcpp/crypto//openssl : native wasip2 wasip3 ;
 crypto-run gcm_wycheproof_openssl : gcm_wycheproof_openssl_test.cpp
-  : <library>/third_party//openssl <library>/third_party//wycheproof
-    <library>/webcpp//boost_json : native ;
-crypto-run gcm_cavp_openssl : gcm_cavp_openssl_test.cpp
-  : <library>/third_party//openssl <library>/third_party//nist-cavp : native ;
-crypto-run aes_openssl : aes_openssl_test.cpp
-  : <library>/third_party//openssl <library>/third_party//nist-cavp : native ;
+  : <library>/webcpp/crypto//openssl <library>/third_party//wycheproof
+    <library>/webcpp//boost_json : native wasip2 wasip3 ;
+crypto-run aes_openssl : aes_openssl_test.cpp : <library>/webcpp/crypto//openssl
+  : native wasip2 wasip3 ;
 crypto-run openssl_error_queue : openssl_error_queue_test.cpp
-  : <library>/third_party//openssl : native ;
+  : <library>/webcpp/crypto//openssl : native wasip2 wasip3 ;
+# OpenSSL on two threads: the provider configured with threads.
+crypto-run gcm_openssl_threads : gcm_openssl_threads_test.cpp
+  : <library>/webcpp/crypto//openssl <threading>multi : native ;
 ```
 
   Run the native lane. Expected: FAIL, `backends/openssl.hpp` not found.
@@ -5353,10 +4880,14 @@ crypto-run openssl_error_queue : openssl_error_queue_test.cpp
 // https://www.boost.org/LICENSE_1_0.txt)
 
 /**
- The backend OpenSSL: the system's libcrypto 3, found by `/third_party//openssl`, native
- only. It serves `aes128/192/256<backends::openssl>`, `gcm<...<backends::openssl>>` and
- `chacha20_poly1305<backends::openssl>`. Its `make` allocates through OpenSSL's own
- functions unless the program sets `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE`.
+ The backend OpenSSL: OpenSSL 3.5.9 built from `third_party/libs/openssl` by
+ `/webcpp/crypto//openssl`, static, on native, wasip2 and wasip3; never on Emscripten. It
+ serves `aes128/192/256<backends::openssl>` and `gcm<...<backends::openssl>>`. Its `make`
+ allocates through OpenSSL's own functions. On MSVC, wasip2 and wasip3 OpenSSL is compiled
+ without assembly: table-driven AES and 4-bit GHASH, no AES-NI, not constant time.
+ OpenSSL's default initialisation reads the configuration file of the directory it was
+ configured with (`/etc/ssl/openssl.cnf`, when the machine has one), as any program of
+ OpenSSL does; what it raises meanwhile is popped with the backend's mark.
 
  @see "The backends", in the guide.
 */
@@ -5366,13 +4897,13 @@ crypto-run openssl_error_queue : openssl_error_queue_test.cpp
 #include <webcpp/crypto/config.hpp>
 
 #if !defined(WEBCPP_CRYPTO_HAS_OPENSSL)
-#error "webcpp::crypto: the backend OpenSSL is used and not linked. In the program's Jamfile, add /third_party//openssl beside /webcpp/crypto//crypto; b2 links it when it finds OpenSSL (-sOPENSSL_ROOT=<dir> names it). (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)"
+#error "webcpp::crypto: the backend OpenSSL is used and not linked. In the program's Jamfile, add /webcpp/crypto//openssl beside /webcpp/crypto//crypto. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)"
 #else
 
 #include <openssl/opensslv.h>
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-#error "webcpp::crypto: the backend OpenSSL needs OpenSSL 3.0 or later, and the headers found are of an older OpenSSL. Give -sOPENSSL_ROOT=<dir>, the directory of OpenSSL 3's include/ and lib/."
+#error "webcpp::crypto: the backend OpenSSL needs OpenSSL 3.0 or later, and the headers found are of an older OpenSSL. In the program's Jamfile, name /webcpp/crypto//openssl, which builds OpenSSL 3.5.9. (without b2: put OpenSSL 3's include/ first)"
 #else
 
 #include <webcpp/crypto/detail/engines.hpp>
@@ -5422,20 +4953,11 @@ inline constexpr char const* openssl_ecb_name =
     KeySize == 16 ? "AES-128-ECB" : KeySize == 24 ? "AES-192-ECB" : "AES-256-ECB";
 
 /**
- * Nothing; under `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE`, `memory_functions_not_installed`
- * when OpenSSL's functions are not webcpp's adapter (Task 15 writes the check).
- */
-inline boost::system::result<void> openssl_memory_guard() noexcept {
-    return {};
-}
-
-/**
  * A context keyed for `cipher`, or the error of the call that failed (spec section 3.3):
  * `errc::not_enough_memory` when `EVP_CIPHER_CTX_new` returns null, `backend_failure` when
  * `EVP_CIPHER_fetch` returns null or the key's `EVP_CipherInit_ex` fails. The thread's
- * error queue is left as it was found, through a mark set after the memory guard, since a
- * mark is OpenSSL's first allocation on a thread and, first in a process, would make the
- * memory functions impossible to install.
+ * error queue is left as it was found, through a mark set before the first call that can
+ * raise.
  *
  * @param cipher OpenSSL's name of the cipher.
  * @param key The key, of the cipher's size.
@@ -5447,10 +4969,6 @@ inline boost::system::result<EVP_CIPHER_CTX*> openssl_context(char const* cipher
                                                               std::span<std::uint8_t const> key,
                                                               bool encrypting,
                                                               bool padding) noexcept {
-    auto const guarded = openssl_memory_guard();
-    if (!guarded) {
-        return guarded.error();
-    }
     ERR_set_mark();
     EVP_CIPHER* const fetched = EVP_CIPHER_fetch(nullptr, cipher, nullptr);
     if (fetched == nullptr) {
@@ -5654,13 +5172,23 @@ struct block_engine<backends::openssl, KeySize> {
 
   `openssl_update` with an empty span makes no call, which keeps a null `data()` away from
   OpenSSL (Review Focus 3).
-- [ ] **Step 3: Run** the native lane, then gcc-15's. Expected: PASS: every OpenSSL program
-  and its twin; the two message tests. `gcm_wycheproof_openssl` and `gcm_cavp_openssl` agree
-  with the vectors as BearSSL's did (226, 81, 6, 3; 1,125 per file and the FAIL counts), so
-  the cap of 128 bytes and the zeroing hold on OpenSSL too. A difference here is a fault of
-  the engine, never of the expected counts.
-- [ ] **Step 4: Commit:** `"crypto: the OpenSSL backend: AES and AES-GCM on EVP, the error
-  queue left as found"`.
+- [ ] **Step 3: Run** the native lane, gcc-15's, wasip2's and wasip3's (their launchers
+  `tools/boost/asio-wasip2/run.sh` and `tools/boost/asio-wasip3/run.sh`, as
+  `tools/ci/matrix.py`'s `wasm_lane` gives them), then Task 11's fixture `openssl_linked`,
+  whose `app.cpp` now seals (`python3 tools/test/crypto_jamfiles_test.py openssl_linked`).
+  Expected: PASS: every OpenSSL program and its twin; the two message tests; the fixture's
+  `tag 530f8afbc74536b9a963b4f1c4cb738b`. `gcm_wycheproof_openssl` agrees with the vectors as
+  BearSSL's did (226, 81, 6, 3), so the cap of 128 bytes and the zeroing hold on OpenSSL
+  too: OpenSSL 3.5.9 refuses an IV of 0 or more than 128 bytes
+  (`providers/implementations/ciphers/ciphercommon_gcm.c:295`, `GCM_IV_MAX_SIZE` 1024 / 8 in
+  `providers/implementations/include/prov/ciphercommon_gcm.h:21`), and a tag that does not
+  match raises nothing (`ossl_gcm_cipher_final`, `ciphercommon_gcm_hw.c:38-47`). A difference
+  here is a fault of the engine, never of the expected counts.
+- [ ] **Step 4: Commit** (after `git add` of the new files), with `doc/changelog.adoc`'s line
+  `* backends::openssl: AES and AES-GCM on OpenSSL 3.5.9, native, wasip2 and wasip3.`:
+  `git -C libs/crypto commit -m "crypto: the OpenSSL backend: AES and AES-GCM on EVP, the error queue left as found" -- include test doc/changelog.adoc`;
+  (superproject) `git commit -m "tools: crypto's openssl_linked fixture seals" -- tools/test/fixtures/crypto_jamfiles/openssl_linked/app.cpp`.
+  After each, `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
 
 ## Task 13: BearSSL and OpenSSL agree
 
@@ -5671,7 +5199,7 @@ struct block_engine<backends::openssl, KeySize> {
 
 **Interfaces:**
 - Produces: `template <class A, class B> void webcpp::test::agree_gcm(std::uint64_t seed)`,
-  which Task 35 extends to ChaCha20-Poly1305 and Task 39 to Botan.
+  which Task 35 extends to ChaCha20-Poly1305 after v0.1.
 
 - [ ] **Step 1: Write the failing test.** `test/support/agreement.hpp` (spec 8.2):
 
@@ -5770,18 +5298,21 @@ void agree_gcm(std::uint64_t seed) {
   is the same source with a different name. In `test/Jamfile`:
 
 ```jam
-# BearSSL against OpenSSL (spec section 8.2), natively. The portable twin keeps
-# BearSSL on aes_ct64 and ghash_ctmul64 through the backend's test seam, so
-# that on x86-64 both of BearSSL's code paths are compared with OpenSSL's.
+# BearSSL against OpenSSL (spec section 8.2), on native, wasip2 and wasip3.
+# The portable twin keeps BearSSL on aes_ct64 and ghash_ctmul64 through the
+# backend's test seam, so that on x86-64 both of BearSSL's code paths are
+# compared with OpenSSL's. On WASI OpenSSL runs its portable C code (no-asm,
+# tools/openssl/build.py:208), another pair of implementations.
 crypto-run agreement_gcm : agreement_gcm_test.cpp
-  : <library>/third_party//bearssl <library>/third_party//openssl : native ;
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl : native wasip2 wasip3 ;
 crypto-run agreement_gcm_portable : agreement_gcm_portable_test.cpp
-  : <library>/third_party//bearssl <library>/third_party//openssl
-    <define>WEBCPP_CRYPTO_DETAIL_BEARSSL_PORTABLE : native ;
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl
+    <define>WEBCPP_CRYPTO_DETAIL_BEARSSL_PORTABLE : native wasip2 wasip3 ;
 ```
 
   The two programs have sources of their own, so b2 compiles each with its own defines (spec
-  4.3's pitfall). Run the native lane. Expected: FAIL first on the missing header; then PASS.
+  4.3's pitfall). Run the native, wasip2 and wasip3 lanes. Expected: FAIL first on the missing
+  header; then PASS.
 - [ ] **Step 2: Prove that the seam selects what it says.** On the CI's x86-64 runner (the
   gcc-14 and clang-18 lanes), the first program's BearSSL runs AES-NI and PCLMUL and the twin
   `aes_ct64` and `ghash_ctmul64`: a check in each program, natively on x86-64 only
@@ -5789,15 +5320,17 @@ crypto-run agreement_gcm_portable : agreement_gcm_portable_test.cpp
   `webcpp::crypto::detail::bearssl_ctr()` with `br_aes_x86ni_ctr_get_vtable()` (expected
   equal in the first unless the CPU lacks AES-NI, which the check then prints) and with
   `&br_aes_ct64_ctr_vtable` (expected equal in the twin).
-- [ ] **Step 3: Commit:** `"crypto: BearSSL and OpenSSL agree on AES-GCM, both of BearSSL's
-  code paths"`.
+- [ ] **Step 3: Commit** (after `git add` of the new files):
+  `git -C libs/crypto commit -m "crypto: BearSSL and OpenSSL agree on AES-GCM, both of BearSSL's code paths" -- test`;
+  then `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
 
 ## Task 14: The default backend, the convenience headers, and their net on MSVC
 
 **Files:**
 - Create: `include/webcpp/crypto/aes256_gcm.hpp`, `test/default_both_test.cpp`,
-  `test/default_selected_test.cpp`, `test/default_bearssl_test.cpp`.
-- Modify: `include/webcpp/crypto.hpp`, `test/Jamfile`.
+  `test/default_selected_test.cpp`, `test/default_bearssl_test.cpp`,
+  `test/default_both_wasm_test.cpp`, `test/default_openssl_wasm_test.cpp`.
+- Modify: `include/webcpp/crypto.hpp`, `test/Jamfile`, `doc/changelog.adoc`.
 
 **Interfaces:**
 - Produces: `webcpp::crypto::aes128_gcm`, `webcpp::crypto::aes256_gcm`; the MSVC key
@@ -5812,7 +5345,8 @@ crypto-run agreement_gcm_portable : agreement_gcm_portable_test.cpp
 // accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 
-// Natively, with OpenSSL and BearSSL linked, OpenSSL is the default (spec section 5).
+// Natively, with OpenSSL and BearSSL linked, OpenSSL is the default (spec section 5), on MSVC
+// too.
 
 #include <webcpp/crypto/aes256_gcm.hpp>
 #include <webcpp/test/exit_status.hpp>
@@ -5829,15 +5363,24 @@ int main() {
 
   `default_selected_test.cpp` expects `"bearssl"` with both linked and
   `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` defined; `default_bearssl_test.cpp` expects
-  `"bearssl"` with BearSSL alone, on every target. In `test/Jamfile`:
+  `"bearssl"` with BearSSL alone, on every target. On WebAssembly OpenSSL may be linked
+  (wasip2, wasip3) and is never the default unless selected (spec section 5; `config.hpp`
+  refuses OpenSSL on Emscripten alone, Task 6): `default_both_wasm_test.cpp` expects
+  `"bearssl"` with both linked, and `default_openssl_wasm_test.cpp` expects `"openssl"` with
+  both linked and `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` defined. In `test/Jamfile`:
 
 ```jam
 crypto-run default_both : default_both_test.cpp
-  : <library>/third_party//bearssl <library>/third_party//openssl : native ;
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl : native ;
 crypto-run default_selected : default_selected_test.cpp
-  : <library>/third_party//bearssl <library>/third_party//openssl
-    <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL : native ;
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl
+    <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL : native wasip2 wasip3 ;
 crypto-run default_bearssl : default_bearssl_test.cpp : <library>/third_party//bearssl ;
+crypto-run default_both_wasm : default_both_wasm_test.cpp
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl : wasip2 wasip3 ;
+crypto-run default_openssl_wasm : default_openssl_wasm_test.cpp
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl
+    <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL : wasip2 wasip3 ;
 ```
 
   Run the native lane. Expected: FAIL, `aes256_gcm.hpp` not found.
@@ -5852,7 +5395,11 @@ crypto-run default_bearssl : default_bearssl_test.cpp : <library>/third_party//b
 
 /**
  `aes128_gcm` and `aes256_gcm` on the default backend, whose header it includes: natively
- OpenSSL when it is linked, else BearSSL (spec section 5).
+ OpenSSL when it is linked, else BearSSL; on WebAssembly BearSSL, unless
+ `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` selects OpenSSL on wasip2 or wasip3 (spec section 5).
+ On MSVC, wasip2 and wasip3 the source-built OpenSSL has no assembly (table-driven AES,
+ 4-bit GHASH, no AES-NI, not constant time): a program that wants BearSSL there defines
+ `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` or names `gcm<aes256<backends::bearssl>>`.
 
  @see "Using webcpp::crypto in your Jamfile", in the guide.
 */
@@ -5912,16 +5459,26 @@ using aes256_gcm = gcm<aes256<>>;
 #endif
 ```
 
-  (Tasks 29, 35 and 38 add ctaes, `chacha20_poly1305.hpp`, `secp256k1.hpp` and Botan under
-  their own `HAS` defines.) The headers-alone calls: `crypto/aes256_gcm.hpp` joins
-  BearSSL's call (with `<library>/third_party//bearssl`), and a native call takes
-  `crypto/backends/openssl.hpp` with `<library>/third_party//openssl`; `crypto.hpp` stays in
-  the first call (no backend: it includes none).
-- [ ] **Step 3: Run** the four lanes. Expected: PASS, the three tests on their targets.
-- [ ] **Step 4: Commit:** `"crypto: aes256_gcm on the default backend, and the convenience
-  header"`.
+  (Increment 2's tasks add ctaes and `secp256k1.hpp` under their own `HAS` defines.) The
+  headers-alone calls: `crypto/aes256_gcm.hpp` joins BearSSL's call (with
+  `<library>/third_party//bearssl`), and a call on native, wasip2 and wasip3 takes
+  `crypto/backends/openssl.hpp` with `<library>/webcpp/crypto//openssl`; `crypto.hpp` stays
+  in the first call (no backend: it includes none).
+- [ ] **Step 3: Run** the four lanes. Expected: PASS, the five tests on their targets.
+- [ ] **Step 4: Commit** (after `git add` of the new files), with `doc/changelog.adoc`'s line
+  `* aes128_gcm and aes256_gcm on the default backend; <webcpp/crypto.hpp>.`:
+  `git -C libs/crypto commit -m "crypto: aes256_gcm on the default backend, and the convenience header" -- include test doc/changelog.adoc`;
+  then `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
 
 ## Task 15: OpenSSL's memory functions, an option of the config: the adapter and the install
+
+Deferred after v0.1 (revision 2026-11-14). This task is kept as written for the memory
+option's own change; before it runs, re-read it against the source-built provider
+(CODING-GUIDELINES.md chapter 5 rule 7): OpenSSL is static, built by
+`/webcpp/third_party//openssl` and named through `/webcpp/crypto//openssl` (Task 11), version
+3.5.9, on native, wasip2 and wasip3; the feature `webcpp-crypto-openssl-link`, `OPENSSL_ROOT`
+and the shared link it names are gone; the error values 13 and 14 are reserved and undeclared;
+and the measured counts are 3.6.4's.
 
 **Files:**
 - Modify: `include/webcpp/crypto/backends/openssl.hpp`.
@@ -6326,6 +5883,14 @@ inline boost::system::result<void> openssl_memory_guard() noexcept {
   the adapter, the install, and make's guard"`.
 
 ## Task 16: The memory option, process by process
+
+Deferred after v0.1 (revision 2026-11-14). This task is kept as written for the memory
+option's own change; before it runs, re-read it against the source-built provider
+(CODING-GUIDELINES.md chapter 5 rule 7): OpenSSL is static, built by
+`/webcpp/third_party//openssl` and named through `/webcpp/crypto//openssl` (Task 11), version
+3.5.9, on native, wasip2 and wasip3; the feature `webcpp-crypto-openssl-link`, `OPENSSL_ROOT`
+and the shared link it names are gone; the error values 13 and 14 are reserved and undeclared;
+and the measured counts are 3.6.4's.
 
 **Files:**
 - Create, in `test/openssl_memory/`: `support.hpp` (the counting resource that is never
@@ -6831,12 +6396,12 @@ memory-run fail_init : fail_init_test.cpp : $(.counter) ;
 - Create: `test/support/counting.hpp`, `test/counting_test.cpp`,
   `test/allocation_bearssl_test.cpp`, `test/allocation_openssl_test.cpp`,
   `test/bearssl_seeder_test.cpp`.
-- Modify: `test/Jamfile`.
+- Modify: `test/Jamfile`, `doc/changelog.adoc`.
 
 **Interfaces:**
 - Produces: `test/support/counting.hpp`: `webcpp::test::allocations()` (every `operator new`
   form and the C library's allocator where a program can count it, I3),
-  `webcpp::test::c_allocations_counted`, used by Tasks 27, 29, 35 and 38.
+  `webcpp::test::c_allocations_counted`, used by Tasks 27 and 29.
 
 - [ ] **Step 1: Write the failing tests.** One counting support for every allocation test
   of the plan (I3), which sees both `operator new` and the C library's allocator, as trystero's
@@ -7095,8 +6660,8 @@ int main() {
 ```
 
   (`BOOST_TEST`'s own reporting is outside the counted window: the window holds the calls
-  alone, and a failed check's message is written after `before` is compared.) Tasks 27, 29, 35
-  and 38 use the same header for libsecp256k1, ctaes, ChaCha20-Poly1305 and Botan.
+  alone, and a failed check's message is written after `before` is compared.) Tasks 27 and 29
+  use the same header for libsecp256k1 and ctaes.
 
   `test/allocation_openssl_test.cpp`: before anything, `CRYPTO_set_mem_functions` with three
   counting functions of the test's (OpenSSL's allocations, outside the user's allocator by
@@ -7105,9 +6670,11 @@ int main() {
   included` and `second make: <m>`) and does not refuse; then seal, open (good and failed),
   the incremental seal, encrypt and decrypt, each with OpenSSL's count and
   `webcpp::test::allocations()` unchanged, the C library's allocator included where counted
-  (spec 8.5: 0 on 3.6.4, PROBE-1011; 3.0.13, the CI's Linux, measured by this test). OpenSSL's
-  test functions forward to the C library's own (`__libc_malloc` on glibc), so that what
-  OpenSSL allocates is counted once, as OpenSSL's. `test/bearssl_seeder_test.cpp`:
+  (spec 8.5; measured by this test on OpenSSL 3.5.9 on each target: native with assembly,
+  MSVC, wasip2 and wasip3 without it; the spec's 0 was measured on 3.6.4). OpenSSL's test
+  functions forward to the C library's own (`__libc_malloc` on glibc, `malloc` elsewhere), so
+  that on glibc what OpenSSL allocates is counted once, as OpenSSL's; on macOS
+  `malloc_logger` counts it again, which changes no window's difference. `test/bearssl_seeder_test.cpp`:
 
 ```cpp
 // Copyright (c) 2026 WebCpp.org
@@ -7209,8 +6776,8 @@ int main() {
 ```jam
 crypto-run counting : counting_test.cpp ;
 crypto-run allocation_bearssl : allocation_bearssl_test.cpp : <library>/third_party//bearssl ;
-crypto-run allocation_openssl : allocation_openssl_test.cpp : <library>/third_party//openssl
-  : native ;
+crypto-run allocation_openssl : allocation_openssl_test.cpp
+  : <library>/webcpp/crypto//openssl : native wasip2 wasip3 ;
 crypto-run bearssl_seeder : bearssl_seeder_test.cpp : <library>/third_party//bearssl ;
 ```
 
@@ -7218,32 +6785,47 @@ crypto-run bearssl_seeder : bearssl_seeder_test.cpp : <library>/third_party//bea
   `allocation_bearssl` by name first (`$B2 -a libs/crypto/test//counting libs/crypto/test//allocation_bearssl`):
   macOS is the one target where a counter that allocates inside `malloc_logger` crashes before
   `main` (N1). Expected: FAIL first on the missing header, then PASS on every target, `counting`
-  with 1,000 of 1,000 at each size on both threads; the OpenSSL counts are printed in the test's
-  output, which Task 24's page quotes.
-- [ ] **Step 2: Commit:** `"crypto: no allocation in a message on BearSSL or OpenSSL, and
-  BearSSL's seeder getentropy alone"`.
+  with 1,000 of 1,000 at each size on both threads; the OpenSSL counts of `make` are printed
+  in the test's output per target, recorded in the ledger and quoted by Task 24's page, and
+  the message's calls are 0 on every target.
+- [ ] **Step 2: Commit** (after `git add` of the new files), with `doc/changelog.adoc`'s line
+  `* No allocation in a message on BearSSL or OpenSSL; BearSSL seeds from getentropy alone.`:
+  `git -C libs/crypto commit -m "crypto: no allocation in a message on BearSSL or OpenSSL, and BearSSL's seeder getentropy alone" -- test doc/changelog.adoc`;
+  then `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
 
 ## Task 18: Every message at link time and on MSVC, and the canary's pins
 
 **Files:**
 - Create, fixtures of Task 10's test under `tools/test/fixtures/crypto_jamfiles/`:
   `canary_missing/`, `canary_other_commit/`,
-  `canary_other_configuration/`, `canary_without/`, `canary_two_files/`,
-  `default_two_files/`, `left_out/`, and `msvc_<case>/` for each `#error` and
-  `static_assert` case of Tasks 6, 7 and 12 (`msvc_no_backend`, `msvc_bearssl_not_linked`,
-  `msvc_openssl_not_linked`, `msvc_two_defaults`, `msvc_memory_option_without_openssl`,
-  `msvc_aes_on_bearssl`), each a `Jamfile`, an `app.cpp` (and a second source where named)
-  and an `.outcome`.
-- Modify (superproject): `tools/lint/lint.sh` (the rule `canary pins`), `tools/lint/lint_test.py`.
+  `canary_other_configuration/`, `canary_without/`, each a `Jamfile`, an `app.cpp` and an
+  `.outcome`.
+- Create (library): `test/msvc/Jamfile` and one directory per MSVC case under it,
+  `test/msvc/<case>/Jamfile` and its sources: `no_backend`, `bearssl_not_linked`,
+  `openssl_not_linked`, `two_defaults`, `aes_on_bearssl`, `canary_missing`,
+  `canary_other_commit`, `canary_other_configuration`, `canary_two_files`,
+  `default_two_files`.
+- Modify (library): `test/Jamfile` (`build-project msvc ;`), `doc/changelog.adoc` nothing (no
+  user sees a test).
+- Modify (superproject): `tools/lint/lint.sh` (the rule `canary pins`), `tools/lint/lint_test.py`,
+  `CODING-GUIDELINES.md` (chapter 9's table: the rule), `doc/releases/0.1.0.adoc` ("Tools and
+  build": the rule).
 
 **Interfaces:**
 - Consumes: `tools/test/crypto_jamfiles_test.py` and its outcome files (Task 10), the canary
-  seams (Task 5, Task 6). The fixtures are copied to `<scratch>/user/<case>/`, so a path into
-  the superproject is `../../<path>`.
+  seams (Task 5, Task 6), `/webcpp/crypto//openssl` (Task 12). The fixtures are copied to
+  `<scratch>/user/<case>/`, so a path into the superproject is `../../<path>`.
 
-The cases' `[native-darwin]` blocks run on the developer's macOS, and their `[native-windows]`
-blocks on the tools job's nightly Windows leg once Task 25b has built it (Task 10's
-preamble, O4'); until then the ledger records them as not yet run.
+Where each message's text is checked: the fixtures check the exact text on clang, GNU ld and
+wasm-ld, which the CI's tools job (Linux) runs, and ld64's in their `[native-darwin]` blocks,
+which run on a developer's macOS and are recorded in the ledger. The tools job has no macOS
+or Windows leg. MSVC's cases are tests of the library, each in a directory of its own, built
+on the CI's `msvc-14.3` and `msvc-14.5` lanes on every push as `webcpp.compile-fail` or
+`webcpp.link-fail`: they prove that each case fails on MSVC, not its text (`C1189`, `C2338`,
+`LNK2001`, `LNK2038`), a limit CODING-GUIDELINES.md chapter 19 records (Task 25). OpenSSL has
+no canary: the source-built provider is never patched, and the canary requirement was not
+adopted for it (CODING-GUIDELINES.md chapter 19, "Asio/Beast closure"); its layers are the
+compile-time `#error`s and MSVC's `detect_mismatch` on the default backend.
 
 - [ ] **Step 1: Write the canary cases** (spec 4.3 layer 2, 8.6). Every case's `app.cpp` makes
   a `gcm<aes256<backends::bearssl>>` and seals once. The Jamfiles:
@@ -7283,9 +6865,6 @@ Undefined symbols for architecture
 _webcpp_crypto_bearssl_7bea48e_getentropy__add_third_party_bearssl_to_your_link
 [native-linux]
 webcpp_crypto_bearssl_7bea48e_getentropy__add_third_party_bearssl_to_your_link
-[native-windows]
-error LNK2001: unresolved external symbol webcpp_crypto_bearssl_7bea48e_noseeder__add_third_party_bearssl_to_your_link
-fatal error LNK1120
 [wasip2]
 wasm-ld: error:
 undefined symbol: webcpp_crypto_bearssl_7bea48e_getentropy__add_third_party_bearssl_to_your_link
@@ -7299,51 +6878,95 @@ em++: error:
 ```
 
   for `canary_missing` and `canary_without`; `canary_other_commit`'s name has `0000000` in
-  place of `7bea48e`, `canary_other_configuration`'s `sysrng` in place of `getentropy` and
-  `noseeder`. The GNU ld line on Linux (`undefined reference to `...'`) is measured by the
-  first run on the gcc and clang lanes and written into `[native-linux]` as measured.
-  Through a static library a mismatching canary member is not loaded, so another commit
-  gives LNK2001 on MSVC, not LNK2038 (spec 4.3).
-- [ ] **Step 2: Write the cases of LNK2038** (layer 3; Review Focus 4):
-  - `canary_two_files`: `obj other : other.cpp /webcpp/crypto//crypto /third_party//bearssl : <define>WEBCPP_CRYPTO_BEARSSL_CANARY_CONFIGURATION=getentropy ;`
-    and `exe app : app.cpp other /webcpp/crypto//crypto /third_party//bearssl ;`; outcome
-    `[native-windows]` `build: fails`,
-    `LNK2038: mismatch detected for 'webcpp_crypto_backend_bearssl'`,
-    `fatal error LNK1319`; elsewhere `build: succeeds`, since `getentropy` is those targets'
-    own configuration and both files read the one canary the library defines;
-  - `default_two_files`: `obj with : with.cpp /webcpp/crypto//crypto /third_party//bearssl /third_party//openssl : <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL ;`
-    and `exe app : main.cpp with /webcpp/crypto//crypto /third_party//bearssl /third_party//openssl ;`,
-    each source naming `aes256_gcm`; native only; `[native-windows]` `build: fails` and
-    `LNK2038: mismatch detected for 'webcpp_crypto_default_backend'`; `[native-linux]` and
-    `[native-darwin]` `build: succeeds`.
-- [ ] **Step 3: Write the MSVC cases of the `#error`s and `static_assert`s** (C14): each
-  `msvc_<case>` directory is the compile-diagnostic case of the same name as a user's
-  program (`exe app : app.cpp /webcpp/crypto//crypto <its requirements> ;`), native, with the
-  outcome `[native]` `build: fails` and the message's text up to its
-  first `(`, which every compiler prints whole, and `[native-windows]` `fatal error C1189`
-  (for an `#error`) or `error C2338` (for a `static_assert`; the code MSVC 14.3 and 14.5
-  print is the first run's measurement, written as measured).
-- [ ] **Step 4: Write the case of webcpp's own program left out** (spec 4.4, the measured
-  message): `left_out/Jamfile` is a test Jamfile of webcpp's form, `import webcpp ;` and
-  `webcpp.run uses : app.cpp : <library>/webcpp/crypto//crypto <library>/third_party//openssl ;`,
-  and its outcome gives `arguments: -sWEBCPP_LOCAL=@scratch -sWEBCPP_SYSTEM_INCLUDE=@scratch`,
-  `build: succeeds` and
-  `webcpp: crypto is left out: OpenSSL was not found: -sOPENSSL_ROOT=<dir> was not given, and `.
-- [ ] **Step 5: Run** `python3 tools/test/crypto_jamfiles_test.py` (every case: the canary
-  cases on the four targets, the rest natively). Expected: `crypto_jamfiles_test: ok`; the GNU
-  ld lines of `[native-linux]` are written from the first Linux run (the CI's tools job, or a
-  Linux machine), as measured.
-- [ ] **Step 6: Write the lint rule `canary pins`** (spec 8.6's last paragraph, AGENTS rule
-  11). Its failing case in `tools/lint/lint_test.py`: a scratch tree whose
-  `libs/crypto/include/webcpp/crypto/detail/canary.h` pins `#define WEBCPP_CRYPTO_BEARSSL_COMMIT 1234567`
-  while `third_party/libs/bearssl` is a repository at another commit must fail with
-  `canary pins: libs/crypto/include/webcpp/crypto/detail/canary.h: bearssl is pinned at 1234567 and third_party/libs/bearssl is at <short head>`.
+  place of `7bea48e`, `canary_other_configuration`'s `sysrng` in place of `getentropy`. The
+  GNU ld line on Linux (`undefined reference to `...'`) is measured by the first run on the
+  gcc and clang lanes and written into `[native-linux]` as measured. The `[native-darwin]`
+  block is measured and run on a developer's macOS, and the ledger records that run.
+- [ ] **Step 2: Write the MSVC cases** (spec 4.3 layers 1 to 3, 8.6; Review Focus 4), each a
+  directory of its own under `test/msvc/` (b2 shares one object file between two programs of
+  one source that differ only by a free define or a `/third_party` library, spec 4.3).
+  `test/msvc/Jamfile` builds them on MSVC alone, through its project's requirements, which
+  every case's Jamfile inherits:
+
+```jam
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+# Each message of the build on MSVC (spec section 8.6), a directory per case:
+# on the CI's msvc lanes each case must fail to compile or to link. Its text
+# is checked on clang, GNU ld and wasm-ld by tools/test/crypto_jamfiles_test.py;
+# MSVC's is not checked (CODING-GUIDELINES.md chapter 19). Elsewhere than MSVC
+# nothing here is built.
+rule msvc-only ( properties * )
+{
+    if ! ( <toolset>msvc in $(properties) )
+    {
+        return <build>no ;
+    }
+}
+
+project : requirements <conditional>@msvc-only ;
+
+build-project no_backend ;
+build-project bearssl_not_linked ;
+build-project openssl_not_linked ;
+build-project two_defaults ;
+build-project aes_on_bearssl ;
+build-project canary_missing ;
+build-project canary_other_commit ;
+build-project canary_other_configuration ;
+build-project canary_two_files ;
+build-project default_two_files ;
+```
+
+  Each case's Jamfile is `import webcpp ;` and one line, native:
+  - the compile-time cases, `webcpp.compile-fail <case> : app.cpp : <its requirements> : native ;`,
+    whose `app.cpp` is the compile-diagnostic case of the same name of Tasks 6, 7 and 12
+    without its `expected-error` comment: `no_backend` (no requirement), `bearssl_not_linked`
+    (`<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL`), `openssl_not_linked`
+    (`<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`), `two_defaults` (both defines) and
+    `aes_on_bearssl` (`<library>/third_party//bearssl`), each with
+    `<library>/webcpp/crypto//crypto`; MSVC stops at `fatal error C1189` for an `#error` and
+    `error C2338` for a `static_assert`, which the first CI run shows and the ledger records;
+  - the link-time cases, `webcpp.link-fail <case> : app.cpp : <its requirements> : native ;`:
+    `canary_missing`, `canary_other_commit` and `canary_other_configuration` with the
+    requirements of Step 1's fixtures of the same names (`<include>` written
+    `../../../../../third_party/libs/bearssl/inc` from the case's directory), which fail with
+    LNK2001 (through a static library a mismatching canary member is not loaded, so another
+    commit gives LNK2001, not LNK2038, spec 4.3); `canary_without` has no MSVC case, since its
+    message is `canary_missing`'s;
+  - the LNK2038 cases (layer 3), which succeed elsewhere and so are MSVC's alone:
+    `canary_two_files`, `webcpp.link-fail canary_two_files : app.cpp other.cpp : <library>/webcpp/crypto//crypto <library>/third_party//bearssl : native ;`
+    with `other.cpp` defining `WEBCPP_CRYPTO_BEARSSL_CANARY_CONFIGURATION getentropy` before
+    its includes (MSVC's own configuration differs, so the two files' `detect_mismatch`
+    values differ: `LNK2038: mismatch detected for 'webcpp_crypto_backend_bearssl'`), and
+    `default_two_files`, `webcpp.link-fail default_two_files : main.cpp with.cpp : <library>/webcpp/crypto//crypto <library>/third_party//bearssl <library>/webcpp/crypto//openssl : native ;`
+    with `with.cpp` defining `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` before its includes and
+    each source naming `aes256_gcm` (`LNK2038: mismatch detected for 'webcpp_crypto_default_backend'`).
+  In `test/Jamfile`, `build-project msvc ;`.
+- [ ] **Step 3: Run** `python3 tools/test/crypto_jamfiles_test.py canary_missing canary_other_commit canary_other_configuration canary_without`
+  (the canary cases on the four targets). Expected: `crypto_jamfiles_test: ok`; the GNU ld
+  lines of `[native-linux]` are written from the first Linux run (the CI's tools job, or a
+  Linux machine), as measured. `b2 -a libs/crypto/test/msvc` natively here builds nothing
+  (each case `<build>no`) and succeeds; the MSVC cases are proven by the library's CI, on the
+  `msvc-14.3` and `msvc-14.5` lanes, whose report shows each case passed (it failed as
+  expected); the ledger records the run and each code MSVC printed.
+- [ ] **Step 4: Write the lint rule `canary pins`** (spec 8.6's last paragraph,
+  CODING-GUIDELINES.md chapter 5, rule 11). Its failing case in `tools/lint/lint_test.py`: a
+  scratch tree whose `libs/crypto/include/webcpp/crypto/detail/canary.h` pins
+  `#define WEBCPP_CRYPTO_BEARSSL_COMMIT 1234567` while the superproject records
+  `third_party/libs/bearssl` at another commit must fail with
+  `canary pins: libs/crypto/include/webcpp/crypto/detail/canary.h: bearssl is pinned at 1234567 and third_party/libs/bearssl is at <short commit>`.
   Then the rule:
 
 ```bash
-# 15. Each canary's commit is its submodule's (AGENTS.md chapter 6, rule 11):
-#    every `#define WEBCPP_CRYPTO_<NAME>_COMMIT <hex>` of crypto's detail/canary.h names
-#    the first seven digits of third_party/libs/<name>'s HEAD.
+# 19. Each canary's commit is its submodule's (CODING-GUIDELINES.md chapter 5, rule 11):
+#     every `#define WEBCPP_CRYPTO_<NAME>_COMMIT <hex>` of crypto's detail/canary.h names
+#     the first seven digits of the commit the superproject records for
+#     third_party/libs/<name>, read from git, so that no checkout is needed.
 rule 'canary pins'
 pins="$(grep -hoE '^#define WEBCPP_CRYPTO_[A-Z0-9]+_COMMIT [0-9a-f]{7}$' \
     libs/crypto/include/webcpp/crypto/detail/canary.h 2>/dev/null || true)"
@@ -7351,7 +6974,7 @@ pin_faults=''
 while read -r _ macro hex; do
     [ -n "${macro}" ] || continue
     name="$(printf '%s' "${macro}" | sed -E 's/^WEBCPP_CRYPTO_(.*)_COMMIT$/\1/' | tr 'A-Z' 'a-z')"
-    head="$(git -C "third_party/libs/${name}" rev-parse --short=7 HEAD 2>/dev/null || printf 'missing')"
+    head="$(git rev-parse --short=7 "HEAD:third_party/libs/${name}" 2>/dev/null || printf 'missing')"
     if [ "${head}" != "${hex}" ]; then
         pin_faults="${pin_faults}libs/crypto/include/webcpp/crypto/detail/canary.h: ${name} is pinned at ${hex} and third_party/libs/${name} is at ${head}
 "
@@ -7367,13 +6990,20 @@ else
 fi
 ```
 
-  The rule's number follows the last of `lint.sh`. The canary pins are written
-  `#define WEBCPP_CRYPTO_BEARSSL_COMMIT 7bea48e` on one line each, inside their `#ifdef`'s
-  `#else` (Task 5's form), which the pattern matches. Run `python3 tools/lint/lint_test.py`
-  and the lint. Expected: PASS and `lint: clean`.
-- [ ] **Step 7: Commit** (superproject, after `git add` of the new fixtures)
-  `"tools: every link-time and MSVC message of webcpp::crypto from a fixture of its own, as a
-  user meets it"` and `"tools: the lint checks each canary's commit against its submodule"`.
+  The rule's number follows the last of `lint.sh` (18, `changelog form`, on the base). The
+  canary pins are written `#define WEBCPP_CRYPTO_BEARSSL_COMMIT 7bea48e` on one line each,
+  inside their `#ifdef`'s `#else` (Task 5's form), which the pattern matches. The library's CI
+  lints against the superproject's `main`, so a pin moves in the superproject's pull request
+  together with the library's commit that moves the canary (CODING-GUIDELINES.md chapter 5,
+  rule 12). CODING-GUIDELINES.md chapter 9's table gains the row
+  `| canary pins | a `WEBCPP_CRYPTO_<NAME>_COMMIT` of crypto's `detail/canary.h` that is not the first seven digits of the commit the superproject records for `third_party/libs/<name>` |`,
+  and `doc/releases/0.1.0.adoc`, "Tools and build", the line
+  `* Added the lint rule canary pins, which checks crypto's canaries against their submodules.`
+  Run `python3 tools/lint/lint_test.py` and the lint. Expected: PASS and `lint: clean`.
+- [ ] **Step 5: Commit** (superproject, after `git add` of the new fixtures)
+  `"tools: every link-time message of webcpp::crypto from a fixture of its own, as a user
+  meets it"` and `"tools: the lint checks each canary's commit against its submodule"`;
+  (library) `"crypto: each message of the build fails on MSVC, a directory per case"`.
 
 ## Task 19: `<windows.h>` before and after every header, on MSVC
 
@@ -7391,9 +7021,9 @@ fi
 // https://www.boost.org/LICENSE_1_0.txt)
 
 // A bare <windows.h> (no NOMINMAX, no WIN32_LEAN_AND_MEAN) before every public header,
-// with the memory option on so that backends/openssl.hpp's Windows branch compiles, and
-// max used as a function after them. Elsewhere than Windows the program is the headers
-// and the uses alone.
+// the backends' included (random_device's BCryptGenRandom reaches <windows.h> through
+// detail/windows.hpp), and max used as a function after them. Elsewhere than Windows the
+// program is the headers and the uses alone.
 
 #ifdef _WIN32
 #include <windows.h>
@@ -7404,11 +7034,6 @@ fi
 
 #include <algorithm>
 #include <limits>
-#include <memory_resource>
-
-std::pmr::memory_resource& webcpp::crypto::openssl_memory_resource() noexcept {
-    return *std::pmr::new_delete_resource();
-}
 
 int main() {
     int const larger = (std::max)(1, 2);
@@ -7428,21 +7053,31 @@ int main() {
 
 ```jam
 # <windows.h> before and after every header (spec section 2.2), on MSVC with
-# the memory option's Windows branch; elsewhere the headers alone.
+# both backends linked; elsewhere the headers alone.
 crypto-run windows_h_before : windows_h_before_test.cpp
-  : <library>/third_party//bearssl <library>/third_party//openssl
-    <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE : native ;
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl : native ;
 crypto-run windows_h_after : windows_h_after_test.cpp
-  : <library>/third_party//bearssl <library>/third_party//openssl
-    <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE : native ;
+  : <library>/third_party//bearssl <library>/webcpp/crypto//openssl : native ;
 ```
 
-- [ ] **Step 2: Run** natively. Expected: PASS here; on the CI's MSVC 14.3 and 14.5 lanes the
-  same, which is the test (`winsock.h` not dragged in, `max` not broken).
+- [ ] **Step 2: Run** natively. Expected: PASS here. The test itself is the CI's `msvc-14.3`
+  and `msvc-14.5` lanes, which build every native test on every push and build the
+  source-built OpenSSL with MSVC already (asio's `tls_client_context` links it there): the
+  first run of the library's CI is the evidence (`winsock.h` not dragged in, `max` not
+  broken), recorded in the ledger. The provider must agree with the program's threading and
+  runtime: MSVC's shared runtime makes b2 build `threading=multi`, as asio's
+  `test/tls/Jamfile` notes.
 - [ ] **Step 3: Commit:** `"crypto: every header compiles beside a bare <windows.h>, before
   and after"`.
 
 ## Task 20: Constant time
+
+Deferred after v0.1 (revision 2026-11-14). Kept as written for its own change; before it runs,
+re-read it against the tree of that day: OpenSSL is source-built (`/webcpp/crypto//openssl`,
+static, compiled `no-asm` on MSVC and WASI), there is no `webcpp-own`, and the CI has no levels
+yet, so the lane `constant-time` runs on every push unless levels exist by then;
+`detail/declassify.hpp` is already in the library as the empty seam (Task 7), and this task
+gives it its body. Task 26's `ctime_tests.c` and Task 29's run of this lane come back with it.
 
 **Files:**
 - Create: `test/constant_time/Jamfile`, `ctgrind_test.cpp`, `msan_test.cpp`, `dudect.hpp`,
@@ -8011,8 +7646,10 @@ webcpp.lane constant-time : ctgrind ctgrind_planted ctgrind_speed ctgrind_space 
 
 **Files (superproject):**
 - Create: `tools/same_program/same_program.jam`, `tools/same_program/compare.py`.
-- Modify: `tools/webcpp.jam` (load the module; the rule), `tools/test/webcpp_jam_test.py`
-  (cases), `AGENTS.md` (chapter 9's Jamfile API).
+- Modify: `tools/webcpp.jam` (load the module; the rule; the list of rules at its head),
+  `tools/test/webcpp_jam_test.py` (cases), `AGENTS.md` (chapter 4, "The Jamfile API
+  (`tools/webcpp.jam`)": the rule's row), `doc/releases/0.1.0.adoc` ("Tools and build": the
+  rule's line).
 - Create (library): `test/unused/Jamfile`, `test/unused/app.cpp`.
 
 **Interfaces:**
@@ -8021,7 +7658,9 @@ webcpp.lane constant-time : ctgrind ctgrind_planted ctgrind_speed ctgrind_space 
   that passes when `<sources>` built with `<library>` and without it, as two `exe`s of b2 under
   one output name in two directories of their own, give byte-identical files (on emscripten
   the `.js` and the `.wasm` beside it). `<requirements>` are properties
-  (`<library>/webcpp/crypto//crypto`). No b2 runs inside b2 (owner item O4).
+  (`<library>/webcpp/crypto//crypto`). No b2 runs inside b2 (owner item O4). Nothing on the
+  base builds a pair and compares it; `tools/generated/generated.jam`, which compares outputs
+  byte for byte in b2, is the nearest pattern.
 
 - [ ] **Step 1: Write the failing tools tests** in `tools/test/webcpp_jam_test.py`, on the
   fixture `demo` (a static library `unused` added to its `test/Jamfile` by the case, one
@@ -8033,6 +7672,8 @@ webcpp.lane constant-time : ctgrind ctgrind_planted ctgrind_speed ctgrind_space 
     and its output names both files and their sizes;
   - `test_the_pair_shares_one_name`: `-d+2` shows both programs linked as `hello_unused`
     (`hello_unused.wasm` on wasip2) in two directories.
+  Each case is a function `test_...(root)` added to the list the file gives
+  `harness.run_cases`, as the existing cases are, so the CI's tools job shards them.
   Run them. Expected: FAIL, `webcpp.same-program` unknown.
 - [ ] **Step 2: Write `tools/same_program/same_program.jam`:**
 
@@ -8043,7 +7684,8 @@ webcpp.lane constant-time : ctgrind ctgrind_planted ctgrind_speed ctgrind_space 
 # accompanying file LICENSE_1_0.txt or copy at
 # https://www.boost.org/LICENSE_1_0.txt)
 #
-# The rule of a library named and not called (AGENTS.md chapter 6, rule 11),
+# The rule of a library named and not called (CODING-GUIDELINES.md chapter 5,
+# rule 11),
 # which tools/webcpp.jam offers as webcpp.same-program: two exes of the same
 # sources, one with the library and one without, each renamed by a tag rule
 # to the test's name so that both outputs have the same name (ld64's ad hoc
@@ -8157,7 +7799,7 @@ if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
 ```
 
-  In `tools/webcpp.jam`, after the drive module's load:
+  In `tools/webcpp.jam`, after the loads of the drive and generated modules:
 
 ```jam
 # The rule of a library named and not called, loaded as the module
@@ -8168,8 +7810,8 @@ import webcpp-same-program ;
 
 # A test that builds sources with library and without it, under one output
 # name, in two directories of their own, and passes when the two files are
-# byte-identical: a library named and not called adds no byte (AGENTS.md
-# chapter 6, rule 11).
+# byte-identical: a library named and not called adds no byte
+# (CODING-GUIDELINES.md chapter 5, rule 11).
 rule same-program ( name : sources + : library : targets * : requirements * )
 {
     local only = [ program same-program : $(name) : $(targets) ] ;
@@ -8179,13 +7821,19 @@ rule same-program ( name : sources + : library : targets * : requirements * )
 ```
 
   The `exe` rule is b2's, called from a module of `tools/`, as `webcpp.example` calls it: the
-  lint's raw-rules check reads a library's test and example Jamfiles, not `tools/`.
+  lint's raw-rules check reads a library's test and example Jamfiles, not `tools/`. The list
+  of rules at the head of `tools/webcpp.jam` gains
+  `#     webcpp.same-program name : sources + : library : targets * : requirements * ;`,
+  AGENTS.md chapter 4's Jamfile API a row for it (what it passes on, and that its pair is
+  release, without debug information, `/Brepro` on MSVC), and the release notes the line
+  `* Added webcpp.same-program, which proves a library named and not called adds no byte.`
 - [ ] **Step 3: Run** the three tools cases. Expected: PASS. If the tag rule does not rename
   the emscripten pair's `.wasm` as it renames the `.js` (the asio plan measured the `.js`,
   `Q/b2-tag/`), `compare.py` reads the `.wasm` by the name the link wrote, which `-d+2` shows,
   and the case `test_the_pair_shares_one_name` gains the emscripten form; on MSVC, if
-  `/Brepro` leaves the pair different, the first MSVC run records the differing bytes'
-  offsets and the case is reported to the owner, the rule otherwise unchanged.
+  `/Brepro` leaves the pair different, the first run of the CI's MSVC lanes records the
+  differing bytes' offsets and the case is reported to the owner, the rule otherwise
+  unchanged.
 - [ ] **Step 4: Write crypto's cases** (spec 8.7), `test/unused/Jamfile`:
 
 ```jam
@@ -8196,26 +7844,47 @@ rule same-program ( name : sources + : library : targets * : requirements * )
 # https://www.boost.org/LICENSE_1_0.txt)
 
 # A backend built from source, named and not called, adds no byte, on every
-# target (spec sections 4.2 and 8.7). OpenSSL and Botan are left out: a shared
-# library named adds its dependency.
+# target it builds on (spec sections 4.2 and 8.7). OpenSSL is refused on
+# emscripten.
 import webcpp ;
 
 webcpp.targets native wasip2 wasip3 emscripten ;
 
 webcpp.same-program unused_bearssl : app.cpp : /third_party//bearssl
   : : <library>/webcpp/crypto//crypto ;
+webcpp.same-program unused_openssl : app.cpp : /webcpp/crypto//openssl
+  : native wasip2 wasip3 : <library>/webcpp/crypto//crypto ;
 ```
 
   `app.cpp` draws 16 bytes with `random_device` and prints them in hex (so that the program
-  is crypto's and calls nothing of BearSSL's). Tasks 26 and 29 add libsecp256k1's and ctaes's
-  lines. In `test/Jamfile`, `build-project unused ;`.
-- [ ] **Step 5: Run** the four lanes. Expected: PASS: `unused_bearssl` on each target
-  (C-LIBS:495-501 measured it on all four).
+  is crypto's and calls nothing of either backend's; it includes
+  `<webcpp/crypto/random_device.hpp>` alone). Tasks 26 and 29 add libsecp256k1's and ctaes's
+  lines. In `test/Jamfile`, `build-project unused ;`. `unused_openssl` is a measurement: the
+  provider's usage requirements add link flags (`-ldl` on Linux, Windows' system libraries,
+  WASI's emulation libraries, `tools/webcpp-openssl.jam`'s `declare`), which may leave the
+  pair different. If it differs on a lane, the ledger records the differing bytes and the
+  flag that adds them, the case is reported to the owner, and Task 25 records the limit in
+  CODING-GUIDELINES.md chapter 19; if it passes everywhere, nothing is recorded.
+- [ ] **Step 5: Run** natively, `toolset=clang-wasip2 testing.launcher=tools/boost/asio-wasip2/run.sh`,
+  `toolset=clang-wasip3 testing.launcher=tools/boost/asio-wasip3/run.sh` and
+  `toolset=emscripten`, each `b2 -a libs/crypto/test/unused`. Expected: PASS:
+  `unused_bearssl` on each target (C-LIBS:495-501 measured it on all four), and
+  `unused_openssl` as measured. The library's CI then runs both on every lane of the matrix
+  (gcc-14, gcc-15, clang-18, clang-22, Apple Clang, MSVC 14.3 and 14.5, emscripten, wasip2,
+  wasip3); the ledger records each lane's result.
 - [ ] **Step 6: Commit** (superproject, after `git add -- tools/same_program`)
   `"tools: webcpp.same-program, a library named and not called adds no byte"`; (library)
-  `"crypto: BearSSL named and not called adds no byte on any target"`.
+  `"crypto: a backend named and not called adds no byte on any target"`.
 
 ## Task 22: Sizes and throughput
+
+Deferred after v0.1 (revision 2026-11-14). Kept as written for its own change; before it runs,
+re-read it against the tree of that day: OpenSSL is source-built and static
+(`/webcpp/crypto//openssl`), so `test/sizes/native_static/` and a shared OpenSSL's rows go;
+there is no `webcpp-own`, and the CI has no levels yet; the own-lanes job already uploads
+`bin/**/*.sizes.md` (`library.yml`, "Upload the lane's size tables"). Until it runs, crypto has
+no size table, a limit CODING-GUIDELINES.md chapter 19 records (Task 25), which this task
+removes; Task 29's signing program in `test/sizes/` comes back with it.
 
 **Files:**
 - Create: `test/sizes/Jamfile`, `test/sizes/wasm/Jamfile`, `test/sizes/native/Jamfile`,
@@ -8607,6 +8276,12 @@ jobs:
   `"tools: webcpp.target-of for a library's own actions"`.
 
 ## Task 23: The browser: WebCrypto as an outside oracle, the audio worklet, throughput in Chrome
+
+Deferred after v0.1 (revision 2026-11-14). Kept as written for its own change; before it runs,
+re-read it against the tree of that day: OpenSSL is source-built (`/webcpp/crypto//openssl`)
+and refused on Emscripten, there is no `webcpp-own`, and the CI has no levels yet, so the lane
+`browser` runs on every push; `CHROME_LANES` in `tools/ci/matrix.py` and the chrome action's
+`product` choice in `library.yml` have changed since the plan was written.
 
 **Files:**
 - Create: `test/browser/Jamfile`, `test/browser/package.json`,
@@ -9103,31 +8778,40 @@ webcpp.lane browser : webcrypto_node webcrypto_chrome throughput_chrome : emscri
 
 **Files:**
 - Create, fixtures of Task 10's test under `tools/test/fixtures/crypto_jamfiles/` (each a
-  `Jamfile`, its sources and an `.outcome`): `web/`, `server/`, `server_static/`,
-  `both_bearssl_default/`, `memory/`.
+  `Jamfile`, its sources and an `.outcome`): `web/`, `server/`, `both_bearssl_default/`.
 - Create: `doc/jamfile.adoc`, `doc/aead.adoc`, `doc/block.adoc`, `doc/equal.adoc`,
-  `doc/entropy.adoc`, `doc/backends.adoc`, `doc/memory.adoc`, `doc/errors.adoc`,
-  `doc/performance.adoc`; `example/aes256_gcm_bearssl.cpp` and `.expected`,
-  `example/equal_hmac.cpp` and `.expected`, `example/bearssl_prng.cpp` and `.expected` (m11).
-- Modify: `doc/crypto.adoc`, `doc/overview.adoc`, `doc/testing.adoc`, `example/Jamfile`,
-  `test/Jamfile` (the fixtures' sources compiled, m21), `README.md`; (superproject)
-  `tools/test/crypto_jamfiles_test.py` (the outcome line `same-as:`).
+  `doc/entropy.adoc`, `doc/backends.adoc`, `doc/memory.adoc`, `doc/errors.adoc`;
+  `example/aes256_gcm_bearssl.cpp` and `.expected`, `example/equal_hmac.cpp` and `.expected`,
+  `example/bearssl_prng.cpp` and `.expected` (m11).
+- Modify: `doc/crypto.adoc`, `doc/overview.adoc`, `doc/testing.adoc`, `doc/changelog.adoc`,
+  `example/Jamfile`, `test/Jamfile` (the fixtures' sources compiled, m21), `README.md`;
+  (superproject) `tools/test/crypto_jamfiles_test.py` (the outcome line `same-as:`),
+  `doc/releases/0.1.0.adoc` (crypto under "New Libraries").
+
+The page follows AGENTS.md chapter 3: one page, `doc/crypto.adoc`, its sections in files
+beside it, built by `doc/Jamfile` (`webcpp.doc crypto : crypto.adoc ;` and
+`webcpp.reference crypto ;`), with the page's attribute header, anchors that start with
+`crypto-`, a testing chapter, the reference under `[#reference]` and the changelog last;
+the index lists it from `meta/libraries.json`, and the site's catalogue is generated from the
+same file, so `site/` needs no change.
 
 - [ ] **Step 1: Write the user's Jamfiles of spec section 7**, fixtures of
   `tools/test/crypto_jamfiles_test.py` (Task 10), each built and run on the targets the
   section names (its outcome's `targets:` line), so that every Jamfile line and every printed
-  result of the page was built and run:
+  result of the page was built and run. Each fixture's Jamfile marks the lines the page shows
+  between `# tag::jamfile[]` and `# end::jamfile[]`, after the licence notice:
 
-| Case | Jamfile (whole, after the licence notice) | Source | Targets | Outcome |
+| Case | Jamfile (the tagged lines) | Source | Targets | Outcome |
 | --- | --- | --- | --- | --- |
 | `web` | `exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ;` | spec 7.2's `app.cpp` | all four | `build: succeeds`, `run: app`, `aes256_gcm ok backend=bearssl` |
-| `server` | `exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl ;` | a copy of `web/app.cpp` | native | `root: OPENSSL_ROOT`, `same-as: web/app.cpp app.cpp`, `aes256_gcm ok backend=openssl` |
-| `server_static` | `exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl : <webcpp-crypto-openssl-link>static ;` | the same copy | native | `root: OPENSSL_ROOT`, `requires: static-libcrypto`, `aes256_gcm ok backend=openssl`, `no-dependency: app libcrypto` |
-| `both_bearssl_default` | `exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl /third_party//bearssl : <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL ;` | the same copy | native | `root: OPENSSL_ROOT`, `aes256_gcm ok backend=bearssl` |
-| `memory` | `project app : requirements <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/third_party//openssl ;` and `exe app : app.cpp /webcpp/crypto//crypto ;` | spec 7.3's memory `app.cpp` | native | `root: OPENSSL_ROOT`, `aes256_gcm ok backend=openssl` |
+| `server` | `exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl ;` | a copy of `web/app.cpp` | native wasip2 wasip3 | `same-as: web/app.cpp app.cpp`, `build: succeeds`, `run: app`, `aes256_gcm ok backend=openssl` |
+| `both_bearssl_default` | `exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl /third_party//bearssl : <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL ;` | the same copy | native wasip2 wasip3 | `build: succeeds`, `run: app`, `aes256_gcm ok backend=bearssl` |
 
-  Copies, not symbolic links: the tools job's nightly Windows leg (O4') checks out a link as a
-  text file (`core.symlinks` off). Task 10's test gains the outcome line
+  OpenSSL is static and built from source by `/webcpp/third_party//openssl`, which
+  `/webcpp/crypto//openssl` names; there is no other link of it to show. Its refusal on
+  Emscripten is Task 10's fixture, which the page shows with the other messages.
+  Copies, not symbolic links: a checkout on Windows reads a link as a text file
+  (`core.symlinks` off). Task 10's test gains the outcome line
   `same-as: <case>/<file> <file>`, two files that must be byte-identical, with a case of its
   self-check, so the copies cannot drift.
 - [ ] **Step 2: Write the examples** the ordinary lanes run and clang-tidy reads:
@@ -9145,26 +8829,34 @@ webcpp.lane browser : webcrypto_node webcrypto_chrome throughput_chrome : emscri
   compiled once each in the ordinary lanes, so that clang-tidy reads the documentation's code
   (m21): in `test/Jamfile`,
   `webcpp.compile doc_web_app : ../../../tools/test/fixtures/crypto_jamfiles/web/app.cpp : <library>/third_party//bearssl ;`
-  and one line per other fixture's program with its libraries (natively for OpenSSL's), the
-  failing cases (`canary_*`, `msvc_*`, `openssl_*` stops) excepted.
+  and one line per other fixture's program with its libraries (`server` and
+  `both_bearssl_default` on native, wasip2 and wasip3), the failing cases (`canary_*` and the
+  refusals) excepted.
 - [ ] **Step 3: Write the page's sections**, each a file of `doc/` included by
   `crypto.adoc` in this order, each holding what the spec section named says, rewritten for a
-  user, with the code it shows included from a built file (`include::{webcpp-root}/tools/test/fixtures/crypto_jamfiles/<case>/Jamfile[]`,
-  `include::{examples}/<file>[]`), never typed:
+  user, with what it shows included from a tracked file, never typed: C++ as
+  `include::{examples}/<file>[tag=...]` or a tagged region of `test/` or `example/`, outputs
+  from the examples' `.expected` files, and a Jamfile's lines as a `[listing]` block of
+  `include::{webcpp-root}/tools/test/fixtures/crypto_jamfiles/<case>/Jamfile[tag=jamfile]`
+  (doc-check refuses a whole file and lines chosen by number). A printed result of a fixture
+  is shown only from a tagged region of a tracked file, its `.outcome` or an example's
+  `.expected`, as `tools/doc/doc-check.py` accepts it (read its rule for outputs first; when
+  it refuses an outcome, the page shows the example's `.expected` of the same program):
   - `overview.adoc` "Why crypto": spec 1.1, 1.2; what stays with Boost.Hash2.
   - `jamfile.adoc` "Using webcpp::crypto in your Jamfile", written so that an AI agent
     writes a correct Jamfile at once (DESIGN, 2026-10-11 "C libraries built from their own
     sources, and the backend named in the user's Jamfile"): first the rule in three lines
-    (spec 7.1: name `/webcpp/crypto//crypto` and `/third_party//<backend>`; which backend for
-    which target; a backend named and not called costs nothing); then each case of Step 1
-    with its Jamfile, its source, its command and what it prints (7.2, 7.3, the static link,
-    the choice of default, the memory option with its "What to know" list); the backends'
-    table (7.6); every message and its fix (7.7), with the link-time messages as Tasks 16
-    and 18 measured them on each linker; and, for Windows, spec 2.2's note: crypto's headers
-    include `<windows.h>` under `NOMINMAX` and `WIN32_LEAN_AND_MEAN` when the program has not
-    defined them, so a program that wants the macros `min` and `max`, or what
-    `WIN32_LEAN_AND_MEAN` leaves out, includes `<windows.h>` itself before any header of
-    crypto.
+    (spec 7.1: name `/webcpp/crypto//crypto` and the backend, `/third_party//bearssl` or
+    `/webcpp/crypto//openssl`; which backend for which target, OpenSSL on native, wasip2 and
+    wasip3 and never on Emscripten; a backend named and not called costs nothing); then each
+    case of Step 1 with its Jamfile, its source, its command and what it prints (7.2, 7.3,
+    the choice of default); the backends' table (7.6); every message and its fix (7.7), with
+    the link-time messages as Task 18 measured them on each linker, and the note that on
+    MSVC each message is proven to stop the build and its text is MSVC's own; and, for
+    Windows, spec 2.2's note: crypto's headers include `<windows.h>` under `NOMINMAX` and
+    `WIN32_LEAN_AND_MEAN` when the program has not defined them, so a program that wants the
+    macros `min` and `max`, or what `WIN32_LEAN_AND_MEAN` leaves out, includes `<windows.h>`
+    itself before any header of crypto.
   - `aead.adoc` "AES-GCM": spec 2.4's interface and every decision of its "Decisions on the
     behaviour" as a rule for the user (in place with the tag apart; a failed open zeroes
     `data`; plaintext in `data` while `open` runs, and when to open into private memory; no
@@ -9180,160 +8872,174 @@ webcpp.lane browser : webcrypto_node webcrypto_chrome throughput_chrome : emscri
     BearSSL's own PRNG from `random_device` (a code block built as `example/` is: a third
     example, `bearssl_prng.cpp`, which seeds `br_hmac_drbg_context` from 32 bytes of `fill`
     and prints `seeded`).
-  - `backends.adoc` "The backends": spec 3.1's table; per backend its Jamfile line, its
-    header, what it exports, its own API reachable, its allocation (BearSSL none; OpenSSL's
-    `make` through OpenSSL's functions, the counts Task 17 printed for 3.0.13 and 3.6.4, the
-    departure the owner accepted on 2026-10-11 and the option; Botan in Task 39), constant
-    time (BearSSL's `bmul64` on a 32-bit WebAssembly host), its licence; the default per
-    target (spec 5) with the reasons measured.
-  - `memory.adoc` "Allocation": spec 2.11; no type is shareable, and why; the memory option
-    (spec 3.7 for a user: the three things to do, the never-destroyed resource, what it
-    routes and what it does not, the errors, a failing resource, one module).
+  - `backends.adoc` "The backends": spec 3.1's table, OpenSSL on native, wasip2 and wasip3;
+    per backend its Jamfile line, its header, what it exports, its own API reachable, its
+    allocation (BearSSL none; OpenSSL's `make` through OpenSSL's functions, the counts Task 17
+    printed for OpenSSL 3.5.9), constant time (BearSSL's `bmul64` on a 32-bit WebAssembly
+    host), its licence; the default per target (spec 5) with the reasons measured: BearSSL on
+    WebAssembly, natively OpenSSL when linked, else BearSSL. The source-built OpenSSL is
+    compiled `no-asm` on MSVC, wasip2 and wasip3: T-table AES and 4-bit GHASH, no AES-NI, not
+    constant time unless OpenSSL is built with `OPENSSL_AES_CONST_TIME`; a program that wants
+    BearSSL there defines `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` or names `aes256_gcm` with
+    `backends::bearssl`.
+  - `memory.adoc` "Allocation": spec 2.11; what each backend allocates and through what; no
+    type is shareable, and why.
   - `errors.adoc` "Errors and exceptions": the table of spec 2.9, the messages, spec 2.10.
-  - `performance.adoc` "Sizes and throughput": `include::sizes.adoc[]` and the throughput the
-    runners measured (`runners.yml`'s summaries, copied with the run's number and date).
-  - `testing.adoc`: the lanes and own lanes, `{n-tests}`, the vectors and their counts, the
-    report's address.
-- [ ] **Step 4: Run** `$B2 -a --build-dir=bin/b-doc libs/crypto/doc`,
-  `python3 tools/test/crypto_jamfiles_test.py web server server_static both_bearssl_default memory`,
-  and the examples in the ordinary lanes. Expected: PASS; doc-check
-  finds nothing; the page shows every Jamfile and program from the tree.
+  - `testing.adoc`: the lanes and own lanes (`c-suites`, on every push), the MSVC message
+    cases, `{n-tests}`, the vectors and their counts, the report's address
+    (https://webcpporg.github.io/report/).
+  The page names no algorithm, backend or option that v0.1 does not build: ChaCha20-Poly1305,
+  Botan, OpenSSL's memory option, sizes and throughput are not mentioned.
+  `doc/changelog.adoc` gains under "Unreleased" the version's one documentation line,
+  `* Added the page: every Jamfile a user writes, and every message with its fix.`
+  (AGENTS.md chapter 5), and `doc/releases/0.1.0.adoc` lists crypto under "New Libraries":
+  `* link:{library-pages}crypto/{library-page}[crypto]: AES-GCM, AES, random_device, equal and
+  secp256k1 over C libraries built from source, from R.`
+- [ ] **Step 4: Run** `$B2 -a --build-dir=bin/b-doc libs/crypto/doc`, `$B2 -a doc`,
+  `python3 tools/test/crypto_jamfiles_test.py web server both_bearssl_default`,
+  and the examples natively, on wasip2 and wasip3 (each with its launcher,
+  `tools/boost/asio-wasip2/run.sh` and `tools/boost/asio-wasip3/run.sh`) and on emscripten.
+  Expected: PASS; doc-check finds nothing; the index lists crypto, linked to its page; the
+  page shows every Jamfile and program from the tree.
 - [ ] **Step 5: Check the text:** `grep -rn $'\xe2\x80\x94' libs/crypto` prints nothing;
-  `git -C libs/crypto grep -I -i -e 'veru[s]'` prints nothing.
+  `git -C libs/crypto grep -I -i -e 'veru[s]'` prints nothing; the lint's `changelog form`
+  passes.
 - [ ] **Step 6: Commit:** `"crypto: the page: every Jamfile a user writes, built and run on
-  every target, and every message with its fix"`.
+  every target, and every message with its fix"`; (superproject) the fixtures and the release
+  notes' line, `"doc: crypto among the new libraries of 0.1.0"`.
 
-## Task 25: Increment 1 whole: the rulebook, green, review and the gates
+## Task 25: Increment 1 whole: the rulebook, green, review and the pull requests
 
 **Files (superproject):**
-- Modify: `AGENTS.md` (chapter 1's table of libraries and layout: crypto and `third_party/libs`'s
-  new submodules; chapter 6's "Bringing a C library into webcpp": crypto named as its first
-  user and both project ids; chapter 9: Task 10's fixtures and test, Task 21's rule, the knobs
-  of Task 11; chapter 13: crypto's later increments, and its own lanes at the nightly level of
-  Task 25b), `README.md` (a row for crypto), `CONTRIBUTING.md` (the guideline's project id
-  note).
+- Modify: `CODING-GUIDELINES.md` (chapters 5, 9, 10, 15, 16, 17 and 19, below), `AGENTS.md`
+  (chapter 1's table of libraries and layout; chapter 4's lanes), `README.md` (a row for
+  crypto).
 
-Tasks 25a and 25b follow this one: 25a waits for asio's Task 21, 25b for owner gate O2.
+Task 25a is obsolete (below); the nightly level, Task 25b, is deferred after v0.1: every own
+lane, `c-suites` included, runs on every push.
 
-- [ ] **Step 1: Write the rows.** AGENTS.md's table of libraries:
-  `| crypto | Authenticated encryption, randomness and secp256k1 over C backends (BearSSL, OpenSSL; libsecp256k1, ctaes, Botan to come), webcpp's own | native, wasip2, wasip3, emscripten; own lanes c-suites, constant-time, browser, sizes, throughput | a local repository at libs/crypto until webcpporg/crypto exists (chapter 2) |`;
-  README.md's table gains crypto with its targets. Commit:
-  `"AGENTS.md, README.md and CONTRIBUTING.md: crypto, and the rules a C library's user meets"`.
-- [ ] **Step 2: Run the definition of green** (AGENTS.md chapter 10), each from scratch,
-  recording each result in the ledger:
-  - the ordinary lanes: native (Apple clang), gcc-15, wasip2, wasip3, emscripten;
-  - the own lanes, each on every target it names: `c-suites` on the four; `constant-time` on
-    a Linux machine with valgrind, clang-18 and llvm-symbolizer-18 (natively) and on wasip2; `browser` on
-    emscripten; `sizes` and `throughput` on the four;
-  - `python3 tools/test/crypto_jamfiles_test.py --require-external` (every fixture), its four
-    `done in` times in the ledger and Task 10's 30-minute rule applied (m20);
-  - `$B2 -a --build-dir=bin/b-doc doc` (the index lists crypto);
+- [ ] **Step 1: Write the rulebook** (CODING-GUIDELINES.md chapter 1: a change that builds a
+  proposal moves its decisions from chapter 17 into chapter 15, and one that resolves an entry
+  of chapter 19 removes it):
+  - CODING-GUIDELINES.md chapter 15 gains `### crypto (authenticated encryption, randomness
+    and secp256k1 over C backends; own; implemented in 0.1.0)`, the decisions of chapter 17's
+    crypto section that v0.1 builds, as built: the backends BearSSL, OpenSSL (the
+    source-built provider through `/webcpp/crypto//openssl`, native, wasip2 and wasip3,
+    refused on Emscripten), libsecp256k1 and ctaes; the default backend; the three layers,
+    with no OpenSSL canary; `webcpp.same-program`; the fixtures of
+    `tools/test/crypto_jamfiles_test.py`; the own lane `c-suites` on every push. Chapter 17's
+    crypto section keeps only the later work, with its source: OpenSSL's memory option,
+    constant time, sizes and throughput, the browser lane, the CI's nightly level, NIST
+    CAVP, ChaCha20-Poly1305, Botan, and what of trystero's migration is not yet built; its
+    paragraph "Provider amendment, 2026-11-03" and every statement of a found or shared
+    OpenSSL leave it.
+  - Chapter 5: rule 5 names crypto as the library that follows it, with both project ids,
+    `/third_party//<name>` the user's.
+  - Chapter 9: the row `canary pins` (Task 18).
+  - Chapter 10, "Third-party code": a row per submodule increment 1 added, with its pin and
+    licence (`bearssl`, `wycheproof`), if the task that added it has not.
+  - Chapter 16, the roadmap: crypto's later work, as chapter 17 lists it.
+  - Chapter 19: remove the entry of "The text of the rules" that sets chapter 10's
+    `/webcpp/third_party` against chapter 5's `/third_party//bearssl` (both ids exist since
+    Task 1), and the words calling crypto's specification "in review". Add, under "The
+    libraries against the rules", crypto's limits against chapter 5's rules 11 and 12:
+    - MSVC's messages: each case fails on the `msvc-14.3` and `msvc-14.5` lanes on every push
+      (`webcpp.compile-fail`, `webcpp.link-fail`, Task 18), and its exact text (`C1189`,
+      `C2338`, `LNK2001`, `LNK2038`) is checked on no CI; the text is checked on clang, GNU ld
+      and wasm-ld by the tools job, and ld64's on a developer's macOS, recorded in the ledger;
+      the tools job has no macOS or Windows leg;
+    - crypto has no size table until its sizes lane (plan Task 22), so a pin's move (rule 12)
+      updates the submodule, the canary's commit and the tests on every target, and no table;
+    - the source-built OpenSSL is compiled `no-asm` on MSVC, wasip2 and wasip3: T-table AES
+      and 4-bit GHASH, no AES-NI, not constant time unless `OPENSSL_AES_CONST_TIME`; crypto's
+      default backend there is still OpenSSL when it is linked, and the page says how to
+      choose BearSSL;
+    - `unused_openssl`, only if Task 21 measured the pair different on a lane: the lane, the
+      bytes and the flag that adds them.
+  - AGENTS.md chapter 1's table of libraries:
+    `| crypto | AES-GCM, the AES block cipher, random_device, a constant-time equal and secp256k1 over C libraries built from source (BearSSL, OpenSSL, libsecp256k1, ctaes), webcpp's own | native, wasip2, wasip3, emscripten (OpenSSL not on emscripten); its own lane c-suites | a submodule at libs/crypto |`;
+    the layout names `third_party/libs/`'s new submodules; chapter 4's lanes name crypto's
+    own lane and its MSVC message cases.
+  - README.md's table gains
+    `| [crypto](https://github.com/webcpporg/crypto) | <meta/libraries.json's description> | native, wasip2, wasip3, emscripten |`.
+  - `doc/releases/0.1.0.adoc` already holds crypto's line (Task 24) and the tools' lines
+    (Tasks 18 and 21).
+  Commit: `"AGENTS.md, CODING-GUIDELINES.md and README.md: crypto, built"`. Then
+  `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
+- [ ] **Step 2: Run the definition of green** (CODING-GUIDELINES.md chapter 1, "Green, before
+  any merge"), each from scratch, recording each result in the ledger:
+  - the ordinary lanes:
+    `b2 -a libs/crypto/test libs/crypto/example` natively (Apple Clang, and gcc-15 with
+    `toolset=gcc-15`);
+    `b2 -a toolset=clang-wasip2 testing.launcher=tools/boost/asio-wasip2/run.sh libs/crypto/test libs/crypto/example`;
+    `b2 -a toolset=clang-wasip3 testing.launcher=tools/boost/asio-wasip3/run.sh libs/crypto/test libs/crypto/example`;
+    `b2 -a toolset=emscripten libs/crypto/test libs/crypto/example`;
+  - the own lane `c-suites` on each target it names, `b2 -a <the target's toolset and
+    launcher> libs/crypto/test/c_suites//c-suites`;
+  - `python3 tools/test/crypto_jamfiles_test.py` (every fixture), its `done in` times in the
+    ledger and Task 10's 30-minute rule applied (m20);
+  - `b2 -a doc` (the index lists crypto, linked to its page);
   - the lint: `lint: clean`;
-  - the tools' tests touched: `tools/test/jamroot_test.py`, `tools/test/webcpp_jam_test.py`,
-    `tools/test/external_test.py`, `tools/test/harness_test.py`,
-    `tools/test/third_party_test.py`, `tools/lint/lint_test.py`, `tools/ci/matrix_test.py`,
-    `tools/ci/actions_test.py`;
-  - `python3 tools/ci/matrix.py plan --library crypto` (every native compiler and the three
-    WebAssembly lanes, `externals` `["nist-cavp", "openssl"]` natively and `["nist-cavp"]` on
-    WebAssembly) and `own-lanes --library crypto`: each own lane once per target it names (I2),
-    `c-suites` on four targets, `sizes` on four, `throughput` on four, `constant-time` on two,
-    `browser` on one with `chrome` true, each entry with its `externals` and `constant-time`'s
-    with `apt` `["valgrind", "llvm-18"]`; after Task 25b, the same split by `--level`.
+  - every `tools/**/*_test.py` as the CI runs them, each `python3 <path>`, among them
+    `tools/test/jamroot_test.py`, `tools/test/webcpp_jam_test.py`,
+    `tools/test/third_party_test.py`, `tools/test/harness_test.py`,
+    `tools/test/doc_test.py`, `tools/test/crypto_jamfiles_test.py` and
+    `tools/lint/lint_test.py`;
+  - `python3 tools/ci/matrix.py plan --library crypto`: the ten lanes, `gcc-14`, `gcc-15`,
+    `clang-18`, `clang-22`, `apple-clang`, `msvc-14.3`, `msvc-14.5`, `emscripten`,
+    `wasip2` and `wasip3`, each with `"external": false` (every backend is built by b2);
+    `python3 tools/ci/matrix.py own-lanes --library crypto`: `c-suites` once per target it
+    names, ids `<target>.crypto.c-suites`.
+  Expected: every one passes. MSVC and Linux's container lanes are proven by the CI alone
+  (Step 5).
 - [ ] **Step 3:** Dispatch the whole-increment review (the library and the superproject), on
   the most capable model, with this plan's Review Focus, its Conflicts, and the spec.
-- [ ] **Step 4:** Fix what it finds, each with a failing test first.
-- [ ] **Step 5 (controller, G1):** with the owner's agreement, the owner creates
-  `webcpporg/crypto` (no other repository: O3's recommendation pins NIST's archives).
-- [ ] **Step 6 (controller, G2):** the owner adds the submodule `libs/crypto`; the exclude
-  line goes; the superproject commits it: `"libs/crypto: authenticated encryption and
-  randomness over C backends"`.
-- [ ] **Step 7 (controller, G4):** with the owner's agreement, push the library, then the
-  superproject, rebased onto `main` at the rebase point after this task ("The base, the order
-  of the tracks", point 3, its identity check giving `identity: ok` for both repositories before the
-  push); watch both CIs and the report's columns for crypto.
+- [ ] **Step 4:** Fix what it finds, each with a failing test first, and run Step 2 again.
+- [ ] **Step 5: The pull requests**, in this order (CODING-GUIDELINES.md chapter 10, "The
+  checklist of a new library"; an agent never creates a repository, never pushes and never
+  merges; the owner does each):
+  1. **The library (G1).** The owner creates `webcpporg/crypto`, public, and pushes the
+     library's branch; its pull request into `main` holds increment 1 and the library's
+     `.github/workflows/ci.yml`, which calls `webcpporg/webcpp/.github/workflows/library.yml@main`
+     with `library: crypto`. Its CI reads the superproject's `main`, which has no
+     `third_party/libs/bearssl` and no `/third_party` yet, so it cannot be green before
+     pull request 2 merges; it waits, open.
+  2. **The superproject, one pull request (G2):** the submodules `third_party/libs/bearssl`
+     and `third_party/libs/wycheproof`, `third_party/Jamfile`'s targets (which compile
+     `libs/crypto/src/canary_*.c`, so they cannot land before the library's submodule),
+     `/third_party` in the Jamroot, `webcpp.same-program`, `tools/test/crypto_jamfiles_test.py`
+     and its fixtures, the lint rule `canary pins`, the rulebook of Step 1, and the submodule
+     `libs/crypto` that the owner adds (`git submodule add ../crypto.git libs/crypto`, never
+     `git add -A`) at the head of pull request 1. Its CI, which builds every library at the
+     commits the pull request records, is green: every lane, the own lanes, docs, lint,
+     tools, actionlint, report and the site. The owner merges it.
+  3. **The library again.** Pull request 1's CI is run again against the new `main` and is
+     green; the owner merges it by fast-forward, so that the commit the superproject records
+     is the library's `main`. If it is merged otherwise, a superproject pull request moves
+     `libs/crypto` to the library's `main` and is green before step 4.
+  4. **The proposals.** A pull request in `webcpporg/proposals` records increment 1 as
+     implemented: merged into the library's `main`, recorded by the superproject's `main`,
+     CI green on both (the proposals' CONTRIBUTING.md), with the run of each CI.
+  The ledger records each pull request, its CI run and its merge commit.
 
-## Task 25a: asio's OpenSSL onto `/third_party//openssl` (I14)
+## Task 25a: asio's OpenSSL onto the source-built provider (obsolete)
 
-The asio plan's departure 4 (approved 2026-10-11) keeps `/webcpp/asio//openssl` on the
-system's shared OpenSSL "until webcpp::crypto's `/third_party//openssl`", and asio's target
-moves onto it then (WEBCPP_ASIO_PLAN.md, departure 4 and its Task 21). This task does that move,
-so that a program of asio and crypto holds one libcrypto. Precondition: asio's Task 21 is on
-this track's base (the rebase point after Task 25, "The base, the order of the tracks"); if it
-is not, this task waits for it, and the ledger says so.
-
-**Files (in `libs/asio`, on its branch):**
-- Modify: `build.jam` (the targets `openssl` and `openssl-tests`), `test/Jamfile` (`ssl_static`;
-  the stops' expected texts that name asio's own OpenSSL lookup), `doc/` (the page on TLS: the
-  link feature and the one copy), `AGENTS.md` (departure 4 closed).
-- Modify (superproject): `tools/test/third_party_test.py` (the cases of Step 1), AGENTS.md
-  chapter 13 (asio's item on OpenSSL closed).
-
-- [ ] **Step 1: Write the failing tests.**
-  - In asio's `test/Jamfile`, its `ssl` test built with `<webcpp-crypto-openssl-link>static`:
-    `webcpp.run ssl_static : ssl_test.cpp : <library>/webcpp/asio//openssl-tests <webcpp-crypto-openssl-link>static : native ;`.
-  - A case of `tools/test/third_party_test.py`: a program naming both `/webcpp/asio//openssl`
-    and `/third_party//openssl` links `libcrypto` once natively (`-d+2`'s link line names it
-    once).
-  - The emscripten side stays as asio built it (N4), in the same file: on a scratch
-    superproject, `b2 toolset=emscripten libs/asio/test//ssl_asyncify
-    libs/asio/example/tls//asio_tls` builds both and exits 0. That success is the check (r4):
-    were `/third_party//openssl` reached on emscripten, its WebAssembly stop (Task 11) would
-    end the load with `OpenSSL is a native backend` and a nonzero status, so `openssl-tests`
-    and the example's native-only condition are shown to add nothing there; b2's printed
-    output is not searched for the target's name, which it never prints whether reached or
-    not. A second case keeps asio's refusal: a program built for emscripten
-    that names `/webcpp/asio//openssl` still stops at asio's forced include, whose message
-    (asio's Task 21) the case states whole.
-
-  Run asio's native lane and `python3 tools/test/third_party_test.py`. Expected: FAIL, the
-  feature unknown to asio's target and two `libcrypto` on the line; the emscripten cases pass
-  before the change and are there to keep passing.
-- [ ] **Step 2: Move the targets.** In asio's `build.jam`, the lines `local openssl-root =
-  [ webcpp.external asio : OpenSSL ... ]`, the four `lib openssl-ssl` / `lib openssl-crypto`
-  alternatives, `openssl-required` and `openssl-for-tests` go. `/third_party//openssl` is named
-  through asio's own native-only `<conditional>` rule, the form asio's Task 21 measured to work
-  (never the negated `<toolset>!emscripten:<library>...`, which links nothing, measured there):
-
-```jam
-# OpenSSL 3, natively, from /third_party//openssl: libssl and libcrypto as one
-# choice, shared or static by <webcpp-crypto-openssl-link>, so that a program
-# of asio and webcpp::crypto holds one libcrypto. /third_party//openssl stops
-# a user's build when the machine lacks OpenSSL and leaves webcpp's own tests
-# out (webcpp-own). Named only natively: on emscripten the ssl names are a
-# record of the settings that links nothing, and /third_party//openssl would
-# stop the build there.
-rule openssl-linked ( properties * )
-{
-    if ! <toolset>emscripten in $(properties)
-    {
-        return <library>/third_party//openssl <define>WEBCPP_ASIO_HAS_OPENSSL=1 ;
-    }
-}
-
-# Refused on WebAssembly, as before: every source of a program built for
-# emscripten that names it stops at the forced include.
-path-constant WEBCPP_ASIO_ROOT : . ;
-alias openssl : : : : <conditional>@openssl-linked
-    <toolset>emscripten:<compileflags>"-include \"$(WEBCPP_ASIO_ROOT)/src/openssl_on_webassembly.hpp\"" ;
-
-# asio's own tests: the same natively; on emscripten nothing, for the
-# ssl_asyncify twin, as asio built it.
-alias openssl-tests : : : : <conditional>@openssl-linked ;
-explicit openssl-tests ;
-```
-
-  The stop a user meets natively is then `/third_party//openssl`'s (Task 11's text), and asio's
-  tests that pinned asio's own stop text pin that one. `tools/ci/matrix.py`'s
-  `EXTERNAL_DEPENDENCIES['asio']` stays `('openssl',)`.
-- [ ] **Step 3: Run** asio's lanes: native, gcc-15, emscripten, and its own lanes `asyncify`
-  (emscripten, `ssl_asyncify` among its programs), `browser` and `tls` (native and
-  emscripten); crypto's native lane; `python3 tools/test/third_party_test.py`. Expected: PASS,
-  `ssl_asyncify` and `emscripten.asio.tls` among the passes.
-- [ ] **Step 4: Commit** (asio) `"asio: OpenSSL through /third_party//openssl, shared or
-  static, one libcrypto with webcpp::crypto"`; (superproject) `"AGENTS.md: asio's OpenSSL is
-  /third_party//openssl"`.
+Obsolete: asio already links the source-built provider. Its `build.jam`, at the commit the
+superproject's `main` pins (`libs/asio` at `6c4e2c8`, lines 104-122), gives its alias
+`openssl` `<library>/webcpp/third_party//openssl <define>WEBCPP_ASIO_HAS_OPENSSL=1` on
+native, wasip2 and wasip3 through `rule openssl-linked`, and refuses Emscripten by a forced
+include; CODING-GUIDELINES.md chapter 5, rule 7: "The Asio alias links this dependency
+explicitly." A program of asio and crypto therefore holds one libcrypto, the provider's.
 
 ## Task 25b: The nightly level: the heavy own lanes, asio's asyncify, the tools' macOS and Windows legs (owner gate O2)
+
+Deferred after v0.1 (revision 2026-11-14). Kept as written for its own change; before it runs,
+re-read it against the tree of that day: OpenSSL is source-built (`/webcpp/crypto//openssl`),
+there is no `webcpp-own`, the CI has no levels yet, and `matrix.py`, `library.yml` and the
+tools job (8 shards, Linux alone) have changed. In v0.1 every own lane runs on every push,
+MSVC's messages are checked by Task 18's MSVC cases without their text, and ld64's text on a
+developer's macOS; this task's Windows and macOS legs of the tools job would check both texts
+and remove those limits from CODING-GUIDELINES.md chapter 19.
 
 Written with the controller's recommendation for O2; if the owner keeps every lane on every
 push instead, this task is dropped, `runners.yml` (Task 22) takes back its push trigger, and
@@ -9431,13 +9137,14 @@ at 03:17 UTC, on the library's own `main`.
 **Files:**
 - Create (superproject): the submodule `third_party/libs/secp256k1`.
 - Modify (superproject): `.gitmodules`, `third_party/Jamfile` (the feature and the target),
-  `tools/test/third_party_test.py` (its cases).
+  `tools/test/third_party_test.py` (its cases), CODING-GUIDELINES.md chapter 10, "Third-party
+  code" (a `secp256k1` row: libsecp256k1 v0.8.0 at `6e2c8bc`, built file by file by
+  `third_party/Jamfile`, MIT), `doc/releases/0.1.0.adoc` ("Tools and build").
 - Create (library): `src/canary_secp256k1.c`, `include/webcpp/crypto/backends/secp256k1.hpp`,
   `test/messages/secp256k1_not_linked/`, `LICENSE-SECP256K1.txt` (a copy of the submodule's
   `COPYING`, MIT, which the README names, as `LICENSE-BEARSSL.txt` is BearSSL's).
 - Modify (library): `include/webcpp/crypto/detail/canary.h` (the pin),
-  `test/c_suites/Jamfile` (`tests.c`), `test/constant_time/Jamfile` (`ctime_tests.c`),
-  `test/messages/Jamfile`, `test/unused/Jamfile`.
+  `test/c_suites/Jamfile` (`tests.c`), `test/messages/Jamfile`, `test/unused/Jamfile`.
 
 **Interfaces:**
 - Produces: `/third_party//secp256k1`; the feature `webcpp-secp256k1-tables`
@@ -9481,12 +9188,23 @@ feature.feature webcpp-secp256k1-tables : auto small large : propagated ;
 # precomputed tables, with every module, recovery included. A program that
 # uses MSVC's static library needs SECP256K1_STATIC, or the header declares
 # every function imported from a DLL.
-.marker.secp256k1 = include/secp256k1.h ;
+path-constant SECP256K1 : libs/secp256k1 ;
+
+rule secp256k1-checked-out ( properties * )
+{
+    if ! [ path.exists [ path.native $(SECP256K1)/include/secp256k1.h ] ]
+    {
+        errors.user-error "third_party/libs/secp256k1 is not checked out: it holds no"
+            "include/secp256k1.h. Check it out with `git submodule update --init"
+            "third_party/libs/secp256k1`." ;
+    }
+}
+
 .secp256k1-small = <define>ECMULT_WINDOW_SIZE=2 <define>COMB_BLOCKS=2 <define>COMB_TEETH=5 ;
 lib secp256k1
   : libs/secp256k1/src/secp256k1.c libs/secp256k1/src/precomputed_ecmult.c
     libs/secp256k1/src/precomputed_ecmult_gen.c $(CRYPTO)/src/canary_secp256k1.c
-  : $(.c-library) <webcpp-c-library>secp256k1 <conditional>@c-library-checked-out
+  : $(.c-library) <conditional>@secp256k1-checked-out
     <include>libs/secp256k1/include <include>libs/secp256k1/src
     <define>ENABLE_MODULE_ECDH=1 <define>ENABLE_MODULE_RECOVERY=1
     <define>ENABLE_MODULE_EXTRAKEYS=1 <define>ENABLE_MODULE_SCHNORRSIG=1
@@ -9588,9 +9306,12 @@ struct secp256k1 {
 #endif  // WEBCPP_CRYPTO_BACKENDS_SECP256K1_HPP
 ```
 
-- [ ] **Step 5: libsecp256k1's own tests on webcpp's build** (spec 8.1, AGENTS rule 11). In
-  `test/c_suites/Jamfile`: `src/tests.c` includes `secp256k1.c` itself (`src/tests.c:21`),
-  so it is built alone with the library's defines, never linked with the archive:
+- [ ] **Step 5: libsecp256k1's own tests on webcpp's build** (spec 8.1, CODING-GUIDELINES.md
+  chapter 5 rule 11). In `test/c_suites/Jamfile` (Task 5's lane `c-suites`, which runs on
+  every push): `src/tests.c` includes `secp256k1.c` itself (`src/tests.c:21`) but not the
+  precomputed tables, which libsecp256k1's CMake links into it as `secp256k1_precomputed`
+  (`src/CMakeLists.txt:134-135`), so it is built from `tests.c` and the two table files with
+  the library's defines, never linked with the archive:
 
 ```jam
 # libsecp256k1's tests, which include secp256k1.c and so recompile it with these
@@ -9606,6 +9327,7 @@ path-constant SECP256K1 : ../../../../third_party/libs/secp256k1 ;
 # Optimised in every variant: VERIFY's checks at -O0 under wasmtime and node would
 # not end within the own-lanes job's 60 minutes (measured in Step 6).
 webcpp.run secp256k1_tests : $(SECP256K1)/src/tests.c
+    $(SECP256K1)/src/precomputed_ecmult.c $(SECP256K1)/src/precomputed_ecmult_gen.c
   : $(.secp256k1) <define>VERIFY <optimization>speed ;
 ```
 
@@ -9614,30 +9336,20 @@ webcpp.run secp256k1_tests : $(SECP256K1)/src/tests.c
   (`src/unit_test.c`, `--iterations=<num>`, default 16). A target on which one run passes
   20 minutes, a third of the job's 60, takes `<testing.arg>--iterations=4` by a conditional
   on that target, with the measured times in the comment above; natively it stays at 16, so
-  the lane on the native compilers runs the suite as libsecp256k1's CI does. `src/ctime_tests.c` joins the lane
-  `constant-time` (spec 8.3), built with the library's defines and `VALGRIND`, linked with
-  `/third_party//secp256k1`, and driven by `valgrind.mjs`:
-
-```jam
-webcpp.drive secp256k1_ctime : $(SECP256K1)/src/ctime_tests.c
-  : <library>/third_party//secp256k1 <include>$(SECP256K1)/src <define>VALGRIND
-    <warnings>off <warnings-as-errors>off <webcpp-drive-timeout>600
-  : valgrind.mjs : : native ;
-```
-
-  with `path-constant SECP256K1 : ../../../../third_party/libs/secp256k1 ;` in that Jamfile
-  and `secp256k1_ctime` in its lane. The unused-library case gains
+  the lane on the native compilers runs the suite as libsecp256k1's CI does.
+  (Deferred after v0.1: libsecp256k1's `src/ctime_tests.c` in the lane of Task 20.)
+  The unused-library case gains
   `webcpp.same-program unused_secp256k1 : app.cpp : /third_party//secp256k1 : : <library>/webcpp/crypto//crypto ;`.
 - [ ] **Step 6: Run** the third-party test, the message test, the lane `c-suites` on the four
-  targets, `constant-time` on a Linux machine with valgrind (I10), and `unused` on the four.
-  Expected: PASS. Record `secp256k1_tests`' time on each of the four targets in the ledger
-  (m6) and apply Step 5's rule.
-  `secp256k1_tests` on WASI: its framework forks workers only with `SUPPORTS_CONCURRENCY`
-  (`src/unit_test.c:10`), sequential by default; if a target lacks what it needs (a `fork`
-  declared but missing on WASI), the program is built with `SUPPORTS_CONCURRENCY` undefined
-  there, by the macro libsecp256k1 uses, with the reason in the Jamfile.
-- [ ] **Step 7: Commit** (superproject) `"third_party: libsecp256k1 v0.8.0, its tables by
-  target, with webcpp::crypto's canary"`; (library) `"crypto: libsecp256k1's backend header,
+  targets, and `unused` on the four. Expected: PASS. Record `secp256k1_tests`' time on each
+  of the four targets in the ledger (m6) and apply Step 5's rule.
+  `secp256k1_tests` runs its tests in sequence on every target: the framework forks workers
+  only with `SUPPORTS_CONCURRENCY` (`src/unit_test.c:10`), which no source defines; CMake adds
+  it only where `sys/types.h`, `sys/wait.h` and `unistd.h` exist (`src/CMakeLists.txt:128-131`),
+  and webcpp's build never does.
+- [ ] **Step 7: Commit** (superproject, with the chapter 10 row and the line of
+  `doc/releases/0.1.0.adoc`) `"third_party: libsecp256k1 v0.8.0, its tables by
+  target, with webcpp::crypto's canary"`; (library, with its line of `doc/changelog.adoc`) `"crypto: libsecp256k1's backend header,
   its canary, and its own tests on webcpp's build"`.
 
 ## Task 27: `secp256k1::keypair`, `verify_schnorr` and `verify_ecdsa`
@@ -9851,6 +9563,7 @@ crypto-run secp256k1_allocation : secp256k1_allocation_test.cpp
 
 #include <boost/system/result.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -10114,7 +9827,7 @@ using keypair = basic_keypair<>;
 
 /**
  * Verifies a BIP340 signature with libsecp256k1's static context, which allocates nothing,
- * after its self-test (`include/secp256k1.h:235`).
+ * after its self-test (`include/secp256k1.h:235-247`).
  *
  * @param signature 64 bytes.
  * @param message The message, of any length.
@@ -10187,7 +9900,9 @@ boost::system::result<void> verify_ecdsa(std::span<std::uint8_t const, 64> signa
 
 **Files:**
 - Create (superproject): the submodule `third_party/libs/bips` (C12).
-- Modify (superproject): `.gitmodules`, `third_party/Jamfile` (the target `bips`).
+- Modify (superproject): `.gitmodules`, `third_party/Jamfile` (the target `bips`),
+  CODING-GUIDELINES.md chapter 10, "Third-party code" (a `bips` row: `bitcoin/bips` at
+  `927b6de9`, shallow, test data, BIP340's `test-vectors.csv`, BSD-2-Clause as BIP340's header states), `doc/releases/0.1.0.adoc`.
 - Create (library): `test/secp256k1_bip340_test.cpp`, `test/secp256k1_wycheproof_test.cpp`.
 - Modify (library): `test/Jamfile`.
 
@@ -10234,12 +9949,19 @@ git -C third_party/libs/bips rev-parse HEAD:bip-0340/test-vectors.csv
   - ECDH through the C API (`secp256k1_ecdh` with a hash function of the test's that copies
     x), on `ecdh_secp256k1_test.json` (752 tests, ASN.1 public keys) and
     `ecdh_secp256k1_webcrypto_test.json` (496, JWK): the SEC1 point taken out of a key in the
-    standard secp256k1 encoding (the ASN.1 `SubjectPublicKeyInfo` whose prefix is the
-    secp256k1 one, `3056301006072a8648ce3d020106052b8104000a034200`, or a JWK of `crv`
-    `secp256k1`), the others skipped with that reason; asserted: ASN.1 474 agree, 22 refused,
-    256 skipped; JWK 473 agree, 20 refused, 3 skipped (tcId 490 among them, a valid point
-    labelled `P-256`); every key the C API refuses also gives `invalid_public_key` through
-    `keypair::ecdh`;
+    standard secp256k1 encoding, the others skipped with that reason. A key is taken when it
+    is an ASN.1 `SubjectPublicKeyInfo` of exactly one of the two secp256k1 forms, the
+    uncompressed prefix `3056301006072a8648ce3d020106052b8104000a034200` followed by 65 bytes
+    or the compressed prefix `3036301006072a8648ce3d020106052b8104000a032200` followed by 33,
+    or a JWK whose `crv` is `P-256K` (at the pin 491 of 496; tcIds 490, 493 and 494 are
+    `P-256`, 495 `P-384`, 496 `P-521`). A taken case agrees or is refused by what the C API
+    does: a `valid` case must agree, an `invalid` one must be refused, and an `acceptable` one
+    (230 in the ASN.1 file, the label Wycheproof gives what a library may take or refuse) is
+    counted by its behaviour, never failed by its label. The counts are re-measured at
+    implementation and asserted as measured, each recorded in the ledger; read from the files
+    at the pin on 2026-11-14, the rule takes 496 ASN.1 keys (492 uncompressed, 4 compressed)
+    and skips 256, and takes 491 JWKs (473 `valid`, 18 `invalid`) and skips 5. Every key the
+    C API refuses also gives `invalid_public_key` through `keypair::ecdh`;
   - webcpp's `ecdh` equals the SHA-256 of the compressed shared point the C API computes with
     its default hash, on every valid ECDH case: `keypair::make(private)`, `ecdh(point)`
     against `secp256k1_ecdh(..., nullptr, nullptr)`;
@@ -10264,29 +9986,33 @@ crypto-run secp256k1_wycheproof : secp256k1_wycheproof_test.cpp
     <library>/webcpp//boost_json ;
 ```
 
-  Run the four lanes. Expected: FAIL first on the reader; PASS once written, with every count
-  above.
-- [ ] **Step 3: Commit** (superproject) `"third_party: bitcoin/bips, for BIP340's vectors"`;
-  (library) `"crypto: secp256k1 against BIP340, Wycheproof's Bitcoin ECDSA, and its ECDH"`.
+  `/third_party//wycheproof` is Task 9's. Run the four lanes. Expected: FAIL first on the
+  reader; PASS once written, with every count above (the ECDH counts as measured).
+- [ ] **Step 3: Commit** (superproject, with the chapter 10 row and the line of
+  `doc/releases/0.1.0.adoc`) `"third_party: bitcoin/bips, for BIP340's vectors"`;
+  (library, with its line of `doc/changelog.adoc`) `"crypto: secp256k1 against BIP340, Wycheproof's Bitcoin ECDSA, and its ECDH"`.
 
 ## Task 29: ctaes, Bitcoin Core's copy: the block cipher alone
 
 **Files:**
-- Create (superproject): the submodule `third_party/libs/ctaes` (`bitcoin/bitcoin` at v31.1,
-  shallow).
+- Create (superproject): the submodule `third_party/libs/bitcoin` (`bitcoin/bitcoin` at v31.1,
+  shallow; only `src/crypto/ctaes` is used).
 - Modify (superproject): `.gitmodules`, `third_party/Jamfile` (the target `ctaes`),
-  `tools/test/third_party_test.py`.
+  `tools/test/third_party_test.py`, CODING-GUIDELINES.md chapter 10, "Third-party code" (a
+  `ctaes` row: `src/crypto/ctaes` of `bitcoin/bitcoin` v31.1 at `9be056a`, the submodule
+  `third_party/libs/bitcoin`, shallow, MIT; its `src/secp256k1/` subtree is never on an include
+  path and no glob over `third_party/libs` reaches it), `doc/releases/0.1.0.adoc`.
 - Create (library): `LICENSE-CTAES.txt` (a copy of `src/crypto/ctaes/COPYING` at the pin,
   MIT), `src/canary_ctaes.c`, `include/webcpp/crypto/backends/ctaes.hpp`,
   `test/aes_ctaes_test.cpp`, `test/agreement_aes_test.cpp`,
   `test/messages/ctaes_not_linked/`, `test/messages/gcm_on_ctaes/`,
   and, fixtures of Task 10's test under `tools/test/fixtures/crypto_jamfiles/`: `block/`, `sign/`,
-  `sign_small/`, `encrypt_and_sign/`, `msvc_gcm_on_ctaes/`, `canary_secp256k1_missing/`,
-  `canary_secp256k1_small/`, `canary_ctaes_missing/`.
+  `sign_small/`, `encrypt_and_sign/`, `canary_secp256k1_missing/`, `canary_secp256k1_small/`,
+  `canary_ctaes_missing/` (their text on clang, GNU ld and wasm-ld).
 - Modify (library): `include/webcpp/crypto/detail/canary.h`, `include/webcpp/crypto.hpp`,
   `test/Jamfile`, `test/c_suites/Jamfile` (ctaes's `test.c`), `test/unused/Jamfile`,
-  `test/sizes/wasm/Jamfile` and `test/sizes/native/Jamfile` (the signing program, both
-  tables), `test/messages/Jamfile`, `doc/block.adoc`, `doc/jamfile.adoc`, `doc/backends.adoc`, and a
+  `test/messages/Jamfile` (with the MSVC cases of `gcm_on_ctaes` and of the canaries, below),
+  `doc/changelog.adoc`, `doc/block.adoc`, `doc/jamfile.adoc`, `doc/backends.adoc`, and a
   new `doc/secp256k1.adoc`.
 
 **Interfaces:**
@@ -10296,14 +10022,19 @@ crypto-run secp256k1_wycheproof : secp256k1_wycheproof_test.cpp
 
 - [ ] **Step 1: Add the submodule** (spec 3.4), shallow from the first clone (m10: Bitcoin
   Core's whole history is several hundred megabytes, and `shallow = true` in `.gitmodules`
-  reaches later clones only), Task 9's and Task 28's form:
+  reaches later clones only), Task 9's and Task 28's form. It is named after the repository it
+  holds: the checkout at the pin is Bitcoin Core's whole tree (2,923 files, about 49 MB, no
+  nested submodules), of which webcpp compiles `src/crypto/ctaes/ctaes.c` alone; its own copy
+  of libsecp256k1 under `src/secp256k1/` is never on an include path and never built, so the
+  program still holds one libsecp256k1, `/third_party//secp256k1`'s (CODING-GUIDELINES.md
+  chapter 5 rule 10):
 
 ```bash
-git submodule add --depth 1 https://github.com/bitcoin/bitcoin.git third_party/libs/ctaes
-git -C third_party/libs/ctaes fetch --depth 1 origin 9be056a8a72b624dae9623b2f7bded92c2a21c91
-git -C third_party/libs/ctaes checkout 9be056a8a72b624dae9623b2f7bded92c2a21c91
-git config -f .gitmodules submodule.third_party/libs/ctaes.shallow true
-git -C third_party/libs/ctaes rev-parse HEAD:src/crypto/ctaes
+git submodule add --depth 1 https://github.com/bitcoin/bitcoin.git third_party/libs/bitcoin
+git -C third_party/libs/bitcoin fetch --depth 1 origin 9be056a8a72b624dae9623b2f7bded92c2a21c91
+git -C third_party/libs/bitcoin checkout 9be056a8a72b624dae9623b2f7bded92c2a21c91
+git config -f .gitmodules submodule.third_party/libs/bitcoin.shallow true
+git -C third_party/libs/bitcoin rev-parse HEAD:src/crypto/ctaes
 ```
 
   Expected: `1b6c31139a71f80245c09597c343936a8e41d021`.
@@ -10312,30 +10043,46 @@ git -C third_party/libs/ctaes rev-parse HEAD:src/crypto/ctaes
   `webcpp_crypto_ctaes_9be056a_default__add_third_party_ctaes_to_your_link`;
   `test/aes_ctaes_test.cpp` calls Task 12's `check_fips197`, `check_aes_kat`,
   `check_aes_guards` and `check_aes_moved_from` for `ctaes`, on every target;
-  `test/agreement_aes_test.cpp` (native): ctaes against OpenSSL on 10,000 random keys of each
+  `test/agreement_aes_test.cpp` (native, `<library>/webcpp/crypto//openssl`, the
+  source-built OpenSSL): ctaes against OpenSSL on 10,000 random keys of each
   size and random messages of 0 to 64 blocks, from a seeded generator, encrypt and decrypt
   byte-identical (spec 8.2's second row); the messages `ctaes_not_linked` (spec 4.3's fifth
   row, `<define>` none and the source naming `aes256<backends::ctaes>` after including
   `backends/ctaes.hpp`) and `gcm_on_ctaes` (the source makes a `gcm<aes256<backends::ctaes>>`
   and states spec 2.4's text,
-  `webcpp::crypto: gcm<aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes256<backends::bearssl>>, gcm<aes256<backends::openssl>> or gcm<aes256<backends::botan>>.`).
-  Run them. Expected: FAIL.
+  `webcpp::crypto: gcm<aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes256<backends::bearssl>> or gcm<aes256<backends::openssl>>.`;
+  spec 2.4's text names a third backend, which increment 5 adds back to the message with
+  it). On the MSVC lanes the same source is a `webcpp.compile-fail` case (it fails to compile;
+  its text is checked on clang only). Run them. Expected: FAIL.
 - [ ] **Step 3: Write the target** in `third_party/Jamfile`:
 
 ```jam
 # ctaes (MIT), Pieter Wuille's constant-time AES as Bitcoin Core v31.1 ships it
 # in src/crypto/ctaes (the owner's "ctaes do Bitcoin Core", spec section 3.4):
-# the submodule is Bitcoin Core's tree at the tag, shallow, and its one file of
-# the library is compiled.
-.marker.ctaes = src/crypto/ctaes/ctaes.h ;
-lib ctaes : libs/ctaes/src/crypto/ctaes/ctaes.c $(CRYPTO)/src/canary_ctaes.c
-  : $(.c-library) <webcpp-c-library>ctaes <conditional>@c-library-checked-out
-    <include>libs/ctaes/src/crypto/ctaes
-  : : <include>libs/ctaes/src/crypto/ctaes <define>WEBCPP_CRYPTO_HAS_CTAES=1 $(.gc) ;
+# the submodule libs/bitcoin is Bitcoin Core's tree at the tag, shallow, and
+# its one file of the library is compiled. Only src/crypto/ctaes is on an
+# include path: the tree's own libsecp256k1 (src/secp256k1) is never reached.
+path-constant BITCOIN : libs/bitcoin ;
+
+rule bitcoin-checked-out ( properties * )
+{
+    if ! [ path.exists [ path.native $(BITCOIN)/src/crypto/ctaes/ctaes.h ] ]
+    {
+        errors.user-error "third_party/libs/bitcoin is not checked out: it holds no"
+            "src/crypto/ctaes/ctaes.h. Check it out with `git submodule update --init"
+            "--depth 1 third_party/libs/bitcoin`." ;
+    }
+}
+
+lib ctaes : libs/bitcoin/src/crypto/ctaes/ctaes.c $(CRYPTO)/src/canary_ctaes.c
+  : $(.c-library) <conditional>@bitcoin-checked-out
+    <include>libs/bitcoin/src/crypto/ctaes
+  : : <include>libs/bitcoin/src/crypto/ctaes <define>WEBCPP_CRYPTO_HAS_CTAES=1 $(.gc) ;
 explicit ctaes ;
 ```
 
-  `canary_ctaes.c` is the prototype's (configuration `default`), with
+  `bitcoin-checked-out` is written as Task 5's `bearssl-checked-out` is. `canary_ctaes.c` is the prototype's
+  (configuration `default`), with
   `WEBCPP_CRYPTO_CTAES_COMMIT 9be056a` in `detail/canary.h` beside the others, under its
   `_CANARY_COMMIT` seam.
 - [ ] **Step 4: Write `backends/ctaes.hpp`:**
@@ -10369,7 +10116,11 @@ explicit ctaes ;
 
 #include <boost/system/result.hpp>
 
+// ctaes.h declares its functions without extern "C" (Bitcoin Core wraps it
+// itself, src/crypto/aes.cpp:9-10).
+extern "C" {
 #include <ctaes.h>
+}
 
 #include <cstddef>
 #include <cstdint>
@@ -10472,9 +10223,9 @@ struct block_engine<backends::ctaes, KeySize> {
 /** ctaes exports no GCM, and webcpp builds none on another library's AES (spec section 2.4). */
 template <std::size_t KeySize>
 struct gcm_state<backends::ctaes, KeySize> {
-    static_assert(KeySize != 16, "webcpp::crypto: gcm<aes128<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes128<backends::bearssl>>, gcm<aes128<backends::openssl>> or gcm<aes128<backends::botan>>.");
-    static_assert(KeySize != 24, "webcpp::crypto: gcm<aes192<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes192<backends::bearssl>>, gcm<aes192<backends::openssl>> or gcm<aes192<backends::botan>>.");
-    static_assert(KeySize != 32, "webcpp::crypto: gcm<aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes256<backends::bearssl>>, gcm<aes256<backends::openssl>> or gcm<aes256<backends::botan>>.");
+    static_assert(KeySize != 16, "webcpp::crypto: gcm<aes128<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes128<backends::bearssl>> or gcm<aes128<backends::openssl>>.");
+    static_assert(KeySize != 24, "webcpp::crypto: gcm<aes192<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes192<backends::bearssl>> or gcm<aes192<backends::openssl>>.");
+    static_assert(KeySize != 32, "webcpp::crypto: gcm<aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes256<backends::bearssl>> or gcm<aes256<backends::openssl>>.");
 };
 
 }  // namespace webcpp::crypto::detail
@@ -10490,50 +10241,176 @@ struct gcm_state<backends::ctaes, KeySize> {
   and AESAVS cases pin it on every target.
 - [ ] **Step 5: ctaes's own test** (spec 8.1): in `test/c_suites/Jamfile`,
   `webcpp.run ctaes_test : $(CTAES)/test.c : <library>/third_party//ctaes <warnings>off <warnings-as-errors>off ;`
-  with `path-constant CTAES : ../../../../third_party/libs/ctaes/src/crypto/ctaes ;`, in the
+  with `path-constant CTAES : ../../../../third_party/libs/bitcoin/src/crypto/ctaes ;`, in the
   lane `c-suites` and also in the ordinary lanes (spec 8's table puts ctaes's `test.c` on the
   fast set): it is declared a second time outside the lane as `ctaes_test_fast`.
 - [ ] **Step 6: The rest of increment 2's cases:**
   - `test/unused/Jamfile`: `webcpp.same-program unused_ctaes : app.cpp : /third_party//ctaes : : <library>/webcpp/crypto//crypto ;`;
-  - `test/sizes/wasm/Jamfile` and `test/sizes/native/Jamfile`: `sign.cpp` (spec 7.4's
-    program, in `test/sizes/`) linked with `<webcpp-secp256k1-tables>small` and `large`, at
-    both optimisations, in each `sizes.json` and its `--expect` list; the
-    table regenerated (Task 22, Step 3);
+  - (Deferred after v0.1: the signing program in the size table, both tables, with Task 22.)
   - the user's Jamfiles of spec 7.4 and 7.5, fixtures of Task 10's test, each with its
     outcome: `sign` (`exe sign : sign.cpp /webcpp/crypto//crypto /third_party//secp256k1 ;`,
     `targets: native wasip2 wasip3 emscripten`, `schnorr ok`), `sign_small` (the same with `: <webcpp-secp256k1-tables>small ;`),
     `encrypt_and_sign` (`exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl /third_party//secp256k1 ;`,
     a program that seals and signs, printing `aes256_gcm ok backend=bearssl` and
     `schnorr ok`), `block` (`exe block : block.cpp /webcpp/crypto//crypto /third_party//ctaes ;`,
-    `ctaes aes256 ok`), and `msvc_gcm_on_ctaes` (Task 18's form for spec 2.4's assertion);
-    each of their programs also compiled in `test/Jamfile` (Task 24's `doc_*` lines, m21);
-    the canary cases of Task 18 for libsecp256k1 (missing; other configuration with
+    `ctaes aes256 ok`); each of their programs also compiled in `test/Jamfile` (Task 24's
+    `doc_*` lines, m21);
+  - the canary cases of Task 18 for libsecp256k1 (missing; other configuration with
     `WEBCPP_CRYPTO_SECP256K1_CANARY_CONFIGURATION=w2c2x5` against the large tables, the
-    case CR-REVIEW M12 named) and ctaes (missing), each linker's lines as Task 18 measured them;
+    case CR-REVIEW M12 named) and ctaes (missing), their text checked on clang, GNU ld and
+    wasm-ld as Task 18 measured them; on the MSVC lanes each is a `webcpp.link-fail` case in
+    `test/messages/Jamfile` (it fails to link), and spec 2.4's assertion a
+    `webcpp.compile-fail` case (Step 2), every push, their text not checked there
+    (CODING-GUIDELINES.md chapter 19 records the limit, Task 25);
   - the documentation: `doc/secp256k1.adoc` (spec 2.8 for a user: the shape, the context in
     the user's resource and its randomisation, the static context and its self-test,
     `ecdh`'s secret, high-S refused, every error, the whole C API reachable, one copy per
     program), `doc/block.adoc` completed with ctaes, `doc/jamfile.adoc` with 7.4 and 7.5,
     `doc/backends.adoc` with ctaes and libsecp256k1 (their tables, licences, allocation:
     none, and the signing context in the user's resource).
-- [ ] **Step 7: Run** the four lanes, the own lanes `c-suites` and `sizes` on their targets,
-  `constant-time` on a Linux machine (Task 20's Step 5), `python3 tools/test/crypto_jamfiles_test.py`
+- [ ] **Step 7: Run** the four lanes, the own lane `c-suites` on its targets,
+  `python3 tools/test/third_party_test.py`, `python3 tools/test/crypto_jamfiles_test.py`
   and the doc. Expected: PASS.
-- [ ] **Step 8: Commit** (superproject) `"third_party: ctaes, as Bitcoin Core v31.1 ships it"`;
-  (library) `"crypto: the AES block cipher on ctaes, GCM refused on it, and increment 2's
+- [ ] **Step 8: Commit** (superproject, with the chapter 10 row and the line of
+  `doc/releases/0.1.0.adoc`) `"third_party: ctaes, as Bitcoin Core v31.1 ships it"`;
+  (library, with its line of `doc/changelog.adoc`) `"crypto: the AES block cipher on ctaes, GCM refused on it, and increment 2's
   pages"`.
 
-## Task 30: Increment 2 whole: green, review
+## Task 30: Increment 2 whole: green, review, pull requests
 
-- [ ] **Step 1: Run the definition of green** as Task 25's Step 2, with the new lanes' programs.
-- [ ] **Step 2:** Dispatch the review of increment 2, with the Review Focus and spec sections
+- [ ] **Step 1: Open the pull requests**, in this order. The library's, on `webcpporg/crypto`:
+  Tasks 26 to 29's commits of `libs/crypto`. Then the superproject's, rebased onto
+  `origin/main` (`git rebase origin/main` on the branch, never a merge): the submodules
+  `third_party/libs/secp256k1`, `third_party/libs/bips` and `third_party/libs/bitcoin` with
+  their `.gitmodules` entries, `third_party/Jamfile` (the feature `webcpp-secp256k1-tables`,
+  the targets `secp256k1`, `bips` and `ctaes`), `tools/test/third_party_test.py`, the three
+  rows of CODING-GUIDELINES.md chapter 10, "Third-party code", the lines of
+  `doc/releases/0.1.0.adoc`, and the new pin of `libs/crypto` at the library's merged commit.
+  The superproject's pull request records the library's pin only after the library's has
+  merged.
+- [ ] **Step 2: Green is the CI's verdict on both**, every lane it plans for them, each on
+  every target it names: the ordinary lanes (the native compilers, MSVC 14.3 and 14.5
+  included, wasip2 and wasip3 through `tools/boost/asio-wasip2/run.sh` and
+  `tools/boost/asio-wasip3/run.sh`, and emscripten), the own lane `c-suites` on native,
+  wasip2, wasip3 and emscripten (within the own-lanes job's 60 minutes), the docs, the lint
+  (`lint: clean`), and the tools job (`third_party_test.py`, `crypto_jamfiles_test.py`). A
+  lane that fails, flakes or warns is fixed in the pull request, whatever caused it.
+- [ ] **Step 3:** Dispatch the review of increment 2, with the Review Focus and spec sections
   2.3, 2.8, 3.4, 3.5, 8.
-- [ ] **Step 3:** Fix what it finds, each with a failing test first; then G4's push of the
-  library and the superproject, with the owner's agreement.
+- [ ] **Step 4:** Fix what it finds, each with a failing test first, on the same pull
+  requests; then each commit's message is checked: `git log -1 --format=%B | git
+  interpret-trailers --parse` prints nothing. The owner merges the library's pull request,
+  then the superproject's.
 
+## Task 30a: trystero's build onto `/third_party//secp256k1`
+
+trystero's code is unchanged: only where its libsecp256k1 comes from. It starts after Task 30's
+superproject pull request has merged, so that `/third_party//secp256k1` and `libs/crypto` (whose
+`src/canary_secp256k1.c` the target compiles) are on `origin/main`. Increment 3 (Tasks 31 and 32)
+still moves trystero's code onto webcpp::crypto later; Task 32 Step 3's build half is this task.
+
+**Files:**
+- Modify (trystero, `libs/trystero` at its branch off its `main`, pinned today at `e9326e9`):
+  `build.jam` (lines 13-40 at `e9326e9`: the comment "Only libsecp256k1 is externally
+  installed", the two `webcpp.external` calls `secp256k1-root` and
+  `secp256k1-emscripten-root`, the three `lib secp256k1` alternatives and their `explicit`,
+  and the rule `trystero-dependencies`; the alias `trystero` loses
+  `<conditional>@trystero-dependencies` and `<library>secp256k1` and gains
+  `<library>/third_party//secp256k1`), `test/provider/Jamfile` (line 11's comment, "Keep
+  ownership with Trystero so CI provisions its external secp256k1"), `.github/workflows/ci.yml`
+  (line 8's comment), `README.md` (the libsecp256k1 rows and section "5. Build libsecp256k1"),
+  `AGENTS.md` ("The dependencies", line 54 onward), `doc/building.adoc` (the libsecp256k1 row,
+  its `-s` options, its MSVC paragraph and its CMake build, lines 12-60 and 123-153),
+  `doc/roadmap.adoc` (line 24, "libsecp256k1 from webcpp's own build", done),
+  `doc/testing.adoc` (line 265), `doc/overview.adoc` (line 73), `doc/changelog.adoc`.
+- Modify (superproject): `tools/ci/matrix.py` (`EXTERNAL_DEPENDENCIES = {}`,
+  `EXTERNAL_VARIABLES = ()`, their comment saying that no library needs one today; the
+  machinery stays for a later library), `tools/ci/matrix_test.py`, `tools/ci/actions_test.py`
+  (the secp256k1 action's cases, from `SECP256K1 = CI / 'actions/secp256k1/install.sh'` on),
+  `.github/workflows/library.yml` (the anchor `&secp256k1` and its uses, the step that writes
+  `SECP256K1_ROOT` and `SECP256K1_EMSCRIPTEN_ROOT`, and the comments on libsecp256k1 remaining
+  external), `AGENTS.md` (the prerequisites, the `.local` table, the actions list and the
+  sentences on `-sSECP256K1_ROOT`), `README.md` (trystero's external library, the "left out"
+  example), CODING-GUIDELINES.md (the bullets that record the external provisioning: chapter
+  4's "A library webcpp does not build yet (currently trystero's libsecp256k1)", trystero's
+  design bullets on libsecp256k1's provisioning and its MSVC library in chapter 15, chapter
+  16's "External libraries built from `third_party/`", chapter 17's "One copy per program"
+  bullet, and chapter 19's "Bringing a C library (chapter 5)" entry, each rewritten to the
+  fact that trystero links `/third_party//secp256k1`), `doc/releases/0.1.0.adoc` ("Tools and
+  build"), and `libs/trystero`'s pin.
+- Delete (superproject): `tools/ci/actions/secp256k1/` (`action.yml`, `install.sh`).
+
+**Interfaces:**
+- Consumes: `/third_party//secp256k1` and `webcpp-secp256k1-tables` (Task 26).
+- Produces: `/webcpp/trystero//trystero` with libsecp256k1 from webcpp's build; no library of
+  `libs/` needs an external library (`matrix.py external` prints `false`).
+
+- [ ] **Step 1: Write the failing tests.** In `tools/ci/matrix_test.py`: the real tree's
+  `matrix.py external --library trystero` prints `false`, `matrix.py external` prints `false`,
+  and the plan of trystero's lanes says `"external": false` on every lane and own lane, with
+  no `webcpp-require-external=on` and no `-sSECP256K1_ROOT` in their commands. In
+  `tools/ci/actions_test.py`: no workflow step uses `./tools/ci/actions/secp256k1`, and the
+  directory does not exist. Run `python3 tools/ci/matrix_test.py` and
+  `python3 tools/ci/actions_test.py`. Expected: FAIL (`external --library trystero` prints
+  `true`; `library.yml` uses the action).
+- [ ] **Step 2: trystero's build.** In `libs/trystero/build.jam`, the dependency block becomes:
+
+```jam
+# libsecp256k1 (every room) is webcpp's build of it, /third_party//secp256k1:
+# v0.8.0 from the submodule third_party/libs/secp256k1, with the tables the
+# feature webcpp-secp256k1-tables chooses (small on emscripten, large natively;
+# CODING-GUIDELINES.md chapter 5). Native WebRTC and OpenSSL are pinned source
+# dependencies too, built together for the consumer's B2 variant.
+```
+
+  and the alias `trystero` names `<library>/third_party//secp256k1` in place of
+  `<library>secp256k1`, without `<conditional>@trystero-dependencies` (the alias keeps its
+  `tag::trystero` region, which the documentation includes). `SECP256K1_STATIC` comes from
+  the target's usage requirements on MSVC (Task 26). Build trystero's test directory natively
+  with no `-sSECP256K1_ROOT` and nothing in `.local/secp256k1-*`. Expected: PASS, where it
+  failed before with "trystero is left out: libsecp256k1 was not found" under
+  `webcpp-require-external=on`.
+- [ ] **Step 3: The tables' consequence, documented.** trystero's external build was
+  window 4 and comb 2x5 on both targets (`-DSECP256K1_ECMULT_WINDOW_SIZE=4
+  -DSECP256K1_ECMULT_GEN_KB=2`, `tools/ci/actions/secp256k1/install.sh`, trystero's
+  `doc/building.adoc:143`). With `auto` it becomes window 15 and comb 11x6 natively (a larger
+  program, faster signing and verification) and window 2 and comb 2x5 on emscripten (the
+  same signing, verification a little slower than window 4, a smaller program). A program
+  that wants otherwise asks for `<webcpp-secp256k1-tables>small` or `large`. `doc/building.adoc`
+  says so in place of its libsecp256k1 rows and CMake build, `doc/changelog.adoc` gains the
+  line, and `doc/roadmap.adoc` drops the item.
+- [ ] **Step 4: The superproject's CI.** `EXTERNAL_DEPENDENCIES = {}` and
+  `EXTERNAL_VARIABLES = ()` in `tools/ci/matrix.py`; `library.yml` loses the secp256k1 steps
+  (its anchor `&secp256k1`, the `*secp256k1` alias, the step of the docs and lint jobs, and
+  the loop over `SECP256K1_ROOT SECP256K1_EMSCRIPTEN_ROOT`); `tools/ci/actions/secp256k1/` is
+  deleted; `actions_test.py` loses the action's cases; AGENTS.md, README.md and
+  CODING-GUIDELINES.md are rewritten as listed above; `doc/releases/0.1.0.adoc` gains, under
+  "Tools and build", that trystero links webcpp's libsecp256k1 and the CI action
+  `secp256k1` is gone. Run `python3 tools/ci/matrix_test.py`, `python3 tools/ci/actions_test.py`,
+  `python3 tools/test/external_test.py` and the lint. Expected: PASS, `lint: clean`.
+- [ ] **Step 5: Commit** (trystero, with its `doc/changelog.adoc` line) `"trystero:
+  libsecp256k1 from webcpp's third_party build"`; (superproject) `"tools/ci: libsecp256k1 is no
+  external library any more"`. After each, `git log -1 --format=%B | git interpret-trailers
+  --parse` prints nothing.
+- [ ] **Step 6: The pull requests and green.** First trystero's, on `webcpporg/trystero`: its
+  CI (`library.yml@main`) runs every lane trystero declares, the native compilers (MSVC 14.3
+  and 14.5 included) and emscripten, and its own lanes (`oracle`, `interop`,
+  `provider-integration`); green is all of them, with no secp256k1 step left that it needs.
+  The owner merges it. Then the superproject's, rebased onto `origin/main`, recording
+  trystero's merged commit as `libs/trystero`'s pin, with Step 4's changes; green is every
+  lane of its CI, the tools job included. The owner merges it.
 ---
 
 # Increment 3: trystero's migration
+
+**Deferred after version 0.1 (revision of 2026-11-14).** Kept as written; before it starts,
+re-read it against the tree of that day. Already true at the revision: trystero's
+shared-connection change has integrated (the precondition below holds, but its table of call
+sites must still be re-read); trystero links `/third_party//secp256k1` after Task 30a, so Task
+32's Step 3 (the build) is done and only its code half remains; OpenSSL and libdatachannel are
+source-built, so `EXTERNAL_DEPENDENCIES` holds neither; Task 33 belongs to the memory option;
+the identity checks and fixed commit identity give way to the Global Constraints' commit rule;
+`~/.buzz` paths name private notes that are not carried.
 
 trystero is changed in its own repository, `libs/trystero`, on a branch `crypto` of it
 (made in the precondition below, from trystero's `main` after the shared-connection track),
@@ -10967,6 +10844,11 @@ inline bool verify(std::span<const std::uint8_t, 64> sig, std::span<const std::u
 ---
 
 # Increment 4: ChaCha20-Poly1305
+
+**Deferred after version 0.1 (revision of 2026-11-14).** Kept as written; before it starts,
+re-read it against the tree of that day: OpenSSL is `/webcpp/crypto//openssl` over the
+source-built provider (3.5.9, also on wasip2 and wasip3), NIST is gate O3's, and the memory
+option's and sizes' parts wait for Tasks 15, 16 and 22.
 
 ## Task 35: ChaCha20-Poly1305 on BearSSL and OpenSSL
 
@@ -11602,6 +11484,11 @@ struct chacha_state<Backend> {
 
 # Increment 5: Botan, native, with exceptions
 
+**Deferred after version 0.1 (revision of 2026-11-14).** Kept as written; before it starts,
+re-read it against the tree of that day: `webcpp-own`, `webcpp.external-root` and
+`webcpp.external-looked` were not built in version 0.1, so Task 37 adds what Botan's discovery
+needs; the tools job has no macOS or Windows leg.
+
 ## Task 37: Botan found, or the build stops
 
 **Files (superproject):**
@@ -12189,6 +12076,9 @@ struct chacha_engine<backends::botan> {
 
 ## Spec coverage
 
+The tasks of version 0.1 are 0 to 14, 17 to 19, 21, 24 to 30a; the others are deferred (the
+revision of 2026-11-14).
+
 | Spec | Tasks |
 | --- | --- |
 | 1.1, 1.2 what the library is, what stays with Hash2 | 1, 24 |
@@ -12214,8 +12104,8 @@ struct chacha_engine<backends::botan> {
 | 4.1 where the C libraries live, defines, usage requirements | 5, 26, 29 |
 | 4.2 file by file; a library named and not called | 5, 21 |
 | 4.3 three layers, every message | 5, 6, 12, 18, 26, 29, 35, 38 |
-| 4.4 external libraries found or stopping, shared or static | 10, 11, 37 |
-| 4.5 one copy per program | 32 |
+| 4.4 external libraries: OpenSSL source-built (C2), Botan found | 11, 37 |
+| 4.5 one copy per program | 11, 30a, 32 |
 | 5 the default backend per target | 6, 14, 22, 38 |
 | 6 entropy | 4, 5, 17, 23, 31 |
 | 7 the user's Jamfile | 10, 24, 29, 39 |
@@ -12228,5 +12118,5 @@ struct chacha_engine<backends::botan> {
 | 8.6 every message, the pins | 6, 11, 12, 16, 18, 19, 29, 35, 37, 38 |
 | 8.7 the unused library | 21, 26, 29 |
 | 8.8 sizes and throughput | 22, 23, 29, 35 |
-| 9 increments 1 to 5 | 0-25, 26-30, 31-34, 35-36, 37-39 |
-| 10 departures and rulings | applied where each section is; C1 to C17 |
+| 9 increments 1 to 5 | 0-25, 26-30a, 31-34, 35-36, 37-39 |
+| 10 departures and rulings | applied where each section is; C1 to C19; the revision of 2026-11-14 |
