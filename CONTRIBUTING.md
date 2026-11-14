@@ -64,9 +64,17 @@ identity they publish under, and holds no private data.
    discussion; an accepted proposal is merged with status `accepted` and its date in `decided`.
    A rejected or withdrawn one is archived with that status, so the reasons stay readable.
 4. **Implementation.** The library is built from the proposal, in its own repository, under the
-   superproject's rules; the proposal's status becomes `implementing`, and `implemented`, with
-   the release it entered, when it is merged into the superproject and released. The maintainers
-   then archive it, which writes the library's specification under `specs/`.
+   superproject's rules, and the proposal's status becomes `implementing`.
+5. **Implemented.** A proposal is `implemented` when its code is merged into the `main` of its
+   library's repository, the superproject's `main` records that commit or a later one, and the
+   CI on GitHub is green on both: every check of the library's `main` and of the superproject's
+   `main`, at commits that hold the change, passed. A change of the organization is held to the
+   same in the superproject and in every repository it changes. No release is needed, since the
+   status says what is built and a release waits for the owner: `release` names the version the
+   change enters, the one `<webcpp/version.hpp>` names on the superproject's `main` then, and
+   `implementation` links the commit that holds it, the library's commit the superproject
+   records or the superproject's own for a change of the organization. The maintainers then
+   archive the proposal, which writes the library's specification under `specs/`.
 
 ## Commit identity in older plans
 

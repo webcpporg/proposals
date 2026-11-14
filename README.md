@@ -31,8 +31,9 @@ specification and plan, and `STATUS.md`, where the work stands and how to resume
 ## Proposals
 
 The table is written by `python3 tools/proposals.py readme` from every proposal's
-`.openspec.yaml`, and the CI fails when it is not current. Release 0.1.0 is not tagged yet: the
-libraries marked with it are published, in the superproject's `main`.
+`.openspec.yaml`, and the CI fails when it is not current. Release 0.1.0 is not tagged yet: a
+proposal marked with it is implemented, in the superproject's `main`, and enters 0.1.0 when the
+tag is placed.
 
 <!-- proposals:begin -->
 | Library | Proposal | Title | Kind | Status | Release | Decided | Implementation |
@@ -73,7 +74,7 @@ libraries marked with it are published, in the superproject's `main`.
 | proposed | Submitted for a decision, with its reference code. |
 | accepted | Accepted; not built yet. |
 | implementing | Being built. |
-| implemented | Built and in a release; archived. |
+| implemented | Merged into `main`, in its repository and in the superproject, with the CI green on GitHub; archived. |
 | rejected | Decided against; archived. |
 | withdrawn | Withdrawn by its author; archived. |
 
