@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-14
+webcpp:
+  library: organization
+  title: "organization: the build names Cobalt's targets only under /webcpp/cobalt"
+  kind: organization
+  port_of: null
+  status: implemented
+  release: "0.1.0"
+  implementation: https://github.com/webcpporg/webcpp/tree/eb0819805cb890b006ededef925115e4fdc54497
+  decided: 2026-11-14
