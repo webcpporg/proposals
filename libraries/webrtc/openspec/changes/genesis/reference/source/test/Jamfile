@@ -1,0 +1,53 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+
+project : requirements <library>/webcpp/webrtc//headers ;
+
+import webcpp ;
+
+# Increment 1 builds natively only; increment 2 adds emscripten, both
+# suspension variants (reference/plan.md).
+webcpp.targets native ;
+
+# Every public header alone, against libdatachannel. It works without
+# exceptions: libdatachannel is called through its C API (design.md, D4).
+webcpp.headers-alone webrtc : ../include
+  : : <library>/webcpp/webrtc//webrtc <threading>multi : native ;
+
+# config.hpp defines WEBCPP_WEBRTC_NO_EXCEPTIONS exactly when webcpp has no
+# exceptions, and keeps it when a developer defines it in a build that has
+# them.
+webcpp.compile config : config_test.cpp ;
+webcpp.compile config_developer_defined : config_test.cpp
+  : <define>WEBCPP_WEBRTC_NO_EXCEPTIONS <define>WEBCPP_TEST_WEBRTC_DEVELOPER_DEFINED ;
+webcpp.compile config_all_off : config_test.cpp
+  : <define>WEBCPP_NO_EXCEPTIONS <define>WEBCPP_TEST_WEBRTC_ALL_OFF ;
+
+# The platform-free parts: errors, value types, the event machinery.
+webcpp.run error : error_test.cpp ;
+webcpp.run types : types_test.cpp ;
+webcpp.run events : events_test.cpp ;
+webcpp.run events_no_exceptions : events_test.cpp : <exception-handling>off ;
+
+# Two native peers over the loopback, as the build asks and without
+# exceptions; libdatachannel's threads need threading=multi.
+webcpp.run native : native_test.cpp : <library>/webcpp/webrtc//webrtc <threading>multi : native ;
+webcpp.run native_no_exceptions : native_test.cpp
+  : <library>/webcpp/webrtc//webrtc <threading>multi <exception-handling>off : native ;
+
+# Allocation: the object's state, queues and outputs in its allocator, and
+# nothing of it on libdatachannel's threads.
+webcpp.run allocation : allocation_test.cpp
+  : <library>/webcpp/webrtc//webrtc <threading>multi : native ;
+
+# Destruction while libdatachannel's threads deliver events, and a flooded
+# channel never read, then destroyed.
+webcpp.run lifetime : lifetime_test.cpp
+  : <library>/webcpp/webrtc//webrtc <threading>multi : native ;
+
+# The measurement of tasks.md 1.10: a never-read channel past 1,024 messages
+# and the connection's other channels.
+webcpp.run stall : stall_test.cpp : <library>/webcpp/webrtc//webrtc <threading>multi : native ;

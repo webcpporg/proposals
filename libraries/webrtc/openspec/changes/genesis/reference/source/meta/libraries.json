@@ -1,0 +1,17 @@
+{
+    "key": "webrtc",
+    "name": "webrtc",
+    "authors": [
+        "R"
+    ],
+    "description": "The W3C WebRTC data-channel API in Asio's model, natively over libdatachannel and in the browser.",
+    "category": [
+        "Concurrent",
+        "IO"
+    ],
+    "maintainers": [
+        "R <github.overboard312@passmail.net>"
+    ],
+    "cxxstd": "20",
+    "port-of": null
+}
