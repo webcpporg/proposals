@@ -1,7 +1,8 @@
 # webcpp::webrtc: where the proposal stands, and how to resume
 
 Written 2026-11-14, when the draft of 2026-10-13 was brought up to date and given its plan and
-its reference code. The proposal is ready to be proposed (tasks.md 0.8, the owner's).
+its reference code, and proposed the same day (tasks.md 0.8): its status is `proposed`, for its
+public discussion on webcpporg/proposals#12 and the maintainers' decision.
 
 ## What exists
 

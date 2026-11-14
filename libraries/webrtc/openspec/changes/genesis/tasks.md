@@ -13,7 +13,7 @@ increment is done in `reference/source/`, built and tested as `reference/STATUS.
 - [x] 0.5 The draft specification, with the owner's decisions of 2026-10-10 and the controller's rulings on the review (section 2), done 2026-10-10 (`reference/spec.md`)
 - [x] 0.6 The review's answers: no zero-copy receive for now, and separate event operations with the policies of section 5.2 (section 10), done 2026-10-10
 - [x] 0.7 Record the owner's decision that webcpp::webrtc stays a library of its own on webcpp::asio, not a part of webcpp::beast, with its reasons (design.md, D1), done 2026-11-14
-- [ ] 0.8 Propose: the status `proposed`, the pull request, the public discussion (the owner's)
+- [x] 0.8 Propose: the status `proposed`, the pull request, the public discussion (the owner's), done 2026-11-14 on webcpporg/proposals#12, where the discussion is held
 
 ## 1. Increment 1: the interface, the `runtime` and the native implementation
 

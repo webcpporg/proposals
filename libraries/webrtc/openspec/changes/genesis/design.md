@@ -554,7 +554,8 @@ To start the implementation: the proposal is decided, the owner creates the repo
 `webcpporg/webrtc`, it starts from one import commit of `reference/source/`, is checked out as the
 superproject's submodule `libs/webrtc`, and `reference/plan.md` is followed from increment 1.
 
-Rollback: the proposal is a draft; withdrawing it deletes `openspec/changes/genesis/`.
+Rollback: a proposal withdrawn or rejected is archived with that status, so that its reasons stay
+readable (`CONTRIBUTING.md`); nothing outside this directory exists yet to undo.
 
 ## Open Questions
 
