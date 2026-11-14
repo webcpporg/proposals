@@ -1,0 +1,31 @@
+# Copyright (c) 2026 WebCpp.org
+#
+# Distributed under the Boost Software License, Version 1.0. (See
+# accompanying file LICENSE_1_0.txt or copy at
+# https://www.boost.org/LICENSE_1_0.txt)
+#
+# webrtc, the W3C WebRTC data-channel API in Asio's model. A program uses
+# /webcpp/webrtc//webrtc: natively it brings the pinned libdatachannel and its
+# OpenSSL, which need threading=multi; in the browser (increment 2) it brings
+# nothing but webcpp::asio's browser runtime.
+
+project /webcpp/webrtc ;
+
+import feature ;
+
+# What a target cannot honour: an error by default, ignored where the platform
+# does an equivalent thing of its own (design.md, D14). Propagated, so that a
+# whole program agrees.
+feature.feature webcpp-webrtc-unsupported : error ignore : propagated ;
+
+# The headers, without a backend: what the platform-free tests use.
+alias headers : : : : <include>include <library>/webcpp/config//config
+  <library>/webcpp/asio//headers
+  <webcpp-webrtc-unsupported>error:<define>WEBCPP_WEBRTC_UNSUPPORTED_ERROR
+  <webcpp-webrtc-unsupported>ignore:<define>WEBCPP_WEBRTC_UNSUPPORTED_IGNORE ;
+
+# Natively, libdatachannel through its C API, which works with exceptions on
+# and off (design.md, D4): no <exception-handling> is required of a consumer.
+alias webrtc : : <toolset>emscripten : : <library>headers <library>/webcpp/asio//asio ;
+alias webrtc : : : : <library>headers <library>/webcpp/asio//asio
+  <library>/webcpp/third_party//libdatachannel ;
