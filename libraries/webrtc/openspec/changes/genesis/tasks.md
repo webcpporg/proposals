@@ -29,7 +29,7 @@ increment is done in `reference/source/`, built and tested as `reference/STATUS.
 - [x] 1.10 Measure whether a never-read native channel stalls the connection's other channels: it does, and destroying it releases them; pinned by `test/stall_test.cpp` (plan: Task 1.10)
 - [ ] 1.11 Measure the C API's cost on receipt against the C++ API's `receive()`, and state the ratio in the documentation (plan: Task 1.11)
 - [ ] 1.12 Documentation: the library's page, libdatachannel's justification and licence, the table of differences, the cancellation and error tables, Doc Comments checked by MrDocs, examples (plan: Task 1.12)
-- [ ] 1.13 The repository `webcpporg/webrtc` from one import commit, the superproject's change (submodule, lanes, the libdatachannel target's message, chapter 15), the whole lint, the lanes of a native-only increment, the review (plan: Task 1.13)
+- [ ] 1.13 The repository `webcpporg/webrtc` from one import commit, the superproject's change (submodule, lanes, chapter 15; the libdatachannel target's message is already worded for every consumer, webcpporg/webcpp#15), the whole lint, the lanes of a native-only increment, the review (plan: Task 1.13)
 
 ## 2. Increment 2: the browser implementation and the interop lane
 

@@ -68,15 +68,15 @@ trystero `e9326e9`, libdatachannel `6b1e2e6`, OpenSSL `45e844f`), with `source/`
 - tasks.md 1.11: the C API's cost on receipt, measured against the C++ API's `receive()`.
 - tasks.md 1.12: the documentation (the library's page, Doc Comments checked by MrDocs).
 - tasks.md 1.13: the repository `webcpporg/webrtc` from one import commit of `source/`, the
-  superproject's change (submodule, CI lanes, the libdatachannel target's threading message, which
-  names trystero, worded for every consumer; webrtc moved from chapter 18 to chapter 15 of
-  `CODING-GUIDELINES.md`), the whole lint, the review.
+  superproject's change (submodule, CI lanes; webrtc moved from chapter 18 to chapter 15 of
+  `CODING-GUIDELINES.md`), the whole lint, the review. The libdatachannel target's refusal of
+  `threading=single` already names libdatachannel's own threads, for every consumer
+  (webcpporg/webcpp#15, merged 2026-11-14).
 - Increments 2 and 3 (tasks.md groups 2 and 3).
-- The superproject's `CODING-GUIDELINES.md` chapter 18 still summarizes the draft of 2026-10-13
-  (the stale WASI reason, libdatachannel found through `-sLIBDATACHANNEL_ROOT`, the open
-  questions on the licence and on the message without exceptions): it is updated with this
-  revision, in the superproject.
 - Open questions O1 to O3 (design.md).
+
+The superproject's `CODING-GUIDELINES.md` chapter 18 summarizes this revision since
+webcpporg/webcpp#15; webcpporg/webcpp#16 marks it `proposed` there.
 
 ## How to resume
 
