@@ -58,13 +58,15 @@ None.
   per app (`"port-of"`: Trystero 0.26.0).
 - **Implementation:** integrated in [trystero PR #1](https://github.com/webcpporg/trystero/pull/1),
   library commit `2e2dcd4`, then pinned by [webcpp PR #3](https://github.com/webcpporg/webcpp/pull/3).
-  The recovered original branch remains recorded in `reference/patches/` and
-  `reference/uncommitted.diff`.
+  The superproject's `main` (`d0a501a`) records trystero `e9326e9`, which holds it; trystero's
+  `main` (`af301ba`) has the same tree. The recovered original branch remains recorded in
+  `reference/patches/` and `reference/uncommitted.diff`.
 - **Dependencies:** none new.
-- **Status:** resumed implementation on 2026-10-14, with the owner-approved password-domain
-  amendment in `reference/password-domains.md` and the live task checklist in `tasks.md`.
-  `reference/plan.md`, `reference/spec.md`, patches and `reference/uncommitted.diff` remain
-  historical evidence. Code is integrated and locally validated; the status remains `implementing` pending a release.
-  No CI was executed and no release was published.
+- **Status:** implemented on 2026-11-14, under CONTRIBUTING's rule of that day: the change is in
+  the `main` of trystero and of the superproject, and every GitHub check of both passed on
+  2026-11-08 (25 on trystero's, 165 on the superproject's). It enters webcpp 0.1.0, whose tag
+  is not placed yet. The owner-approved password-domain amendment is
+  `reference/password-domains.md`; `reference/plan.md`, `reference/spec.md`, patches and
+  `reference/uncommitted.diff` remain historical evidence.
 - **Other proposals:** modifies the capability the `genesis` creates; the move of trystero onto
   webcpp::asio, webcpp::webrtc and webcpp::crypto is a change of its own that comes after this one.

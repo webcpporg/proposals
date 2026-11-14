@@ -31,8 +31,9 @@ specification and plan, and `STATUS.md`, where the work stands and how to resume
 ## Proposals
 
 The table is written by `python3 tools/proposals.py readme` from every proposal's
-`.openspec.yaml`, and the CI fails when it is not current. Release 0.1.0 is not tagged yet: the
-libraries marked with it are published, in the superproject's `main`.
+`.openspec.yaml`, and the CI fails when it is not current. Release 0.1.0 is not tagged yet: a
+proposal marked with it is implemented, in the superproject's `main`, and enters 0.1.0 when the
+tag is placed.
 
 <!-- proposals:begin -->
 | Library | Proposal | Title | Kind | Status | Release | Decided | Implementation |
@@ -57,7 +58,7 @@ libraries marked with it are published, in the superproject's `main`.
 | pratt | [genesis](libraries/pratt/openspec/changes/archive/2026-10-08-genesis) | pratt: a generic Pratt parser engine for C++20, with a decimal calculator | own | implemented | 0.1.0 | 2026-10-08 | [code](https://github.com/webcpporg/pratt/tree/d78451b) |
 | trystero | [genesis](libraries/trystero/openspec/changes/archive/2026-10-09-genesis) | trystero: serverless WebRTC rooms, wire compatible with Trystero | port of Trystero 0.26.0 | implemented | 0.1.0 | 2026-10-09 | [code](https://github.com/webcpporg/trystero/tree/160f431) |
 | trystero | [bounded-json-parse](libraries/trystero/openspec/changes/bounded-json-parse) | trystero: bound the text and the objects a room parses | port of Trystero 0.26.0 | draft |  |  |  |
-| trystero | [shared-connection](libraries/trystero/openspec/changes/shared-connection) | trystero: one connection shared by the rooms of an app | port of Trystero 0.26.0 | implementing |  | 2026-10-11 | [code](https://github.com/webcpporg/trystero/tree/2e2dcd465fbc13b77ff6dc9939bdea29a0f86af1) |
+| trystero | [shared-connection](libraries/trystero/openspec/changes/archive/2026-11-14-shared-connection) | trystero: one connection shared by the rooms of an app | port of Trystero 0.26.0 | implemented | 0.1.0 | 2026-10-11 | [code](https://github.com/webcpporg/trystero/tree/e9326e94c06cfa9ffdbd0a8d3c8d72b80b3b9b59) |
 | wasi | [genesis](libraries/wasi/openspec/changes/archive/2026-10-08-genesis) | wasi: the HTTP handler a WebAssembly component exports, for C++ on wasip2 and wasip3 | own | implemented | 0.1.0 | 2026-10-08 | [code](https://github.com/webcpporg/wasi/tree/6e3c529) |
 | wasi | [redesign](libraries/wasi/openspec/changes/redesign) | wasi: one namespace per WASI version, one entry point, target features and run scripts | own | accepted |  | 2026-10-09 |  |
 | wasi | [wasm-bindgen](libraries/wasi/openspec/changes/wasm-bindgen) | wasm: evolve wasi into WebAssembly integration and generate C++ bindings | own | accepted |  | 2026-11-03 | [code](https://github.com/webcpporg/wasi) |
@@ -74,7 +75,7 @@ libraries marked with it are published, in the superproject's `main`.
 | proposed | Submitted for a decision, with its reference code. |
 | accepted | Accepted; not built yet. |
 | implementing | Being built. |
-| implemented | Built and in a release; archived. |
+| implemented | Merged into `main`, in its repository and in the superproject, with the CI green on GitHub; archived. |
 | rejected | Decided against; archived. |
 | withdrawn | Withdrawn by its author; archived. |
 

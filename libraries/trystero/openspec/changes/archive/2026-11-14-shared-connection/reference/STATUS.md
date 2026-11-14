@@ -1,5 +1,22 @@
 # webcpp::trystero, shared connection: implementation and release status
 
+## Implemented, 2026-11-14
+
+CONTRIBUTING changed on 2026-11-14: a proposal is `implemented` when its code is merged into
+the `main` of its repository, the superproject's `main` records that commit or a later one, and
+the CI on GitHub is green on both. A release is no longer needed. This proposal meets it:
+
+- The superproject's `main`, `d0a501a`, records trystero `e9326e9`, which holds the merge
+  `2e2dcd4` and 13 later commits ([trystero PR #3](https://github.com/webcpporg/trystero/pull/3)).
+- trystero's `main`, `af301ba`, merges `e9326e9` and has the same tree.
+- Every GitHub check passed on both, from the push runs of 2026-11-08: 25 check runs on
+  trystero's `af301ba` and 165 on the superproject's `d0a501a`. The sections below that say no CI
+  ran describe 2026-10-14 and are history.
+
+The proposal is `implemented` with release 0.1.0, the version `<webcpp/version.hpp>` names on
+the superproject's `main`; trystero's changelog already lists the change under webcpp 0.1.0.
+The tag `webcpp-0.1.0` is not placed yet.
+
 ## Resumed execution, 2026-10-14
 
 The owner requested completion and prohibited CI during this session. Work resumed in an

@@ -133,7 +133,9 @@ def faults(proposal: Proposal) -> list[str]:
         found.append(f'{where}: a port names what it ports in port_of')
     status = meta.get('status')
     if status == 'implemented' and not meta.get('release'):
-        found.append(f'{where}: an implemented proposal names the release it entered')
+        found.append(f'{where}: an implemented proposal names the release it enters')
+    if status == 'implemented' and not meta.get('implementation'):
+        found.append(f'{where}: an implemented proposal links the commit that holds it')
     if status in ('accepted', 'implementing', 'implemented') and not meta.get('decided'):
         found.append(f'{where}: an accepted proposal names the date it was decided')
     if proposal.archived != (status in ('implemented', 'rejected', 'withdrawn')):

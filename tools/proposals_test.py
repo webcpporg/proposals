@@ -134,9 +134,17 @@ class Faults(Scratch):
         self.assertTrue(any('names the release' in p for p in problems), problems)
         self.assertTrue(any('is not open' in p for p in problems), problems)
 
-    def test_an_archived_implemented_proposal_has_no_fault(self) -> None:
+    def test_an_implemented_proposal_links_the_commit_that_holds_it(self) -> None:
         self.proposal('libraries/demo/openspec/changes/archive/2026-10-13-genesis',
                       metadata(status='implemented', release='"0.1.0"', decided='2026-10-13'),
+                      code=True)
+        problems = self.problems()
+        self.assertTrue(any('links the commit' in p for p in problems), problems)
+
+    def test_an_archived_implemented_proposal_has_no_fault(self) -> None:
+        self.proposal('libraries/demo/openspec/changes/archive/2026-10-13-genesis',
+                      metadata(status='implemented', release='"0.1.0"', decided='2026-10-13',
+                               implementation='"https://github.com/webcpporg/demo/tree/abc1234"'),
                       code=True)
         self.assertEqual(self.problems(), [])
 
