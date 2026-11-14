@@ -21,8 +21,8 @@ WebCPP namespaces and configuration. Its browser/P2/P3 support units MUST ship
 under `src/`, be enumerated by `sources.json`, and be usable by B2 and independent
 compiler/CMake consumers. Native upstream-equivalent types MUST forward to Boost.
 Wasm implementation paths MUST not shadow installed Boost headers. Cobalt runner,
-core and SSL sources MUST belong to the independent Cobalt library; old Asio names
-remain compatibility aliases. Consumer builds MUST NOT run maintainer patch tools.
+core and SSL sources MUST belong to the independent Cobalt library; Asio MUST NOT
+declare a Cobalt target. Consumer builds MUST NOT run maintainer patch tools.
 
 #### Scenario: A header is the only include of its translation unit
 - **WHEN** each of `asio.hpp`, `asio/config.hpp`, `asio/io_context.hpp`, `asio/steady_timer.hpp`, `asio/system_timer.hpp` and `asio/basic_waitable_timer.hpp` is compiled alone with `-std=c++20` and Boost 1.92's headers
@@ -635,16 +635,21 @@ A program that runs a self-posting handler for one second on a `webcpp::asio::io
 - **WHEN** `asio_turn_limit` runs with `io_context_options{.max_handlers_per_turn = 250}` and 5,000 self-posts
 - **THEN** it prints `max_handlers_per_turn: 250` and `handlers run: 5000`
 
-### Requirement: Cobalt: Forwarding compatibility targets
+### Requirement: Cobalt: Targets owned by Cobalt alone
 
-`/webcpp/asio//cobalt` and `cobalt_ssl`, and the root `boost_cobalt` and
-`boost_cobalt_io_ssl` names, MUST forward to independently owned Cobalt targets.
-Cobalt SHALL preserve the browser default of 100 handlers and independently test
-its runner and task helper. Native core/runner MUST remain upstream; the corrected
-SSL wrapper is the owner-approved exception specified by Cobalt's genesis.
+Asio and the superproject's root MUST NOT declare a Cobalt target or an alias to one
+(the owner's decision of 2026-11-14); a program names `/webcpp/cobalt//cobalt`, `core`,
+`io_ssl` or `cobalt_ssl`. Cobalt SHALL preserve the browser default of 100 handlers
+and independently test its runner and task helper. Native core/runner MUST remain
+upstream; the corrected SSL wrapper is the owner-approved exception specified by
+Cobalt's genesis.
 
-#### Scenario: Mixed aliases
-- **WHEN** an application links old and canonical Cobalt targets together
+#### Scenario: A removed Cobalt name
+- **WHEN** a program names `/webcpp/asio//cobalt`, `/webcpp/asio//cobalt_ssl`, `/webcpp//boost_cobalt` or `/webcpp//boost_cobalt_io_ssl`
+- **THEN** b2 stops because it finds no such target
+
+#### Scenario: Core and runner together
+- **WHEN** an application links `/webcpp/cobalt//cobalt` and `/webcpp/cobalt//core` together
 - **THEN** one matching core, selected runner and optional TLS provider are linked
 
 #### Scenario: Plain Asio
@@ -798,7 +803,7 @@ Reverse resolution (`resolve(endpoint, ec)`, `async_resolve(endpoint, ...)`) SHA
 - **THEN** its compile fails with the instruction to use the browser settings adapter
 
 #### Scenario: Cobalt's optional SSL wrapper
-- **WHEN** a program names `/webcpp/asio//cobalt_ssl` on native or WASIp3
+- **WHEN** a program names `/webcpp/cobalt//cobalt_ssl` on native or WASIp3
 - **THEN** the shipped corrected Cobalt SSL wrapper and source-built OpenSSL are linked, and TLS state, encrypted transfers, cancellation and shutdown are covered by real-peer tests
 
 ### Requirement: Release: The rulebook, index, documentation and gates

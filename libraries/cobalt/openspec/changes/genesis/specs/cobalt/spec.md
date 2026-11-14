@@ -29,8 +29,13 @@ preserving supported coroutine operations, completion tokens, executor/cancellat
 associations and the `co_main` signature. Native core and plain I/O types MUST be
 actual Boost types; Wasm MUST select shipped adaptations through configuration.
 The corrected SSL wrapper SHALL be the explicitly documented native identity exception.
-Both `co_main` and custom-main consumers MUST be supported. The old Asio/root Cobalt
-B2 targets MUST remain forwarding aliases without duplicate implementation.
+Both `co_main` and custom-main consumers MUST be supported. Each Cobalt B2 target
+SHALL have one name, under `/webcpp/cobalt`; Asio and the superproject's root MUST NOT
+declare an alias to a Cobalt target.
+
+#### Scenario: A removed Cobalt name
+- **WHEN** a program names `/webcpp/asio//cobalt`, `/webcpp/asio//cobalt_ssl`, `/webcpp//boost_cobalt` or `/webcpp//boost_cobalt_io_ssl`
+- **THEN** b2 stops because it finds no such target, and `/webcpp/cobalt//cobalt` builds
 
 #### Scenario: Existing coroutine algorithm
 - **WHEN** an existing supported Boost.Cobalt program changes its includes and namespace to WebCPP

@@ -12,9 +12,9 @@ items do not certify the later source migration.
 
 ## 2. Independent ownership and compatibility
 
-- [ ] 2.1 Add failing public-target/Asio-only/mixed-alias build witnesses, then establish the independent library skeleton, configuration and metadata; verify Asio-only consumers do not resolve Cobalt or OpenSSL. (plan: 2.1)
+- [ ] 2.1 Add failing public-target/Asio-only/core-and-runner build witnesses, then establish the independent library skeleton, configuration and metadata; verify Asio-only consumers do not resolve Cobalt or OpenSSL. (plan: 2.1)
 - [ ] 2.2 Transfer the runner and Cobalt shipped source inventories and maintainer provenance with matching consumer/archive settings; verify exact source provenance, hash/version refusals and one definition per support unit. (plan: 2.2)
-- [ ] 2.3 Forward the four legacy target names and migrate Cobalt-owned tests/examples while splitting mixed fixtures; verify old/new/custom-main consumers and combined Asio/Beast/Cobalt links have no graph cycle, duplicate runner or provider. (plan: 2.3)
+- [ ] 2.3 Remove the four legacy target names (owner's decision of 2026-11-14) and migrate Cobalt-owned tests/examples while splitting mixed fixtures; verify b2 finds none of the old names, and that co_main/custom-main consumers and combined Asio/Beast/Cobalt links have no graph cycle, duplicate runner or provider. (plan: 2.3)
 
 ## 3. Core behavior and capabilities
 

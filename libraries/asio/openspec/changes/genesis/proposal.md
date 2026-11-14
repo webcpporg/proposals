@@ -41,7 +41,9 @@ own asynchronous model (promises, events) should reach C++ as ordinary Asio oper
   that fail as values behind a transport point; the `ssl` names.
 - Superproject changes the library needs: the propagated composite feature `webcpp-suspend`,
   a test support that fails a test whose `main` did not finish (`webcpp::test::exit_status`),
-  `webcpp.variants`, `webcpp.size-table`, and `/webcpp//boost_cobalt`.
+  `webcpp.variants`, `webcpp.size-table`, and the compiled Cobalt core, first as
+  `/webcpp//boost_cobalt` and now `/webcpp/cobalt//core` of the independent Cobalt library
+  (the root name was removed on 2026-11-14).
 - Beast builds on this foundation; the owner intends a later Trystero migration to Asio
   and Beast. Combining the libraries remains supported through one OpenSSL provider.
 

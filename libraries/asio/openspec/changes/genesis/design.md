@@ -190,7 +190,8 @@ records the size of each variant of each example (Asyncify's program is about 2.
 Cobalt's `co_main` cannot be replaced from a header: `main` is a hidden friend that calls
 `main_promise::run_main`, compiled in Cobalt's `src/main.cpp`, which owns an `io_context` and
 calls Boost's `run`. webcpp compiles every Cobalt source but `main.cpp` (and, departure 3,
-`io/ssl.cpp`) as `/webcpp//boost_cobalt` and defines `run_main` itself in
+`io/ssl.cpp`) as `/webcpp//boost_cobalt` (since moved to the Cobalt library as
+`/webcpp/cobalt//core`; the root name was removed on 2026-11-14) and defines `run_main` itself in
 `src/cobalt_main.cpp`, with a `webcpp::asio::io_context` and its run family; under Asyncify it
 ends the program with `std::exit` so that the `co_return` value is the exit status. It reads
 `main_promise`'s members, which are Boost's implementation, so compiling it against the pinned

@@ -75,18 +75,20 @@ The canonical Cobalt build depends on `/webcpp/asio//asio`; TLS additionally con
 existing Asio trust helper and the one superproject OpenSSL/CA provider. Asio's core, browser
 bridge and TLS targets never depend on any Cobalt target.
 
-Existing `/webcpp/asio//cobalt` and `cobalt_ssl` become thin forwarding aliases. The low-level
-`/webcpp//boost_cobalt` and `boost_cobalt_io_ssl` names remain compatible aliases to the new
-owner. Root project registration resolves the names once; aliases must not recursively load
-one another's build files. An Asio-only build must work when Cobalt is unselected and must
-not compile Cobalt or resolve OpenSSL. A graph witness checks actual source/object lists,
-including old and new target names in the same program.
+Each Cobalt target has one name. On 2026-11-14 the owner decided that the build system names
+Cobalt only under `/webcpp/cobalt`: the earlier forwarding aliases `/webcpp/asio//cobalt` and
+`cobalt_ssl`, and the root `/webcpp//boost_cobalt` and `boost_cobalt_io_ssl`, are removed, and a
+tool test checks that b2 no longer finds any of the four. Rejected: keeping them as compatibility
+aliases, which gave every target two names before any release had published the old ones.
+An Asio-only build must work when Cobalt is unselected and must not compile Cobalt or resolve
+OpenSSL. A graph witness checks actual source/object lists, including core and runner targets in
+the same program.
 
 Cobalt owns native originals, Wasm adaptations, runner and corrected SSL source.
 Asio owns its shipped reactor and SDK adapters. Shared OpenSSL, CA and WIT providers
 have one owner. Historical patch inputs under `upstream/` are maintainer provenance,
-not a consumer step. Plain Asio must build without Cobalt or TLS, and old/new aliases
-must resolve one core, one selected runner and at most one optional SSL provider.
+not a consumer step. Plain Asio must build without Cobalt or TLS, and core, runner and
+SSL targets together must resolve one core, one selected runner and at most one optional SSL provider.
 
 ### D3. Preserve the established scheduling contract
 
@@ -305,8 +307,8 @@ discover Cobalt without duplicated reference pages or Cobalt files installed by 
 
 - Private Boost promise members and SDK descriptor APIs can change. Checked version/hash
   manifests, negative mismatch tests and exact-source upgrade review prevent silent drift.
-- Forwarding aliases can form build-loading cycles or duplicate objects. Asio-only and
-  mixed old/new target graph and link witnesses gate extraction.
+- Combined core, runner and SSL targets can duplicate objects. Asio-only and combined
+  target graph and link witnesses gate extraction; a removed name stops b2 by name.
 - An upstream example may fail even natively or depend on a service that changed. Record
   the unchanged failure, reproduce it, and label any deterministic counterpart separately.
 - Browser timers and scheduler load vary. Functional bounds and repeated measurements are
@@ -323,8 +325,9 @@ discover Cobalt without duplicated reference pages or Cobalt files installed by 
 2. Build the independent tree and import it as one initial commit when repository creation
    is authorized. Preserve upstream notices; do not carry unrelated source history.
 3. Move Cobalt-specific code/patches/tests/docs, split mixed fixtures without duplicating
-   provider ownership, and redirect the compatibility names. Do not delete old definitions
-   until all old/new entry-point checks pass against the same candidate.
+   provider ownership, and move every consumer to the Cobalt names. Remove the old names
+   (the owner's decision of 2026-11-14) only together with their last consumer, in one
+   candidate whose entry-point checks pass.
 4. Populate operation and application matrices through fresh public-target builds/runs,
    execute browser pages, produce Release measurements, then build/lint/render documentation.
 5. Coordinate Asio and organization specification ownership references, submodule/installation

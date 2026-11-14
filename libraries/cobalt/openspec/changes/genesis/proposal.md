@@ -15,8 +15,10 @@ need an independent library contract before extraction or broader support can be
   native SSL wrapper is an explicit type-identity exception.
 - Extract target-specific runners, shipped implementation sources, source inventories and
   Cobalt-owned tests/examples from Asio and the superproject. Keep dependency direction
-  Cobalt -> Asio, with no Asio core dependency on Cobalt. Retain the old
-  `/webcpp/asio//cobalt` and `cobalt_ssl` names as compatibility aliases.
+  Cobalt -> Asio, with no Asio core dependency on Cobalt. Each Cobalt target has one
+  name, under `/webcpp/cobalt`: the old `/webcpp/asio//cobalt` and `cobalt_ssl` and the
+  root `/webcpp//boost_cobalt` and `boost_cobalt_io_ssl` names are removed, not
+  forwarded (the owner's decision of 2026-11-14).
 - Define an explicit feature and application matrix by target, actual runtime, exception
   mode, thread profile and, on Emscripten, JSPI or Asyncify. Every cell has evidence or a
   named limitation: supported/tested, SDK/runtime blocked, not applicable, or implementation
