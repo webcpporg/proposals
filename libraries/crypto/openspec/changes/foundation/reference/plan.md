@@ -1782,34 +1782,60 @@ webcpp's `equal`, `is_all_zero` and `secret<N>`'s wipe.
 - [ ] **Step 4: Run** the lane on Linux x86-64 (and arm64 in `runners.yml`); commit
   `crypto: the constant-time lane, over libsodium's code and the new guards`.
 
-## Task 15: The documentation's form
+## Task 15: The documentation's form, and its generator
 
-**Files:** create `doc/ed25519.adoc`, `x25519.adoc`, `aead.adoc` (rewritten: GCM and the
-ChaCha family), `box.adoc`, `secretbox.adoc`, `kx.adoc`, `profiles.adoc`,
-`capabilities.adoc` (generated), `measurements.adoc` (generated), `guide/privacy.adoc`,
-`guide/p2p.adoc`, `LICENSE-LIBSODIUM-DOC.txt`, the fixtures of every example; modify
-`doc/backends.adoc`, `doc/jamfile.adoc`, `doc/errors.adoc`, `README.md` (libsodium named, ISC),
-`doc/changelog.adoc`.
+The owner's requirements (design D19) bind this task and every later increment's
+documentation step.
 
-- [ ] **Step 1:** each algorithm page has four parts in this order: what it is and when to use
-  it; a complete example, built and run as a fixture (its expected output in the page); its
-  pitfalls; its backends, included from the generated table. The X25519 page warns that a
-  shared secret is not a key (derive one with webcpp::hash's HKDF) and about the all-zero
-  secret; the AEAD pages about nonce reuse and the XChaCha nonce drawn at random; Ed25519 about
-  libsodium's strictness against other implementations.
-- [ ] **Step 2:** the libsodium families' text adapts `jedisct1/libsodium-doc` at
-  `6d1ea27b79b853b2a04f09ae9e1a8231c90e3b56`; `LICENSE-LIBSODIUM-DOC.txt` is its `LICENSE`
-  verbatim; each adapted page ends with "Adapted from libsodium's documentation
-  (https://github.com/jedisct1/libsodium-doc), ISC licence; see LICENSE-LIBSODIUM-DOC.txt."
-  Wikipedia appears only as links.
-- [ ] **Step 3:** `guide/privacy.adoc` opens with sealed boxes and `ciphers::secretbox`, and
-  `guide/p2p.adoc` with Ed25519 identities and `kx`; each section says what goes wrong without
-  the primitive, what it guarantees and how to use it right, and its example is webcpp's own
-  code written after a named, linked public application built on noble (for example a Nostr
-  client's signed and encrypted events), never copying it.
-- [ ] **Step 4:** `b2 doc` builds the pages; every example fixture runs; the changelog gains
-  the lines of increment 1. Commit `crypto: the documentation of the libsodium families, the
-  profiles and the table`.
+**Files:** create superproject `tools/crypto/docs.py`, `tools/test/crypto_docs_test.py`;
+library `meta/use_cases.json`, `doc/ciphers.adoc`, `doc/curves.adoc`, `doc/hybrid.adoc`, `doc/root.adoc` (each a
+chapter opening with its generated comparison table), the sections of increment 1's algorithms
+in them, `doc/backends.adoc` (generated matrices), `doc/choose.adoc` (the generated decision
+table), `doc/profiles.adoc`, `doc/llms.txt` (generated), `doc/guide/{wallets,p2p,passwords,everyday}.adoc`,
+`LICENSE-LIBSODIUM-DOC.txt`, the fixtures of every example; modify `meta/capabilities.json`
+(the documentation fields), `doc/jamfile.adoc`, `doc/errors.adoc`, `README.md` (libsodium named,
+ISC), `doc/changelog.adoc`.
+
+- [ ] **Step 1: The failing tools test** `crypto_docs_test.py`: from a two-row table, the
+  ciphers comparison table has the columns of D19; a `used_in` entry without `source` is
+  refused naming the row; the decision table's row links its example; `llms.txt` lists the
+  function with its use case and backends; `--check` fails after a measurement changes.
+- [ ] **Step 2: The documentation fields** of each increment-1 row, for example:
+
+```json
+{"family": "xchacha20_poly1305", "name": "xchacha20_poly1305", "title": "XChaCha20-Poly1305",
+ "group": "ciphers",
+ "doc": {"aead": true, "key_bytes": 32, "nonce_bytes": 24, "misuse_resistant": false,
+         "random_nonce_safe": true, "standards": [{"name": "draft-irtf-cfrg-xchacha", "url": "https://datatracker.ietf.org/doc/draft-irtf-cfrg-xchacha/"}],
+         "used_in": [{"what": "libsodium's secretstream", "source": "https://doc.libsodium.org/secret-key_cryptography/secretstream"}],
+         "webcrypto": false,
+         "choose_when": "you encrypt many messages under one key and want to draw each nonce at random",
+         "example": "xchacha_seal"}}
+```
+
+  and `meta/use_cases.json` rows such as
+  `{"need": "encrypt messages in a chat app, on the web and natively", "algorithm": "ciphers::xchacha20_poly1305", "profile": "automatic", "example": "xchacha_seal"}`.
+- [ ] **Step 3: `tools/crypto/docs.py`** reads `capabilities.json`, `measurements.json` and
+  `use_cases.json` and writes the comparison table at the head of each group chapter, the
+  backend list of every API section (with the default per target and profile from
+  `rankings`), the backends matrices, the decision table and `llms.txt`, each opening with the
+  generated-file notice; `--check` compares.
+- [ ] **Step 4: The prose:** each section of increment 1's algorithms in D19's style (lead
+  paragraph in webcpp's own words, the ordinary use case first, what goes wrong without it, how
+  it works, a compiled example included by tag with its expected output, pitfalls); the
+  libsodium families adapted from `jedisct1/libsodium-doc` at `6d1ea27` with the attribution
+  line, `LICENSE-LIBSODIUM-DOC.txt` its `LICENSE` verbatim; Wikipedia only as links. The X25519
+  section warns that a shared secret is not a key (derive one with webcpp::hash's HKDF) and
+  about the all-zero secret; the AEAD sections about nonce reuse; Ed25519 about libsodium's
+  strictness.
+- [ ] **Step 5: The teaching chapters' first sections:** everyday apps (sealed boxes and
+  `ciphers::secretbox` for a file-sharing app), peer-to-peer protocols (Ed25519 identities and
+  `curves::x25519::kx_keypair`), each after a named, linked application built on noble, its
+  protocol steps shown as a domain library's.
+- [ ] **Step 6:** `b2 doc` builds the pages; every example fixture runs; `docs.py --check` and
+  the tools test pass; the changelog gains the lines of increment 1. Commit (superproject)
+  `tools/crypto: docs.py, the generated tables and llms.txt`; (library)
+  `crypto: the documentation of increment 1, its tables generated from the data`.
 
 ## Task 16: Increment 1 whole
 
@@ -1855,7 +1881,8 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
    `acvp` submodule, pinned here by `gh api`, its chapter 10 row).
 4. RSA: PKCS #1 v1.5 and PSS, OAEP, key generation; Wycheproof's RSA files; the heavy
    variants (key generation, private operations at 3072 bits and above as measured).
-5. Measurements, constant-time paths, pages, green, review, pull requests.
+5. Measurements, constant-time paths, the documentation step of D19 (table rows, sections,
+   generated pages), green, review, pull requests.
 
 ## Increment 4: the browser backend and the asynchronous family (a stream after 1)
 

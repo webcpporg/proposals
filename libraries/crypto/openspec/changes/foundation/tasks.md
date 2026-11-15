@@ -1,8 +1,8 @@
 # Tasks
 
 Each task of increment 1 points to its section in `reference/plan.md`, which holds its files,
-interfaces, steps, code and expected output. Increments 2 to 8 are outlined there and written
-in full, task by task, when each starts. Nothing is built. The work starts after version 0.1
+interfaces, steps, code and expected output. Increments 2 to 12 are outlined there and written
+in full, task by task, when each starts; each one's documentation step follows design D19. Nothing is built. The work starts after version 0.1
 has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `main`
 (`reference/STATUS.md`).
 
@@ -22,7 +22,7 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 - [ ] 1.12 Threads: `WEBCPP_CRYPTO_HAS_THREADS` and the refusal of a heavy variant without them (plan: Task 12)
 - [ ] 1.13 Vectors, libsodium's own suite in `c-suites`, node's WebCrypto as the oracle for Ed25519 and X25519 (plan: Task 13)
 - [ ] 1.14 The constant-time lane over libsodium's paths and the new guards (plan: Task 14)
-- [ ] 1.15 The documentation's form: pages per algorithm, libsodium's text adapted, the profiles, the table, the privacy and peer-to-peer chapters' first sections (plan: Task 15)
+- [ ] 1.15 The documentation (design D19): `docs.py`, the generated comparison tables, backend lists, matrices, decision table and `llms.txt`, the sections of increment 1, the teaching chapters' first sections (plan: Task 15)
 - [ ] 1.16 Increment 1 whole: the rulebook, green, review and the pull requests (plan: Task 16)
 
 ## 2. Increment 2: libsecp256k1's remaining modules (version 0.2, beside 1)

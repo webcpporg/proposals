@@ -313,25 +313,43 @@ The genesis's constant-time harness (memcheck's client requests, MemorySanitizer
 - **WHEN** the seed and the message are marked undefined and `curves::ed25519::keypair::sign` runs under memcheck
 - **THEN** no conditional jump depends on them, and the planted branch on the seed fails the same test
 
-### Requirement: Documentation: a page per algorithm
-The documentation SHALL give each algorithm a page in noble's form: what it is and when to use it, a complete example built and run as a fixture, its pitfalls (nonce reuse, small-order keys, malleability, message limits, constant time per target), and its backends from the capability table, with `doc/capabilities.adoc`, `doc/profiles.adoc` and `doc/measurements.adoc`.
+### Requirement: Documentation: two readers, and pages in the owner's style
+The documentation SHALL let a developer who knows little cryptography and an LLM that collects a person's use case choose correctly from it alone. Every page MUST open with a lead paragraph in webcpp's own words saying what the thing is and what it is for, then how it works, then details; MUST put use cases from ordinary applications first; MUST say what goes wrong without the primitive and what the mistake costs; and every algorithm's section MUST give what it is, a compiled example included by tag with its expected output, and its pitfalls. Wikipedia (CC BY-SA) MUST only be cited by link, never copied; the libsodium families' pages adapt libsodium's documentation (`jedisct1/libsodium-doc` at `6d1ea27b79b853b2a04f09ae9e1a8231c90e3b56`, ISC) with an attribution line each, and the library MUST ship its notice as `LICENSE-LIBSODIUM-DOC.txt`. Every increment's documentation task MUST follow these rules and the requirements below.
 
-#### Scenario: The X25519 page
+#### Scenario: The X25519 section
 - **WHEN** the documentation is built
-- **THEN** the X25519 page holds a running example, warns about the all-zero secret and about using the shared secret directly as a key, and lists its backends from the table
-
-### Requirement: Documentation: libsodium's text adapted, Wikipedia cited
-The pages of the libsodium families SHALL adapt libsodium's documentation (`jedisct1/libsodium-doc` at `6d1ea27b79b853b2a04f09ae9e1a8231c90e3b56`, ISC), each adapted page carrying an attribution line, and the library MUST ship the documentation's ISC notice as `LICENSE-LIBSODIUM-DOC.txt`. Wikipedia (CC BY-SA) MUST only be cited by link, never copied.
+- **THEN** the X25519 section opens with what X25519 is for in a chat app, holds a running example, and warns about the all-zero secret and about using the shared secret directly as a key
 
 #### Scenario: An adapted page
 - **WHEN** the secretbox page is read
 - **THEN** it ends with the attribution to libsodium's documentation and its ISC licence
 
-### Requirement: Documentation: teaching chapters by use case
-The documentation SHALL hold teaching chapters on peer-to-peer networks, cryptocurrencies and privacy, each framed as raising a program's security (what goes wrong without the primitive, what it guarantees, how to use it right), whose examples are webcpp's own code written after what a named, linked public application built on noble does, never copying its code, each example built and run as a fixture.
+### Requirement: Documentation: a chapter per namespace, opening with a comparison table
+Each group of the library (`ciphers`, `curves`, `post_quantum`, `rsa`, `hybrid`, `commitments`, `secret_sharing`, the root utilities) SHALL have a chapter that opens with a comparison table of everything inside it, generated from `meta/capabilities.json` and `meta/measurements.json`: for `ciphers` whether each is an AEAD, key and nonce sizes, nonce-misuse resistance, speed with and without hardware support, constant time per backend, standards, where it is used in the world, WebCrypto availability and "choose it when"; for `curves` what each does, its security level, key and signature sizes, speed, standards, the ecosystems that require it, and "choose it for compatibility with"; the other groups with the columns their algorithms need. Every statement of where an algorithm is used MUST cite a source, and the generator MUST refuse one without.
 
-#### Scenario: The privacy chapter
-- **WHEN** the privacy chapter's sealed-box example is built and run
+#### Scenario: The curves table
+- **WHEN** the curves chapter is built
+- **THEN** its table lists secp256k1 with Bitcoin, Ethereum and Nostr, P-256 with passkeys and WebCrypto, and Ed25519 with SSH and Signal, each with its cited source
+
+### Requirement: Documentation: generated backend lists and matrices
+Every API page SHALL list the backends that implement it, with the default per target and profile, generated from the capability table and the rankings. A backends chapter MUST hold generated matrices: operations by backends by targets, binary size per target per operation, throughput natively and under node per operation, and constant time per backend and target. No table that states support, size, speed or a property MAY be written by hand: `tools/crypto/docs.py` generates them, and its `--check` MUST fail on a stale page.
+
+#### Scenario: A pin move
+- **WHEN** a pin moves and `meta/measurements.json` is regenerated without rerunning `docs.py`
+- **THEN** `docs.py --check` fails, naming the stale pages
+
+### Requirement: Documentation: choosing by use case, and an index for LLMs
+The documentation SHALL hold a "choose by use case" chapter, a decision table generated from `meta/use_cases.json` whose rows read "I need to ..." and give a namespace, an algorithm, a backend and a profile with a link to the example, and an `llms.txt` at its root listing each namespace, each function, its use cases and its backends, generated with the tables.
+
+#### Scenario: An LLM picks a cipher
+- **WHEN** the row "encrypt messages in a chat app, on the web and natively" is read
+- **THEN** it names `ciphers::xchacha20_poly1305`, its default backend per target, and its example, and `llms.txt` lists the same function with that use case
+
+### Requirement: Documentation: teaching chapters by use case
+The documentation SHALL hold teaching chapters on crypto wallets, peer-to-peer protocols, passwords and everyday apps, each giving the problem, the idea, code from a compiled example and the mistakes, framed as raising a program's security; their examples MUST be webcpp's own code written after what a named, linked public application built on noble does, never copying its code, and protocol-level steps (BIP, EIP, NIP) MUST be shown as what a domain library builds from these primitives, not as this library's API.
+
+#### Scenario: The everyday apps chapter
+- **WHEN** its sealed-box example is built and run
 - **THEN** it prints its expected output, and the chapter names the application whose practice it follows
 
 ### Requirement: Scope: primitives only, protocols in domain libraries

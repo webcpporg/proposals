@@ -95,11 +95,16 @@ this change the same day. It is version 0.2 onward, a series of increments after
   BIP vectors for libsecp256k1's modules), the C libraries' own suites, cross-backend agreement natively and on
   WebAssembly, the browser as the outside oracle for everything it offers, and constant-time
   lanes for the new code.
-- **Documentation:** a page per algorithm in noble's form (what it is, an example, its
-  pitfalls); libsodium's documentation adapted under its ISC licence with the notice kept;
-  Wikipedia cited, never copied; teaching chapters by use case (peer-to-peer networks,
-  cryptocurrencies, privacy), framed as raising a program's security, with examples of webcpp's
-  own written after what real public applications built on noble do.
+- **Documentation** (D19, the owner's requirements of 2026-11-15): written for a newcomer and
+  for an LLM choosing from it alone; a chapter per namespace opening with a comparison table
+  (characteristics, use cases, where used with sources, compatibility, "choose it when"); every
+  API page's backends, a backends chapter's matrices (operations, targets, sizes, throughput,
+  constant time), a "choose by use case" decision table and an `llms.txt` index, all generated
+  from `meta/capabilities.json`, `meta/use_cases.json` and `meta/measurements.json` by
+  `tools/crypto/docs.py`; prose in webcpp's own words in the manner of Wikipedia's best articles
+  (cited, never copied), libsodium's documentation adapted under ISC, noble's per-algorithm
+  form; teaching chapters on crypto wallets, peer-to-peer protocols, passwords and everyday
+  apps.
 
 ## Capabilities
 

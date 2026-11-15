@@ -503,26 +503,67 @@ mature C hash-to-curve, so it has none.
 - **Messages and the table:** every refusal from a test of its own (the genesis's rule), and the
   generated table test of D4.
 
-### D19. Documentation
+### D19. Documentation: two readers, generated tables, chapters per group
 
-- **A page per algorithm** in noble's form: what it is and when to use it, a complete example
-  that compiles and runs as a fixture, its pitfalls (nonce reuse, small-order keys, malleability,
-  message limits, what is and is not constant time on each target), and its backends from the
-  capability table.
-- **libsodium's documentation** (`jedisct1/libsodium-doc` at `6d1ea27`, ISC) is adapted for the
-  libsodium families: each adapted page carries an attribution line, and the library ships the
-  notice as `LICENSE-LIBSODIUM-DOC.txt`.
-- **Wikipedia** (CC BY-SA) is cited by link where a page needs background, and never copied.
-- **Teaching chapters by use case:** peer-to-peer networks (identities, signed and encrypted
-  messages, key exchange), cryptocurrencies (secp256k1, recovery, MuSig2, silent payments,
-  BLS, KZG), privacy (boxes, sealed boxes, secretstream, post-quantum hybrids, IP address
-  encryption). Each is framed as raising a program's security: what goes wrong without the
-  primitive, what it guarantees, how to use it right. Each example is webcpp's own code,
-  written after what a real public application built on noble does with the primitives (the
-  ECDH and XChaCha20 a Nostr client composes, the recoverable signatures an Ethereum library
-  makes, the Schnorr signatures a Bitcoin signer makes, a passkey verifier's ECDSA), naming and
-  linking that application, never copying its code; the protocol itself (NIP-44's format, a
-  transaction's sighash) is the domain library's, and the chapter says which.
+The owner's documentation requirements of 2026-11-15 (`doc-requirements.md` in the
+superproject's work tree), binding on crypto version 0.1's Task 24, on webcpp::hash's
+documentation and on the documentation task of every increment here.
+
+- **Two readers at once:** a developer who knows little cryptography, and an LLM that collects a
+  person's use case and must pick the right technology from the documentation alone. Every page
+  lets both choose correctly without outside knowledge.
+- **Style:** each page explains as the best Wikipedia articles do, in webcpp's own words: a lead
+  paragraph saying what the thing is and what it is for, then how it works, then details.
+  Wikipedia (CC BY-SA) is a model and a cited source, never copied. libsodium's documentation
+  (`jedisct1/libsodium-doc` at `6d1ea27`, ISC) is adapted for the libsodium families with an
+  attribution line on each adapted page and its notice shipped as `LICENSE-LIBSODIUM-DOC.txt`.
+  noble's README (MIT) is the model of an algorithm's section: what it is, an example, its
+  pitfalls. Use cases from ordinary applications come first (a wallet, a chat app, a password
+  manager, file sharing, a login), then the technical detail; every page is framed as raising
+  security: what goes wrong without it, what the mistake costs.
+- **One chapter per namespace** (D29's groups: `ciphers`, `curves`, `post_quantum`, `rsa`,
+  `hybrid`, `commitments`, `secret_sharing`, the root utilities), each opening with a comparison
+  table of everything inside it. The ciphers table: AEAD or not, key and nonce sizes,
+  nonce-misuse resistance, speed with and without hardware support, constant time per backend,
+  standards, where it is used in the world (TLS, WireGuard, Signal, SSH, Nostr, WebRTC, disk
+  encryption), WebCrypto availability, and "choose it when". The curves table: what each curve
+  does (signatures, agreement, aggregation, pairings), security level, key and signature sizes,
+  speed, standards, the ecosystems that require it (secp256k1: Bitcoin, Ethereum, Nostr;
+  P-256: passkeys, TLS, JWT, WebCrypto, smart cards; Ed25519 and X25519: SSH, Signal,
+  WireGuard, Solana, Tor; BLS12-381: Ethereum's consensus; BN254: zk-SNARK verifiers), and
+  "choose it for compatibility with". The other groups' tables alike.
+- **Every API page lists its backends**, with the default per target and profile, generated
+  from the capability table and the rankings, never written by hand.
+- **A backends chapter with matrices**, generated and regenerated at every pin move:
+  operations by backends by targets, binary size per target per operation, throughput natively
+  and under node per operation, constant time per backend and target.
+- **A "choose by use case" chapter:** a decision table an LLM can follow, "I need to ..." to a
+  namespace, an algorithm, a backend and a profile, each row linking its example.
+- **Teaching chapters by use case:** crypto wallets, peer-to-peer protocols, passwords (with
+  webcpp::hash's password hashing), everyday apps (chat, file sharing, a login, a password
+  manager, privacy). Each: the problem, the idea, code from a compiled example, the mistakes.
+  Examples are webcpp's own code written after what real public applications built on noble do
+  (a Nostr client's ECDH and XChaCha20, an Ethereum library's recoverable signatures, a Bitcoin
+  signer's Schnorr signatures, a passkey verifier's ECDSA), naming and linking that
+  application, never copying it; protocol-level steps (BIP, EIP, NIP) are shown as what a
+  domain library builds from these primitives, not as this library's API (D24).
+- **A machine-readable index for LLMs**, `llms.txt` at the documentation's root (each
+  namespace, each function, its use cases and its backends), generated with the tables.
+
+**The single source.** Every table that states support, size, speed or a property is generated:
+`meta/capabilities.json` gains, per algorithm, its documentation fields (group, properties such
+as AEAD, sizes, misuse resistance, security level, standards, `used_in` with a cited source per
+entry, WebCrypto availability, `choose_when`, use cases) and `meta/use_cases.json` holds the
+decision table's rows; `meta/measurements.json` gives sizes, throughput and the
+constant-time results of the lanes. `tools/crypto/docs.py` (superproject) generates the
+comparison tables, the per-page backend lists, the backends matrices, the decision table and
+`llms.txt`; its `--check` fails on a stale page, and it refuses a world fact without a source.
+Every code block is a compiled example included by tag, with its expected output.
+
+- **Why:** an LLM or a newcomer chooses from tables, and a table typed by hand lies after the
+  next pin move; the data the tests and lanes produce is the only thing that stays true.
+- **Alternatives:** hand-written tables reviewed at each release (they drift); a page per
+  algorithm alone (the first draft: no comparison, no way to choose between algorithms).
 
 ### D20. Increments and versions
 
