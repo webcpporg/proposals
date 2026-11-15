@@ -980,6 +980,7 @@ with `backend_has_v` for every cell.
 | HMAC | 1 (Hash2, every hash) | - | - | SHA-256/512/512-256: 2 | 5 | 4 | 6 | 7 |
 | SipHash-2-4, SipHash-2-4x | SipHash-2-4 64: 1 (Hash2) | - | - | 2 | - | - | 6 | - |
 | HKDF | 1 | - | - | 1 (SHA-256/512) | 1 | 1 | 6 | 7 |
+| `async_argon2id`, `async_argon2`, `async_scrypt`, `async_pbkdf2` on another thread | every backend that has the function, only with threads (11.5): native `threading=multi`, Emscripten `-pthread`; never WASI | | | | | | | `async_pbkdf2` without threads too |
 | PBKDF2 | 1 | - | - | - | - | 1 | 6 | 7 |
 | scrypt | - | - | - | 1 | - | 4 | 6 | - |
 | Argon2id, one lane | - | - | - | 1 | - | 4 | 6 | - |
@@ -1392,8 +1393,9 @@ library's plan, which changes nothing a crypto program links.
   `invalid_state` (value 9) after it.
 - The profile is one define of five (4.1); `auto` is the owner's rule; WebCrypto is never chosen
   by a profile and serves the asynchronous family alone (section 11).
-- The asynchronous family is offered on every target for the algorithms WebCrypto serves, and
-  completes through `post` where it runs a synchronous backend (11.2).
+- The cheap asynchronous functions exist only for the algorithms WebCrypto serves, on every
+  target, completing through `post` on a synchronous backend (11.2); the heavy ones run on
+  another thread and exist only with threads (11.5).
 - No `LICENSE-<ORIGIN>.txt` in the library's repository: webcpp::hash's code derives from no
   C library's (chapter 10, "The licence"); the README and the third-party table name each
   library and its licence. `NOTICE.md` holds libsodium-doc's copyright notice and ISC licence,
@@ -1452,11 +1454,17 @@ never inline. A rejected promise is `error::backend_failure`; a cancelled operat
 
 ### 11.2 Where the family runs, and its default
 
-- **Offered on every target, for the algorithms WebCrypto serves** (SHA-1, SHA-256, SHA-384,
-  SHA-512, HMAC over them, HKDF and PBKDF2 over them). Decided so that code written once against
-  the asynchronous family builds and runs everywhere; off Emscripten, and on Emscripten with a
-  synchronous backend named, the operation runs the synchronous backend at once and completes
-  through `asio::post` on the handler's associated executor (never inside the initiating call).
+- **The cheap functions** (`async_digest`, `async_hmac`, `async_hkdf`) exist on every target,
+  and only for the algorithms WebCrypto serves (SHA-1, SHA-256, SHA-384, SHA-512, HMAC and HKDF
+  over them). Off Emscripten, and on Emscripten with a synchronous backend named, the operation
+  runs the synchronous backend at once and completes through `asio::post` on the handler's
+  associated executor (never inside the initiating call). Decided so that code written once
+  against the browser's family builds and runs everywhere; they cost microseconds, so a post
+  blocks nothing. No other cheap function gets an `async_` variant: off the browser it would add
+  a post and nothing else.
+- **`async_pbkdf2` is heavy** (11.5): on Emscripten its default is WebCrypto, with or without
+  threads; with a synchronous backend it runs on another thread, and exists so only where the
+  build has threads.
 - **`default_async_backend`** is `backends::webcrypto` on Emscripten for every algorithm it
   serves, whatever the profile (4.1): the asynchronous family exists for the browser; elsewhere,
   and for an algorithm it does not serve, it is `default_backend<Algorithm, Hmac>`.
@@ -1468,6 +1476,50 @@ never inline. A rejected promise is `error::backend_failure`; a cancelled operat
   convenience header does not bring (chapter 3: an optional heavy dependency, named in its
   comment); `backends::webcrypto` needs nothing else on Emscripten and names no C library.
 
+### 11.5 The heavy functions on another thread (the owner's decision, 2026-11-14)
+
+The deliberately slow functions get asynchronous variants that truly run on another thread, and
+only when the build has threads: `async_argon2id`, `async_argon2` (increment 2 on),
+`async_scrypt` and `async_pbkdf2` (with a synchronous backend), and every later memory-hard or
+deliberately slow function (Botan's bcrypt and bcrypt-pbkdf). Separate from the browser's family,
+which exists on Emscripten with or without threads.
+
+```cpp
+/** Argon2id on a thread of `work`'s context; completes with `void(boost::system::error_code)`. */
+template <class Backend = backends::sodium, class WorkExecutor, class CompletionToken>
+auto async_argon2id(WorkExecutor const& work, std::span<std::uint8_t> output,
+                    std::span<std::uint8_t const> password, std::span<std::uint8_t const> salt,
+                    argon2id_parameters const& parameters, CompletionToken&& token);
+// async_scrypt, async_argon2<Variant, Backend>, async_pbkdf2<Hmac, Backend> alike.
+```
+
+- **Threads detected by `config.hpp`.** webcpp's `<webcpp/config.hpp>` defines no threading macro
+  (its macros are `WEBCPP_TARGET_*`, `WEBCPP_HAS_EXCEPTIONS`, `WEBCPP_NO_EXCEPTIONS`), so
+  `config.hpp` defines `WEBCPP_HASH_HAS_THREADS` natively when Boost.Config's `BOOST_HAS_THREADS`
+  is defined (b2's `threading=multi` compiles with `-pthread`, which defines `_REENTRANT`; MSVC's
+  `/MT` and `/MD` define `_MT`), and on Emscripten when `__EMSCRIPTEN_PTHREADS__` is defined
+  (`-pthread`). Never on wasip2 (no threads) or wasip3 (its cooperative threads do not run in
+  parallel, so a heavy function there would still block its caller). A developer may define
+  `WEBCPP_HASH_NO_THREADS` to turn the heavy variants off in a build that has threads.
+- **Where the work runs.** The function guards first (errors complete through a post, as 11.1),
+  then posts the work to `work`, an executor whose context runs on other threads (a
+  `webcpp::asio::thread_pool`'s, typically), and completes on the handler's associated executor
+  (Asio's default: `work` itself; a program binds its own event loop's with `bind_executor`). On
+  Emscripten with pthreads each thread of the pool is a Web Worker, so the page never blocks, and
+  the completion reaches the page's thread through the handler's executor
+  (`webcpp::asio::browser::main_thread_context`'s, when bound). The spans and the parameters are
+  the caller's until completion; cancellation before the work starts completes with
+  `operation_aborted`, after it starts the work runs to its end (no C library here can be
+  interrupted) and then completes with `operation_aborted`, `output` zeroed.
+- **Without threads they do not exist:** each name is then a template whose `static_assert`
+  says "webcpp::hash: async_argon2id runs on another thread and needs a build with threads
+  (natively b2 threading=multi; on Emscripten -pthread). Without threads, call argon2id." (and
+  the same for each), so a call fails to compile with the instruction; `async_pbkdf2` with
+  `backends::webcrypto` on Emscripten is not refused.
+- **Alternatives:** completing heavy functions through a post without threads (rejected by the
+  owner: it blocks the event loop for seconds under an asynchronous name); running them on a
+  thread created per call (a thread per call, no bound, and no executor of the program's).
+
 ### 11.3 The alternatives the owner rejected
 
 - **JSPI or Asyncify suspension under the synchronous call:** a suspension per call, a larger
@@ -1478,6 +1530,13 @@ never inline. A rejected promise is `error::backend_failure`; a cancelled operat
   the test of 7.4, which compares every algorithm with the browser's whatever the backend.
 
 ### 11.4 Tests
+
+The heavy variants: natively with `threading=multi` and on Emscripten with `-pthread` (under
+node, whose workers are Web Workers' equivalent), `async_argon2id`, `async_scrypt` and
+`async_pbkdf2` with a synchronous backend run on a thread of the pool other than the caller's
+(the thread id recorded in the work and compared), give RFC 7914's and libsodium's results, and
+keep the caller's event loop responsive (a timer of 10 ms on the caller's loop fires while an
+Argon2id of 64 MiB runs); without threads, a message test per name states 11.5's text.
 
 The async family's tests run on every target: on Emscripten under node, every function on
 `backends::webcrypto` against RFC 4231 (HMAC), RFC 5869, RFC 6070 and RFC 7914 section 11, and

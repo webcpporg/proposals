@@ -291,7 +291,26 @@ From increment 2 on, `digest<Digest, Backend>`, `hasher<Digest, Backend>` (`make
 - **WHEN** an Emscripten test under node calls `async_hkdf<hmac_sha2_256>` with RFC 5869 A.1's inputs once with a callback, once with `use_awaitable` and once with `use_future`
 - **THEN** each completes with no error and A.1's OKM, through WebCrypto
 
+#### Scenario: Cheap functions only where the browser serves them
+- **WHEN** a program looks for an `async_` variant of a cheap function WebCrypto lacks, as `async_digest<digests::blake2b>`
+- **THEN** it does not compile, and `async_hkdf<hmac_sha2_256>` does, on every target
+
 #### Scenario: Never inline elsewhere
 - **WHEN** a native test calls `async_pbkdf2<hmac_sha2_512>` with a callback that records whether the initiating call has returned
 - **THEN** the callback runs after the initiating call returned, from the executor, with RFC-correct output
+
+### Requirement: Heavy functions run on another thread, only in a build with threads
+`config.hpp` SHALL define `WEBCPP_HASH_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined and on Emscripten when `__EMSCRIPTEN_PTHREADS__` is defined, never on WASI, unless `WEBCPP_HASH_NO_THREADS` is defined. With it, `async_argon2id`, `async_argon2`, `async_scrypt` and `async_pbkdf2` (with a synchronous backend), and every later deliberately slow function's `async_` variant, MUST run the work on the executor the caller gives (natively a `webcpp::asio::thread_pool`'s; on Emscripten a pool of Web Workers) and complete through the completion token on the handler's associated executor. Without it, a call of any of them MUST fail to compile with "webcpp::hash: <name> runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call <synchronous name>.", except `async_pbkdf2` on `backends::webcrypto`, which needs no thread.
+
+#### Scenario: Argon2id off the caller's thread
+- **WHEN** a native test built with `threading=multi` calls `async_argon2id` with a `thread_pool`'s executor, the interactive costs and a callback bound to its own `io_context`, and runs a 10 ms timer on that `io_context`
+- **THEN** the work runs on a pool thread, the timer fires before the derivation completes, and the result equals `argon2id`'s
+
+#### Scenario: Without threads
+- **WHEN** a program built with b2's default `threading=single` calls `async_scrypt`
+- **THEN** compilation fails with "webcpp::hash: async_scrypt runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call scrypt."
+
+#### Scenario: A page that never blocks
+- **WHEN** an Emscripten program built with `-pthread` calls `async_argon2id` with a pool of Web Workers under node
+- **THEN** the derivation runs on a worker, the main thread's timer keeps firing, and the completion reaches the main thread
 

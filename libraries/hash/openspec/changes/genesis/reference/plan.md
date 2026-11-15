@@ -108,7 +108,7 @@ the integration branches and resolves those files.
 | 7 | `xkcp-3` | 30 to 33 (increment 3) | 24, and Task 25 |
 | 7 | `openssl-4` | 34 to 38 (increment 4) | 24, and Task 25 |
 | 7 | `bearssl-5` | 39, 40 (increment 5) | 24, and Task 25 |
-| 7 | `async-7` | 44 to 46 (increment 7) | 24, and webcpp::asio's `browser::async_await` on `main` |
+| 7 | `async-7` | 44 to 46 (increment 7; the heavy variants on threads in Task 44) | 24, and webcpp::asio's `browser::async_await` on `main` |
 | 8 | `botan-6` | 41 to 43 (increment 6) | Task 25, and webcpp::crypto's Botan provisioning on `main` |
 | 9 | `whole-n` | 47 | each increment's stream: run once per increment as it merges |
 
@@ -2311,7 +2311,22 @@ Stream `async-7`.
   `webcpp::asio_backend::async_initiate<CompletionToken, void(boost::system::error_code)>`, runs
   the guards, and for a synchronous backend runs it at once and posts the handler, bound to its
   associated executor, with the result's error code. Run. Expected: PASS.
-- [ ] **Step 3: Commit** (library) `"hash: the asynchronous family, completing through post on every synchronous backend"`.
+- [ ] **Step 3: The heavy variants on another thread** (spec 11.5). `config.hpp` gains
+  `WEBCPP_HASH_HAS_THREADS` (from `BOOST_HAS_THREADS` natively, `__EMSCRIPTEN_PTHREADS__` on
+  Emscripten, never WASI; `WEBCPP_HASH_NO_THREADS` turns it off) with a three-way test
+  (`config_threads`, `<threading>multi`; `config_single`; `config_no_threads`). Write the failing
+  tests first: `async_heavy_test.cpp`, declared natively with `<threading>multi` and on Emscripten
+  with `<threading>multi` (b2 gives `-pthread`): `async_argon2id`, `async_scrypt` and
+  `async_pbkdf2<hmac_sha2_512, backends::hash2>` on a `webcpp::asio::thread_pool` of two threads,
+  the work's thread id differing from the caller's, results equal to the synchronous functions',
+  and a 10 ms timer on the caller's `io_context` firing during an Argon2id of 64 MiB; and a
+  message test per name (`test/messages/async_<name>_without_threads/`, built single-threaded and
+  on wasip2) stating spec 11.5's text. Then write the variants: guards, `asio::post(work, ...)`
+  running the synchronous function, completion dispatched to the handler's associated executor;
+  without threads each name is a template whose `static_assert` holds the text. Run natively
+  (`threading=multi` and single), on wasip2, and on Emscripten with and without pthreads.
+  Expected: PASS.
+- [ ] **Step 4: Commit** (library) `"hash: the asynchronous family by post, and the heavy functions on another thread where the build has threads"`.
 
 ## Task 45: `backends::webcrypto` on Emscripten
 
@@ -2332,8 +2347,12 @@ Stream `async-7`.
 
 ## Task 46: The asynchronous family's behaviour
 
-- [ ] **Step 1: Write the tests:** cancellation through a cancellation slot before the promise
-  settles (completion with `operation_aborted`, `output` zeroed, no later write); the handler's
+- [ ] **Step 1: Write the tests:** the heavy variants' cancellation (before the work starts:
+  `operation_aborted` at once; after: the work ends, then `operation_aborted`, `output` zeroed);
+  on Emscripten with pthreads, an `async_argon2id` on a pool of Web Workers under node while the
+  main thread's timer keeps firing, the completion bound to
+  `webcpp::asio::browser::main_thread_context`'s executor; cancellation through a cancellation
+  slot before the promise settles (completion with `operation_aborted`, `output` zeroed, no later write); the handler's
   associated allocator holds the operation's storage (a counting allocator); co_await in Asio
   (`use_awaitable`) and in Cobalt (`cobalt::use_op`, where webcpp::cobalt is on `main`); the spans
   untouched by the caller until completion. Run on every target. Expected: PASS.

@@ -70,7 +70,7 @@ every task is open. The groups are the spec's increments (spec 1.5); inside each
 
 ## 7. Increment 7: the browser backend, through the asynchronous family (stream `async-7`)
 
-- [ ] 7.1 The asynchronous family, completing through post everywhere (plan: Task 44)
+- [ ] 7.1 The cheap asynchronous functions by post, and the heavy ones on another thread where the build has threads (plan: Task 44)
 - [ ] 7.2 `backends::webcrypto` on Emscripten through `browser::async_await` (plan: Task 45)
 - [ ] 7.3 Cancellation, allocation and tokens; increment 7 whole (plan: Task 46, Task 47)
 

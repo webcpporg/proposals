@@ -380,6 +380,28 @@ synchronous backend named, it runs that backend at once and completes through `a
   that uses it would not port).
 - **Dependency:** `async.hpp` needs webcpp::asio; the convenience header leaves it out and says
   so (chapter 3).
+- **Cheap functions only where the browser serves them:** `async_digest`, `async_hmac` and
+  `async_hkdf` exist for WebCrypto's algorithms alone, completing by post off Emscripten for
+  uniformity; any other cheap function would gain only a post.
+
+### D24. The heavy functions run on another thread, only in a build with threads
+
+The owner decided on 2026-11-14 that Argon2, scrypt, PBKDF2 with a synchronous backend and every
+later deliberately slow function get `async_` variants that truly run on another thread: natively
+with `threading=multi` on an executor the caller gives (a `webcpp::asio::thread_pool`'s),
+completing through the completion token; on Emscripten with pthreads on a Web Worker, so the page
+never blocks. `config.hpp` defines `WEBCPP_HASH_HAS_THREADS` from Boost.Config's
+`BOOST_HAS_THREADS` natively and `__EMSCRIPTEN_PTHREADS__` on Emscripten (webcpp's own config
+defines no threading macro), never on WASI (wasip3's cooperative threads are not parallel).
+Without threads the names are templates whose `static_assert` says the build needs threads and
+which synchronous function to call. This is separate from D23's browser family, which exists on
+Emscripten with or without threads; `async_pbkdf2` belongs to both: WebCrypto by default on
+Emscripten, a pool thread with a synchronous backend.
+
+- **Alternatives:** heavy functions completing by post without threads (rejected: an
+  asynchronous name that blocks the event loop for seconds); a thread per call (unbounded, and
+  not the program's executor); detecting threads at run time (a program without a thread library
+  cannot link the pool at all).
 
 ## Risks / Trade-offs
 
