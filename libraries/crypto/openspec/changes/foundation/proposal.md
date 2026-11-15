@@ -40,8 +40,18 @@ this change the same day. It is version 0.2 onward, a series of increments after
   6. blst: BLS12-381 signatures, aggregation and hash-to-curve;
   7. Botan 3 as a pinned submodule: Ed448, X448, brainpool, AES-SIV, AES-GCM-SIV, AES-KW,
      CMAC, ML-KEM, ML-DSA, SLH-DSA and the long tail;
-  8. OpenSSL's remaining algorithms on native, wasip2 and wasip3.
-  After increment 1, increments 3 to 8 run as parallel streams; increment 2 runs beside 1.
+  8. OpenSSL's remaining algorithms on native, wasip2 and wasip3;
+  9. KZG polynomial commitments over c-kzg-4844, on blst;
+  10. the BN254 pairing over mcl, for pairing-based verification;
+  11. Shamir secret sharing over dsprenkels/sss, constant time;
+  12. HPKE (RFC 9180) over OpenSSL natively and on WASI, and Botan on Emscripten.
+  Increment 2 runs beside 1; after 1, increments 3 to 8, 10 and 11 run as parallel streams; 9
+  follows 6, and 12 follows 8 (its WebAssembly cells 7).
+- **Primitives only** (D24, the owner's rule): whatever BIPs, EIPs, SLIPs and NIPs define goes to
+  future domain libraries (webcpp::bitcoin, webcpp::ethereum, webcpp::nostr) built on crypto and
+  hash; libsecp256k1's own modules stay as the primitives they are. Version 0.1's Taproot tweak
+  becomes a generic x-only tweak and its `from_lax_der` and `bitcoin_sign` example move to
+  webcpp::bitcoin, a change of the genesis that increment 2 must not undo.
 - **Every backend exposes everything its library offers that belongs to crypto.** Hashing,
   XOFs, HMAC, key derivation and password hashing are webcpp::hash's (D1); webcpp::crypto
   depends on webcpp::hash.
@@ -76,7 +86,7 @@ this change the same day. It is version 0.2 onward, a series of increments after
   or on Web Workers on Emscripten with pthreads; without threads it does not compile, and cheap
   operations stay synchronous.
 - **Tests per backend** with official vectors (Wycheproof where it covers, RFCs, NIST ACVP,
-  BIP and EIP vectors), the C libraries' own suites, cross-backend agreement natively and on
+  BIP vectors for libsecp256k1's modules), the C libraries' own suites, cross-backend agreement natively and on
   WebAssembly, the browser as the outside oracle for everything it offers, and constant-time
   lanes for the new code.
 - **Documentation:** a page per algorithm in noble's form (what it is, an example, its
@@ -118,9 +128,12 @@ None.
   1.0.22 at `77e1ce5d6dee871c49ef211222ba18ef0c486bda` (ISC); libsodium's documentation at
   `jedisct1/libsodium-doc` `6d1ea27b79b853b2a04f09ae9e1a8231c90e3b56` (ISC); blst v0.3.17 at
   `54e6e55674722fc2797ebb4bbb71b26d881eb4b8` (Apache-2.0); Botan 3.14.1 at
-  `01af88c039fcfaedc418b1af4d6d3a139674e591` (BSD-2-Clause); the genesis's BearSSL, OpenSSL
+  `01af88c039fcfaedc418b1af4d6d3a139674e591` (BSD-2-Clause); c-kzg-4844 v2.1.8 at
+  `e125905e5e01186e6ccb7a0ced4845bf7eddbcfe` (Apache-2.0); mcl v4.43 at
+  `50e4c6f2826de6b041f857caf9f253cc736ea926` (BSD-3-Clause); dsprenkels/sss at
+  `9f2a10b1c0d391bed485c4c7e93788ce37c360f1` (MIT); the genesis's BearSSL, OpenSSL
   3.5.9, libsecp256k1 v0.8.0 and ctaes pins; webcpp::asio on Emscripten for the asynchronous
-  family; for tests, Wycheproof, NIST ACVP's JSON vectors, BIP and EIP vectors, node and
+  family; for tests, Wycheproof, NIST ACVP's JSON vectors, BIP vectors, the consensus specifications' BLS vectors, node and
   Chrome.
 - **Status:** accepted on 2026-11-14 (the owner decided its scope and shape that day); not
   built, no release.

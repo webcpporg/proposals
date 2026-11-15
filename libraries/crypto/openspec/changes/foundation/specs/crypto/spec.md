@@ -199,7 +199,7 @@ Increment 2 SHALL add, as thin wrappers over libsecp256k1 v0.8.0: `sign_recovera
 
 #### Scenario: Ethereum's recovery
 - **WHEN** a recoverable signature of a digest is made and `recover` is given the signature and the digest
-- **THEN** it returns the signer's public key, and an EIP-155 vector's sender is recovered
+- **THEN** it returns the signer's public key, for random keys and for libsecp256k1's own recovery test cases
 
 #### Scenario: Nostr's shared x coordinate
 - **WHEN** two key pairs compute `ecdh_x` with each other's public keys
@@ -268,7 +268,7 @@ A rejected WebCrypto promise SHALL map to the library's errors: `OperationError`
 - **THEN** it completes with `not_supported`
 
 ### Requirement: Backend blst: BLS12-381
-Increment 6 SHALL add `backends::blst` over blst v0.3.17 (`54e6e55674722fc2797ebb4bbb71b26d881eb4b8`), the submodule `third_party/libs/blst`, built as upstream's two translation units (`src/server.c`, `build/assembly.S`) with the assembly and `__BLST_PORTABLE__` natively on Linux and macOS and `__BLST_NO_ASM__` on MSVC and WebAssembly, the configuration in the canary's name. It MUST offer `bls12_381::min_pk` and `bls12_381::min_sig`, each with `secret_key::make(ikm)` (EIP-2333), `sign`, `verify`, `aggregate`, `aggregate_verify`, `fast_aggregate_verify`, proofs of possession, and `hash_to_g1` and `hash_to_g2` with a caller's domain separation tag; pairing and field arithmetic MUST NOT be exposed.
+Increment 6 SHALL add `backends::blst` over blst v0.3.17 (`54e6e55674722fc2797ebb4bbb71b26d881eb4b8`), the submodule `third_party/libs/blst`, built as upstream's two translation units (`src/server.c`, `build/assembly.S`) with the assembly and `__BLST_PORTABLE__` natively on Linux and macOS and `__BLST_NO_ASM__` on MSVC and WebAssembly, the configuration in the canary's name. It MUST offer `bls12_381::min_pk` and `bls12_381::min_sig`, each with `secret_key::make(ikm)` (the IETF BLS draft's `KeyGen`), `sign`, `verify`, `aggregate`, `aggregate_verify`, `fast_aggregate_verify`, proofs of possession, and `hash_to_g1` and `hash_to_g2` with a caller's domain separation tag; pairing, field arithmetic and blst's EIP-2333 key tree MUST NOT be exposed.
 
 #### Scenario: The consensus vectors
 - **WHEN** the BLS vectors of Ethereum's consensus specifications run on `min_pk`
@@ -334,12 +334,59 @@ The documentation SHALL hold teaching chapters on peer-to-peer networks, cryptoc
 - **WHEN** the privacy chapter's sealed-box example is built and run
 - **THEN** it prints its expected output, and the chapter names the application whose practice it follows
 
-### Requirement: Increments: the foundation's eight, and its parallel streams
-The foundation SHALL proceed in eight increments ordered by value: (1) libsodium's core, the profiles, the capability table, the measurements, the constant-time lane and the documentation's form; (2) libsecp256k1's remaining modules; (3) BearSSL's remaining parts; (4) the browser backend and the asynchronous family; (5) libsodium completed; (6) blst; (7) Botan as a submodule; (8) OpenSSL's remaining algorithms. Increments 1 and 2 MUST be able to run beside each other and form version 0.2; after increment 1 merges, increments 3 to 8 MUST be able to run as parallel streams, whose shared generated files are regenerated after each rebase and never merged by hand. Each increment ends with the definition of green, a review, and pull requests the owner merges.
+### Requirement: Scope: primitives only, protocols in domain libraries
+webcpp::crypto SHALL hold cryptographic primitives only: algorithms with a specification of their own (an RFC, a NIST standard, an IETF or CFRG draft, a paper) and the public interfaces of its backends' libraries that are such algorithms, libsecp256k1's modules included (recovery, raw ECDH, tweaks by any 32-byte value, x-only tweaks, ElligatorSwift, MuSig2, silent payments). Whatever a protocol specification defines (BIPs, EIPs, SLIPs, NIPs and their like: BIP32 and BIP39 derivation, BIP341's `TapTweak`, sighashes, PSBT, addresses, EIP-712 hashing, EIP-2333 key trees, EIP-4844 versioned hashes, keystores, NIP-44's format, SLIP-39 shares) MUST NOT be in the library: it belongs to domain libraries built on crypto and hash (webcpp::bitcoin, webcpp::ethereum, webcpp::nostr, ...). Increment 2 MUST NOT bring back the Taproot tweak, `taproot_output_key` or `from_lax_der`, which version 0.1 replaces by a generic x-only tweak or moves to webcpp::bitcoin; a protocol's vectors MAY serve as test data for a primitive.
+
+#### Scenario: A tagged tweak is a domain library's
+- **WHEN** a program needs BIP341's output key from an internal key and a merkle root
+- **THEN** webcpp::crypto offers the x-only tweak by a 32-byte value, and the `TapTweak` tagged hash that computes that value is webcpp::bitcoin's
+
+#### Scenario: A backend function that is a protocol
+- **WHEN** a program needs EIP-2333's child key derivation, which blst implements
+- **THEN** webcpp::crypto does not expose it, and blst's C API stays reachable for webcpp::ethereum
+
+### Requirement: KZG commitments over c-kzg-4844
+Increment 9 SHALL add `backends::ckzg` over c-kzg-4844 v2.1.8 (`e125905e5e01186e6ccb7a0ced4845bf7eddbcfe`), the submodule `third_party/libs/c-kzg-4844`, built file by file against the library's blst submodule, never c-kzg's own. It MUST offer `kzg::settings::make` from a trusted setup the caller gives, `blob_to_commitment`, `compute_proof`, `verify_proof`, `compute_blob_proof`, `verify_blob_proof`, `verify_blob_proof_batch` and c-kzg's cell functions, with c-kzg's own vectors; the trusted setup MUST NOT be embedded, and versioned hashes MUST NOT be offered.
+
+#### Scenario: c-kzg's vectors
+- **WHEN** c-kzg-4844's reference tests run through `kzg` with the ceremony's setup loaded as test data
+- **THEN** every commitment, proof and verification gives the expected result
+
+### Requirement: The BN254 pairing over mcl
+Increment 10 SHALL add `backends::mcl` over mcl v4.43 (`50e4c6f2826de6b041f857caf9f253cc736ea926`), the submodule `third_party/libs/mcl`, built without its JIT (`MCL_DONT_USE_XBYAK`), offering `bn254::g1` and `bn254::g2` (decoding with subgroup checks, addition, scalar multiplication) and `bn254::pairing_check` for public data only, its capability cells marked not constant time.
+
+#### Scenario: A pairing check
+- **WHEN** `pairing_check` is given pairs whose product of pairings is one, and then the same with one point negated
+- **THEN** the first succeeds and the second returns `invalid_signature`
+
+### Requirement: Shamir secret sharing over sss
+Increment 11 SHALL add `backends::sss` over dsprenkels/sss at `9f2a10b1c0d391bed485c4c7e93788ce37c360f1`, the submodule `third_party/libs/sss` without its `randombytes` submodule, offering `shamir::split_key`, `shamir::combine_key`, `shamir::split` and `shamir::combine`, refusing `k < 2`, `k > n` and `n > 255` before any call, and feeding sss's `randombytes` only bytes the wrapper drew from `random_device`, reporting `entropy_unavailable` before sss runs.
+
+#### Scenario: Any k shares recover the key
+- **WHEN** a 32-byte key is split into 5 shares with threshold 3 and every 3-subset is combined
+- **THEN** each gives the key, and a 2-subset gives a different value
+
+#### Scenario: No entropy
+- **WHEN** `split_key` runs with the test's failing entropy source
+- **THEN** it returns `entropy_unavailable` and sss is not called
+
+### Requirement: HPKE over OpenSSL and Botan
+Increment 12 SHALL add `hpke<Kem, Kdf, Aead, Backend>` (RFC 9180: the base, PSK, auth and auth-PSK modes, a context with `seal`, `open` and `export` whose sequence number is guarded against overflow, and the single-shot calls) on OpenSSL (`OSSL_HPKE_*`, native, wasip2, wasip3) and on Botan (its `hpke` module, natively, on Emscripten, and on WASI as increment 7 finds), over the suites both have, and MUST NOT compose HPKE from another library's parts.
+
+#### Scenario: RFC 9180's vectors on two backends
+- **WHEN** RFC 9180's test vectors for DHKEM(X25519, HKDF-SHA256) with ChaCha20-Poly1305 run on OpenSSL and on Botan natively
+- **THEN** both give every ciphertext and exported secret, and each opens the other's
+
+### Requirement: Increments: the foundation's twelve, and its parallel streams
+The foundation SHALL proceed in twelve increments ordered by value: (1) libsodium's core, the profiles, the capability table, the measurements, the constant-time lane and the documentation's form; (2) libsecp256k1's remaining modules; (3) BearSSL's remaining parts; (4) the browser backend and the asynchronous family; (5) libsodium completed; (6) blst; (7) Botan as a submodule; (8) OpenSSL's remaining algorithms; (9) KZG over c-kzg-4844; (10) BN254 over mcl; (11) Shamir secret sharing over sss; (12) HPKE. Increments 1 and 2 MUST be able to run beside each other and form version 0.2; after increment 1 merges, increments 3 to 8, 10 and 11 MUST be able to run as parallel streams; 9 starts when 6 merges, and 12 when 8 merges, its WebAssembly cells joining when 7 merges. The shared generated files are regenerated after each rebase and never merged by hand. Each increment ends with the definition of green, a review, and pull requests the owner merges.
 
 #### Scenario: Two streams touch the capability table
 - **WHEN** increments 3 and 6 both add rows to `meta/capabilities.json` and 3 merges first
 - **THEN** 6 rebases, merges the JSON rows, regenerates the derived files with `capabilities.py`, and `--check` passes
+
+#### Scenario: KZG waits for blst
+- **WHEN** increment 9 is about to start and increment 6 has not merged
+- **THEN** it waits, because `backends::ckzg` builds on the library's blst
 
 ## MODIFIED Requirements
 

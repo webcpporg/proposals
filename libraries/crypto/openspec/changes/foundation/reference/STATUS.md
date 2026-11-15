@@ -15,6 +15,12 @@
   latest 3.x tag is 3.14.1 (`01af88c039fcfaedc418b1af4d6d3a139674e591`, 2026-11-06);
   libsodium's documentation `jedisct1/libsodium-doc` master is
   `6d1ea27b79b853b2a04f09ae9e1a8231c90e3b56` (ISC).
+- Pins of increments 9 to 12, checked with `gh api` on 2026-11-15: c-kzg-4844's latest release
+  v2.1.8 (`e125905e5e01186e6ccb7a0ced4845bf7eddbcfe`, 2026-07-09, Apache-2.0, its own blst
+  submodule at v0.3.16); mcl's latest tag v4.43 (`50e4c6f2826de6b041f857caf9f253cc736ea926`,
+  BSD-3-Clause; mcl publishes tags, not releases); dsprenkels/sss's latest commit
+  `9f2a10b1c0d391bed485c4c7e93788ce37c360f1` (2025-08-18, MIT; its only tag is v0.1.0); Botan
+  3.14.1 holds the `hpke` module (`src/lib/pubkey/hpke/`).
 - An upstream fact found while writing: libsodium 1.0.22 has the ristretto255 and
   edwards25519 maps from hashes, and not the full RFC 9380 `crypto_core_*_from_string`
   functions, which are on libsodium's `master` since 2026-02-20 and in no release (design

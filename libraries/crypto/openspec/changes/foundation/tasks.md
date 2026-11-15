@@ -28,7 +28,7 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 ## 2. Increment 2: libsecp256k1's remaining modules (version 0.2, beside 1)
 
 - [ ] 2.1 `ecdh` returns `secret<32>`; `ecdh_x` and `ecdh_point` (plan: Increment 2, step 1)
-- [ ] 2.2 Recovery and hedged ECDSA, with EIP-155 vectors (plan: Increment 2, step 2)
+- [ ] 2.2 Recovery and hedged ECDSA, with libsecp256k1's own recovery tests (plan: Increment 2, step 2)
 - [ ] 2.3 Tweaks, negation, combination, uncompressed keys (plan: Increment 2, step 3)
 - [ ] 2.4 ElligatorSwift with BIP324's vectors (plan: Increment 2, step 4)
 - [ ] 2.5 MuSig2 with BIP327's vectors, the consumed nonce (plan: Increment 2, step 5)
@@ -79,7 +79,31 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 - [ ] 8.3 AES modes and CMAC, ChaCha20-Poly1305; the allocation per operation recorded (plan: Increment 8, step 3)
 - [ ] 8.4 Increment 8 whole (plan: Increment 8, step 4)
 
-## 9. Records
+## 9. Increment 9: KZG over c-kzg-4844 (after 6)
 
-- [ ] 9.1 The proposal records version 0.2 as built once the CI is green on the library's and the superproject's `main`
-- [ ] 9.2 Each later increment's version recorded the same way
+- [ ] 9.1 The submodule built against webcpp's blst, c-kzg's own tests on blst v0.3.17 (plan: Increment 9, step 1)
+- [ ] 9.2 `kzg::settings` and the commitment, proof and cell functions; their heavy variants (plan: Increment 9, step 2)
+- [ ] 9.3 Increment 9 whole (plan: Increment 9, step 3)
+
+## 10. Increment 10: BN254 over mcl (a parallel stream after 1)
+
+- [ ] 10.1 The spike: mcl's portable configurations per target, without its JIT (plan: Increment 10, step 1)
+- [ ] 10.2 The submodule, its canary, `bn254::g1`, `g2`, `pairing_check` (plan: Increment 10, step 2)
+- [ ] 10.3 Increment 10 whole (plan: Increment 10, step 3)
+
+## 11. Increment 11: Shamir secret sharing over sss (a parallel stream after 1)
+
+- [ ] 11.1 The submodule without `randombytes`, webcpp's `sss_randombytes.c`, MSVC's VLAs (plan: Increment 11, step 1)
+- [ ] 11.2 `shamir::split_key`, `combine_key`, `split`, `combine`, the constant-time lane (plan: Increment 11, step 2)
+- [ ] 11.3 Increment 11 whole (plan: Increment 11, step 3)
+
+## 12. Increment 12: HPKE (after 8; WebAssembly after 7)
+
+- [ ] 12.1 `hpke` on OpenSSL with RFC 9180's vectors (plan: Increment 12, step 1)
+- [ ] 12.2 `hpke` on Botan, agreement with OpenSSL (plan: Increment 12, step 2)
+- [ ] 12.3 Increment 12 whole (plan: Increment 12, step 3)
+
+## 13. Records
+
+- [ ] 13.1 The proposal records version 0.2 as built once the CI is green on the library's and the superproject's `main`
+- [ ] 13.2 Each later increment's version recorded the same way

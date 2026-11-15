@@ -1799,12 +1799,13 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
 1. `ecdh` returns `secret<32>` (BREAKING, its changelog line); `ecdh_x` and `ecdh_point` through
    `secp256k1_ecdh` with webcpp's copying hash functions; Wycheproof's ECDH file and NIP-44's
    vectors.
-2. `sign_recoverable`, `recover`, hedged `sign_ecdsa`; EIP-155 vectors.
+2. `sign_recoverable`, `recover`, hedged `sign_ecdsa`; libsecp256k1's own recovery tests.
 3. Tweaks, negation, combination, `parse_public_key` and `serialize_public_key` in both forms.
 4. ElligatorSwift; BIP324's `packet_encoding_test_vectors.csv` and its ellswift vectors.
 5. MuSig2 with `musig::secret_nonce` consumed by move; BIP327's vectors.
 6. Silent payments; BIP352's `send_and_receive_test_vectors.json`.
-7. Capability rows, constant-time paths (signing, tweaks, nonce generation), the
+7. No Taproot tweak, `taproot_output_key` or `from_lax_der` (version 0.1 moves them out, D24).
+   Capability rows, constant-time paths (signing, tweaks, nonce generation), the
    cryptocurrencies chapter's secp256k1 sections, green, review, pull requests.
 
 ## Increment 3: BearSSL's remaining parts (a stream after 1)
@@ -1853,7 +1854,8 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
    heavy variants (verification, aggregate and fast aggregate verification, aggregation over
    many signatures).
 3. The consensus specifications' BLS vectors (a test-data submodule pinned here), RFC 9380's
-   suites, EIP-2333's; measurements, pages, green, review, pull requests.
+   suites; blst's EIP-2333 key tree is not wrapped (D24); measurements, pages, green, review,
+   pull requests.
 
 ## Increment 7: Botan as a submodule (a stream after 1)
 
@@ -1874,3 +1876,43 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
    operation measured and recorded per algorithm.
 4. Measurements (the `no-asm` builds on MSVC, wasip2 and wasip3 included), pages, green,
    review, pull requests.
+
+## Increment 9: KZG over c-kzg-4844 (after increment 6)
+
+1. The submodule `third_party/libs/c-kzg-4844` at v2.1.8 (`e125905`), `src/` compiled file by
+   file against webcpp's blst (c-kzg's `blst` submodule never checked out); c-kzg's own tests on
+   blst v0.3.17, and the pin rule of D25 if they fail; chapter 10's row; the canary.
+2. `kzg::settings::make` from a caller's setup (the ceremony's file as test data), the
+   commitment, proof and cell functions; the settings' allocation recorded; the heavy variants
+   as measured; c-kzg's reference vectors.
+3. Measurements, pages (the cryptocurrencies chapter's KZG section, versioned hashes named as
+   webcpp::ethereum's), green, review, pull requests.
+
+## Increment 10: BN254 over mcl (a stream after increment 1)
+
+1. The spike: mcl v4.43 (`50e4c6f`) with `MCL_DONT_USE_XBYAK` on each target, generic C++ and
+   upstream's generated code where it exists, measured; the configuration per target fixed in
+   the canary's name.
+2. The submodule, its sources file by file, `bn254::g1`, `g2`, `pairing_check`; vectors from
+   mcl's own tests and the pairing's bilinearity checks on random public points; the heavy
+   variant of a many-pair check.
+3. Measurements, pages ("public data only"), green, review, pull requests.
+
+## Increment 11: Shamir secret sharing over sss (a stream after increment 1)
+
+1. The submodule `third_party/libs/sss` at `9f2a10b` (its `randombytes` submodule never checked
+   out), `hazmat.c`, `sss.c`, `tweetnacl.c`, and webcpp's `src/sss_randombytes.c` handing over
+   the thread-local bytes the wrapper drew; the spike on MSVC's missing VLAs (clang-cl, or the
+   cell absent); the diff since v0.1.0 read and recorded.
+2. `shamir::split_key`, `combine_key`, `split`, `combine`, the guards `2 <= k <= n <= 255`,
+   sss's own `test_hazmat.c` and `test_sss.c` in `c-suites`, every subset recovery test, the
+   constant-time lane over the split and the combination.
+3. Measurements, pages (SLIP-39 named as webcpp::bitcoin's), green, review, pull requests.
+
+## Increment 12: HPKE (after increment 8; WebAssembly after increment 7)
+
+1. `hpke<Kem, Kdf, Aead, Backend>` on OpenSSL's `OSSL_HPKE_*` on native, wasip2 and wasip3;
+   RFC 9180's test vectors for every suite both backends have; the sequence number's guard.
+2. Botan's `hpke` module enabled in the Botan configuration of increment 7; the same vectors;
+   agreement between OpenSSL and Botan natively; Emscripten served by Botan.
+3. Capability rows, measurements, pages, green, review, pull requests.

@@ -4,8 +4,9 @@ webcpp::crypto's genesis (`../genesis/`) was accepted on 2026-10-11 and revised 
 when the owner set version 0.1 to its increment 1 without the heaviest parts, and its increment
 2. Version 0.1 is being built (the superproject's work tree `webcpp-crypto`, its streams merged
 task by task): AES-GCM on BearSSL and OpenSSL, the AES block cipher on OpenSSL and ctaes,
-`random_device`, `equal`, and secp256k1 on libsecp256k1 with what a Bitcoin wallet needs (DER,
-low-S, the Taproot tweak). Its headers are `config.hpp`, `error.hpp` (values 1 to 12, 13 and
+`random_device`, `equal`, and secp256k1 on libsecp256k1 with DER, low-S and a key tweak (the
+Taproot tweak of version 0.1, which a change of version 0.1 turns into a generic x-only tweak,
+D24). Its headers are `config.hpp`, `error.hpp` (values 1 to 12, 13 and
 14 reserved), `equal.hpp`, `random_device.hpp`, `aes.hpp`, `gcm.hpp`, `aes256_gcm.hpp`,
 `secp256k1.hpp` and `backends/{bearssl,openssl,ctaes,secp256k1}.hpp`, over the traits
 `detail::{block,gcm}_{state,engine}`.
@@ -51,8 +52,8 @@ allocation through the program's allocator, every C library a pinned submodule b
 **Non-Goals:**
 
 - Hashing, XOFs, HMAC, HKDF, PBKDF2, scrypt, Argon2, Keccak and BLAKE3: webcpp::hash's.
-- Protocols and formats above primitives: BIP32, BIP39, PSBT, transactions, sighashes,
-  addresses, JOSE, canonical JSON, base58, bech32, OPRF, FROST. They belong to libraries above
+- Anything a protocol specification defines (BIPs, EIPs, SLIPs, NIPs and their like): D24.
+  Also JOSE, canonical JSON, base58, bech32, OPRF and FROST, which belong to libraries above
   this one.
 - Generic curve construction, field and point arithmetic as an API, multi-scalar
   multiplication as an API, Poseidon, FFTs, jubjub, ZIP215 verification, ChaCha8 and ChaCha12,
@@ -88,7 +89,7 @@ Hash2's hmac when needed". hash never includes crypto's headers.
 | Backend | Library and pin | What it exposes in crypto | Targets |
 | --- | --- | --- | --- |
 | `sodium` | libsodium 1.0.22 (`77e1ce5`) | Ed25519, Ed25519ph, X25519, the Ed25519 to X25519 conversion, `crypto_box` (XSalsa20 and XChaCha20 forms) with precomputation, sealed boxes, `crypto_secretbox` (both forms), ChaCha20-Poly1305 IETF and original, XChaCha20-Poly1305, AEGIS-128L, AEGIS-256, AES256-GCM (where the CPU has it), `secretstream`, `crypto_kx`, `crypto_auth`, `crypto_onetimeauth`, the stream ciphers (ChaCha20 IETF and original, XChaCha20, Salsa20, XSalsa20, Salsa20/12, Salsa20/8) and the cores HChaCha20 and HSalsa20, ristretto255 and edwards25519 groups and scalars with their maps from hashes, ML-KEM-768, X-Wing, `randombytes_uniform` and `randombytes_buf_deterministic`, the memory utilities (`is_zero`, `compare`, `increment`, `add`, `sub`, `mlock`), ISO/IEC 7816-4 padding, constant-time hexadecimal and base64, IP address encryption (`crypto_ipcrypt`), guarded memory (`sodium_malloc`) | all four; AES256-GCM native only, guarded memory and `mlock` native only |
-| `secp256k1` | libsecp256k1 v0.8.0 (`6e2c8bc`) | the genesis's, and recovery, raw ECDH, seckey and pubkey tweaks, negation, combination, uncompressed keys, ElligatorSwift (BIP324), MuSig2 (BIP327), silent payments (BIP352), hedged ECDSA | all four |
+| `secp256k1` | libsecp256k1 v0.8.0 (`6e2c8bc`) | the genesis's (with version 0.1's generic x-only tweak, D24), and recovery, raw ECDH, seckey and pubkey tweaks, negation, combination, uncompressed keys, ElligatorSwift (BIP324), MuSig2 (BIP327), silent payments (BIP352), hedged ECDSA | all four |
 | `bearssl` | BearSSL (`7bea48e`) | the genesis's, and P-256, P-384, P-521 ECDSA (RFC 6979, raw and DER) and ECDH, X25519, ChaCha20-Poly1305, AES-CTR, AES-CBC, AES-CCM, AES-EAX, RSA (PKCS #1 v1.5 and PSS signatures, OAEP, key generation) | all four |
 | `openssl` | OpenSSL 3.5.9 (`45e844f`), the superproject's provider | the genesis's, and P-256, P-384, P-521, Ed25519, Ed448, X25519, X448, ML-KEM, ML-DSA, SLH-DSA, RSA, AES-CTR, CBC, CCM, OCB, KW, KWP, SIV, GCM-SIV, CMAC, ChaCha20-Poly1305 | native, wasip2, wasip3 |
 | `ctaes` | ctaes of Bitcoin Core v31.1 (`9be056a`) | the genesis's block cipher; nothing else exists in it | all four |
@@ -345,7 +346,9 @@ All modules are already compiled (chapter 10's `secp256k1` row); increment 2 wra
   module's own functions.
 
 Each is a thin wrapper over libsecp256k1's function, allocating nothing beyond the key pair's
-context; protocols built on them (transactions, PSBT) stay outside.
+context; protocols built on them (transactions, PSBT, BIP32 derivation, Taproot's `TapTweak`,
+addresses) are the domain libraries' (D24), and increment 2 brings back neither the Taproot
+tweak nor `from_lax_der`, which version 0.1 moves out.
 
 ### D12. BearSSL's remaining parts (increment 3), and no DRBG anywhere
 
@@ -417,10 +420,12 @@ x86-64 and arm64, the assembly is used with `__BLST_PORTABLE__` (the ADX instruc
 run time, so one binary runs on every x86-64); on MSVC and WebAssembly `__BLST_NO_ASM__` (blst's
 constant-time C). The configuration is in the canary's name. The interface:
 `bls12_381::min_pk` and `min_sig` (public keys in G1 and signatures in G2, or the reverse),
-each with `secret_key::make(ikm)` (EIP-2333's `keygen`), `sign`, `verify`, `aggregate`,
+each with `secret_key::make(ikm)` (the IETF BLS draft's `KeyGen`, `blst_keygen`), `sign`, `verify`, `aggregate`,
 `aggregate_verify`, `fast_aggregate_verify`, proofs of possession, and `hash_to_g1`,
 `hash_to_g2` (RFC 9380 suites with a caller's domain separation tag). Pairing and field
-arithmetic are not exposed.
+arithmetic are not exposed, nor blst's EIP-2333 key tree (`blst_derive_master_eip2333`,
+`blst_derive_child_eip2333`), which is a protocol's (D24) and stays reachable through blst's
+C API for webcpp::ethereum.
 
 ### D15. Botan as a pinned submodule built by b2 (increment 7)
 
@@ -481,8 +486,10 @@ mature C hash-to-curve, so it has none.
   7748, 8439, 9380, 9496, 5297, 8452, 3394, 5649, 8017); the drafts' vectors for XChaCha20 and
   AEGIS; NIST ACVP's JSON vectors (ML-KEM, ML-DSA, SLH-DSA, AES modes, ECDSA), a shallow
   submodule `third_party/libs/acvp` pinned by the increment that first reads it; BIP vectors
-  (BIP327, BIP324, BIP352 from the `bips` submodule) and EIP vectors (EIP-2333 and the
-  consensus specifications' BLS vectors) for their increments.
+  (BIP327, BIP324, BIP352 from the `bips` submodule) for the libsecp256k1 modules that
+  implement them, the consensus specifications' BLS vectors for blst, and c-kzg-4844's own
+  vectors for KZG; a vector is test data, and testing a primitive with it brings no protocol
+  into the library (D24).
 - **The C libraries' own suites** on webcpp's build, in the own lane `c-suites`: libsodium's
   `test/default` (with its `.exp` files), Botan's `botan-test` for the modules built, blst's own
   tests where it ships them.
@@ -508,12 +515,14 @@ mature C hash-to-curve, so it has none.
 - **Wikipedia** (CC BY-SA) is cited by link where a page needs background, and never copied.
 - **Teaching chapters by use case:** peer-to-peer networks (identities, signed and encrypted
   messages, key exchange), cryptocurrencies (secp256k1, recovery, MuSig2, silent payments,
-  BLS), privacy (boxes, sealed boxes, secretstream, post-quantum hybrids, IP address
+  BLS, KZG), privacy (boxes, sealed boxes, secretstream, post-quantum hybrids, IP address
   encryption). Each is framed as raising a program's security: what goes wrong without the
   primitive, what it guarantees, how to use it right. Each example is webcpp's own code,
-  written after what a real public application built on noble does (a Nostr client's NIP-44
-  messages, an Ethereum library's recoverable signatures, a Bitcoin signer's Taproot spends, a
-  passkey verifier), naming and linking that application, never copying its code.
+  written after what a real public application built on noble does with the primitives (the
+  ECDH and XChaCha20 a Nostr client composes, the recoverable signatures an Ethereum library
+  makes, the Schnorr signatures a Bitcoin signer makes, a passkey verifier's ECDSA), naming and
+  linking that application, never copying its code; the protocol itself (NIP-44's format, a
+  transaction's sighash) is the domain library's, and the chapter says which.
 
 ### D20. Increments and versions
 
@@ -526,6 +535,10 @@ mature C hash-to-curve, so it has none.
 6. blst.
 7. Botan as a submodule.
 8. OpenSSL's remaining algorithms.
+9. KZG polynomial commitments over c-kzg-4844 (D25).
+10. The BN254 pairing over mcl (D26).
+11. Shamir secret sharing over dsprenkels/sss (D27).
+12. HPKE (RFC 9180) over OpenSSL and Botan (D28).
 
 After 0.2, each increment that completes is the next minor version, the owner naming each
 release. The genesis's deferred work (the memory option, NIST CAVP, the nightly level) and its
@@ -542,6 +555,10 @@ increment 3 (trystero's migration) keep their own schedule; its Tasks 20, 22, 23
   files (`capabilities.json`, `measurements.json` and what they generate), whose conflicts are
   resolved by regenerating after the rebase, never by hand. Increment 4's oracle covers the
   algorithms on `main` when it merges, and each later increment adds its own oracle cases.
+- **Increments 9 to 12 join the streams as their dependencies land:** 10 (mcl) and 11 (sss)
+  bring backends of their own and run beside 3 to 8 from the merge of 1; 9 builds on blst and
+  starts when 6 merges; 12 needs OpenSSL's remaining algorithms natively and Botan for
+  WebAssembly, and starts when 8 merges, its WebAssembly cells joining when 7 merges.
 - **Merges follow the value order** (3 before 4 before 5, ...), a stream that finishes early
   waiting for its turn only if its rebase conflicts.
 
@@ -590,6 +607,128 @@ PBKDF2) is webcpp::hash's and has its variants there.
   in parallel); a thread pool owned by the library (global state, and the program's executor is
   the program's).
 
+### D24. Primitives only: protocols go to domain libraries
+
+The owner's rule of 2026-11-14: webcpp::crypto and webcpp::hash hold primitives. Whatever a
+protocol specification defines (BIPs, EIPs, SLIPs, NIPs, and their like for other systems) goes
+to future domain libraries built on crypto and hash: webcpp::bitcoin, webcpp::ethereum,
+webcpp::nostr and others. The test: an operation belongs here when it is a cryptographic
+algorithm with its own specification (an RFC, a NIST standard, an IETF or CFRG draft, a
+paper) or the public interface of a backend's library that is such an algorithm; it belongs to
+a domain library when it fixes a format, a derivation path, a tag, a domain separation string
+or a message layout for one protocol.
+
+| Primitive, here | Protocol, in a domain library |
+| --- | --- |
+| secp256k1 ECDSA, BIP340 Schnorr, ECDH, recovery, raw ECDH, tweaks by any 32-byte value, x-only tweaks, ElligatorSwift, MuSig2, silent payments: libsecp256k1's own modules and APIs | BIP32 and BIP39 derivation, BIP341's `TapTweak` tagged hash and output keys, sighashes, PSBT, transactions, addresses, `from_lax_der`'s historical-transaction parsing |
+| Ed25519, X25519, AEADs, boxes, KEMs | NIP-04 and NIP-44 message formats, keystores (EIP-2335, Web3 Secret Storage) |
+| BLS signatures, aggregation, hash-to-curve with a caller's tag, KZG commitments over a caller's trusted setup | EIP-2333 key trees, EIP-4844 versioned hashes, consensus signing domains |
+| HMAC, HKDF, Keccak-256 (webcpp::hash) | EIP-712 typed-data hashing, EIP-191 messages, EIP-55 checksums |
+| Shamir secret sharing over GF(2^8) | SLIP-39 mnemonics and share formats |
+
+libsecp256k1's modules stay because they are that library's own interfaces, specified as
+algorithms (MuSig2 and silent payments are signature and key-derivation schemes with their own
+proofs), and wrapping them adds no protocol layout of webcpp's. Each backend's C API stays
+reachable, so a domain library may call what this library does not expose (blst's EIP-2333
+functions, for instance).
+
+**Version 0.1 changes accordingly** (a change of the genesis, not of this one): Task 27b's
+`basic_keypair::tweak_taproot` and `taproot_output_key` become a generic x-only tweak of a key
+pair and of an x-only key by any 32-byte tweak (libsecp256k1's
+`secp256k1_keypair_xonly_tweak_add` and `secp256k1_xonly_pubkey_tweak_add`), and
+`from_lax_der` and the `bitcoin_sign` example leave crypto for webcpp::bitcoin. Increment 2 of
+this change MUST NOT bring any of them back.
+
+- **Why:** a primitive is reviewed once against its specification and serves every protocol;
+  a protocol's rules change with its community's process and belong to the library that follows
+  that community.
+- **Alternatives:** protocol helpers in crypto "because they are small" (the drift the owner
+  stopped); a single `webcpp::web3` library (the protocols do not share their rules).
+
+### D25. KZG polynomial commitments over c-kzg-4844 (increment 9)
+
+`backends::ckzg` over c-kzg-4844 v2.1.8 (`e125905e5e01186e6ccb7a0ced4845bf7eddbcfe`,
+Apache-2.0), the submodule `third_party/libs/c-kzg-4844`, built file by file (`src/` without
+its bindings) against this change's blst, never c-kzg's own blst submodule (one copy per
+program, chapter 5 rule 10). c-kzg 2.1.8 pins blst v0.3.16 (`e7f90de`) and webcpp pins v0.3.17:
+the increment runs c-kzg's own tests on v0.3.17 first, and if they fail, the blst pin moves to
+the one c-kzg tests with, as a change of its own. The interface, `kzg::settings` and free
+functions: `settings::make` from a trusted setup the caller gives (G1 monomial and Lagrange
+points, G2 points; the Ethereum ceremony's file is test data, never embedded),
+`blob_to_commitment`, `compute_proof`, `verify_proof`, `compute_blob_proof`,
+`verify_blob_proof`, `verify_blob_proof_batch`, and the cell functions of c-kzg 2.x
+(`compute_cells_and_proofs`, `recover_cells_and_proofs`, `verify_cell_proof_batch`). The blob
+and cell sizes are c-kzg's compile-time constants. Versioned hashes and the blob transaction
+format are webcpp::ethereum's (D24). c-kzg allocates the settings' tables with `malloc`, a
+departure recorded as OpenSSL's and Botan's are; commitments and proofs over a blob are heavy
+(D23).
+
+### D26. The BN254 pairing over mcl (increment 10)
+
+`backends::mcl` over mcl v4.43 (`50e4c6f2826de6b041f857caf9f253cc736ea926`, BSD-3-Clause), the
+submodule `third_party/libs/mcl`, for pairing-based verification: `bn254::g1`, `bn254::g2`
+(decoding with subgroup checks, addition, scalar multiplication on public data, the
+serialisations mcl documents) and `bn254::pairing_check` (a product of pairings equal to one),
+which zk-SNARK verifiers and the EVM's precompiles use. mcl is built without its JIT
+(`MCL_DONT_USE_XBYAK`: a library must not write executable memory at run time), file by file
+from its C++ sources; the increment opens with a spike that measures mcl's portable
+configurations per target (generic C++, its LLVM-generated code where upstream ships it) and
+records the choice in the canary's configuration. mcl is not constant time on every path, so
+its table cells say `constant_time: false` and its pages say it is for public data; no secret
+operation is exposed on it. A pairing check with many pairs is heavy (D23). The EVM's
+precompile encodings are webcpp::ethereum's (D24).
+
+### D27. Shamir secret sharing over dsprenkels/sss (increment 11)
+
+`backends::sss` over dsprenkels/sss (MIT) at `9f2a10b1c0d391bed485c4c7e93788ce37c360f1`
+(2025-08-18, its latest commit; its only tag, v0.1.0, is older and the increment reads the
+diff since it), the submodule `third_party/libs/sss`, compiling `hazmat.c` and `sss.c` and its
+`tweetnacl.c`, never its `randombytes` submodule. It offers `shamir::split_key` and
+`shamir::combine_key` (`sss_create_keyshares`, `sss_combine_keyshares`: a 32-byte key into `n`
+shares with threshold `k`, GF(2^8) arithmetic bitsliced and constant time) and `shamir::split`
+and `shamir::combine` (`sss_create_shares`, `sss_combine_shares`: a 64-byte message, encrypted
+under a key that is then split, with each share authenticated).
+
+- **Entropy:** sss draws its polynomial through a function `randombytes` and ignores its result.
+  webcpp's `src/sss_randombytes.c` defines it to hand over bytes the C++ wrapper drew from
+  `random_device` into a thread-local buffer just before the call, so that the wrapper reports
+  `entropy_unavailable` before sss runs and nothing reaches sss but `random_device`'s bytes; the
+  buffer is wiped after.
+- **Guards:** `2 <= k <= n <= 255` before any call (`k = 1` would make sss declare a
+  zero-length array, undefined behaviour). sss uses C99 variable-length arrays, which MSVC does
+  not compile: the increment's spike decides whether MSVC builds it with clang-cl or the table
+  marks it absent there.
+- **Why sss:** it is the one maintained C library whose arithmetic is constant time (bitsliced
+  GF(2^8), no tables indexed by secrets), small, MIT, with a security review in its history.
+  libgfshare uses log and exponent tables indexed by secret bytes; trezor-crypto's shamir lives
+  inside a firmware repository without releases and serves SLIP-39; OpenSSL, Botan and
+  libsodium have no secret sharing; Go's and Rust's implementations are not C. SLIP-39's
+  mnemonics and share formats are webcpp::bitcoin's (D24).
+
+### D28. HPKE (RFC 9180) over OpenSSL and Botan (increment 12)
+
+HPKE is a primitive with its own RFC, offered where a library implements it, never composed by
+webcpp from libsodium's parts (the rule against webcpp's own cryptography). OpenSSL 3.5.9's
+`OSSL_HPKE_*` (in OpenSSL since 3.2) serves native, wasip2 and wasip3; Botan 3.14.1's module
+`hpke` (`src/lib/pubkey/hpke/`, present at the 3.14.1 tag) serves Emscripten, and WASI where
+increment 7's spike builds Botan. So every target has HPKE, and the WebAssembly backend is
+Botan. libsodium has no HPKE; BoringSSL has one but is not pinned by webcpp and would be a
+second copy of a libcrypto beside OpenSSL. The interface, `hpke<Kem, Kdf, Aead, Backend>` over
+RFC 9180's suites both backends have (DHKEM(X25519, HKDF-SHA256), DHKEM(P-256, HKDF-SHA256),
+HKDF-SHA256 and SHA512, AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305): `setup_base_sender`,
+`setup_base_receiver`, the PSK, auth and auth-PSK modes, a context with `seal`, `open` and
+`export`, its sequence number guarded against overflow, and the single-shot `seal` and `open`.
+RFC 9180's test vectors, and agreement between OpenSSL and Botan natively.
+
+### Capability rows of increments 9 to 12
+
+| Algorithm | Backends | Targets |
+| --- | --- | --- |
+| `kzg` (commitments, proofs, cells) | `ckzg` | all four (blst underneath) |
+| `bn254` (decode, add, multiply, pairing check; public data) | `mcl` | all four, as the spike configures each |
+| `shamir` (key shares, message shares) | `sss` | all four; MSVC as the spike finds |
+| `hpke` (RFC 9180 suites above) | `openssl`, `botan` | OpenSSL native, wasip2, wasip3; Botan native, Emscripten, WASI as increment 7 finds |
+
 ## Risks / Trade-offs
 
 - [The capability table grows to hundreds of cells] -> it is generated into the code and the
@@ -620,6 +759,12 @@ PBKDF2) is webcpp::hash's and has its variants there.
   in node with the algorithm removed from `crypto.subtle`.
 - [hash-to-curve on ristretto255 waits for libsodium] -> D17; programs that need it today use
   blst or Botan's suites.
+- [c-kzg-4844 tests with blst v0.3.16 and webcpp pins v0.3.17] -> c-kzg's own tests run on
+  webcpp's blst first; a failure moves the blst pin as its own change (D25).
+- [sss is quiet upstream] -> pinned at its latest commit with the diff from v0.1.0 read, its
+  own tests and the constant-time lane run on webcpp's build; a fork is never taken without the
+  owner (D27).
+- [mcl is not constant time everywhere] -> nothing secret is exposed on it (D26).
 - [Six streams at once] -> the generated files are regenerated, never merged by hand; each
   stream rebases when another merges.
 - [A heavy flag changes with a pin move, adding or removing an `async_` variant] -> the flag
@@ -643,6 +788,6 @@ withdrawing it deletes `openspec/changes/foundation/`.
 ## Open Questions
 
 None. The owner decided the scope, the backends, the profiles, the browser's family, the
-documentation and the order on 2026-11-14; the two upstream facts this change waits on
-(Botan's WASI build, libsodium's next release for hash-to-curve) have decided rules for either
-outcome (D15, D17).
+documentation and the order on 2026-11-14; the upstream facts this change waits on (Botan's WASI build,
+libsodium's next release for hash-to-curve, c-kzg's tests on webcpp's blst, sss on MSVC) have
+decided rules for either outcome (D15, D17, D25, D27).
