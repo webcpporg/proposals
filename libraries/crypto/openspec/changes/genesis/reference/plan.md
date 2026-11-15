@@ -62,6 +62,24 @@ of version 0.1 were patched to it, and the deferred tasks carry a note under the
    developer's macOS. crypto has no size table until Task 22. Task 25 records both in
    CODING-GUIDELINES.md chapter 19.
 
+**The owner's reshape of 2026-11-15 (after integration 4):**
+- **crypto holds primitives only.** A protocol's rules (BIPs, EIPs, NIPs) go to future domain
+  libraries; Task 27b is generalized: the Taproot functions (`taproot_output_key`,
+  `keypair::tweak_taproot`) become the generic x-only tweak (`curves::secp256k1::tweak_xonly`
+  and `keypair::tweak_xonly`, any 32-byte tweak, the same guards, canary reads and wiping);
+  `from_lax_der`, libsecp256k1's `contrib/lax_der_parsing.c` in `/third_party//secp256k1`, and
+  the example `bitcoin_sign` are removed. They are kept on the library's branch
+  `save/bitcoin-taproot` for a future webcpp::bitcoin. BIP341's vectors stay as the tweak's
+  test, which computes TapTweak itself; Wycheproof's DER counts keep the strict ones.
+- **Namespaces group the primitives by kind, and headers mirror them:** the root keeps `error`,
+  `random_device`, `equal`, the memory option and the configuration; `backends::*`;
+  `ciphers::{aes128, aes192, aes256, gcm, aes128_gcm, aes256_gcm}` under
+  `<webcpp/crypto/ciphers/>`; `curves::secp256k1::*` in `<webcpp/crypto/curves/secp256k1.hpp>`;
+  later `post_quantum`, `rsa`, `hybrid`, `commitments::kzg` and `secret_sharing::shamir`. No
+  alias or forwarding header keeps an old name, since nothing is released. The tasks below are
+  kept as written: their `aes.hpp`, `gcm.hpp`, `aes256_gcm.hpp` and `secp256k1.hpp` are these
+  headers, and their names these names in their namespaces.
+
 **The controller's rulings of 2026-11-14:**
 - **A program names `/webcpp/crypto//openssl`,** crypto's alias over the provider, as asio's
   `/webcpp/asio//openssl` does: on native, wasip2 and wasip3 it links

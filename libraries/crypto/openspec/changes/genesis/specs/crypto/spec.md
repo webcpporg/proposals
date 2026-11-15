@@ -11,21 +11,21 @@ of the build, tests and tools of `reference/plan.md`; the library is not built y
 ## ADDED Requirements
 
 ### Requirement: Library: header-only target and namespace
-The library SHALL be header-only C++20, in namespace `webcpp::crypto` (with `webcpp::crypto::backends` and `webcpp::crypto::secp256k1`), with public headers under `<webcpp/crypto/...>`, one per responsibility, internals in `webcpp::crypto::detail`, macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). A program MUST reach it through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, and on Windows `bcrypt`.
+The library SHALL be header-only C++20 and hold cryptographic primitives only (a protocol's rules belong to a domain library), in namespace `webcpp::crypto` (with `webcpp::crypto::backends`, `webcpp::crypto::ciphers` and `webcpp::crypto::curves::secp256k1`), with public headers under `<webcpp/crypto/...>` that mirror the namespaces as `<webcpp/crypto/<group>/<name>.hpp>`, one per responsibility, internals in `webcpp::crypto::detail`, macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). A program MUST reach it through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, and on Windows `bcrypt`.
 
 #### Scenario: A program that only draws random bytes links no backend
 - **WHEN** a Jamfile reads `exe app : app.cpp /webcpp/crypto//crypto ;` and `app.cpp` includes `<webcpp/crypto/random_device.hpp>` and `<webcpp/crypto/equal.hpp>`
 - **THEN** it compiles and links without any library of `/third_party` being named or built
 
 ### Requirement: Library: the public headers
-The library SHALL provide `<webcpp/crypto/config.hpp>`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `aes.hpp` (`aes128`, `aes192`, `aes256`), `gcm.hpp` (`gcm<Cipher>`), `chacha20_poly1305.hpp`, `aes256_gcm.hpp` (`aes128_gcm`, `aes256_gcm` and the default backend's header), `backends/<name>.hpp` (a backend's tag type, compile-time check and canary), `secp256k1.hpp` (`secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`) and the convenience header `<webcpp/crypto.hpp>`. Every public header MUST include `<webcpp/crypto/config.hpp>` first, and only the headers that call a C library need a backend linked.
+The library SHALL provide `<webcpp/crypto/config.hpp>`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `ciphers/aes.hpp` (`ciphers::aes128`, `aes192`, `aes256`), `ciphers/gcm.hpp` (`ciphers::gcm<Cipher>`), `ciphers/chacha20_poly1305.hpp`, `ciphers/aes256_gcm.hpp` (`ciphers::aes128_gcm`, `aes256_gcm` and the default backend's header), `backends/<name>.hpp` (a backend's tag type, compile-time check and canary), `curves/secp256k1.hpp` (`curves::secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`) and the convenience header `<webcpp/crypto.hpp>`. Every public header MUST include `<webcpp/crypto/config.hpp>` first, and only the headers that call a C library need a backend linked.
 
 #### Scenario: A program that only signs names only libsecp256k1
-- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//secp256k1 ;` and `sign.cpp` includes `<webcpp/crypto/secp256k1.hpp>`
+- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//secp256k1 ;` and `sign.cpp` includes `<webcpp/crypto/curves/secp256k1.hpp>`
 - **THEN** it builds and prints `schnorr ok`, with no encryption backend linked
 
 ### Requirement: Library: the convenience header
-`<webcpp/crypto.hpp>` SHALL include everything that needs no backend (`config.hpp`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `aes.hpp`, `gcm.hpp`) and the header of each backend whose `WEBCPP_CRYPTO_HAS_<NAME>` define is set. It MUST NOT make a program that links no backend fail to compile.
+`<webcpp/crypto.hpp>` SHALL include everything that needs no backend (`config.hpp`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `ciphers/aes.hpp`, `ciphers/gcm.hpp`) and the header of each backend whose `WEBCPP_CRYPTO_HAS_<NAME>` define is set. It MUST NOT make a program that links no backend fail to compile.
 
 #### Scenario: The convenience header with no backend linked
 - **WHEN** a program that links no backend includes only `<webcpp/crypto.hpp>` and uses `equal`
@@ -737,12 +737,16 @@ The repository SHALL hold `build.jam` (project `/webcpp/crypto`, alias `crypto`)
 - **WHEN** a new `.hpp` is added without the licence notice
 - **THEN** the lint fails naming the file
 
-### Requirement: secp256k1: what a Bitcoin wallet needs
-The secp256k1 interface SHALL offer `to_der` (a compact signature as strict DER, at most `max_der_size` = 72 bytes, into a caller's buffer), `from_der` (strict DER, BIP66), `from_lax_der` (DER as Bitcoin Core accepts it for historical transactions, through libsecp256k1's `contrib/lax_der_parsing.c`), `normalize_ecdsa` (the low-S form `verify_ecdsa` requires), `taproot_output_key` (the BIP341 output key and its parity from an x-only internal key and an empty or 32-byte merkle root) and `basic_keypair::tweak_taproot` (the key pair tweaked in place for a key-path spend), each a wrapper over libsecp256k1's own function, allocating nothing; webcpp MUST NOT serialize transactions, compute sighashes or derive keys.
+### Requirement: secp256k1: its encodings and the x-only tweak
+The interface of `curves::secp256k1` SHALL offer `to_der` (a compact signature as strict DER, at most `max_der_size` = 72 bytes, into a caller's buffer), `from_der` (strict DER, BIP66), `normalize_ecdsa` (the low-S form `verify_ecdsa` requires), `tweak_xonly` (an x-only key tweaked by any 32-byte tweak: the tweaked x-only key and its parity, `secp256k1_xonly_pubkey_tweak_add`) and `basic_keypair::tweak_xonly` (the key pair tweaked in place by any 32-byte tweak, `secp256k1_keypair_xonly_tweak_add`), each a wrapper over libsecp256k1's own function, reading the canary and allocating nothing; a key pair whose tweak gives no valid key is wiped. The caller computes a tweak; crypto MUST NOT compute a protocol's tweak, decode lax DER, serialize transactions, compute sighashes or derive keys.
 
-#### Scenario: BIP341's wallet vectors
-- **WHEN** every `scriptPubKey` and `keyPathSpending` case of BIP341's `wallet-test-vectors.json` is run
-- **THEN** `taproot_output_key` gives each `tweakedPubkey`, and a key pair tweaked by `tweak_taproot` signs each sighash into the vector's witness
+#### Scenario: BIP341's wallet vectors through the generic tweak
+- **WHEN** every `scriptPubKey` and `keyPathSpending` case of BIP341's `wallet-test-vectors.json` is run, the test computing each TapTweak with libsecp256k1's tagged hash and passing it
+- **THEN** `tweak_xonly` gives each `tweakedPubkey` (7 cases), and a key pair tweaked by `keypair::tweak_xonly` signs each sighash into the vector's witness (7 inputs)
+
+#### Scenario: A tweak not below the group order
+- **WHEN** an x-only key or a key pair is tweaked by 32 bytes of 0xff
+- **THEN** both give `invalid_secret_key`, and the key pair is wiped and empty, as moved from
 
 #### Scenario: A high-S signature
 - **WHEN** a valid signature's `s` is replaced by `n - s`

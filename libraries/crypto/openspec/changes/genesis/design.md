@@ -293,11 +293,24 @@ superproject's `main` of that day (`reference/plan.md`, "The revision of 2026-11
   OpenSSL may be linked and chosen with `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`; the default there
   stays BearSSL. The source-built OpenSSL is compiled without assembly on MSVC, wasip2 and wasip3
   (table AES, no AES-NI, not constant time); the documentation says so and how to choose BearSSL.
-- **secp256k1 gains what a Bitcoin wallet needs (Task 27b, the owner's decision of
-  2026-11-14):** DER encoding and strict and lax decoding of ECDSA signatures, low-S
-  normalization, and the BIP341 Taproot tweak of a key pair and of an x-only key, thin wrappers
-  over libsecp256k1's own functions (its `contrib/lax_der_parsing.c` included); transactions,
-  sighashes, BIP32 and addresses stay outside the library.
+- **secp256k1 gains its encodings and its tweak (Task 27b, the owner's decision of
+  2026-11-14, reshaped on 2026-11-15):** strict DER encoding and decoding of ECDSA signatures,
+  low-S normalization, and the generic x-only tweak, of an x-only key (`tweak_xonly`, the
+  tweaked key and its parity) and of a key pair in place (`keypair::tweak_xonly`), thin
+  wrappers over libsecp256k1's own functions. The caller computes the tweak: BIP341's TapTweak
+  is a protocol's rule, not a primitive. Lax DER (`contrib/lax_der_parsing.c`) and the Taproot
+  functions are kept on the library's branch `save/bitcoin-taproot` for a future
+  webcpp::bitcoin; transactions, sighashes, BIP32 and addresses stay outside crypto.
+- **crypto holds primitives only, and its namespaces group them by kind (the owner's decision
+  of 2026-11-15):** protocols (BIPs, EIPs, NIPs) go to future domain libraries. The root
+  namespace `webcpp::crypto` holds `error`, `random_device`, `equal`, the memory option and the
+  configuration; `backends::*` the backends; `ciphers` the block cipher, GCM and its aliases
+  (`aes128`, `aes192`, `aes256`, `gcm`, `aes128_gcm`, `aes256_gcm`); `curves::secp256k1` the
+  curve. Later groups follow the same rule: `post_quantum`, `rsa`, `hybrid`,
+  `commitments::kzg`, `secret_sharing::shamir`. Headers mirror the namespaces as
+  `<webcpp/crypto/<group>/<name>.hpp>`. Nothing is released, so no alias or forwarding header
+  keeps the old names. Where the specification and the plan below name `aes256`, `gcm` or
+  `secp256k1::keypair`, they mean these names in their namespace.
 - **trystero's build moves onto `/third_party//secp256k1` in version 0.1**, its code unchanged,
   which removes the CI's external libsecp256k1 (Migration Plan, step 3's build half).
 - **Two limits are recorded instead of built:** MSVC's message cases fail on the MSVC lanes and
