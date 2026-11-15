@@ -34,8 +34,9 @@ Increment 7: the browser backend through the parallel asynchronous family (spec 
   `/webcpp/hash//openssl`.
 - **The superproject** gains: three submodules and their targets; the test-data target
   `/third_party//blake3_vectors`; `tools/hash/measure.py` and the own lane `measure`;
-  `tools/test/hash_jamfiles_test.py` and its fixtures; `tools/test/blake3_c_suite.py`;
-  CODING-GUIDELINES.md chapter 10's three rows and chapter 17's entry.
+  `tools/test/hash_jamfiles_test.py` and its fixtures;
+  CODING-GUIDELINES.md chapter 10's three rows and chapter 17's entry. BLAKE3's own test program
+  runs in the library's own lane `c-suites` (Task 6, Step 5; design D29).
 
 **Tech Stack:**
 - C++20, b2 5.5.3, Boost 1.92 (Hash2, System, Core's lightweight_test, JSON in tests), wasi-sdk
@@ -1003,11 +1004,13 @@ inline keccak_256::result_type keccak_256::result() noexcept {
 ## Task 6: BLAKE3's C implementation, file by file
 
 **Files:**
-- Create (superproject): the submodule `third_party/libs/blake3`; `tools/test/blake3_c_suite.py`.
+- Create (superproject): the submodule `third_party/libs/blake3`.
 - Modify (superproject): `.gitmodules`, `third_party/Jamfile` (`blake3`, `blake3_vectors`),
   `tools/test/third_party_test.py`, `CODING-GUIDELINES.md` (chapter 10's rows `blake3`), the
   release notes.
-- Create (library): `src/canary_blake3.c`. Modify: `include/webcpp/hash/detail/canary.h`.
+- Create (library): `src/canary_blake3.c`; `test/c_suites/blake3_main.c`,
+  `test/c_suites/blake3_c_suite.cpp`, `test/c_suites/cpu_features.c`. Modify:
+  `include/webcpp/hash/detail/canary.h`, `test/c_suites/Jamfile`.
 
 **Interfaces:**
 - Produces: `/third_party//blake3` (usage requirements `<include>third_party/libs/blake3/c`,
@@ -1113,31 +1116,42 @@ explicit blake3_vectors ;
 ```
 
   Run the cases. Expected: PASS.
-- [ ] **Step 5: BLAKE3's own suite.** BLAKE3's C test is `c/test.py`, which runs `c/blake3`, a
-  binary built inside the submodule's `c/` directory, where webcpp builds nothing; and a library's
-  test Jamfile may not declare b2's raw `exe` (the lint's raw-rules rule). So it is a test of the
-  tools, run by the superproject's tools job, as the user's Jamfiles are (CODING-GUIDELINES.md
-  chapter 8): `tools/test/blake3_c_suite.py` builds the fixture
-  `tools/test/fixtures/blake3_c_suite/Jamfile` on a scratch superproject for each target,
+- [ ] **Step 5: BLAKE3's own suite, in the lane `c-suites`.** BLAKE3's C test is `c/test.py`,
+  which runs `c/blake3`, a binary built inside the submodule's `c/` directory, where webcpp builds
+  nothing. Its program, `c/main.c`, runs instead as a program of the library's own lane
+  `c-suites` (design D29; the plan first named a tools test, `tools/test/blake3_c_suite.py`,
+  which the review replaced, since no lane and no CI job ran it):
+  - `test/c_suites/blake3_main.c` compiles `c/main.c`, unmodified, after the headers it includes,
+    with `main` renamed `webcpp_blake3_main` and `fread`, `printf` and `fprintf` renamed to the
+    driver's, so that a run's standard input and output are the driver's buffers;
+  - `test/c_suites/blake3_c_suite.cpp` does what `c/test.py` does with `c/blake3`: for every case
+    of `test_vectors.json`, the input `i % 251` for each `i` below `input_len`, the program run
+    with no argument, with `--keyed <hex of the key>` and with `--derive-key <context>`, each with
+    `--length` of the whole expected output; every line it prints (one per subset of the CPU
+    features it tests, under `BLAKE3_TESTING`) must equal the file's;
+  - `test/c_suites/cpu_features.c` defines, off x86, the two names `main.c` reads that
+    `blake3_dispatch.c` defines under `BLAKE3_TESTING` on x86 alone;
+  - the library is built with `BLAKE3_TESTING` where `blake3_dispatch.c` reads it, a build of its
+    own selected by the feature `<webcpp-blake3-testing>on`;
+  - `blake3_c_suite_corrupted` is the same program with `WEBCPP_TEST_BLAKE3_CORRUPTED`, one
+    expected line changed, and passes only when exactly that line is reported.
 
 ```jam
-# BLAKE3's own test program, c/main.c with BLAKE3_TESTING, on webcpp's build of
-# BLAKE3; tools/test/blake3_c_suite.py drives it as c/test.py drives c/blake3.
-path-constant BLAKE3 : ../../../../third_party/libs/blake3 ;
-exe blake3_main : $(BLAKE3)/c/main.c
-  : <library>/third_party//blake3 <define>BLAKE3_TESTING <warnings>off <warnings-as-errors>off ;
+# BLAKE3's c/main.c on webcpp's build of BLAKE3, with BLAKE3_TESTING where
+# blake3_dispatch.c reads it, driven as BLAKE3's c/test.py drives c/blake3.
+.blake3-c-suite = blake3_main.c cpu_features.c blake3_c_suite.cpp ;
+.blake3-c-suite-requirements =
+    <library>/third_party//blake3/<webcpp-blake3-testing>on
+    <library>/third_party//blake3_vectors <library>/webcpp//boost_json
+    <warnings>off <warnings-as-errors>off ;
+webcpp.run blake3_c_suite : $(.blake3-c-suite) : $(.blake3-c-suite-requirements) ;
+webcpp.run blake3_c_suite_corrupted : $(.blake3-c-suite)
+  : $(.blake3-c-suite-requirements) <define>WEBCPP_TEST_BLAKE3_CORRUPTED ;
 ```
 
-  and runs it over every case of `test_vectors.json` as `c/test.py` does: the input of a case is
-  `i % 251` for each `i` below `input_len`, given on standard input; the program runs with no
-  argument, with `--length <n>`, with `--keyed <hex of the key>` and with `--derive-key
-  <context>` (the arguments `c/main.c` parses at the pin), and each output line is compared with
-  the JSON's; natively directly, on wasip2 and wasip3 through `tools/boost/asio-wasip2/run.sh` and
-  `.../asio-wasip3/run.sh`, on Emscripten through node. It prints
-  `blake3 c suite: <target>: 35 cases ok` per target (the file at the pin holds 35 cases, the key
-  "whats the Elvish word for friend" and outputs of 131 bytes) or the first difference, and exits
-  non-zero on a difference. Run `python3 tools/test/blake3_c_suite.py`. Expected: four lines,
-  `native`, `wasip2`, `wasip3` and `emscripten`, each `35 cases ok`.
+  Both join `webcpp.lane c-suites` on native, wasip2, wasip3 and Emscripten. Run the lane on each
+  target. Expected: both pass on the four targets (the file at the pin holds 35 cases, the key
+  "whats the Elvish word for friend" and outputs of 131 bytes).
 - [ ] **Step 6: Document and commit.** Chapter 10's rows `blake3` ("BLAKE3 1.8.7 at `f3149ec`;
   `third_party/Jamfile` compiles `c/blake3.c`, `blake3_dispatch.c` and `blake3_portable.c` on
   every target, the intrinsics files on their instruction sets alone (an exception to chapter 5
@@ -2139,7 +2153,7 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
   `bitcoin`, and its case in `tools/test/` gains a wrong hash pin that must fail.
 - [ ] **Step 2: Green, from scratch,** every lane of the Global Constraints: native, wasip2, wasip3,
   emscripten, gcc-15, the own lanes `c-suites` and `measure` on their targets,
-  `python3 tools/test/hash_jamfiles_test.py`, `python3 tools/test/blake3_c_suite.py`,
+  `python3 tools/test/hash_jamfiles_test.py`,
   `python3 tools/test/third_party_test.py`, the lint (`lint: clean`). Expected: every one passes;
   the ledger records each command and its last line.
 - [ ] **Step 2b: Review** of the whole increment against the spec and the Review Focus, by a

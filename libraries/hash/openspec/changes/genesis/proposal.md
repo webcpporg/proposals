@@ -16,7 +16,8 @@ algorithms do, and whose default backend is the fastest natively and the smalles
 decided its shape the same day and accepted it, then widened it: every backend exposes all its
 library offers for hashing and key derivation, in increments by value; one profile in the
 configuration changes every default at once; the browser's WebCrypto becomes a backend through a
-parallel asynchronous API. Nothing is built.
+parallel asynchronous API. Increment 1 is built in the library's own repository and green on
+every local lane; it is not yet published, and the spec records what building it decided.
 
 ## What Changes
 
@@ -33,14 +34,19 @@ parallel asynchronous API. Nothing is built.
   with keyed hashing, key derivation and the extendable output; portable on WebAssembly, SIMD
   dispatch natively.
 - **HKDF (RFC 5869: `hkdf_extract`, `hkdf_expand`, `hkdf`) and PBKDF2 (RFC 8018: `pbkdf2`)** as
-  function templates `template <class Hmac, class Backend = default_kdf_backend<Hmac>>`, over
+  function templates `template <class Hmac, class Backend = default_kdf_backend<Hmac, Kdf>>`,
+  the default chosen per operation through the public tags `kdfs::hkdf`, `kdfs::hkdf_extract`,
+  `kdfs::hkdf_expand` and `kdfs::pbkdf2`, over
   backends named after the library that does the work: `backends::hash2` (webcpp's construction
   over any Hash2 hmac, every target, the recorded departure from "webcpp writes no
   cryptography"), `backends::sodium` (libsodium's HKDF over SHA-256 and SHA-512),
   `backends::bearssl` (BearSSL's HKDF), `backends::openssl` (both; native, wasip2, wasip3), and
   later `backends::botan`. A backend without the function refuses at compile time, naming those
-  that have it.
-- **The default backend:** natively the fastest linked (OpenSSL when linked, else hash2); on
+  that have it; a backend whose C interface holds a length in an `int` refuses past `INT_MAX`
+  (OpenSSL, `detail::backend_limits`). Every function that returns a result is `[[nodiscard]]`.
+- **The default backend:** natively the fastest linked (the owner expected OpenSSL when linked,
+  else hash2; increment 1's measurement, on one loaded machine, put libsodium and hash2 ahead for
+  HKDF by under 1 percent, to be re-measured on an idle machine before a release); on
   WebAssembly the one giving the smallest binary, from a measured size table (one KDF program per
   backend per target), regenerated at every pin move and checked by an own lane.
 - **`argon2id` and `scrypt`** from libsodium (`crypto_pwhash_argon2id`,
@@ -53,8 +59,10 @@ parallel asynchronous API. Nothing is built.
   program), `third_party/libs/xkcp` (`/third_party//xkcp`) and `third_party/libs/blake3`
   (`/third_party//blake3`). `/third_party//bearssl` gains webcpp::hash's canary.
 - **The superproject gains** `/webcpp/hash//openssl` (the one OpenSSL provider),
-  `tools/hash/measure.py` and the own lane `measure`, `tools/test/hash_jamfiles_test.py` with its
-  fixtures, `tools/test/blake3_c_suite.py`, chapter 10's three rows and chapter 17's entry.
+  `tools/hash/measure.py` and the own lane `measure`, `tools/hash/doc_tables.py`,
+  `tools/test/hash_jamfiles_test.py` with its fixtures, chapter 10's three rows and chapter 17's
+  entry; libsodium links with `-sALLOW_MEMORY_GROWTH=1` on Emscripten. BLAKE3's own test program
+  runs in the library's own lane `c-suites`, beside libsodium's and XKCP's suites.
 - **Tests:** RFC 5869, 6070, 7914 and 9106 vectors, Keccak-256's and BLAKE3's official vectors,
   cross-backend agreement natively (all backends, random inputs) and on WebAssembly (hash2 against
   sodium and bearssl), WebCrypto as an outside oracle on Emscripten under node, the C libraries'
@@ -113,7 +121,10 @@ None.
   over XKCP's permutation), the guards, the adapters and the canaries. Repository
   `webcpporg/hash` (not created; the owner creates it, plan gate G1), checked out as the
   submodule `libs/hash` (gate G2), BSL-1.0, "Copyright (c) 2026 WebCpp.org".
-- **Implementation:** not started; the library's repository has no commit. **The reference code
+- **Implementation:** increment 1 (the plan's Tasks 0 to 24) is built: the library's repository
+  (branch `main`, not yet on GitHub) and the superproject's integration branch hold it, green on
+  native, wasip2, wasip3, Emscripten and gcc-15 locally; MSVC and Apple clang wait for the CI
+  after the owner's gates. Increments 2 to 7 are not started. **The reference code
   is the code written in the tasks of `reference/plan.md`:** Task 1 (`build.jam`, `config.hpp`,
   the test Jamfile's `hash-run`), Task 2 (`error.hpp`), Task 3 (`algorithms.hpp`, `hmac.hpp`),
   Task 4 (the XKCP target, `xkcp_adapter.c`, `canary.h`, `canary_xkcp.c`), Task 5
@@ -132,8 +143,8 @@ None.
   OpenSSL 3.5.9 at `45e844f`, as the superproject builds them; for tests, wasmtime, node's
   WebCrypto, and the RFCs' vectors. The superproject's `tools/webcpp.jam`, `third_party/Jamfile`,
   `webcpp.same-program` and asio's test support (`webcpp::test::exit_status`).
-- **Status:** accepted on 2026-11-14 (the owner decided the shape and approved it); not built,
-  no release.
+- **Status:** accepted on 2026-11-14 (the owner decided the shape and approved it); increment 1
+  built locally, not published, no release. It becomes `implementing` at the owner's gates.
 - **Other proposals:** `libraries/crypto` is changed later: it depends on webcpp::hash for HKDF
   (replacing its spec 1.2's "written on Hash2's hmac when needed"), its libsodium backend
   (version 0.2) uses `/third_party//sodium` as built here, and `/third_party//bearssl`, which its

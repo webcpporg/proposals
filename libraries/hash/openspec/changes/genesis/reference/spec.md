@@ -141,6 +141,11 @@ Every public header includes `<webcpp/hash/config.hpp>` first, then what it uses
 functions call a C library needs that library linked (spec 5.4); the others need nothing but
 Boost.
 
+Every function of `include/` that returns `boost::system::result` is `[[nodiscard]]`:
+`boost::system::result` carries no `[[nodiscard]]` of its own, and a dropped result, a refusal
+at run time, would pass as a success and leave the output unwritten. `libs/hash/meta/lint.json`
+opts the library into the lint's rule "nodiscard results" with that reason (design D30).
+
 ### 2.2 `<webcpp/hash/config.hpp>`
 
 ```cpp
@@ -192,8 +197,10 @@ Boost.
 #if defined(WEBCPP_TARGET_EMSCRIPTEN) && defined(WEBCPP_HASH_PROFILE_BACKEND_OPENSSL)
 #error "webcpp::hash: WEBCPP_HASH_PROFILE_BACKEND_OPENSSL selects OpenSSL, which is not built for Emscripten. Remove that define."
 #endif
-// The profile's and the overrides' refusals (spec 4.1): more than one profile, two overrides of
-// one algorithm, OpenSSL selected on Emscripten.
+// The profile's refusals (spec 4.1): more than one profile of one level, OpenSSL selected on
+// Emscripten by the profile. The overrides' refusals (two overrides of one algorithm, an OpenSSL
+// override on Emscripten) are not here: they are in detail/overrides.hpp, which kdf.hpp includes
+// (spec 4.1, design D28).
 // clang-format on
 
 namespace webcpp::hash::backends {
@@ -211,10 +218,18 @@ struct openssl;
 
 namespace webcpp::hash::kdfs {
 
-/** HKDF, RFC 5869: `hkdf_extract`, `hkdf_expand` and `hkdf`. */
+/** HKDF, RFC 5869: the operation `hkdf`; its override applies to both steps too. */
 struct hkdf;
+/** HKDF-Extract alone, the operation `hkdf_extract` (RFC 5869, section 2.2). */
+struct hkdf_extract;
+/** HKDF-Expand alone, the operation `hkdf_expand` (RFC 5869, section 2.3). */
+struct hkdf_expand;
 /** PBKDF2, RFC 8018: `pbkdf2`. */
 struct pbkdf2;
+/** Argon2id, RFC 9106, with one lane: `argon2id`. */
+struct argon2id;
+/** scrypt, RFC 7914: `scrypt`. */
+struct scrypt;
 
 }  // namespace webcpp::hash::kdfs
 
@@ -548,18 +563,21 @@ namespace webcpp::hash {
  Whether `Backend` has the key derivation `Kdf` over `Hmac`: a property of the library behind
  it (spec 3), whether or not the program links it.
 
- @tparam Backend A backend of `backends`. @tparam Kdf `kdfs::hkdf` or `kdfs::pbkdf2`.
- @tparam Hmac A Boost.Hash2 hmac.
+ @tparam Backend A backend of `backends`. @tparam Kdf A tag of `kdfs`: `hkdf`, `hkdf_extract`,
+ `hkdf_expand`, `pbkdf2`, `argon2id` or `scrypt`. @tparam Hmac A Boost.Hash2 hmac, or `void`.
 */
 template <class Backend, class Kdf, class Hmac>
 inline constexpr bool backend_has_v = /* the table of spec 3.2 */;
 
 /**
  The backend `hkdf_extract`, `hkdf_expand`, `hkdf` and `pbkdf2` use when the program names none:
- the override's backend, else the profile's choice among the linked backends that have `Kdf`
- over `Hmac`, from the measured table (spec 4.1, 4.2); `default_backend<Kdf, Hmac>`.
+ the override's backend, else the profile's choice among the linked backends that have the
+ operation `Kdf` over `Hmac`, from the measured table (spec 4.1, 4.2); `default_backend<Kdf, Hmac>`.
+ Chosen per operation, so that `kdfs::hkdf_extract` and `kdfs::hkdf_expand` never name a backend
+ that has HKDF only whole (design D25).
 
- @tparam Hmac A Boost.Hash2 hmac. @tparam Kdf `kdfs::hkdf` (the default) or `kdfs::pbkdf2`.
+ @tparam Hmac A Boost.Hash2 hmac. @tparam Kdf `kdfs::hkdf` (the default), `kdfs::hkdf_extract`,
+ `kdfs::hkdf_expand` or `kdfs::pbkdf2`.
 */
 template <class Hmac, class Kdf = kdfs::hkdf>
 using default_kdf_backend = /* spec 4 */;
@@ -583,8 +601,8 @@ inline constexpr std::size_t hkdf_max_info_size = 32768;
  @param ikm The input keying material, any length.
  @return The pseudorandom key, of the hmac's digest size.
 */
-template <class Hmac, class Backend = default_kdf_backend<Hmac>>
-boost::system::result<typename Hmac::result_type> hkdf_extract(
+template <class Hmac, class Backend = default_kdf_backend<Hmac, kdfs::hkdf_extract>>
+[[nodiscard]] boost::system::result<typename Hmac::result_type> hkdf_extract(
     std::span<std::uint8_t const> salt, std::span<std::uint8_t const> ikm);
 
 /**
@@ -597,8 +615,8 @@ boost::system::result<typename Hmac::result_type> hkdf_extract(
  @return Success, or the error of the first guard that fails; on a backend's failure `output`
  is zeroed.
 */
-template <class Hmac, class Backend = default_kdf_backend<Hmac>>
-boost::system::result<void> hkdf_expand(std::span<std::uint8_t> output,
+template <class Hmac, class Backend = default_kdf_backend<Hmac, kdfs::hkdf_expand>>
+[[nodiscard]] boost::system::result<void> hkdf_expand(std::span<std::uint8_t> output,
                                         std::span<std::uint8_t const> prk,
                                         std::span<std::uint8_t const> info);
 
@@ -611,7 +629,7 @@ boost::system::result<void> hkdf_expand(std::span<std::uint8_t> output,
  @return Success, or the error of the first guard that fails.
 */
 template <class Hmac, class Backend = default_kdf_backend<Hmac>>
-boost::system::result<void> hkdf(std::span<std::uint8_t> output,
+[[nodiscard]] boost::system::result<void> hkdf(std::span<std::uint8_t> output,
                                  std::span<std::uint8_t const> salt,
                                  std::span<std::uint8_t const> ikm,
                                  std::span<std::uint8_t const> info);
@@ -626,11 +644,26 @@ The guards, in order, before any work and before the backend is called:
 | `hkdf_expand`, `hkdf` | `output` empty, or longer than 255 times the digest size | `invalid_output_size` |
 | `hkdf_expand` | `prk.size()` other than the digest size | `invalid_key_size` |
 | `hkdf_expand`, `hkdf` | `info.size() > hkdf_max_info_size` | `input_too_long` |
+| all | an input or the output past the backend's `detail::backend_limits` (OpenSSL: the salt and the PRK past `INT_MAX`) | `input_too_long` for an input, `invalid_output_size` for the output |
 | all | the backend fails | `backend_failure`, or `errc::not_enough_memory` when OpenSSL cannot allocate; `output` zeroed |
 
 The PRK is of exactly the digest size on every backend, where RFC 5869 allows "at least
 HashLen octets", because libsodium takes exactly that and a call must never succeed on one
-backend and fail on another (design D9). The salt and the IKM have no limit but `size_t`'s.
+backend and fail on another (design D9). The salt and the IKM have no limit but `size_t`'s and
+the backend's own.
+
+**A backend's narrower lengths (design D26).** A backend whose C interface holds a length in a
+type narrower than `std::size_t` declares its limits in `detail::backend_limits<Backend>`
+(`detail/engines.hpp`), one member per input and output of each operation (`hkdf_salt`,
+`hkdf_ikm`, `hkdf_prk`, `hkdf_info`, `hkdf_output`, `pbkdf2_password`, `pbkdf2_salt`,
+`pbkdf2_output`, `argon2id_*`, `scrypt_*`); the primary template, every backend's unless its
+header specialises it, has no limit (`detail::no_limit`). The public functions read it after the
+spec's own guards and before any call of the backend. `backends::openssl` limits HKDF's salt and
+PRK (HMAC's key, an `int` in `HMAC_Init_ex`) and PBKDF2's password, salt and output (`int`s in
+`pbkdf2_derive`) to `INT_MAX`: OpenSSL 3.5.9 holds them in an `int`, and a PBKDF2 output of 2^31
+bytes crashed it (SIGSEGV, a negative length reaching `memcpy`). `backends::hash2` accepts these
+lengths: this is the one place where a call can succeed on one backend and be refused on another,
+a refusal at a size no protocol uses, never a different result.
 
 ### 2.9 `<webcpp/hash/pbkdf2.hpp>`: PBKDF2
 
@@ -648,7 +681,7 @@ namespace webcpp::hash {
  @return Success, or the error of the first guard that fails.
 */
 template <class Hmac, class Backend = default_kdf_backend<Hmac, kdfs::pbkdf2>>
-boost::system::result<void> pbkdf2(std::span<std::uint8_t> output,
+[[nodiscard]] boost::system::result<void> pbkdf2(std::span<std::uint8_t> output,
                                    std::span<std::uint8_t const> password,
                                    std::span<std::uint8_t const> salt,
                                    std::uint64_t iterations);
@@ -658,7 +691,9 @@ boost::system::result<void> pbkdf2(std::span<std::uint8_t> output,
 
 Guards: `output` empty or longer than (2^32 - 1) times the digest size, compared through
 `detail::exceeds(std::uint64_t, std::uint64_t)` so that no comparison is tautological on wasm32
-(`invalid_output_size`); `iterations == 0` (`invalid_iterations`); a backend's failure zeroes
+(`invalid_output_size`); `iterations == 0` (`invalid_iterations`); then the backend's
+`detail::backend_limits` (2.8: on OpenSSL the password and the salt past `INT_MAX`,
+`input_too_long`, and the output past `INT_MAX`, `invalid_output_size`); a backend's failure zeroes
 `output`. OpenSSL is called with `pkcs5 = 1`, which turns off SP 800-132's lower bounds, so that
 every RFC 6070 case runs on every backend (design D10).
 
@@ -697,8 +732,8 @@ inline constexpr std::size_t argon2id_salt_size = 16;
  @return Success, or the error of the first guard that fails, or
  `errc::not_enough_memory` when the memory cannot be allocated.
 */
-template <class Backend = backends::sodium>
-boost::system::result<void> argon2id(std::span<std::uint8_t> output,
+template <class Backend = default_backend<kdfs::argon2id>>
+[[nodiscard]] boost::system::result<void> argon2id(std::span<std::uint8_t> output,
                                      std::span<std::uint8_t const> password,
                                      std::span<std::uint8_t const> salt,
                                      argon2id_parameters const& parameters);
@@ -739,8 +774,8 @@ struct scrypt_parameters {
  @return Success, or the error of the first guard that fails, or
  `errc::not_enough_memory` when the 128 r N bytes cannot be allocated.
 */
-template <class Backend = backends::sodium>
-boost::system::result<void> scrypt(std::span<std::uint8_t> output,
+template <class Backend = default_backend<kdfs::scrypt>>
+[[nodiscard]] boost::system::result<void> scrypt(std::span<std::uint8_t> output,
                                    std::span<std::uint8_t const> password,
                                    std::span<std::uint8_t const> salt,
                                    scrypt_parameters const& parameters);
@@ -818,21 +853,21 @@ template <class Digest> struct digest_options;
 
 /** Hashes `input` into `output`, whose size is the digest's (or any size, for an XOF). */
 template <class Digest, class Backend = default_backend<Digest>>
-boost::system::result<void> digest(std::span<std::uint8_t> output, std::span<std::uint8_t const> input,
+[[nodiscard]] boost::system::result<void> digest(std::span<std::uint8_t> output, std::span<std::uint8_t const> input,
                                    digest_options<Digest> const& options = {});
 
 /** An incremental hash with one finalisation: `make`, `update`, `finish`. Move-only; wiped. */
 template <class Digest, class Backend = default_backend<Digest>>
 class hasher {
 public:
-    static boost::system::result<hasher> make(digest_options<Digest> const& options = {});
-    boost::system::result<void> update(std::span<std::uint8_t const> input);
-    boost::system::result<void> finish(std::span<std::uint8_t> output);
+    [[nodiscard]] static boost::system::result<hasher> make(digest_options<Digest> const& options = {});
+    [[nodiscard]] boost::system::result<void> update(std::span<std::uint8_t const> input);
+    [[nodiscard]] boost::system::result<void> finish(std::span<std::uint8_t> output);
 };
 
 /** The MAC of `input` under `key`; for KMAC, its customisation and its XOF form in the options. */
 template <class Mac, class Backend = default_backend<Mac>>
-boost::system::result<void> mac(std::span<std::uint8_t> output, std::span<std::uint8_t const> key,
+[[nodiscard]] boost::system::result<void> mac(std::span<std::uint8_t> output, std::span<std::uint8_t const> key,
                                 std::span<std::uint8_t const> input, mac_options<Mac> const& options = {});
 
 /** Argon2d, Argon2i or Argon2id with every RFC 9106 parameter (increment 4 on). */
@@ -844,7 +879,7 @@ struct argon2_parameters {
     std::span<std::uint8_t const> associated_data = {};
 };
 template <class Variant, class Backend = default_backend<Variant>>
-boost::system::result<void> argon2(std::span<std::uint8_t> output, std::span<std::uint8_t const> password,
+[[nodiscard]] boost::system::result<void> argon2(std::span<std::uint8_t> output, std::span<std::uint8_t const> password,
                                    std::span<std::uint8_t const> salt, argon2_parameters const& parameters);
 
 }  // namespace webcpp::hash
@@ -954,7 +989,8 @@ directory of its own, spec 7.6):
   HKDF, `iter` and `pkcs5 = 1` for PBKDF2), `EVP_KDF_derive`, then the context and the KDF
   freed. A failure clears the thread's OpenSSL error queue it caused (`ERR_set_mark` and
   `ERR_pop_to_mark`), and is `errc::not_enough_memory` when the last error's reason is
-  `ERR_R_MALLOC_FAILURE`, `backend_failure` otherwise.
+  `ERR_R_MALLOC_FAILURE`, `backend_failure` otherwise. The lengths OpenSSL holds in an `int`
+  are refused past `INT_MAX` before it is called (2.8, `detail::backend_limits`, design D26).
 
 ### 3.5 The capability table
 
@@ -1018,6 +1054,14 @@ Keep one." A library profile beside an umbrella profile is not an error: the lib
 **Precedence:** a per-algorithm override, then the library's profile, then webcpp's umbrella
 profile, then the build's measured default (`auto`).
 
+**Per operation (design D25).** A profile chooses for the operation the call makes, each a tag of
+`kdfs`: `hkdf`, `hkdf_extract`, `hkdf_expand`, `pbkdf2`, `argon2id`, `scrypt`. The choice is the
+first backend of the profile's order (each step has its own row of the measured table) that the
+program links and that has that operation over that hmac (`backend_has_v`); so an order that puts
+`backends::bearssl` first, as the size order of `hkdf` does on every WebAssembly target, never
+makes `hkdf_extract` or `hkdf_expand` refuse. When no linked backend has it, the first of the
+order that has it, whose engine then refuses with its "needs" message (5.7).
+
 An **override** names the backend of one algorithm, whatever the profile, spelled as
 webcpp::crypto's `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`:
 `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>` (`WEBCPP_HASH_DEFAULT_BACKEND_HKDF_SODIUM`,
@@ -1025,15 +1069,27 @@ webcpp::crypto's `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`:
 backend lacks the algorithm over the hmac used fails to compile with that backend's text of 3.3;
 two overrides of one algorithm are an `#error`. OpenSSL selected on Emscripten, by profile or
 override, is an `#error`. A backend the program does not link is never chosen by a profile; an
-override of an unlinked backend fails with that backend's "needs" message (5.7).
+override of an unlinked backend fails with that backend's "needs" message (5.7). An override
+names an algorithm, not a step: `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_<NAME>` applies to `hkdf_extract`,
+`hkdf_expand` and `hkdf`, and with `BEARSSL` the two steps refuse at compile time with 3.3's text.
+
+**Where the overrides live (design D28).** Not in `config.hpp`: one block per algorithm of
+`doc/capabilities.json` and one define per backend that has it, in `detail/overrides.hpp`,
+generated by `tools/hash/measure.py --overrides` from that file and checked by
+`overrides_list_test`. It holds `override_choice<Algorithm>`, the overrides' `#error`s (two
+overrides of one algorithm; an OpenSSL override on Emscripten) and, on MSVC, each algorithm's
+`#pragma detect_mismatch("webcpp_hash_default_backend_<algorithm>", ...)`, `"none"` without an
+override. `kdf.hpp`, the one reader of the overrides, includes it, so every key derivation header
+brings the refusals; a translation unit that includes no key derivation header reads no
+default and is not stopped.
 
 The increment-1 spelling stays: `default_kdf_backend<Hmac, Kdf = kdfs::hkdf>` is
 `default_backend<Kdf, Hmac>`, the general `template <class Algorithm, class Hmac = void> using
 default_backend`. `backends::hash2` (or, for a hash webcpp has only over a C library, that
 library's backend) is always a candidate, so a default always exists for every function of
 increment 1. On MSVC `config.hpp` carries
-`#pragma detect_mismatch("webcpp_hash_profile", "<profile>")` and each override header the
-override's, so that two translation units of one program cannot choose differently.
+`#pragma detect_mismatch("webcpp_hash_profile", "<profile>")` and `detail/overrides.hpp` each
+algorithm's, so that two translation units of one program cannot choose differently.
 
 ### 4.2 The measured table
 
@@ -1053,14 +1109,29 @@ committed table of webcpp's own measurements, never estimated:
 
 `tools/hash/measure.py` runs them, writes `doc/measurements.json` (with the machine, compiler,
 target, date and each pin), renders `doc/measurements.adoc`, and generates
-`include/webcpp/hash/detail/ranking.hpp`, which holds per target and algorithm two orders of
-backends, by size and by throughput. The own lane `measure` re-measures the sizes (deterministic
-for a toolchain) and fails when the order of any row differs from the committed file, naming
-`python3 tools/hash/measure.py --write`; throughput is re-measured by hand at every pin move and
-the order changes only when the median moves by more than 10 percent, which keeps the defaults
-stable across machines. Every pin move of a library a program links runs both (CODING-GUIDELINES.md
-chapter 5 rule 12). Until the plan's measurement task, `ranking.hpp` orders `hash2` first
-everywhere (provisional, replaced in increment 1).
+`include/webcpp/hash/detail/ranking.hpp`, which holds per target and operation (`hkdf_extract` and
+`hkdf_expand` each with its own row) two orders of backends, by size and by throughput. The own lane
+`measure` re-measures the sizes (deterministic for a toolchain) and fails when the order of any row
+differs from the committed file, naming `python3 tools/hash/measure.py --write`; throughput is
+re-measured by hand at every pin move and a committed order changes only when the median moves by
+more than 10 percent, which keeps the defaults stable across machines. A first measurement orders by
+the median of the invocations' medians alone, with no clause of its own (an exact tie keeps the
+capability table's order of backends). Every pin move of a library a program links runs both
+(CODING-GUIDELINES.md chapter 5 rule 12).
+
+**The native toolchain.** `doc/measurements.json` records the machine, whether it was loaded
+(the larger 1-minute load average past the core count) and `native_toolchain`, the compiler, the
+host's operating system and processor, and the strip the native orders were measured with. A
+`measure` lane whose native toolchain differs builds and checks every program and skips the
+native order comparison with one printed line; WebAssembly orders are always compared.
+
+**Increment 1's orders are provisional (design D32).** They were measured on one machine, macOS on
+arm64 with Apple clang 21, shared and loaded (`loaded: true`). The native HKDF order over
+`hmac_sha2_256`, libsodium then hash2 then OpenSSL, rests on medians each under 1 percent from the
+next (1,540, 1,554 and 1,564 ns), and differs from the expectation "OpenSSL when linked" recorded in
+design D8. Before a release the throughput is re-measured on an idle machine and the orders
+regenerated. Whether one native order serves Linux and Windows (and x86-64), or each platform gets
+its own, is an open question for the owner (design O2).
 
 ### 4.3 The throughput measurement the owner named
 
@@ -1110,8 +1181,15 @@ naming its command.
 | --- | --- | --- | --- | --- |
 | `xkcp` | `third_party/libs/xkcp` (`XKCP/XKCP`) | `lib/low/KeccakP-1600/plain-64bits/KeccakP-1600-opt64.c`, webcpp's `src/xkcp_adapter.c` and `src/canary_xkcp.c` | none: XKCP's "generic64" profile (all rounds unrolled, no lane complementing) on every target; its `config.h`, generated by XKCP's own build, is webcpp's `libs/hash/src/xkcp/config.h` with `#define XKCP_has_KeccakP1600` alone | `WEBCPP_HASH_HAS_XKCP=1` (no include directory: the public header declares only the adapter) |
 | `blake3` | `third_party/libs/blake3` (`BLAKE3-team/BLAKE3`) | `c/blake3.c`, `c/blake3_dispatch.c`, `c/blake3_portable.c` on every target; on native x86-64 also `c/blake3_sse2.c` (`-msse2`), `c/blake3_sse41.c` (`-msse4.1`), `c/blake3_avx2.c` (`-mavx2`), `c/blake3_avx512.c` (`-mavx512f -mavx512vl`), with MSVC `/arch:AVX2` and `/arch:AVX512` for the last two; on native arm64 `c/blake3_neon.c`; `src/canary_blake3.c` | WebAssembly: `BLAKE3_NO_SSE2`, `BLAKE3_NO_SSE41`, `BLAKE3_NO_AVX2`, `BLAKE3_NO_AVX512` (the portable code alone); arm64: `BLAKE3_USE_NEON=1`; never `BLAKE3_USE_TBB`; the `.S` and `.asm` files are not compiled (the intrinsics files are their equivalents, which BLAKE3's own CMake chooses where it has no assembler) | `<include>third_party/libs/blake3/c`, `WEBCPP_HASH_HAS_BLAKE3=1` |
-| `sodium` | `third_party/libs/libsodium` (`jedisct1/libsodium`) | every `.c` of `src/libsodium/` (141), and `src/canary_sodium.c`; none of the seven `.S` files | the defines libsodium's own `configure` finds for each target (spec 5.3), with `CONFIGURED=1`, `SODIUM_STATIC=1`, `NATIVE_LITTLE_ENDIAN=1`, `DEV_MODE` off, and neither `HAVE_AMD64_ASM` nor `HAVE_AVX_ASM` (`--disable-asm`), so that the C code is used | `<include>third_party/libs/libsodium/src/libsodium/include`, `SODIUM_STATIC=1`, `WEBCPP_HASH_HAS_SODIUM=1` |
+| `sodium` | `third_party/libs/libsodium` (`jedisct1/libsodium`) | every `.c` of `src/libsodium/` (141), and `src/canary_sodium.c`; none of the seven `.S` files | the defines libsodium's own `configure` finds for each target (spec 5.3), with `CONFIGURED=1`, `SODIUM_STATIC=1`, `NATIVE_LITTLE_ENDIAN=1`, `DEV_MODE` off, and neither `HAVE_AMD64_ASM` nor `HAVE_AVX_ASM` (`--disable-asm`), so that the C code is used | `<include>third_party/libs/libsodium/src/libsodium/include`, `SODIUM_STATIC=1`, `WEBCPP_HASH_HAS_SODIUM=1`; on Emscripten the link flag `-sALLOW_MEMORY_GROWTH=1` |
 | `bearssl` | `third_party/libs/bearssl` (webcpp::crypto's, Task 5 of its plan) | as webcpp::crypto builds it, plus `src/canary_bearssl.c` of webcpp::hash | webcpp::crypto's | webcpp::crypto's, plus `WEBCPP_HASH_HAS_BEARSSL=1` |
+
+**libsodium's memory on Emscripten (design D27).** Argon2id and scrypt allocate the memory their
+costs name (64 MiB for libsodium's interactive Argon2id costs), past Emscripten's fixed 16 MiB, so
+`/third_party//sodium` gives a program that links it `-sALLOW_MEMORY_GROWTH=1` on Emscripten as a
+usage requirement, as libsodium's own tests link: a user who names libsodium gets a program that
+works without knowing the flag. Naming it therefore changes an Emscripten program by that flag
+alone (7.8).
 
 libsodium's `src/libsodium/include/sodium/version.h` is generated by its `configure`; upstream
 ships a generated copy, `builds/msvc/version.h`, which its `build.zig` copies into place. b2
@@ -1201,7 +1279,9 @@ whose `#error` is the first message of spec 2.2.
 | `backends/openssl.hpp` without `WEBCPP_HASH_HAS_OPENSSL` | "webcpp::hash: backends::openssl needs OpenSSL. Add /webcpp/hash//openssl to the program's Jamfile (native, wasip2 and wasip3): exe app : app.cpp /webcpp/hash//hash /webcpp/hash//openssl ;" |
 | OpenSSL on Emscripten | spec 2.2's first `#error` |
 | a link without the library | the canary's symbol, as undefined |
-| two TUs, two configurations, MSVC | LNK2038 on `webcpp_hash_backend_<name>` or `webcpp_hash_default_kdf_backend` |
+| two TUs, two configurations, MSVC | LNK2038 on `webcpp_hash_backend_<name>`, `webcpp_hash_profile` or `webcpp_hash_default_backend_<algorithm>` |
+| two overrides of one algorithm | `detail/overrides.hpp`'s `#error`, "webcpp::hash: WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<A> and WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<B> are both defined. Keep one." |
+| an OpenSSL override on Emscripten | `detail/overrides.hpp`'s `#error`, "webcpp::hash: WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_OPENSSL selects OpenSSL, which is not built for Emscripten. Remove that define." |
 
 ## 6. Allocation and wiping
 
@@ -1269,9 +1349,18 @@ The own lane `c-suites` of `libs/hash/test/c_suites`, on every target: libsodium
 `test/default/*.c` with its `cmptest.h` and their `.exp` files, every test on every target, each
 run in a writable directory of the build (`cmptest.h` writes `<name>.res` there); XKCP's `tests/UnitTests`
 built with webcpp's `config.h` and run with `--SnP` (the Keccak-p[1600] tests); BLAKE3's
-`c/main.c` built with `BLAKE3_TESTING`, driven over every case of `test_vectors.json` by
-`tools/test/blake3_c_suite.py`, which does what BLAKE3's `c/test.py` does with the target's
-launcher (c/test.py runs a binary inside the submodule, where webcpp builds nothing).
+`c/main.c`, unmodified, over every case of `test_vectors.json`, as the lane's programs
+`blake3_c_suite` and `blake3_c_suite_corrupted` (design D29). `blake3_main.c` compiles `main.c`
+with its `main` and its standard input and output renamed; `blake3_c_suite.cpp` does what BLAKE3's
+`c/test.py` does with `c/blake3` (a binary built inside the submodule, where webcpp builds
+nothing): for each case the input `i % 251` for each `i` below `input_len`, the program run with
+no argument, with `--keyed <hex of the key>` and with `--derive-key <context>`, each with
+`--length` of the whole expected output, and every line it prints compared with the file's;
+`cpu_features.c` defines, off x86, the two names `main.c` reads that BLAKE3's dispatcher defines
+on x86 alone. The library is built with `BLAKE3_TESTING` where `blake3_dispatch.c` reads it
+(`<webcpp-blake3-testing>on`, a build of its own). `blake3_c_suite_corrupted` changes one expected
+line and passes only when exactly that line is reported. These programs replaced the plan's
+`tools/test/blake3_c_suite.py`, a tools test that no lane and no CI job ran.
 
 ### 7.4 WebCrypto as an outside oracle
 
@@ -1287,7 +1376,9 @@ Each guard of spec 2.8 to 2.11 has its case on each backend: the output limits a
 one past it (255 times the digest size and one more; PBKDF2's limit computed without
 allocating it), a 31-byte and a 33-byte PRK for a 32-byte digest, info of 32,768 and 32,769
 bytes, iterations 0, Argon2id's salts of 15 and 17 bytes and memory of 8,191, 8,193 and 9,216
-bytes, scrypt's N of 0, 1, 3 and 2^(16r), r times p of 2^30. A guard's refusal leaves `output`
+bytes, scrypt's N of 0, 1, 3 and 2^(16r), r times p of 2^30; natively, each of OpenSSL's
+`backend_limits` with a span of `INT_MAX + 1` bytes, never dereferenced, and a derivation within
+them (`openssl_limits_test`), OpenSSL never run past its limit. A guard's refusal leaves `output`
 untouched; a backend's failure zeroes it (provoked with OpenSSL's digest name replaced through a
 test seam, `WEBCPP_HASH_DETAIL_TEST_OPENSSL_DIGEST`).
 
@@ -1314,7 +1405,10 @@ natively through `CRYPTO_set_mem_functions` in a separate program, reported, not
 builds every Jamfile line of spec 5.1 and every build stop on every target, as webcpp::crypto's
 `crypto_jamfiles_test.py` does. `webcpp.same-program` proves on every target that a program
 naming `/third_party//xkcp`, `//blake3`, `//sodium` or `//bearssl` without calling it is
-byte-identical to one without it.
+byte-identical to one without it. On Emscripten `/third_party//sodium` adds its link flag
+`-sALLOW_MEMORY_GROWTH=1` (5.2): `unused_sodium_emscripten` gives the program without libsodium
+that flag explicitly and requires the two to be identical, so the flag is shown to be the only
+difference.
 
 ### 7.9 The lanes
 
@@ -1338,6 +1432,15 @@ The library's page (`doc/hash.adoc` and its parts) is written in two models:
   copyright notice and the ISC licence text, and each adapted section says it adapts
   libsodium's documentation. Wikipedia (CC BY-SA, incompatible with BSL-1.0) is only cited,
   never copied; the RFCs and NIST publications are cited by number and section.
+
+**Each chapter opens with two comparison tables (design D31).** The chapter of each namespace
+(digests, MACs, key derivations, password hashing, the non-cryptographic hashes) opens with two
+tables that `tools/hash/doc_tables.py` generates from `doc/capabilities.json` and the
+measurements: "What each of X is" (Name, Output, Security, Standard, Status, In the browser) and
+"How to choose among X" (Name, the two measured columns when there are measurements, Where it is
+used, Choose it when). Each is led by the name and has fewer than eight columns, since the site
+reads a table of eight columns or more as a matrix that scrolls in its box rather than stack;
+`hash_doc_tables_test` checks every generated table, with and without measurements.
 
 Per backend: its Jamfile line, its column of the capability table (rendered from
 `doc/capabilities.json`), what it allocates, and every message with its fix (CODING-GUIDELINES.md
@@ -1393,6 +1496,13 @@ library's plan, which changes nothing a crypto program links.
 - The cheap asynchronous functions exist only for the algorithms WebCrypto serves, on every
   target, completing through `post` on a synchronous backend (11.2); the heavy ones run on
   another thread and exist only with threads (11.5).
+- Increment 1's amendments (design D25 to D32): the public tags `kdfs::hkdf_extract` and
+  `kdfs::hkdf_expand` and a default backend per operation (4.1); `detail::backend_limits`, with
+  OpenSSL refusing past `INT_MAX` (2.8); libsodium's `-sALLOW_MEMORY_GROWTH=1` on Emscripten (5.2,
+  7.8); the overrides' refusals in `detail/overrides.hpp` behind `kdf.hpp` (4.1); BLAKE3's own
+  program in the lane `c-suites` (7.3); `[[nodiscard]]` on every result (2.1); two comparison
+  tables a chapter, each under eight columns (8); the native orders provisional until re-measured
+  on an idle machine (4.2).
 - No `LICENSE-<ORIGIN>.txt` in the library's repository: webcpp::hash's code derives from no
   C library's (chapter 10, "The licence"); the README and the third-party table name each
   library and its licence. `NOTICE.md` holds libsodium-doc's copyright notice and ISC licence,
