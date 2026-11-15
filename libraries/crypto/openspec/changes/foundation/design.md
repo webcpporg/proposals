@@ -167,45 +167,65 @@ the machine lacks it.
 - **Alternatives:** messages written by hand in each backend header (the genesis's way for two
   backends, which does not scale to eight); a table in the documentation only.
 
-### D5. One setting chooses every default; per-algorithm overrides
+### D5. One define chooses every default; a webcpp-wide umbrella; per-family overrides
 
-`<define>WEBCPP_CRYPTO_PROFILE=<profile>` takes one of:
+Every setting is a macro tested with `#ifdef`, never a macro with a value (the coordinator's
+ruling of 2026-11-14, which webcpp::hash applies alike):
 
-- `automatic`, the default when nothing is defined: natively `fastest`, on WebAssembly
-  `smallest`, the owner's rule;
-- `fastest`: for each algorithm, the linked backend with the highest measured throughput on
-  this target and architecture;
-- `smallest`: for each algorithm, the linked backend that adds the fewest bytes on this target;
-- `portable`: for each algorithm, the backend the table marks portable, one that exists on all
-  four targets, so that a program links the same backends and behaves the same everywhere; an
-  algorithm no backend has on all four targets is refused under it, naming its backends;
-- a backend's name (`sodium`, `bearssl`, `openssl`, `botan`, `blst`, `secp256k1`, `ctaes`):
-  that backend for every algorithm it has, `automatic` for the others.
+- **crypto's profile**, at most one of `WEBCPP_CRYPTO_PROFILE_FASTEST` (for each algorithm, the
+  linked backend with the highest measured throughput on this target and architecture),
+  `WEBCPP_CRYPTO_PROFILE_SMALLEST` (the linked backend that adds the fewest bytes on this
+  target), `WEBCPP_CRYPTO_PROFILE_PORTABLE` (the backend the table marks portable, one that
+  exists on all four targets, so that a program links the same backends and behaves the same
+  everywhere; an algorithm no backend has on all four targets is refused under it, naming its
+  backends) and `WEBCPP_CRYPTO_PROFILE_BACKEND_<NAME>` (`SODIUM`, `BEARSSL`, `OPENSSL`, `BOTAN`,
+  `BLST`, `SECP256K1`, `CTAES`: that backend for every algorithm it has, the next level for
+  the others);
+- **the webcpp-wide umbrella**, at most one of `WEBCPP_PROFILE_FASTEST`,
+  `WEBCPP_PROFILE_SMALLEST` and `WEBCPP_PROFILE_PORTABLE`, read by crypto's and hash's
+  `config.hpp` alike (and by every later library with backends), so that one define changes
+  every library's defaults;
+- **per-family overrides**, at most one per family, `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`
+  (`WEBCPP_CRYPTO_DEFAULT_BACKEND_ED25519_OPENSSL`), the families being the capability
+  table's; the genesis's `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `_OPENSSL` keep their
+  meaning as spellings of `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL` and `_GCM_OPENSSL`;
+- **with none of them, the build's measured default** (`automatic`): natively `fastest`, on
+  WebAssembly `smallest`, the owner's rule.
 
-`<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>=<backend>` overrides one family
-(`WEBCPP_CRYPTO_DEFAULT_BACKEND_ED25519=openssl`), the families being the capability table's.
-The genesis's `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `_OPENSSL` keep their meaning, the
-override of the AES block cipher and AES-GCM family, and are refused together with
-`WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM`.
+**Precedence:** a per-family override, then crypto's profile, then the webcpp-wide profile,
+then the measured default. A named-backend profile that lacks an algorithm passes it to the
+next level. Two of crypto's profiles, two webcpp-wide profiles, or two overrides of one family
+stop compilation with an `#error` naming both macros; crypto's profile beside a webcpp-wide one
+is allowed, and crypto's wins.
 
-Mechanism: the macro's value is a token. `config.hpp` reads it as a type,
-`profiles::WEBCPP_CRYPTO_PROFILE`, where `profiles` declares `automatic`, `fastest`,
-`smallest`, `portable` and an alias per backend; a misspelt profile is a compile error naming
-the token, and a static assertion lists the valid ones. `default_backend_t<Family>` walks the
-generated ranking of D6 for the profile, the target and the architecture, and takes the first
-backend that is linked (its `HAS` macro), has the algorithm on this target, and is not
+Mechanism: `config.hpp` counts the defined macros of each level with `#if` and resolves the
+level into `WEBCPP_CRYPTO_DETAIL_PROFILE_*`, then declares `using profile = profiles::<one>;`
+(`automatic`, `fastest`, `smallest`, `portable`, or the backend's alias). The generated
+`detail/capabilities.hpp` declares, per family, one `#ifdef` per backend that has it, the
+two-at-once `#error`, and the override's type. `default_backend_t<Family>` walks the generated
+ranking of D6 for the profile, the target and the architecture, and takes the first backend
+that is linked (its `HAS` macro), has the algorithm on this target, and is not
 run-time-available; when none is linked, it is `detail::none_linked<Family>`, whose engine's
 refusal names the Jamfile lines that would give one. On MSVC, `config.hpp` carries
-`#pragma detect_mismatch("webcpp_crypto_profile", "<profile>")` and each override its own key,
-extending the genesis's net for two translation units that choose differently.
+`#pragma detect_mismatch("webcpp_crypto_profile", "<resolved profile>")` and each family's
+resolved override its own key, extending the genesis's net for two translation units that
+choose differently.
 
-- **Why a token read as a type:** the preprocessor cannot compare strings, and a type gives a
-  misspelling a compiler's message; the generic code is plain C++ over Boost.Mp11.
+- **Why one macro per value:** a setting is then testable with `#ifdef` by any header, by
+  b2's `<define>` and by a program's own preprocessor code, and two at once is detectable,
+  which a token value is not; webcpp::hash uses the same form, so the umbrella reads the same
+  way in both.
+- **Why an umbrella:** the owner's "one setting switches every default backend at once" is about
+  the program, not one library; `WEBCPP_PROFILE_SMALLEST` makes a whole web program small.
 - **Why never a run-time-available backend as a default:** a default must work on every machine
   of its target; a program names libsodium's AES256-GCM itself, and handles `not_supported`.
-- **Alternatives:** one macro per profile (`WEBCPP_CRYPTO_PROFILE_FASTEST`), which allows two at
-  once; a run-time choice (the backend is a type, and a program must not carry what it does not
-  call); a ranking written by hand (the owner asked for a measured one).
+- **Limit:** a misspelt macro (`WEBCPP_CRYPTO_PROFILE_FASTES`) is not seen by the
+  preprocessor; the profile page lists every macro, and `crypto::profile_name`, a
+  `std::string_view` of the resolved profile, lets a program print or assert what it got.
+- **Alternatives:** one token-valued macro (`WEBCPP_CRYPTO_PROFILE=fastest`, the first draft:
+  not testable with `#ifdef`, and hash's form differed); a run-time choice (the backend is a
+  type, and a program must not carry what it does not call); a ranking written by hand (the
+  owner asked for a measured one).
 
 ### D6. The measurement table: webcpp's own, regenerated at every pin move
 
@@ -577,12 +597,9 @@ PBKDF2) is webcpp::hash's and has its variants there.
   specialisation that compiles and a vector that passes.
 - [A profile changes a program's backends when a pin moves] -> rankings change only through a
   committed regeneration in the pin move's change, with the 10 % hysteresis for throughput;
-  `portable` and named profiles never move.
-- [webcpp::hash's genesis spells its profile as one define per value
-  (`WEBCPP_HASH_PROFILE_FASTEST`, hash's D20) where this change uses one token-valued define
-  (`WEBCPP_CRYPTO_PROFILE=fastest`)] -> the owner's "one setting" needs one spelling for both
-  libraries; hash's later change that reads crypto's profile (proposal, Impact) aligns the two,
-  and until then each library's page states its own.
+  `portable` and named-backend profiles never move.
+- [A misspelt profile or override macro is silently ignored] -> the profile page lists every
+  macro, and `crypto::profile_name` shows the resolved profile (D5).
 - [Two translation units with different profiles] -> MSVC's `detect_mismatch` per profile and
   override; elsewhere the documentation says to set the profile in the project's requirements.
 - [Ed25519 verification differs between libsodium, OpenSSL, Botan and browsers on adversarial

@@ -36,16 +36,20 @@ The primary engine of every (algorithm, backend) pair that the table marks absen
 - **WHEN** `aes256_gcm_sodium::make(key)` runs where `crypto_aead_aes256gcm_is_available()` returns 0
 - **THEN** it returns `not_supported`, and `supports_v<aes256_gcm_sodium, backends::sodium>` is `true` natively and `false` on WebAssembly
 
-### Requirement: Profiles: one setting chooses every default backend
-`config.hpp` SHALL read `WEBCPP_CRYPTO_PROFILE` as a token naming `automatic` (the value when it is not defined), `fastest`, `smallest`, `portable` or a backend (`sodium`, `bearssl`, `openssl`, `botan`, `blst`, `secp256k1`, `ctaes`), and every algorithm's default backend, `default_backend_t<Family>`, MUST follow it: `automatic` is `fastest` natively and `smallest` on WebAssembly; `fastest` and `smallest` take the measured ranking of the target (and natively of the architecture); `portable` takes the table's portable backend, refusing an algorithm that no backend has on all four targets; a backend's name takes that backend for every algorithm it has and `automatic` for the others. A token that names none MUST stop compilation with a message listing the valid values.
+### Requirement: Profiles: one define chooses every default backend
+Every profile and override SHALL be a macro tested with `#ifdef`. `config.hpp` MUST read at most one of crypto's profiles, `WEBCPP_CRYPTO_PROFILE_FASTEST`, `WEBCPP_CRYPTO_PROFILE_SMALLEST`, `WEBCPP_CRYPTO_PROFILE_PORTABLE` and `WEBCPP_CRYPTO_PROFILE_BACKEND_<NAME>` (`SODIUM`, `BEARSSL`, `OPENSSL`, `BOTAN`, `BLST`, `SECP256K1`, `CTAES`), and at most one of the webcpp-wide profiles `WEBCPP_PROFILE_FASTEST`, `WEBCPP_PROFILE_SMALLEST` and `WEBCPP_PROFILE_PORTABLE`, which webcpp::hash reads alike. Every algorithm's default backend, `default_backend_t<Family>`, MUST follow them: `FASTEST` and `SMALLEST` take the measured ranking of the target (and natively of the architecture); `PORTABLE` takes the table's portable backend, refusing an algorithm that no backend has on all four targets; a named backend takes that backend for every algorithm it has and the next level for the others; with none defined, the build's measured default is `FASTEST` natively and `SMALLEST` on WebAssembly. `webcpp::crypto::profile_name` MUST give the resolved profile's name.
 
 #### Scenario: The owner's rule
 - **WHEN** a program links libsodium, BearSSL and OpenSSL natively on Linux x86-64 and uses `chacha20_poly1305` without a define
 - **THEN** its backend is the one `meta/measurements.json` ranks fastest there among the three, and on Emscripten, where OpenSSL is not built, the one ranked smallest among the other two
 
-#### Scenario: A misspelt profile
-- **WHEN** a program defines `WEBCPP_CRYPTO_PROFILE=fastes`
-- **THEN** compilation stops naming `fastes` and listing the valid profiles
+#### Scenario: The webcpp-wide umbrella
+- **WHEN** a program defines only `WEBCPP_PROFILE_SMALLEST` natively and uses `chacha20_poly1305` and webcpp::hash's HKDF
+- **THEN** both libraries take their smallest linked backend, and `crypto::profile_name` is `smallest`
+
+#### Scenario: Two profiles at once
+- **WHEN** a program defines `WEBCPP_CRYPTO_PROFILE_FASTEST` and `WEBCPP_CRYPTO_PROFILE_PORTABLE`
+- **THEN** compilation stops with an `#error` naming both macros, and so it does for `WEBCPP_PROFILE_FASTEST` with `WEBCPP_PROFILE_SMALLEST`
 
 ### Requirement: Profiles: the selection takes only what can work
 `default_backend_t<Family>` SHALL take, in the profile's order, the first backend that is linked (its `WEBCPP_CRYPTO_HAS_<NAME>` define), has the algorithm on the current target, and is not decided at run time. When none is linked it MUST be `detail::none_linked<Family>`, whose use stops compilation with the Jamfile lines that would give one, generated from the table.
@@ -58,12 +62,16 @@ The primary engine of every (algorithm, backend) pair that the table marks absen
 - **WHEN** libsodium is the only linked backend having AES-256-GCM natively
 - **THEN** `aes256_gcm` still names a backend without a run-time check, or stops compilation with the lines that would give one
 
-### Requirement: Profiles: per-family overrides and the genesis's defines
-`WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>=<backend>`, with the families of the capability table, SHALL override one family's default. `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` MUST keep their genesis meaning as the override of the AES block cipher and AES-GCM family, and MUST be refused together with `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM`. On MSVC, `config.hpp` MUST carry `#pragma detect_mismatch("webcpp_crypto_profile", "<profile>")` and one key per override, so that two translation units that choose differently fail to link with LNK2038.
+### Requirement: Profiles: per-family overrides, the genesis's defines and the precedence
+`WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`, with the families of the capability table and the backends that have each, SHALL override one family's default; two overrides of one family MUST stop compilation with an `#error` naming both. `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` MUST keep their genesis meaning, as spellings of `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL` and `_GCM_OPENSSL`. The precedence MUST be: a per-family override, then crypto's profile, then the webcpp-wide profile, then the build's measured default; crypto's profile beside a webcpp-wide one is allowed and wins. On MSVC, `config.hpp` MUST carry `#pragma detect_mismatch("webcpp_crypto_profile", "<resolved profile>")` and one key per family's resolved override, so that two translation units that choose differently fail to link with LNK2038.
 
 #### Scenario: One family overridden
-- **WHEN** a program defines `WEBCPP_CRYPTO_PROFILE=sodium` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_ED25519=openssl`
+- **WHEN** a program defines `WEBCPP_CRYPTO_PROFILE_BACKEND_SODIUM` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_ED25519_OPENSSL`
 - **THEN** `ed25519::backend_type` is `backends::openssl` and `x25519::backend_type` is `backends::sodium`
+
+#### Scenario: The precedence across levels
+- **WHEN** a program defines `WEBCPP_PROFILE_PORTABLE`, `WEBCPP_CRYPTO_PROFILE_FASTEST` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL`, with BearSSL, OpenSSL and libsodium linked natively
+- **THEN** `aes256_gcm` is on BearSSL (the override), `chacha20_poly1305` on the backend ranked fastest (crypto's profile over the umbrella), and webcpp::hash's defaults follow `WEBCPP_PROFILE_PORTABLE`
 
 ### Requirement: Measurements: webcpp's own, committed and regenerated
 The library SHALL hold `meta/measurements.json`: per (algorithm, backend), the bytes added over the baseline program on each target (native at `<optimization>space`, wasip2, wasip3 and Emscripten at `-Os`, stripped, raw and `gzip -9n`) and the throughput of the family's fixed operation natively on Linux x86-64, Linux arm64 and macOS arm64 and under wasmtime and node, each the median of five runs. `tools/crypto/measure.py` MUST write it and generate `detail/rankings.hpp` and `doc/measurements.adoc`. A pin move MUST regenerate it in the same change. The own lane `sizes` MUST rebuild the WebAssembly size programs on every push and fail when a size or the size ranking differs from the committed file; two backends whose throughput medians differ by less than 10 % MUST keep their committed order.

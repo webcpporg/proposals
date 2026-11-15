@@ -48,12 +48,15 @@ this change the same day. It is version 0.2 onward, a series of increments after
 - **A capability table** (algorithm, backend, target), committed as `meta/capabilities.json`,
   from which the refusals, the `supports` trait and the documentation's table are generated. A
   backend without a function refuses at compile time, naming the backends that have it (D4).
-- **One setting chooses every default backend:** `WEBCPP_CRYPTO_PROFILE` is `automatic` (the
-  owner's rule: natively the fastest, on WebAssembly the smallest), `fastest`, `smallest`,
-  `portable` or a backend's name, with per-algorithm overrides
-  `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>`. Defaults come from the build (the target, the
-  linked `HAS` macros) and from `meta/measurements.json`, webcpp's own measurements of size per
-  target and throughput natively, regenerated at every pin move (D5, D6).
+- **One define chooses every default backend:** macros tested with `#ifdef`, at most one per
+  level: crypto's `WEBCPP_CRYPTO_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE` or
+  `_BACKEND_<NAME>`; the webcpp-wide umbrella `WEBCPP_PROFILE_FASTEST`, `_SMALLEST`,
+  `_PORTABLE`, which crypto and hash both read; per-family overrides
+  `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`. The precedence is override, crypto's profile,
+  the umbrella, then the build's measured default (the owner's rule: natively the fastest, on
+  WebAssembly the smallest), from the target, the linked `HAS` macros and
+  `meta/measurements.json`, webcpp's own measurements of size per target and throughput
+  natively, regenerated at every pin move (D5, D6).
 - **New backends:** `backends::sodium` (libsodium 1.0.22, the `/third_party//sodium` that
   webcpp::hash builds), `backends::blst` (blst v0.3.17), `backends::botan` (Botan 3.14.1, now a
   pinned submodule built by b2, replacing the genesis's "found on the machine"), and
@@ -124,7 +127,7 @@ None.
 - **Other proposals:** `libraries/crypto/openspec/changes/genesis` is modified as the
   MODIFIED and REMOVED requirements of `specs/crypto/spec.md` say, its version 0.1 and
   increment 3 (trystero's migration) unchanged. `libraries/hash` builds the shared
-  `/third_party//sodium`, to which this change adds crypto's canary, and is asked by a later
-  change of its own to read `WEBCPP_CRYPTO_PROFILE`, so that one setting covers both libraries.
+  `/third_party//sodium`, to which this change adds crypto's canary, and reads the same
+  webcpp-wide umbrella `WEBCPP_PROFILE_*`, so that one define covers both libraries.
   `organization` carries the rulebook this change extends (chapter 5's rules for Botan and
   blst, chapter 10's rows for `blst`, `botan` and `acvp`, chapter 17's entry).
