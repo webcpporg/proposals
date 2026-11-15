@@ -737,6 +737,17 @@ The repository SHALL hold `build.jam` (project `/webcpp/crypto`, alias `crypto`)
 - **WHEN** a new `.hpp` is added without the licence notice
 - **THEN** the lint fails naming the file
 
+### Requirement: secp256k1: what a Bitcoin wallet needs
+The secp256k1 interface SHALL offer `to_der` (a compact signature as strict DER, at most `max_der_size` = 72 bytes, into a caller's buffer), `from_der` (strict DER, BIP66), `from_lax_der` (DER as Bitcoin Core accepts it for historical transactions, through libsecp256k1's `contrib/lax_der_parsing.c`), `normalize_ecdsa` (the low-S form `verify_ecdsa` requires), `taproot_output_key` (the BIP341 output key and its parity from an x-only internal key and an empty or 32-byte merkle root) and `basic_keypair::tweak_taproot` (the key pair tweaked in place for a key-path spend), each a wrapper over libsecp256k1's own function, allocating nothing; webcpp MUST NOT serialize transactions, compute sighashes or derive keys.
+
+#### Scenario: BIP341's wallet vectors
+- **WHEN** every `scriptPubKey` and `keyPathSpending` case of BIP341's `wallet-test-vectors.json` is run
+- **THEN** `taproot_output_key` gives each `tweakedPubkey`, and a key pair tweaked by `tweak_taproot` signs each sighash into the vector's witness
+
+#### Scenario: A high-S signature
+- **WHEN** a valid signature's `s` is replaced by `n - s`
+- **THEN** `verify_ecdsa` refuses it and `normalize_ecdsa` returns the original, which verifies
+
 ### Requirement: Increments: five, in order
 The work SHALL proceed in five increments: (1) the foundation and AES-GCM on BearSSL and OpenSSL (config, errors, `equal`, `random_device`, `aes128/192/256`, `gcm` one shot and incremental, both backends, the submodule `bearssl`, the canary, `detect_mismatch`, crypto's alias over the source-built OpenSSL, the tests, the unused-library rule, the documentation; then, after version 0.1, the memory option, constant time, sizes, throughput, the browser lane and NIST's vectors); (2) libsecp256k1 and ctaes (submodules, `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, ECDH, `aes128/192/256<ctaes>`, the diagnostic of `gcm<aes256<ctaes>>`, the tables feature, and trystero's build onto `/third_party//secp256k1`); version 0.1 is (1) without its deferred parts and (2); (3) trystero's migration; (4) ChaCha20-Poly1305 on BearSSL and OpenSSL with its part of the memory option's tests; (5) Botan, found, native only, with exceptions only, in every native cross-backend lane. Each increment ends with the definition of green, a review against the plan's Review Focus, and pull requests the owner merges.
 

@@ -293,6 +293,11 @@ superproject's `main` of that day (`reference/plan.md`, "The revision of 2026-11
   OpenSSL may be linked and chosen with `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`; the default there
   stays BearSSL. The source-built OpenSSL is compiled without assembly on MSVC, wasip2 and wasip3
   (table AES, no AES-NI, not constant time); the documentation says so and how to choose BearSSL.
+- **secp256k1 gains what a Bitcoin wallet needs (Task 27b, the owner's decision of
+  2026-11-14):** DER encoding and strict and lax decoding of ECDSA signatures, low-S
+  normalization, and the BIP341 Taproot tweak of a key pair and of an x-only key, thin wrappers
+  over libsecp256k1's own functions (its `contrib/lax_der_parsing.c` included); transactions,
+  sighashes, BIP32 and addresses stay outside the library.
 - **trystero's build moves onto `/third_party//secp256k1` in version 0.1**, its code unchanged,
   which removes the CI's external libsecp256k1 (Migration Plan, step 3's build half).
 - **Two limits are recorded instead of built:** MSVC's message cases fail on the MSVC lanes and

@@ -36,6 +36,7 @@ says how to start.
 - [ ] 2.1 libsecp256k1 built file by file, its tables feature, its canary and its own tests (plan: Task 26)
 - [ ] 2.2 `secp256k1::keypair`, `verify_schnorr` and `verify_ecdsa` (plan: Task 27)
 - [ ] 2.3 secp256k1's vectors: BIP340, Wycheproof's Bitcoin ECDSA, and ECDH (plan: Task 28)
+- [ ] 2.3b What a Bitcoin wallet needs from secp256k1: DER encoding and decoding, low-S normalization, the BIP341 Taproot tweak (plan: Task 27b)
 - [ ] 2.4 ctaes, Bitcoin Core's copy: the block cipher alone (plan: Task 29)
 - [ ] 2.5 Increment 2 whole: green, review, the pull requests (plan: Task 30)
 - [ ] 2.6 trystero's build onto `/third_party//secp256k1`, the CI's external libsecp256k1 removed (plan: Task 30a)

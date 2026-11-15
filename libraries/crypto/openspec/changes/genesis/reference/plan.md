@@ -81,7 +81,7 @@ of version 0.1 were patched to it, and the deferred tasks carry a note under the
 - **Commits use the contributor's own identity**, with no trailer of any kind (proposals'
   CONTRIBUTING.md, "Commit identity in older plans").
 
-**The tasks of version 0.1:** 0, 1 to 14, 17 to 19, 21, 24, 25 (increment 1); 26 to 30 and 30a
+**The tasks of version 0.1:** 0, 1 to 14, 17 to 19, 21, 24, 25 (increment 1); 26 to 27b, 28 to 30 and 30a
 (increment 2). Every other task is deferred or obsolete, as its heading's note says.
 
 **Architecture:**
@@ -9895,6 +9895,106 @@ boost::system::result<void> verify_ecdsa(std::span<std::uint8_t const, 64> signa
   and their twins on every target (the moved-from twins too: no exception is involved).
 - [ ] **Step 4: Commit:** `"crypto: secp256k1's key pair, BIP340 and ECDSA signatures, their
   verifications and ECDH on libsecp256k1"`.
+
+## Task 27b: what a Bitcoin wallet needs from secp256k1 (DER, low-S, the Taproot tweak)
+
+Added on 2026-11-14 by the owner's decision ("Incluir na v0.1"), after the guide's Bitcoin
+section showed three gaps. Builds on Task 27's `include/webcpp/crypto/secp256k1.hpp`
+(`basic_keypair`, `verify_schnorr`, `verify_ecdsa`), Task 26's `/third_party//secp256k1`
+target and Task 28's `bips` submodule. Thin wrappers over libsecp256k1 v0.8.0's own
+functions: webcpp writes no curve arithmetic and no DER of its own.
+
+## Interface (namespace `webcpp::crypto::secp256k1`, in `secp256k1.hpp`)
+
+```cpp
+/// The longest strict DER encoding of a secp256k1 ECDSA signature.
+inline constexpr std::size_t max_der_size = 72;
+
+/// Encodes a compact signature (r then s, 64 bytes) as strict DER (BIP66) into `out`.
+/// @return the number of bytes written; invalid_signature for a compact signature
+/// libsecp256k1 refuses; invalid_input_size when `out` is shorter than max_der_size.
+template <class Backend = backends::secp256k1>
+result<std::size_t> to_der(std::span<std::uint8_t const, 64> compact,
+                           std::span<std::uint8_t> out) noexcept;
+
+/// Decodes a strict DER signature (secp256k1_ecdsa_signature_parse_der) to compact form.
+/// @return the 64 bytes; invalid_signature for anything that is not strict DER.
+template <class Backend = backends::secp256k1>
+result<std::array<std::uint8_t, 64>> from_der(std::span<std::uint8_t const> der) noexcept;
+
+/// Decodes a DER signature as Bitcoin Core does for historical transactions
+/// (libsecp256k1's contrib/lax_der_parsing.c, ecdsa_signature_parse_der_lax).
+template <class Backend = backends::secp256k1>
+result<std::array<std::uint8_t, 64>> from_lax_der(std::span<std::uint8_t const> der) noexcept;
+
+/// The low-S form of a compact signature (secp256k1_ecdsa_signature_normalize), which
+/// verify_ecdsa requires; a signature already low-S is returned unchanged.
+template <class Backend = backends::secp256k1>
+result<std::array<std::uint8_t, 64>> normalize_ecdsa(
+    std::span<std::uint8_t const, 64> compact) noexcept;
+
+/// The BIP341 output key: the internal x-only key tweaked by
+/// t = tagged_hash("TapTweak", internal || merkle_root), merkle_root empty (key-path only)
+/// or 32 bytes. Returns the 32-byte x-only output key and its parity (0 or 1).
+template <class Backend = backends::secp256k1>
+result<taproot_output> taproot_output_key(std::span<std::uint8_t const, 32> internal_key,
+                                          std::span<std::uint8_t const> merkle_root) noexcept;
+
+struct taproot_output {
+    std::array<std::uint8_t, 32> key;
+    int parity;
+};
+
+// In basic_keypair:
+/// Tweaks this key pair in place into the BIP341 output key pair a key-path spend signs
+/// with (secp256k1_keypair_xonly_tweak_add with the TapTweak tagged hash, computed with
+/// secp256k1_tagged_sha256). No allocation.
+/// @return invalid_input_size for a merkle_root that is neither empty nor 32 bytes;
+/// invalid_state on a moved-from pair; invalid_secret_key if the tweak makes the key
+/// invalid (negligible, but checked).
+result<void> tweak_taproot(std::span<std::uint8_t const> merkle_root) noexcept;
+```
+
+Every function starts with the canary read, as the other secp256k1 functions do, and every
+guard runs before any secret byte is touched. The tweaked pair keeps the wiping and
+moved-from behaviour of Task 27.
+
+## Build
+
+- Compile `contrib/lax_der_parsing.c` into `/third_party//secp256k1` (it is part of the
+  pinned v0.8.0 tree, unmodified; include it with the same flags; its header
+  `contrib/lax_der_parsing.h` reaches only the library's own source, never a user's include
+  path, so declare its function in webcpp's backend header with its exact prototype or add
+  `contrib/` to the library's private includes only). Update the third_party_test case that
+  counts the compiled files.
+- The canary configuration is unchanged.
+
+## Tests (test-first; each seen failing first)
+
+1. `secp256k1_der_test`: round trips compact -> DER -> compact for random signatures from
+   `sign_ecdsa`; every DER is <= 72 bytes and strict; `from_der` refuses non-strict
+   encodings that `from_lax_der` accepts (cases from Wycheproof's
+   `ecdsa_secp256k1_sha256_bitcoin_test.json`, whose signatures are DER: count accepted and
+   refused per flag and assert the counts); `to_der` with a too-short `out` gives
+   invalid_input_size and writes nothing.
+2. `normalize_ecdsa`: a high-S signature (s' = n - s of a valid one) is refused by
+   `verify_ecdsa`, normalized back to the original, and then verifies.
+3. `secp256k1_taproot_test`, against `third_party/libs/bips/bip-0341/wallet-test-vectors.json`
+   (read through the `bips` data alias): every `scriptPubKey` case's `internalPubkey` and
+   `merkleRoot` give `tweakedPubkey` via `taproot_output_key`; every `keyPathSpending`
+   input's `internalPrivkey` tweaked by `tweak_taproot` gives its `tweakedPrivkey`
+   (compare through the public key, or add a test-only accessor if the brief's API cannot
+   show the secret: prefer comparing `xonly_public_key()` with the expected tweaked key and
+   the signature of the given sigHash against the vector's expected witness, BIP340 with an
+   all-zero aux as the vectors do). Assert the number of cases read.
+4. The guide's Bitcoin example: add a `bitcoin_sign` example program under
+   `libs/crypto/example/` that signs a P2WPKH input using BIP143's published example
+   (the native P2WPKH case of BIP143) and checks the DER signature and sighash against it;
+   its `.expected` holds the witness in hex. Use Boost.Hash2's sha2_256 for the hashes.
+
+All on native, wasip2, wasip3, emscripten (and gcc-15 natively), through `crypto-run`, with
+headers-alone and the changelog line ("Added DER encoding and decoding of ECDSA signatures,
+low-S normalization and the BIP341 Taproot tweak to secp256k1.").
 
 ## Task 28: secp256k1's vectors: BIP340, Wycheproof's Bitcoin ECDSA, and ECDH
 
