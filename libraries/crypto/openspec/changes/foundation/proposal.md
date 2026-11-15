@@ -53,6 +53,18 @@ this change the same day. It is version 0.2 onward, a series of increments after
   `<webcpp/crypto/<group>/<name>.hpp>`; the root keeps `error`, `random_device`, `equal`, the
   memory utilities, the configuration and the profiles; `crypto::backends` stays outside. Version
   0.1 is renamed to this layout before it closes, and the foundation starts from it.
+- **Standard key formats** (D30, the owner's decision of 2026-11-15 from the research on libp2p
+  and iroh): each curve's increment carries SPKI (public) and PKCS#8 (private) in DER and their
+  PEM armour, import and export, decoded strictly (an encoding that does not re-encode to the
+  same bytes is refused): Ed25519 and X25519 (RFC 8410) in increment 1, secp256k1 (RFC 5480)
+  in increment 2, P-256 (RFC 5480, RFC 5915) in increment 3, RSA (PKCS #1 inside SPKI and
+  PKCS#8) with RSA. libp2p's PeerIds for ECDSA and RSA keys are SPKI DER, WebCrypto imports and
+  exports `spki` and `pkcs8`, and OpenSSL and SSH tooling exchange PEM; JWK stays above crypto.
+- **Ed25519's verification policy** (D31): strict by default (libsodium's rules), named
+  `curves::ed25519::strict`; the twelve edge cases of "Taming the many EdDSAs" run against every
+  Ed25519 backend, their verdicts committed and published as a table; `zip215` is declared only
+  when a mature C or C++ implementation of ZIP-215 is found, an open research item, since Rust
+  peers verifying with ed25519-dalek's default rules accept signatures libsodium refuses.
 - **Primitives only** (D24, the owner's rule): whatever BIPs, EIPs, SLIPs and NIPs define goes to
   future domain libraries (webcpp::bitcoin, webcpp::ethereum, webcpp::nostr) built on crypto and
   hash; libsecp256k1's own modules stay as the primitives they are. Version 0.1's Taproot tweak

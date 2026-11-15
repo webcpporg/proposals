@@ -20,7 +20,9 @@
   submodule at v0.3.16); mcl's latest tag v4.43 (`50e4c6f2826de6b041f857caf9f253cc736ea926`,
   BSD-3-Clause; mcl publishes tags, not releases); dsprenkels/sss's latest commit
   `9f2a10b1c0d391bed485c4c7e93788ce37c360f1` (2025-08-18, MIT; its only tag is v0.1.0); Botan
-  3.14.1 holds the `hpke` module (`src/lib/pubkey/hpke/`).
+  3.14.1 holds the `hpke` module (`src/lib/pubkey/hpke/`); `novifinancial/ed25519-speccheck`
+  (Apache-2.0), "Taming the many EdDSAs"' suite, at `65519336fda78a3d016e947df6d82848aca0c9da`
+  (2021-02-26), the test data of design D31.
 - An upstream fact found while writing: libsodium 1.0.22 has the ristretto255 and
   edwards25519 maps from hashes, and not the full RFC 9380 `crypto_core_*_from_string`
   functions, which are on libsodium's `master` since 2026-02-20 and in no release (design

@@ -826,6 +826,70 @@ The foundation starts from that layout and keeps no alias of the old names.
   `curves::ed25519::verify` that the groups make unnecessary); groups by backend (a program would name
   its backend twice); aliases from the old names (two spellings for one type in version 0).
 
+### D30. Standard key formats: SPKI, PKCS#8 and PEM, decoded strictly
+
+The owner's decision of 2026-11-15, from the research on libp2p and iroh: libp2p's PeerIds for
+ECDSA and RSA keys are SPKI DER, WebCrypto imports and exports `spki` and `pkcs8`, and OpenSSL
+and SSH tooling exchange PEM. Each curve's increment carries its own formats, as primitives of
+encoding (no protocol layout, D24):
+
+| Keys | Formats | Increment | Backends |
+| --- | --- | --- | --- |
+| Ed25519, X25519 | RFC 8410 SPKI and PKCS#8 (version 1, the seed or secret alone), PEM | 1 | `sodium` (the fixed DER prefix of RFC 8410 and the 32 key bytes); `openssl` and `botan` when they land |
+| secp256k1 | RFC 5480 SPKI with the secp256k1 OID (compressed and uncompressed points), PKCS#8 with RFC 5915's `ECPrivateKey`, PEM | 2 | `secp256k1` (fixed layouts around the key bytes, as for RFC 8410); `openssl` and `botan` when they land |
+| P-256, P-384, P-521 | RFC 5480 SPKI, PKCS#8 with RFC 5915's `ECPrivateKey`, PEM | 3, beside the DER signatures | `bearssl` for PKCS#8 (`br_skey_decoder`, `br_encode_ec_pkcs8_der`) and PEM (`br_pem_decoder`, `br_pem_encode`); SPKI where a backend encodes it (`openssl`, `botan`); BearSSL's SPKI cells absent |
+| RSA | PKCS #1 inside SPKI and PKCS#8, PEM | 3 (RSA) | `bearssl` (`br_skey_decoder`, `br_encode_rsa_pkcs8_der`), `openssl`, `botan` |
+
+- **The interface:** in each curve's namespace `encode_spki`, `decode_spki`, `encode_pkcs8`,
+  `decode_pkcs8` (into the caller's buffer, with `max_spki_size` and `max_pkcs8_size`,
+  nothing written on refusal), and at the root `pem::armour(label, der, out)` and
+  `pem::unarmour(label, text, out)` with the labels `PUBLIC KEY` and `PRIVATE KEY`. A decoded
+  private key is a `secret<N>` or a key pair made at once.
+- **Strict decoding:** an encoding is accepted only if encoding what was decoded gives the same
+  bytes, on every backend; so PKCS#8 version 2 (with the public key) and PEM with other line
+  lengths or carriage returns are refused, the same on OpenSSL as on libsodium, and the
+  documentation says which producer's forms are accepted (OpenSSL's, WebCrypto's).
+- **Fixed prefixes are constants, not cryptography:** RFC 8410's SPKI is the 12 bytes
+  `30 2a 30 05 06 03 2b 65 70 03 21 00` (Ed25519; `6e` in place of `70` for X25519) before the
+  key, and its PKCS#8 the 16 bytes `30 2e 02 01 00 30 05 06 03 2b 65 70 04 22 04 20` before the
+  seed; secp256k1's SPKI and PKCS#8 layouts are fixed alike for each point form. The backend
+  writes and compares those constants; libsodium's constant-time base64 does the PEM armour.
+- **Tests:** round trips on every backend; malformed inputs (wrong OID, trailing bytes, long-form
+  lengths that need not be, a version 2 PKCS#8, a bad PEM label or line) refused with
+  `invalid_encoding`; OpenSSL (natively, through its C API in the tests even before increment 8)
+  and WebCrypto's `importKey` and `exportKey` with `spki` and `pkcs8` (node, on Emscripten) as
+  outside oracles.
+- **JWK stays out:** it is JSON, which belongs to a layer above crypto.
+- **Alternatives:** a DER library of webcpp's (an ASN.1 parser is a security boundary webcpp
+  should not write while every backend but libsodium and libsecp256k1 has one); accepting
+  every BER variant a backend's parser takes (the same key would be accepted by one backend and
+  refused by another).
+
+### D31. Ed25519's verification policy: strict, named, and its edge cases published
+
+The default verification is strict, libsodium's `crypto_sign_verify_detached`: `S` canonical
+(below the group order), `A` and `R` canonical encodings, `A` and `R` of small order refused.
+The policy is part of the API's shape: `curves::ed25519::verify<Policy = strict, Backend>`, with
+`curves::ed25519::strict` declared now; a backend whose rules differ from the policy's either
+meets them by webcpp's checks before the call (canonical encodings and small order through
+libsodium's `crypto_core_ed25519_is_valid_point` when both are linked) or has no cell for that
+policy.
+
+The twelve edge cases of Chalkias, Garillot and Nikolaenko, "Taming the many EdDSAs" (2020),
+from its suite `novifinancial/ed25519-speccheck` (Apache-2.0, `cases.json` at
+`65519336fda78a3d016e947df6d82848aca0c9da`, a shallow test-data submodule with its chapter 10
+row), run against every Ed25519 backend (libsodium in increment 1, OpenSSL in 8, Botan in 7;
+BearSSL has no Ed25519; WebCrypto in node and Chrome as an outside view in 4). Each backend's
+verdict per case, under its raw behaviour and under `strict`, is committed in
+`meta/ed25519_cases.json`, from which `docs.py` generates the table "which backend accepts
+which case"; the test asserts the committed verdicts, so a pin move that changes one fails
+until the data is regenerated. The documentation explains the interop risk: Rust peers using
+ed25519-dalek's default `verify` (and ZIP-215 verifiers) accept signatures that libsodium
+refuses, so a network mixing them must agree on a rule.
+
+`curves::ed25519::zip215` is not declared: it waits for a mature C or C++ implementation of
+ZIP-215 (open question O1).
+
 ## Risks / Trade-offs
 
 - [The capability table grows to hundreds of cells] -> it is generated into the code and the
@@ -861,6 +925,10 @@ The foundation starts from that layout and keeps no alias of the old names.
 - [sss is quiet upstream] -> pinned at its latest commit with the diff from v0.1.0 read, its
   own tests and the constant-time lane run on webcpp's build; a fork is never taken without the
   owner (D27).
+- [Strict key decoding refuses forms other tools emit (PKCS#8 version 2, PEM with CRLF)] -> the
+  documentation lists the accepted producers; a program converts with OpenSSL first (D30).
+- [Ed25519 verdicts differ between backends and peers] -> the policy is named, the twelve
+  cases' verdicts are committed and published, and the interop risk is documented (D31).
 - [mcl is not constant time everywhere] -> nothing secret is exposed on it (D26).
 - [Six streams at once] -> the generated files are regenerated, never merged by hand; each
   stream rebases when another merges.
@@ -884,7 +952,13 @@ withdrawing it deletes `openspec/changes/foundation/`.
 
 ## Open Questions
 
-None. The owner decided the scope, the backends, the profiles, the browser's family, the
+- **O1. A ZIP-215 verifier in C or C++** (research, not a task): `curves::ed25519::zip215` is
+  declared only once a mature C or C++ implementation is identified and pinned. Its acceptance
+  criterion: every ZIP-215 test vector passes, and its verdicts equal those of the
+  `ed25519-zebra` reference on ZIP-215's vectors and on "Taming the many EdDSAs"' twelve
+  cases. Until then a program that must accept ZIP-215 signatures has no API here.
+
+Otherwise none. The owner decided the scope, the backends, the profiles, the browser's family, the
 documentation and the order on 2026-11-14; the upstream facts this change waits on (Botan's WASI build,
 libsodium's next release for hash-to-curve, c-kzg's tests on webcpp's blst, sss on MSVC) have
 decided rules for either outcome (D15, D17, D25, D27).

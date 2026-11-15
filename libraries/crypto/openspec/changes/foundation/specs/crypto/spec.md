@@ -131,15 +131,26 @@ Every engine of `backends::sodium` SHALL call `sodium_init()` before its first l
 - **THEN** it returns `entropy_unavailable` and libsodium's generator is never called
 
 ### Requirement: Ed25519: key pairs, signatures and strict verification
-`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its 32-byte public key, sign a message into 64 bytes, and give its X25519 secret key as `secret<32>`; `curves::ed25519::verify<Backend>(public_key, message, signature)` MUST return nothing on success and `invalid_signature` otherwise. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
+`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its 32-byte public key, sign a message into 64 bytes, and give its X25519 secret key as `secret<32>`; `curves::ed25519::verify<Policy, Backend>(public_key, message, signature)` MUST return nothing on success and `invalid_signature` otherwise. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
 
 #### Scenario: RFC 8032's test 1
 - **WHEN** the key pair is made from RFC 8032 section 7.1's first secret key and signs the empty message
 - **THEN** the public key and the signature are the RFC's, and `curves::ed25519::verify` accepts them
 
 #### Scenario: A small-order public key
-- **WHEN** `curves::ed25519::verify<backends::sodium>` is given a small-order public key from Wycheproof
+- **WHEN** `curves::ed25519::verify<curves::ed25519::strict, backends::sodium>` is given a small-order public key from Wycheproof
 - **THEN** it returns `invalid_signature`
+
+### Requirement: Ed25519: a named verification policy and the twelve edge cases
+`curves::ed25519::verify<Policy, Backend>` SHALL take a verification policy, `curves::ed25519::strict` by default and the only one declared: `S` below the group order, `A` and `R` canonical encodings, neither of small order, as libsodium's `crypto_sign_verify_detached` decides. Every Ed25519 backend MUST give libsodium's verdicts under `strict`. The twelve cases of "Taming the many EdDSAs" (Chalkias, Garillot, Nikolaenko, 2020; `novifinancial/ed25519-speccheck` at `65519336fda78a3d016e947df6d82848aca0c9da`) MUST run against every Ed25519 backend, raw and under `strict`, and against WebCrypto in node as an outside view; the verdicts MUST be committed in `meta/ed25519_cases.json`, asserted by the test, and published as a generated table, with the documentation explaining the interop risk with peers using ed25519-dalek's default verification. `curves::ed25519::zip215` MUST NOT be declared until a mature C or C++ implementation of ZIP-215 passes every ZIP-215 vector with the same verdicts as `ed25519-zebra` (open question O1).
+
+#### Scenario: A non-canonical R
+- **WHEN** the speccheck case with a non-canonical `R` is verified with `verify<strict, backends::sodium>`
+- **THEN** it returns `invalid_signature`, as `meta/ed25519_cases.json` records
+
+#### Scenario: A verdict changes with a pin move
+- **WHEN** a backend's pin moves and its raw verdict on one of the twelve cases changes
+- **THEN** the test fails until `meta/ed25519_cases.json` and its table are regenerated in that change
 
 ### Requirement: Ed25519ph: an incremental signer
 `curves::ed25519::ph<Hash, Backend>`, with `Hash` webcpp::hash's `sha2_512` as RFC 8032 requires, SHALL sign and verify a message given in pieces (`begin`, `update`, `sign` or `verify`) through libsodium's `crypto_sign_ed25519ph_*`, and refuse another hash at compile time.
@@ -165,6 +176,21 @@ The library SHALL offer `hybrid::box` (X25519, XSalsa20-Poly1305) and `hybrid::b
 #### Scenario: A sealed box opened by its recipient
 - **WHEN** a message is sealed to a recipient's public key and opened with the recipient's key pair
 - **THEN** it opens, and a sealed box changed in one byte returns `authentication_failed` with `data` zeroed
+
+### Requirement: Key formats: SPKI, PKCS#8 and PEM, strict
+Each curve's increment SHALL add, in its namespace, `encode_spki`, `decode_spki`, `encode_pkcs8` and `decode_pkcs8` (into the caller's buffer, with `max_spki_size` and `max_pkcs8_size`, nothing written on refusal), and the root `pem::armour` and `pem::unarmour` (labels `PUBLIC KEY` and `PRIVATE KEY`, lines of 64 characters, LF): Ed25519 and X25519 per RFC 8410 in increment 1 (on libsodium, RFC 8410's fixed DER prefix and the 32 key bytes, a recorded constant), secp256k1 per RFC 5480 with its OID in increment 2, P-256, P-384 and P-521 per RFC 5480 and RFC 5915 in increment 3 (PKCS#8 and PEM on BearSSL, SPKI on OpenSSL and Botan), RSA with PKCS #1 inside SPKI and PKCS#8 with RSA, and on OpenSSL and Botan for every key type they have. Decoding MUST accept an encoding only when re-encoding what was decoded gives the same bytes, on every backend, and refuse anything else with `invalid_encoding`. JWK MUST NOT be offered. Tests MUST run round trips, malformed-input refusals, and OpenSSL natively and WebCrypto's `importKey` and `exportKey` (`spki`, `pkcs8`) under node as outside oracles.
+
+#### Scenario: An Ed25519 key from WebCrypto
+- **WHEN** node's WebCrypto exports an Ed25519 key pair as `pkcs8` and `spki` and the library decodes both on libsodium
+- **THEN** the key pair signs as WebCrypto's does, and encoding it again gives the same bytes
+
+#### Scenario: PKCS#8 version 2 is refused
+- **WHEN** `decode_pkcs8` is given an Ed25519 PKCS#8 that carries the public key (version 2)
+- **THEN** it returns `invalid_encoding` and writes nothing, on libsodium and on OpenSSL alike
+
+#### Scenario: A libp2p PeerId's key
+- **WHEN** a P-256 public key's SPKI DER from OpenSSL is decoded by `curves::p256::decode_spki` on OpenSSL and re-encoded
+- **THEN** the bytes are identical, as a libp2p PeerId of an ECDSA key requires
 
 ### Requirement: Key exchange: crypto_kx
 `curves::x25519::kx_keypair<Backend>` SHALL compute `client_session_keys(server_public_key)` and `server_session_keys(client_public_key)`, each returning a receive key and a transmit key as `secret<32>`, through libsodium's `crypto_kx`, and return `weak_public_key` where libsodium refuses the peer's key.

@@ -1160,18 +1160,27 @@ private:
 using keypair = basic_keypair<>;
 
 /**
- Verifies an Ed25519 signature.
+ Ed25519 verification as libsodium does it: `S` below the group order, `A` and `R` canonical,
+ neither of small order (design D31).
+*/
+struct strict {};
 
+/**
+ Verifies an Ed25519 signature under a verification policy (design D31).
+
+ @tparam Policy `strict` (libsodium's rules), the only policy declared.
  @tparam Backend The backend; by default the family's.
  @param public_key 32 bytes.
  @param message The signed bytes.
  @param signature 64 bytes.
  @return Nothing; `invalid_public_key` for a key of another size; `invalid_signature`.
 */
-template <class Backend = default_backend_t<families::ed25519>>
+template <class Policy = strict, class Backend = default_backend_t<families::ed25519>>
 boost::system::result<void> verify(std::span<std::uint8_t const> public_key,
-                                           std::span<std::uint8_t const> message,
-                                           std::span<std::uint8_t const> signature) noexcept {
+                                   std::span<std::uint8_t const> message,
+                                   std::span<std::uint8_t const> signature) noexcept {
+    static_assert(std::is_same_v<Policy, strict>,
+                  "webcpp::crypto: Ed25519's only verification policy is curves::ed25519::strict.");
     if (public_key.size() != 32) {
         return error::invalid_public_key;
     }
@@ -1262,6 +1271,34 @@ struct ed25519_engine<tags::ed25519, backends::sodium> {
 - [ ] **Step 5: The table and the messages.** `capabilities.json` gains `ed25519ph`;
   `ed25519_on_bearssl` checks the generated refusal; `ed25519ph_sha256` the static assertion.
 - [ ] **Step 6: Run** every lane; commit `crypto: Ed25519 and Ed25519ph on libsodium`.
+
+## Task 6b: Ed25519's verification policy and the twelve edge cases
+
+**Files:** create `meta/ed25519_cases.json`, `test/ed25519_speccheck_test.cpp`; superproject
+`third_party/Jamfile` (`/third_party//ed25519-speccheck`, test data, its define
+`WEBCPP_TEST_ED25519_SPECCHECK`) and the shallow submodule `third_party/libs/ed25519-speccheck`
+at `65519336fda78a3d016e947df6d82848aca0c9da` with its chapter 10 row; modify `tools/crypto/docs.py`
+(the table "which backend accepts which case").
+
+- [ ] **Step 1:** `ed25519_speccheck_test` reads `cases.json` (twelve cases: message, public
+  key, signature) and, for each Ed25519 backend linked, records the raw verdict and the verdict
+  of `verify<strict, Backend>`, comparing them with `meta/ed25519_cases.json`; under `strict`
+  every backend must give libsodium's verdicts. The file starts with libsodium's row:
+
+```json
+{"source": {"repository": "novifinancial/ed25519-speccheck", "commit": "65519336", "file": "cases.json"},
+ "backends": {"sodium": {"raw": ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"],
+                         "strict": ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"]}}}
+```
+
+  where each `?` becomes `accept` or `reject` from the first run, reviewed against the paper's
+  table before it is committed (a disagreement with the paper is reported, never smoothed).
+- [ ] **Step 2:** under node on Emscripten, the same twelve cases through WebCrypto's
+  `verify` (Ed25519), recorded as `webcrypto-node`, an outside view, not asserted against
+  `strict`.
+- [ ] **Step 3:** `docs.py` generates the table into the curves chapter, with the paragraph on
+  ed25519-dalek's default `verify` and ZIP-215 (design D31, O1). Commit
+  `crypto: Ed25519's strict policy, and the twelve edge cases per backend`.
 
 ## Task 7: X25519 and the conversion
 
@@ -1385,6 +1422,65 @@ boost::system::result<std::array<std::uint8_t, 32>> to_x25519_public(
   `agree` is `crypto_scalarmult_curve25519` (whose -1 is `weak_public_key`), the conversion is
   `crypto_sign_ed25519_pk_to_curve25519` (whose -1 is `invalid_public_key`).
 - [ ] **Step 4: Run** every lane; commit `crypto: X25519 and the Ed25519 to X25519 conversion`.
+
+## Task 7b: SPKI, PKCS#8 and PEM for Ed25519 and X25519
+
+**Files:** create `include/webcpp/crypto/pem.hpp`, `include/webcpp/crypto/curves/ed25519/formats.hpp`,
+`include/webcpp/crypto/curves/x25519/formats.hpp`, `test/formats_25519_sodium_test.cpp`,
+`test/oracle/webcrypto_formats.mjs`; modify `backends/sodium.hpp`, `meta/capabilities.json`.
+
+- [ ] **Step 1: The failing tests:** round trips of SPKI and PKCS#8 for random key pairs;
+  OpenSSL's `i2d_PUBKEY` and `i2d_PrivateKey` (the source-built provider, linked in the test
+  only) produce the same bytes and decode ours; malformed inputs refused with
+  `invalid_encoding` and nothing written (Ed25519's OID under X25519, a trailing byte, a length
+  in long form, PKCS#8 version 2 with the public key, a PEM label other than the expected, a
+  line of 63 characters, a carriage return); under node, WebCrypto's `importKey` and
+  `exportKey` with `spki` and `pkcs8` agree byte for byte.
+- [ ] **Step 2: The constants and the functions:**
+
+```cpp
+namespace webcpp::crypto::detail {
+
+/** RFC 8410's SPKI before an Ed25519 public key: SEQUENCE, AlgorithmIdentifier 1.3.101.112, BIT STRING. */
+inline constexpr std::array<std::uint8_t, 12> ed25519_spki_prefix{
+    0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00};
+/** RFC 8410's PKCS#8 (version 1) before an Ed25519 seed: OneAsymmetricKey, OCTET STRING of an OCTET STRING. */
+inline constexpr std::array<std::uint8_t, 16> ed25519_pkcs8_prefix{
+    0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20};
+// X25519: the same with 0x6e in place of 0x70 (1.3.101.110).
+
+}  // namespace webcpp::crypto::detail
+
+namespace webcpp::crypto::curves::ed25519 {
+
+/** The SPKI's size, 44 bytes. */
+inline constexpr std::size_t spki_size = 44;
+/** The PKCS#8's size, 48 bytes. */
+inline constexpr std::size_t pkcs8_size = 48;
+
+/** Writes a public key's SPKI into `out` (at least `spki_size` bytes); returns its length. */
+template <class Backend = default_backend_t<families::ed25519_formats>>
+boost::system::result<std::size_t> encode_spki(std::span<std::uint8_t const> public_key,
+                                               std::span<std::uint8_t> out) noexcept;
+/** The public key of an SPKI, refused unless it is exactly RFC 8410's form. */
+template <class Backend = default_backend_t<families::ed25519_formats>>
+boost::system::result<std::array<std::uint8_t, 32>> decode_spki(std::span<std::uint8_t const> spki) noexcept;
+/** Writes a key pair's PKCS#8 (version 1, the seed) into `out`; returns its length. */
+template <class Backend = default_backend_t<families::ed25519_formats>>
+boost::system::result<std::size_t> encode_pkcs8(keypair const& key, std::span<std::uint8_t> out) noexcept;
+/** The key pair of a PKCS#8, refused unless it is exactly RFC 8410's version 1 form. */
+template <class Backend = default_backend_t<families::ed25519>>
+boost::system::result<basic_keypair<Backend>> decode_pkcs8(std::span<std::uint8_t const> pkcs8) noexcept;
+
+}  // namespace webcpp::crypto::curves::ed25519
+```
+
+  On libsodium the encoders copy the prefix and the key bytes, and the decoders compare the
+  prefix with `equal` and check the length, which is the re-encoding test of design D30 for a
+  fixed layout. `pem.hpp`'s `pem::armour` and `pem::unarmour` use libsodium's
+  `sodium_bin2base64` and `sodium_base642bin` (original variant), lines of 64 characters, LF
+  only, `-----BEGIN <label>-----`; `unarmour` re-armours and compares.
+- [ ] **Step 3: Run** every lane; commit `crypto: SPKI, PKCS#8 and PEM for Ed25519 and X25519`.
 
 ## Task 8: `ciphers::aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs
 
@@ -1863,7 +1959,10 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
    `secp256k1_ecdh` with webcpp's copying hash functions; Wycheproof's ECDH file and NIP-44's
    vectors.
 2. `sign_recoverable`, `recover`, hedged `sign_ecdsa`; libsecp256k1's own recovery tests.
-3. Tweaks, negation, combination, `parse_public_key` and `serialize_public_key` in both forms.
+3. Tweaks, negation, combination, `parse_public_key` and `serialize_public_key` in both forms;
+   SPKI (RFC 5480 with the secp256k1 OID, compressed and uncompressed) and PKCS#8 (RFC 5915's
+   `ECPrivateKey` with its public key, as OpenSSL writes it) as fixed layouts around the key
+   bytes, PEM through `pem.hpp`, strict decoding, OpenSSL's encoders as the oracle (design D30).
 4. ElligatorSwift; BIP324's `packet_encoding_test_vectors.csv` and its ellswift vectors.
 5. MuSig2 with `musig::secret_nonce` consumed by move; BIP327's vectors.
 6. Silent payments; BIP352's `send_and_receive_test_vectors.json`.
@@ -1880,12 +1979,16 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
    validation, and its serialisation; Wycheproof's DER files per curve, NIST's ECDSA signature
    and key validation vectors; the compressed form's absent BearSSL cells; a passkey's ES256
    assertion verified from its COSE key's coordinates, with the curves chapter's note that
-   WebAuthn's protocol stays outside crypto.
+   WebAuthn's protocol stays outside crypto; PKCS#8 for the P-curves on BearSSL
+   (`br_skey_decoder`, `br_encode_ec_pkcs8_der`) and PEM (`br_pem_decoder`, `br_pem_encode`),
+   strict by re-encoding; SPKI's BearSSL cells absent (OpenSSL and Botan later); OpenSSL and
+   WebCrypto's `spki` and `pkcs8` as oracles (design D30).
 2. X25519 (`br_ec_c25519_m62`/`m31`) and ChaCha20-Poly1305 (the genesis's Task 35 engine),
    joining libsodium in agreement natively and on WebAssembly.
 3. `ctr`, `cbc` (PKCS #7, `invalid_padding`), `ccm`, `eax`; NIST ACVP's AES vectors (the
    `acvp` submodule, pinned here by `gh api`, its chapter 10 row).
-4. RSA: PKCS #1 v1.5 and PSS, OAEP, key generation; Wycheproof's RSA files; the heavy
+4. RSA: PKCS #1 v1.5 and PSS, OAEP, key generation; PKCS#8 with PKCS #1 inside on BearSSL
+   (`br_skey_decoder`, `br_encode_rsa_pkcs8_der`), strict; Wycheproof's RSA files; the heavy
    variants (key generation, private operations at 3072 bits and above as measured).
 5. Measurements, constant-time paths, the documentation step of D19 (table rows, sections,
    generated pages), green, review, pull requests.
@@ -1935,12 +2038,15 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
    source an object; the submodule at `01af88c`; the canary; chapter 5's new rule and chapter
    10's row; the genesis's Task 37 dropped.
 3. The backend: every family the table lists for Botan, `detail::botan_random`, the boundary's
-   `try`; Wycheproof and ACVP per family; the heavy variants (SLH-DSA, RSA, ML-DSA as measured).
+   `try`; SPKI, PKCS#8 and PEM for every key type Botan has, strict by re-encoding (D30), and
+   Ed25519's twelve cases recorded (D31); Wycheproof and ACVP per family; the heavy variants (SLH-DSA, RSA, ML-DSA as measured).
 4. Measurements, the allocation departure re-measured, pages, green, review, pull requests.
 
 ## Increment 8: OpenSSL's remaining algorithms (a stream after 1)
 
-1. P-curves, Ed25519, Ed448, X25519, X448, RSA through `EVP_PKEY`, a context made in `make`.
+1. P-curves, Ed25519, Ed448, X25519, X448, RSA through `EVP_PKEY`, a context made in `make`;
+   SPKI, PKCS#8 and PEM for each (`i2d_PUBKEY`, `d2i_PUBKEY`, `i2d_PrivateKey`, the PEM
+   functions), strict by re-encoding (D30); Ed25519's twelve cases recorded (D31).
 2. ML-KEM, ML-DSA, SLH-DSA (OpenSSL 3.5); ACVP's vectors; the heavy variants as measured.
 3. AES-CTR, CBC, CCM, OCB, KW, KWP, SIV, GCM-SIV, CMAC, ChaCha20-Poly1305; the allocation per
    operation measured and recorded per algorithm.

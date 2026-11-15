@@ -14,7 +14,9 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 - [ ] 1.4 The capability table, its generator, `supports_v` and the generated refusals (plan: Task 4)
 - [ ] 1.5 The profiles, the overrides, `default_backend_t` and the seeded rankings (plan: Task 5)
 - [ ] 1.6 Ed25519 and Ed25519ph on libsodium (plan: Task 6)
+- [ ] 1.6b Ed25519's strict policy, and the twelve "Taming the many EdDSAs" cases per backend, committed and published (plan: Task 6b)
 - [ ] 1.7 X25519 and the Ed25519 to X25519 conversion (plan: Task 7)
+- [ ] 1.7b SPKI, PKCS#8 and PEM for Ed25519 and X25519, strict, with OpenSSL and WebCrypto as oracles (plan: Task 7b)
 - [ ] 1.8 `ciphers::aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs on libsodium (plan: Task 8)
 - [ ] 1.9 `hybrid::box`, sealed boxes and `ciphers::secretbox`, in both forms (plan: Task 9)
 - [ ] 1.10 `kx` (plan: Task 10)
@@ -29,7 +31,7 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 
 - [ ] 2.1 `ecdh` returns `secret<32>`; `ecdh_x` and `ecdh_point` (plan: Increment 2, step 1)
 - [ ] 2.2 Recovery and hedged ECDSA, with libsecp256k1's own recovery tests (plan: Increment 2, step 2)
-- [ ] 2.3 Tweaks, negation, combination, uncompressed keys (plan: Increment 2, step 3)
+- [ ] 2.3 Tweaks, negation, combination, uncompressed keys; SPKI, PKCS#8 and PEM for secp256k1 (plan: Increment 2, step 3)
 - [ ] 2.4 ElligatorSwift with BIP324's vectors (plan: Increment 2, step 4)
 - [ ] 2.5 MuSig2 with BIP327's vectors, the consumed nonce (plan: Increment 2, step 5)
 - [ ] 2.6 Silent payments with BIP352's vectors (plan: Increment 2, step 6)
@@ -37,10 +39,10 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 
 ## 3. Increment 3: BearSSL's remaining parts (a parallel stream after 1)
 
-- [ ] 3.1 P-256, P-384, P-521 ECDSA and ECDH, strict DER signatures and public key forms (uncompressed point, raw x and y) (plan: Increment 3, step 1)
+- [ ] 3.1 P-256, P-384, P-521 ECDSA and ECDH, strict DER signatures and public key forms (uncompressed point, raw x and y); PKCS#8 and PEM (plan: Increment 3, step 1)
 - [ ] 3.2 X25519 and ChaCha20-Poly1305 on BearSSL, joining libsodium in agreement (plan: Increment 3, step 2)
 - [ ] 3.3 AES-CTR, AES-CBC, AES-CCM, AES-EAX (plan: Increment 3, step 3)
-- [ ] 3.4 RSA: PKCS #1 v1.5, PSS, OAEP, key generation; its heavy variants (plan: Increment 3, step 4)
+- [ ] 3.4 RSA: PKCS #1 v1.5, PSS, OAEP, key generation, PKCS#8; its heavy variants (plan: Increment 3, step 4)
 - [ ] 3.5 Increment 3 whole (plan: Increment 3, step 5)
 
 ## 4. Increment 4: the browser backend and the asynchronous family (a parallel stream after 1)
@@ -69,12 +71,12 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 
 - [ ] 7.1 The spike: Botan 3.14.1 on wasip2 and wasip3 (plan: Increment 7, step 1)
 - [ ] 7.2 `tools/webcpp-botan.jam`, the submodule, its canary, chapter 5's new rule (plan: Increment 7, step 2)
-- [ ] 7.3 The Botan backend: every family the table lists for it, `detail::botan_random` (plan: Increment 7, step 3)
+- [ ] 7.3 The Botan backend: every family the table lists for it, `detail::botan_random`, SPKI, PKCS#8 and PEM, Ed25519's twelve cases (plan: Increment 7, step 3)
 - [ ] 7.4 Increment 7 whole (plan: Increment 7, step 4)
 
 ## 8. Increment 8: OpenSSL's remaining algorithms (a parallel stream after 1)
 
-- [ ] 8.1 Curves and signatures: P-curves, Ed25519, Ed448, X25519, X448, RSA (plan: Increment 8, step 1)
+- [ ] 8.1 Curves and signatures: P-curves, Ed25519, Ed448, X25519, X448, RSA, with SPKI, PKCS#8 and PEM; Ed25519's twelve cases (plan: Increment 8, step 1)
 - [ ] 8.2 ML-KEM, ML-DSA, SLH-DSA with ACVP's vectors; the heavy variants (plan: Increment 8, step 2)
 - [ ] 8.3 AES modes and CMAC, ChaCha20-Poly1305; the allocation per operation recorded (plan: Increment 8, step 3)
 - [ ] 8.4 Increment 8 whole (plan: Increment 8, step 4)
