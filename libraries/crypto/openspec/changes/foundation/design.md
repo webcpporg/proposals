@@ -359,6 +359,27 @@ RFC 6979 nonces, raw and ASN.1, ECDH, X25519 (`br_ec_c25519_m62`/`m31`), ChaCha2
 guard, `invalid_padding` for every cause), AES-CCM, AES-EAX and RSA (`br_rsa_i62`/`i31`:
 PKCS #1 v1.5 and PSS signatures, OAEP, key generation drawing from `random_device`). RSA is in
 scope because BearSSL, OpenSSL, Botan and the browser all have it and WebAuthn and JWT use it.
+**Key and signature forms on the P-curves** (the owner's decision of 2026-11-15), as
+primitives:
+
+- `curves::p256::to_der` and `from_der` (and `p384`, `p521` by the same code), shaped as
+  `curves::secp256k1::to_der` and `from_der`: `to_der` writes into the caller's buffer of at
+  least `max_der_size` bytes (72 for P-256, 104 for P-384, 139 for P-521) and returns the
+  length; `from_der` returns the raw `r || s`; a refusal (`invalid_signature`,
+  `invalid_input_size` for a short buffer) writes nothing. Decoding is BearSSL's
+  `br_ecdsa_asn1_to_raw`, made strict by re-encoding the result with `br_ecdsa_raw_to_asn1` and
+  requiring the same bytes, so that only canonical DER is accepted and the check stays
+  BearSSL's code.
+- `curves::p256::public_key` (and the other P-curves): parsed from the uncompressed point
+  (`0x04 || x || y`, 65 bytes for P-256) or from raw `x` and `y` coordinates, as WebAuthn's COSE
+  keys carry them, with validation (on the curve, not the identity; BearSSL's decoder checks
+  the point), and serialised back to the uncompressed form. BearSSL decodes only uncompressed
+  points, so the compressed form's cells are absent on BearSSL and present on OpenSSL and Botan
+  when increments 8 and 7 land.
+- These serve WebAuthn's ES256 verification; the protocol itself (COSE parsing,
+  authenticator data, the client data's hash) stays outside crypto (D24), and the
+  documentation says so.
+
 BearSSL's HMAC-DRBG and AES-CTR-DRBG are not exposed, nor any backend's DRBG: `random_device`
 is the only generator (the genesis's D10), and a deterministic stream for tests is
 `random_bytes_deterministic` (libsodium's, a keyed ChaCha20 stream).
@@ -761,10 +782,13 @@ HKDF-SHA256 and SHA512, AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305): `setup_bas
 `export`, its sequence number guarded against overflow, and the single-shot `seal` and `open`.
 RFC 9180's test vectors, and agreement between OpenSSL and Botan natively.
 
-### Capability rows of increments 9 to 12
+### Capability rows of increments 3 (key and signature forms) and 9 to 12
 
 | Algorithm | Backends | Targets |
 | --- | --- | --- |
+| `p256_der`, `p384_der`, `p521_der` (ECDSA DER, strict) | `bearssl` (increment 3); `openssl`, `botan` later | all four for BearSSL |
+| `p256_public_key` (uncompressed point, raw x and y, validation) | `bearssl` (increment 3); `openssl`, `botan` later | all four for BearSSL |
+| `p256_public_key_compressed` | `openssl` (increment 8), `botan` (increment 7) | as those backends |
 | `kzg` (commitments, proofs, cells) | `ckzg` | all four (blst underneath) |
 | `bn254` (decode, add, multiply, pairing check; public data) | `mcl` | all four, as the spike configures each |
 | `shamir` (key shares, message shares) | `sss` | all four; MSVC as the spike finds |

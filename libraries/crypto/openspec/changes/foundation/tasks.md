@@ -37,7 +37,7 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 
 ## 3. Increment 3: BearSSL's remaining parts (a parallel stream after 1)
 
-- [ ] 3.1 P-256, P-384, P-521 ECDSA and ECDH (plan: Increment 3, step 1)
+- [ ] 3.1 P-256, P-384, P-521 ECDSA and ECDH, strict DER signatures and public key forms (uncompressed point, raw x and y) (plan: Increment 3, step 1)
 - [ ] 3.2 X25519 and ChaCha20-Poly1305 on BearSSL, joining libsodium in agreement (plan: Increment 3, step 2)
 - [ ] 3.3 AES-CTR, AES-CBC, AES-CCM, AES-EAX (plan: Increment 3, step 3)
 - [ ] 3.4 RSA: PKCS #1 v1.5, PSS, OAEP, key generation; its heavy variants (plan: Increment 3, step 4)

@@ -1873,8 +1873,14 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
 
 ## Increment 3: BearSSL's remaining parts (a stream after 1)
 
-1. `ecdsa<Curve>` and `ecdh<Curve>` on P-256, P-384, P-521 (`br_ec_all_m31`, `br_ec_p256_m62`
-   natively, `br_ecdsa_i31_*`); Wycheproof's ECDSA and ECDH files per curve; WebAuthn's ES256.
+1. `ecdsa` and `ecdh` on P-256, P-384 and P-521 (`br_ec_all_m31`, `br_ec_p256_m62` natively,
+   `br_ecdsa_i31_*`), with Wycheproof's ECDSA and ECDH files per curve; then their key and
+   signature forms (design D12): `to_der` and strict `from_der` (BearSSL's decoder, re-encoded
+   and compared), `public_key` from the uncompressed point and from raw `x` and `y` with
+   validation, and its serialisation; Wycheproof's DER files per curve, NIST's ECDSA signature
+   and key validation vectors; the compressed form's absent BearSSL cells; a passkey's ES256
+   assertion verified from its COSE key's coordinates, with the curves chapter's note that
+   WebAuthn's protocol stays outside crypto.
 2. X25519 (`br_ec_c25519_m62`/`m31`) and ChaCha20-Poly1305 (the genesis's Task 35 engine),
    joining libsodium in agreement natively and on WebAssembly.
 3. `ctr`, `cbc` (PKCS #7, `invalid_padding`), `ccm`, `eax`; NIST ACVP's AES vectors (the

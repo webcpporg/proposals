@@ -223,6 +223,21 @@ Increment 3 SHALL add on BearSSL, on every target: `curves::p256::ecdsa`, `curve
 - **WHEN** `verify` of `curves::p256::ecdsa<backends::bearssl>` is given a WebAuthn assertion's DER signature, the digest and the credential's public key
 - **THEN** it accepts it, and refuses it with one bit of the digest changed
 
+### Requirement: P-curves: DER signatures and public key forms
+Increment 3 SHALL add, as primitives on BearSSL for P-256, P-384 and P-521 by the same code: `curves::p256::to_der` and `from_der` shaped as `curves::secp256k1`'s (`to_der` into the caller's buffer of at least `max_der_size` bytes, 72 for P-256, returning the length; `from_der` returning the raw `r || s`; a refusal writing nothing), decoding strict DER only (BearSSL's `br_ecdsa_asn1_to_raw`, then re-encoded by `br_ecdsa_raw_to_asn1` and required to give the same bytes); and `curves::p256::public_key` parsed from the uncompressed point (`0x04 || x || y`, 65 bytes) or from raw 32-byte `x` and `y` coordinates, refusing a point off the curve or the identity with `invalid_public_key`, and serialised to the uncompressed form. The compressed form MUST be present only on backends that have it (OpenSSL, Botan), its BearSSL cells absent. The documentation MUST say these serve WebAuthn's ES256 verification and that COSE parsing and WebAuthn's protocol stay outside crypto. Tests MUST run Wycheproof's `ecdsa_secp256r1_sha256_test.json` (DER), its P-384 and P-521 DER files, and NIST's ECDSA signature and public-key validation vectors (ACVP's JSON, or CAVP's archives once gate O3 pins them).
+
+#### Scenario: A non-canonical DER signature
+- **WHEN** `from_der` is given a Wycheproof case whose DER has a leading zero byte it does not need
+- **THEN** it returns `invalid_signature` and writes nothing
+
+#### Scenario: A COSE key's coordinates
+- **WHEN** `public_key` is made from the raw `x` and `y` of a passkey's COSE key and verifies an assertion's signature after `from_der`
+- **THEN** the verification succeeds, and the same `x` with `y` changed by one is refused as `invalid_public_key`
+
+#### Scenario: A short buffer
+- **WHEN** `to_der` is given a 70-byte buffer for a signature whose DER takes 72 bytes
+- **THEN** it returns `invalid_input_size` and the buffer is untouched
+
 ### Requirement: Backend browser: WebCrypto on Emscripten
 `backends::browser` SHALL exist on Emscripten only, its header stopping another target with the fix; its keys MUST be WebCrypto `CryptoKey` objects held in a JavaScript table and named in C++ by a handle, freed when their last owner is destroyed and kept alive while an operation uses them. It MUST offer AES-GCM, AES-CBC, AES-CTR, AES-KW, ECDSA and ECDH on P-256, P-384 and P-521, RSA-PSS, RSA-OAEP and RSASSA-PKCS1-v1_5, and Ed25519 and X25519 as run-time-available algorithms; it MUST have no synchronous member, and calling one MUST fail to compile with "backends::browser is asynchronous: call async_<name>".
 
