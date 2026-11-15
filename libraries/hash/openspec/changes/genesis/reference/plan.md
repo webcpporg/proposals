@@ -70,9 +70,12 @@ OpenSSL 3.5.9's `providers/implementations/kdfs/hkdf.c` defines `HKDF_MAXINFO (3
 
 ## The order of the work, and the parallel streams
 
-The base is the superproject's `origin/main` of the day Task 0 runs. Every task but Task 13 can
-start from it; Task 13 (BearSSL) needs `/third_party//bearssl` and
-`third_party/libs/bearssl`, which webcpp::crypto's Task 5 adds, on `main`.
+The base is the superproject's branch `crypto/v0.1` (webcpp::crypto's version 0.1, at `278fb3c`
+when this plan was checked), not `origin/main`: only it holds what the plan builds on,
+`third_party/Jamfile`'s `.c-library`, `.gc` and `CRYPTO`, `/third_party//bearssl` and its
+submodule, `tools/same_program/same_program.jam` and `webcpp.same-program`,
+`tools/test/crypto_jamfiles_test.py`, `libs/crypto` (pre-flight, 2026-11-15). When `crypto/v0.1`
+has merged into `main`, the work rebases onto `main`. No task waits for BearSSL.
 
 The tasks form streams that run in parallel, each in a worktree of its own of the superproject
 (branch `hash/<stream>` from the integration branch `hash/genesis`) with a worktree of the
@@ -93,15 +96,15 @@ the integration branches and resolves those files.
 | 2 | `kdf` | 9, then 10 | 2 and 3 |
 | 3 | `kdf-sodium` | 11 | 8 and 9 |
 | 3 | `kdf-openssl` | 12 | 10 |
-| 3 | `kdf-bearssl` | 13 | 9, and webcpp::crypto's Task 5 on `main` |
-| 3 | `pwhash` | 15, then 16 | 8 and 9 |
+| 3 | `kdf-bearssl` | 13 | 9 |
+| 4 | `pwhash` | 15, then 16 | 8, 9 and 11 (`backends/sodium.hpp` is Task 11's) |
 | 4 | `default` | 14 | 11, 12 and 13 |
 | 4 | `agreement` | 17 | 11, 12 and 13 |
 | 4 | `webcrypto` | 18 | 11 and 13 |
-| 4 | `build` | 19 | 5, 7, 11, 13 and 15 |
-| 4 | `allocation` | 20 | 5, 7, 12, 13 and 16 |
+| 5 | `build` | 19 | 5, 7, 11, 12, 13, 14 and 15 |
+| 5 | `allocation` | 20 | 5, 7, 11, 12, 13 and 16 |
 | 4 | `throughput` | 22 | 8, 10 and 12 |
-| 5 | `measure` | 21 | 14 |
+| 5 | `measure` | 21 | 5, 7, 14, 15 and 16 |
 | 6 | `docs` | 23 | every task but 24 |
 | 6 | `whole` | 24 | 23 |
 | 7 | `sodium-2` | 25 to 29 (increment 2) | 24 |
@@ -137,7 +140,7 @@ favour of the real one.
 
 **Repositories and paths:**
 - The superproject is `webcpporg/webcpp`, checked out with its submodules; the work happens in
-  a worktree of it on the branch `hash/genesis` from `origin/main` (Task 0), its `.local` a link
+  a worktree of it on the branch `hash/genesis` from `crypto/v0.1` (Task 0), its `.local` a link
   to the main checkout's. Paths below are relative to that worktree.
 - `libs/hash` is the library's own git repository, created in Task 1, branch `main`, whose
   remote is `webcpporg/hash` once the owner creates it (G1). Until the submodule is added (G2),
@@ -270,11 +273,11 @@ favour of the real one.
 **Files:**
 - Create: `.superpowers/sdd/WEBCPP_HASH_PLAN/progress.md` in the worktree (untracked).
 
-- [ ] **Step 1: Make the worktree from `origin/main`.**
+- [ ] **Step 1: Make the worktree from `crypto/v0.1`.**
 
 ```bash
 git -C <superproject> fetch origin
-git -C <superproject> worktree add <worktree> -b hash/genesis origin/main
+git -C <superproject> worktree add <worktree> -b hash/genesis crypto/v0.1
 cd <worktree>
 ls tools/node-test/include/webcpp/test/exit_status.hpp third_party/Jamfile tools/webcpp-openssl.jam tools/same_program/same_program.jam
 git submodule update --init
@@ -282,10 +285,8 @@ git submodule status
 ln -s <superproject>/.local .local
 ```
 
-  Expected: the four files listed (`same_program.jam` comes with webcpp::crypto's Task 21; if it
-  is missing, Task 19's same-program step waits for it and the ledger says so); one line per
-  submodule without a leading `-` or `+`; `ls -l .local` shows the link. Record whether
-  `third_party/libs/bearssl` exists (webcpp::crypto's Task 5 merged): Task 13 waits until it does.
+  Expected: the four files listed; one line per submodule without a leading `-` or `+`,
+  `third_party/libs/bearssl` at `7bea48e` among them; `ls -l .local` shows the link.
 - [ ] **Step 2: Create the ledger** with the first line
   `# SDD ledger - plan: libraries/hash/openspec/changes/genesis/reference/plan.md (proposals)`.
 - [ ] **Step 3: Record the baseline** in the ledger, each with its output: `git rev-parse HEAD`;
@@ -701,6 +702,16 @@ void webcpp_hash_xkcp_extract_bytes(const uint64_t *state, unsigned char *data, 
 # these targets, naming the command, and leaves the others as they are.
 path-constant HASH : ../libs/hash ;
 
+# The property set of webcpp::hash's C libraries: crypto's .c-library less
+# crypto's conditional and include directory, so that no target of hash's needs
+# libs/crypto. hash-checked-out, below, is declared before the targets use it.
+.hash-c-library = <link>static <warnings>off <warnings-as-errors>off
+    <toolset>clang:<cflags>"-ffunction-sections -fdata-sections"
+    <toolset>gcc:<cflags>"-ffunction-sections -fdata-sections"
+    <toolset>emscripten:<cflags>"-ffunction-sections -fdata-sections"
+    <toolset>msvc:<cflags>"/Gy /Gw"
+    <conditional>@hash-checked-out <include>$(HASH)/include ;
+
 rule hash-checked-out ( properties * )
 {
     if ! [ path.exists [ path.native $(HASH)/src/canary_xkcp.c ] ]
@@ -730,8 +741,7 @@ rule xkcp-checked-out ( properties * )
 lib xkcp
   : libs/xkcp/lib/low/KeccakP-1600/plain-64bits/KeccakP-1600-opt64.c
     $(HASH)/src/xkcp_adapter.c $(HASH)/src/canary_xkcp.c
-  : $(.c-library) <conditional>@hash-checked-out <conditional>@xkcp-checked-out
-    <include>$(HASH)/include <include>$(HASH)/src/xkcp
+  : $(.hash-c-library) <conditional>@xkcp-checked-out <include>$(HASH)/src/xkcp
     <include>libs/xkcp/lib/common <include>libs/xkcp/lib/low/common
     <include>libs/xkcp/lib/low/KeccakP-1600/common
     <include>libs/xkcp/lib/low/KeccakP-1600/plain-64bits
@@ -740,12 +750,21 @@ lib xkcp
 explicit xkcp ;
 ```
 
-  `.c-library`'s `<include>$(CRYPTO)/include` and `crypto-checked-out` belong to crypto's
-  targets: if the shared set carries them, this target uses a set of its own without them
-  (`.hash-c-library`), so that XKCP never needs `libs/crypto`. Run the case. Expected: PASS.
+  (`.gc` is crypto's, already in the file.) Add `include/webcpp/hash/detail/canary.h` and
+  `detail/xkcp.hpp` to the headers-alone list and the boundaries file. Run the case.
+  Expected: PASS.
 - [ ] **Step 5: XKCP's own suite** in `test/c_suites/Jamfile` (the form of webcpp::crypto's):
 
 ```jam
+# (licence notice)
+
+# The C libraries' own test programs, on webcpp's build of each, on every target
+# (CODING-GUIDELINES.md chapter 5, rule 11). One lane line lists every program;
+# each task that adds a suite adds its programs to it.
+import webcpp ;
+
+webcpp.targets native wasip2 wasip3 emscripten ;
+
 path-constant XKCP : ../../../../third_party/libs/xkcp ;
 webcpp.run xkcp_unit_tests : $(XKCP)/tests/UnitTests/main.c $(XKCP)/tests/UnitTests/UT.c
     $(XKCP)/tests/UnitTests/testPermutations.c
@@ -758,6 +777,9 @@ webcpp.run xkcp_unit_tests : $(XKCP)/tests/UnitTests/main.c $(XKCP)/tests/UnitTe
 
 webcpp.lane c-suites : xkcp_unit_tests : native wasip2 wasip3 emscripten ;
 ```
+
+  This is the Jamfile's one `webcpp.lane c-suites` line; Task 8 adds libsodium's programs to it,
+  never a second line (two would declare the alias `c-suites` twice).
 
   Build it natively first: `main.c` references the functions of every component its
   `XKCP_has_*` guards enable; with webcpp's `config.h` only Keccak-p[1600]'s. If the link names
@@ -985,8 +1007,7 @@ inline keccak_256::result_type keccak_256::result() noexcept {
 - Modify (superproject): `.gitmodules`, `third_party/Jamfile` (`blake3`, `blake3_vectors`),
   `tools/test/third_party_test.py`, `CODING-GUIDELINES.md` (chapter 10's rows `blake3`), the
   release notes.
-- Create (library): `src/canary_blake3.c`. Modify: `include/webcpp/hash/detail/canary.h`,
-  `test/c_suites/Jamfile`.
+- Create (library): `src/canary_blake3.c`. Modify: `include/webcpp/hash/detail/canary.h`.
 
 **Interfaces:**
 - Produces: `/third_party//blake3` (usage requirements `<include>third_party/libs/blake3/c`,
@@ -1069,7 +1090,8 @@ lib blake3
 explicit blake3 ;
 ```
 
-  where `blake3-profile` returns, by target: on WebAssembly the four `<define>BLAKE3_NO_*`; on
+  `third_party/Jamfile` gains `import webcpp-target ;` beside its imports (the rules read
+  `webcpp-target.target-of`). Where `blake3-profile` returns, by target: on WebAssembly the four `<define>BLAKE3_NO_*`; on
   native x86-64 `<source>blake3_sse2 <source>blake3_sse41 <source>blake3_avx2
   <source>blake3_avx512`; on native arm64 `<source>libs/blake3/c/blake3_neon.c
   <define>BLAKE3_USE_NEON=1`. Read the architecture from b2's `<architecture>` and
@@ -1080,8 +1102,11 @@ explicit blake3 ;
 ```jam
 # BLAKE3's official vectors, test_vectors/test_vectors.json at the pin, read at
 # run time from the directory WEBCPP_TEST_BLAKE3_VECTORS gives, on every target.
+# Quoted as wycheproof's define is, with forward slashes, so that a path with a
+# space or a backslash survives.
+.blake3-vectors = [ regex.replace $(BLAKE3)/test_vectors "\\\\" "/" ] ;
 alias blake3_vectors : : <conditional>@blake3-checked-out : :
-    <define>WEBCPP_TEST_BLAKE3_VECTORS=\"$(BLAKE3:T)/test_vectors\"
+    <define>"\"WEBCPP_TEST_BLAKE3_VECTORS=\\\"$(.blake3-vectors)\\\"\""
     [ webcpp.data $(BLAKE3)/test_vectors ]
     <dependency>libs/blake3/test_vectors/test_vectors.json ;
 explicit blake3_vectors ;
@@ -1243,11 +1268,28 @@ grep -n 'SODIUM_VERSION_STRING' third_party/libs/libsodium/builds/msvc/version.h
 ```
 
   Expected: 141, 7, `#define SODIUM_VERSION_STRING "1.0.22"`.
-- [ ] **Step 2: Read the define sets** of `build.zig` (every target it lists),
-  `dist-build/emscripten.sh` (Emscripten) and `builds/msvc/properties/` (MSVC) at the pin, and
-  write them into the ledger as spec 5.3's groups, each define with the file and line it comes
-  from. Any define the spec does not list is added to the Jamfile with its reason, never dropped
-  silently; `HAVE_AMD64_ASM` and `HAVE_AVX_ASM` stay off (design D11).
+- [ ] **Step 2: Derive the configuration defines from libsodium's own `configure`, once per
+  target** (the ruling of 2026-11-15, which drops `build.zig`'s lists). In a scratch copy of the
+  submodule (never the submodule itself), `./autogen.sh -s` once, then for each target:
+
+```bash
+# native, on each native machine of the matrix (macOS arm64, Linux x86-64, Linux arm64)
+./configure --disable-shared --enable-static --disable-asm --disable-dependency-tracking
+# wasip2 and wasip3 (wasi-sdk 34's clang, as libsodium's dist-build/wasm32-wasi.sh at the pin)
+CC=<wasi-sdk>/bin/clang CFLAGS="--target=wasm32-wasip2" ./configure --host=wasm32-wasi \
+  --disable-shared --enable-static --disable-asm --without-pthreads --disable-ssp
+# Emscripten (as dist-build/emscripten.sh at the pin, with its flags)
+emconfigure ./configure --disable-shared --enable-static --disable-asm --without-pthreads --disable-ssp
+```
+
+  and record, for each, the `DEFS` that `./config.status --config` and the generated Makefile give
+  (every `-DHAVE_*` and the others): in this plan, by an amendment of the proposal (a table, one
+  column per target), and beside the sources in `third_party/Jamfile`. MSVC has no `configure`:
+  its defines are those of `builds/msvc/properties/` at the pin, recorded the same way. Rules: each
+  `HAVE_*` only on the targets whose `configure` found it; `DEV_MODE` off everywhere;
+  `CONFIGURED=1`, `SODIUM_STATIC=1` and `NATIVE_LITTLE_ENDIAN=1` everywhere; `HAVE_AMD64_ASM` and
+  `HAVE_AVX_ASM` never (`--disable-asm`, design D11); a define the C sources do not read is
+  recorded and omitted. The table replaces spec 5.3's prose when recorded.
 - [ ] **Step 3: Write the failing cases** in `tools/test/third_party_test.py`: natively,
   `/third_party//sodium` with `-a -d+2` compiles 142 C files (the 141 and the canary), none with
   `-std=`, each with `-DCONFIGURED=1`, `-DSODIUM_STATIC=1`, `-DNATIVE_LITTLE_ENDIAN=1`, none with
@@ -1302,9 +1344,10 @@ explicit sodium ;
 
   where `sodium-version-include` gives the directory b2 wrote `sodium/version.h` into, and that
   directory's `sodium/` (the form `third_party/Jamfile` already uses for a generated header's
-  directory; read it before writing). `sodium-target-defines` returns spec 5.3's groups by
-  `webcpp-target.target-of`, `<target-os>` and the architecture, each group under a comment
-  citing `build.zig`'s lines. `sodium-test-config` is an alias with the same include directories
+  directory; read it before writing; a target id with `/` may be read as a project path, so name
+  the `make` target `sodium_version_h` and place its output under `sodium/` if b2 refuses the
+  slash). `sodium-target-defines` returns Step 2's table by `webcpp-target.target-of`,
+  `<target-os>` and the architecture, each group under a comment citing its `configure` run. `sodium-test-config` is an alias with the same include directories
   (plus `src/libsodium/include/sodium/private`'s parent and `crypto_pwhash/argon2`) and defines as
   usage requirements, for programs that include libsodium's private headers. Run the cases.
   Expected: PASS.
@@ -1314,6 +1357,12 @@ explicit sodium ;
 
 ```jam
 path-constant SODIUM_TESTS : ../../../../third_party/libs/libsodium/test/default ;
+.sodium-tests-dir = [ regex.replace $(SODIUM_TESTS) "\\\\" "/" ] ;
+# cmptest.h writes <name>.res in the working directory: a writable directory of
+# the build, given to wasmtime on WASI (webcpp.data) and made the working
+# directory of every run, so that the suite runs on every target (chapter 5,
+# rule 11; the ruling of 2026-11-15).
+path-constant SODIUM_RESULTS : ../../../../bin/sodium-results ;
 # libsodium's own tests (101 at 77e1ce5), each with cmptest.h, which writes
 # <name>.res in the working directory and compares it with <name>.exp under
 # TEST_SRCDIR (Emscripten: /test-data). Each runs on every target; a test a
@@ -1338,21 +1387,29 @@ for local name in $(.sodium-tests)
 {
     webcpp.run sodium_$(name) : $(SODIUM_TESTS)/$(name).c
       : <library>/third_party//sodium-test-config <library>/third_party//sodium
-        <define>TEST_NAME=\"$(name)\" <define>TEST_SRCDIR=\"$(SODIUM_TESTS:T)\"
+        <define>"\"TEST_NAME=\\\"$(name)\\\"\""
+        <define>"\"TEST_SRCDIR=\\\"$(.sodium-tests-dir)\\\"\""
         <include>$(SODIUM_TESTS) <include>$(SODIUM_TESTS)/../quirks
-        [ webcpp.data $(SODIUM_TESTS) ] <warnings>off <warnings-as-errors>off
+        [ webcpp.data $(SODIUM_TESTS) ] [ webcpp.data $(SODIUM_RESULTS) ]
+        <warnings>off <warnings-as-errors>off
         <toolset>emscripten:<source>sodium_bound.cpp ;
 }
-webcpp.lane c-suites : sodium_$(.sodium-tests) : native wasip2 wasip3 emscripten ;
+# Added to Task 4's lane line, the Jamfile's only one:
+# webcpp.lane c-suites : xkcp_unit_tests sodium_$(.sodium-tests) : native wasip2 wasip3 emscripten ;
 ```
 
   Run natively first; then wasip2, wasip3 and Emscripten. Record each test's time per target in
   the ledger; a test past the node bound (120 s) gets `sodium_bound.cpp`'s
-  `webcpp::test::bound` with the measured time, and one past the WASI launcher's 600 s bound is
-  declared without that target, with its time as the reason (the `pwhash_*` tests are the
-  candidates). On Emscripten, `cmptest.h` reads `/test-data`: map `TEST_SRCDIR` there through the
-  node runner's mount, or declare the suite native and WASI only on Emscripten if the runner has
-  no mount, and record it. Expected: every declared test passes; `sodium_init` succeeds under
+  `webcpp::test::bound` with the measured time, and one past the WASI launcher's 600 s bound gets the bound
+  raised for it alone, with its measured time and reason; no target is dropped. On WASI, the run's
+  working directory must be `SODIUM_RESULTS`, preopened writable: if
+  `tools/boost/asio-wasip2/run.sh` (and `asio-wasip3`'s) maps `webcpp.data` directories read-only
+  or does not change into one, extend the launcher in this task with a directory it maps writable
+  and runs in, with a case in `tools/test/`; natively the run changes into it the same way (the
+  `.res` files never land in b2's working directory). On Emscripten, `cmptest.h` forces
+  `TEST_SRCDIR "/test-data"`: the node runner mounts the test directory there and a writable
+  working directory (extended the same way if it has no mount), so the suite runs on all four
+  targets. A run that writes no `.res` fails, never passes. Expected: every declared test passes; `sodium_init` succeeds under
   node (Review Focus 6). A failing test is investigated as a build difference (a define of spec
   5.3) before anything else; libsodium's code is never changed.
 - [ ] **Step 6: Document and commit.** Chapter 10's row `libsodium`: "libsodium 1.0.22 at
@@ -1366,7 +1423,8 @@ webcpp.lane c-suites : sodium_$(.sodium-tests) : native wasip2 wasip3 emscripten
 ## Task 9: The key derivations' layer, and HKDF on `backends::hash2`
 
 **Files:**
-- Create (library): `include/webcpp/hash/kdf.hpp`, `include/webcpp/hash/hkdf.hpp`,
+- Create (library): `test/messages/Jamfile` (a temporary copy until Task 5's merges),
+  `test/messages/kdf_not_digest/`, `include/webcpp/hash/kdf.hpp`, `include/webcpp/hash/hkdf.hpp`,
   `include/webcpp/hash/backends/hash2.hpp`, `include/webcpp/hash/detail/engines.hpp`,
   `include/webcpp/hash/detail/limits.hpp`, `include/webcpp/hash/detail/wipe.hpp`,
   `include/webcpp/hash/detail/ranking.hpp` (the provisional order, spec 4.2),
@@ -1401,13 +1459,17 @@ inline constexpr rfc5869_case a1{
 - [ ] **Step 2: Write the failing tests.** `hkdf_hash2_test.cpp` runs the seven cases through
   `hkdf_extract`, `hkdf_expand` and `hkdf` on `backends::hash2` (A.1 to A.3 with
   `hmac_sha2_256`, A.4 to A.7 with `hmac_sha1_160`), and one case each over `hmac_sha3_256`,
-  `hmac_blake2b_512` and `hmac<boost::hash2::ripemd_160>`, whose expected output is OpenSSL's,
-  recorded once natively by Task 12 and, until then, marked as pending in the ledger.
+  `hmac_blake2b_512` and `hmac<boost::hash2::ripemd_160>`, whose expected outputs are computed in
+  this task by an independent implementation (Python's `hmac` over `hashlib.sha3_256`,
+  `hashlib.blake2b` and `hashlib.new('ripemd160')`, or, where the machine's `hashlib` lacks
+  RIPEMD-160, a pure-Python RIPEMD-160 cited by its source), the script and its output recorded
+  in the ledger; Task 12 then checks the same three on OpenSSL.
   `hkdf_guards_test.cpp`: for `hmac_sha2_256`, outputs of 0, 8,160 and 8,161 bytes; PRKs of 31,
   32 and 33 bytes; info of 32,768 and 32,769 bytes; each refusal leaves a span of `0xaa` bytes
-  untouched. `wipe_test.cpp`: `detail::wipe` zeroes a span and a trivially copyable object, and,
-  built with `WEBCPP_HASH_DETAIL_TEST_WIPE_RECORD`, `hkdf` reports a wipe of each T block and of
-  the keyed hmac copy. Declare the three with `hash-run`. Run them. Expected: FAIL, no `hkdf.hpp`.
+  untouched. `backends/hash2.hpp` defines `struct backends::hash2 {};` (Tasks 12 and 13 define
+  their backends' structs likewise). `wipe_test.cpp`: `detail::wipe` zeroes a span and a trivially copyable object, and,
+  built with `WEBCPP_HASH_DETAIL_TEST_WIPE_RECORD`, `hkdf` reports the wipes the engine does: one
+  per block's `mac` copy, one of `t` after the loop, one of `keyed`. Declare the three with `hash-run`. Run them. Expected: FAIL, no `hkdf.hpp`.
 - [ ] **Step 3: Write the layer.** `detail/engines.hpp`:
 
 ```cpp
@@ -1467,7 +1529,11 @@ boost::system::result<void> hkdf_expand(std::span<std::uint8_t> output,
     static_assert(detail::is_digest_hmac<Hmac>::value,
                   "webcpp::hash: the key derivations take a Boost.Hash2 hmac whose result is a "
                   "digest, as hmac_sha2_256.");
-    constexpr std::size_t digest_size = std::tuple_size_v<typename Hmac::result_type>;
+    if constexpr (!detail::is_digest_hmac<Hmac>::value) {
+        return error::backend_failure;  // unreachable: the static_assert above stops the build
+    } else {
+    // Hash2 1.92 declares no std::tuple_size for digest<N>; its size() is constexpr.
+    constexpr std::size_t digest_size = typename Hmac::result_type().size();
     if (output.empty() || output.size() > 255 * digest_size) {
         return error::invalid_output_size;
     }
@@ -1482,6 +1548,7 @@ boost::system::result<void> hkdf_expand(std::span<std::uint8_t> output,
         detail::wipe(output);
     }
     return done;
+    }
 }
 ```
 
@@ -1508,7 +1575,7 @@ struct hkdf_engine<backends::hash2, Hmac> {
     static boost::system::result<void> expand(std::span<std::uint8_t> output,
                                               std::span<std::uint8_t const> prk,
                                               std::span<std::uint8_t const> info) noexcept {
-        const Hmac keyed(prk.data(), prk.size());
+        Hmac keyed(prk.data(), prk.size());  // not const: it is wiped at the end
         digest_type t{};
         std::size_t written = 0;
         for (unsigned counter = 1; written < output.size(); ++counter) {
@@ -1526,7 +1593,7 @@ struct hkdf_engine<backends::hash2, Hmac> {
             written += n;
         }
         wipe_object(t);
-        wipe_object(const_cast<Hmac&>(keyed));
+        wipe_object(keyed);
         return {};
     }
 
@@ -1542,21 +1609,29 @@ struct hkdf_engine<backends::hash2, Hmac> {
 };
 ```
 
-  (`keyed` is declared `const` for the copies and wiped through `detail::wipe`'s object form,
-  which takes the bytes of a trivially copyable object: a `static_assert` there checks that
-  Hash2's hmac is one; if it is not on a compiler, `keyed` is declared without `const` instead.)
+  (`detail::wipe`'s object form takes the bytes of a trivially copyable object; a `static_assert`
+  there checks that Hash2's hmac is one, which the pre-flight compiled for all sixteen aliases.)
+  `default_kdf_backend` stays well-formed for any `Hmac` (it picks `backends::hash2` when the hmac
+  is not a digest hmac), so that the `static_assert` is the only error a non-digest hmac gives.
   `kdf.hpp`'s `backend_has_v` is spec 3.2's table as variable template specialisations, and
   `default_kdf_backend` increment 1's rule (natively OpenSSL when linked and having it, else
   hash2; on WebAssembly the first linked of `detail::ranking`'s size order), which Task 14 turns
-  into the profile. Run the three tests on the four targets. Expected: PASS (the three
+  into the profile. Task 9 fixes `detail/ranking.hpp`'s interface, which Task 14 reads and Task
+  21's generator writes: `template <class... B> struct backend_list {};`; per target,
+  `template <class Algorithm, class Hmac> struct ranking { using by_size = backend_list<...>;
+  using by_throughput = backend_list<...>; };`; and `using portable_order = backend_list<hash2,
+  xkcp, blake3, sodium, bearssl>;`. The provisional file encodes Task 9's rule: natively
+  `by_throughput` is `openssl, hash2, sodium, bearssl` and `by_size` `hash2, sodium, bearssl,
+  openssl`; on WebAssembly both are `hash2, sodium, bearssl, openssl`; so native defaults stay
+  OpenSSL's, when linked, until Task 21 measures. Run the three tests on the four targets. Expected: PASS (the three
   OpenSSL-recorded cases pending).
 - [ ] **Step 4: The refusal on a non-digest hmac.** `test/messages/kdf_not_digest/` calls
   `hkdf<boost::hash2::hmac<boost::hash2::fnv1a_64>>` and states spec 3.3's text. Run it.
   Expected: PASS. Headers-alone, boundaries, `hash.hpp`, changelog ("Added HKDF (RFC 5869) over
   every Boost.Hash2 hmac, on backends::hash2.").
-- [ ] **Step 5: Review against the departure's conditions** (spec 1.3.1): HKDF's engine and Task
-  10's PBKDF2 engine together under 150 lines (`wc -l` of the two engines' bodies, recorded), the
-  RFC's names in comments, every intermediate wiped. Commit (library)
+- [ ] **Step 5: Review HKDF's engine against the departure's conditions** (spec 1.3.1): the RFC's
+  names in comments, every intermediate wiped (the 150-line check of both engines is Task 10's,
+  which has both). Commit (library)
   `"hash: the key derivations' layer, and HKDF on backends::hash2"`.
 
 ## Task 10: PBKDF2 on `backends::hash2`
@@ -1575,8 +1650,10 @@ struct hkdf_engine<backends::hash2, Hmac> {
   from the RFCs' text; `pbkdf2_rfc6070_long_test.cpp` is case 4 (16,777,216 iterations), on every
   target, its time recorded in the ledger (under node with `webcpp::test::bound` at the measured
   time if past 120 s). Guards: output 0, iterations 0, and the output limit for `hmac_sha2_256`
-  ((2^32 - 1) times 32) checked by `detail::exceeds` on a span whose `size()` is faked by a
-  test-only overload (no allocation of 137 GB). Run them. Expected: FAIL, no `pbkdf2.hpp`.
+  ((2^32 - 1) times 32): `detail::exceeds` tested directly, and natively only `pbkdf2` with
+  `std::span<std::uint8_t>(ptr, limit + 1)` over a one-byte buffer, never dereferenced since the
+  guard returns first (on wasm32 the limit exceeds `SIZE_MAX`, so the guard is unreachable there,
+  which the test states). Run them. Expected: FAIL, no `pbkdf2.hpp`.
 - [ ] **Step 2: Write `pbkdf2.hpp`** (guards of spec 2.9) and the engine:
 
 ```cpp
@@ -1624,7 +1701,9 @@ struct pbkdf2_engine<backends::hash2, Hmac> {
 ```
 
   Run on the four targets. Expected: PASS.
-- [ ] **Step 3: Commit** (library) `"hash: PBKDF2 (RFC 8018) on backends::hash2"`, with the
+- [ ] **Step 3: The departure's size** (spec 1.3.1): HKDF's engine and PBKDF2's together under
+  150 lines (`wc -l` of the two engines' bodies, recorded in the ledger).
+- [ ] **Step 4: Commit** (library) `"hash: PBKDF2 (RFC 8018) on backends::hash2"`, with the
   changelog line and the lists.
 
 ## Task 11: HKDF on `backends::sodium`
@@ -1655,8 +1734,9 @@ struct hkdf_engine<backends::sodium, hmac_sha2_256> {
             return error::backend_failure;
         }
         hmac_sha2_256::result_type prk;
-        if (crypto_kdf_hkdf_sha256_extract(prk.data(), salt.data(), salt.size(), ikm.data(),
-                                           ikm.size()) != 0) {
+        // libsodium declares the IKM nonnull; an empty span's data() may be null.
+        if (crypto_kdf_hkdf_sha256_extract(prk.data(), salt.data(), salt.size(),
+                                           detail::nonnull(ikm), ikm.size()) != 0) {
             return error::backend_failure;
         }
         return prk;
@@ -1679,7 +1759,10 @@ struct hkdf_engine<backends::sodium, hmac_sha2_256> {
 };
 ```
 
-  and the same for SHA-512. Run on the four targets. Expected: PASS.
+  and the same for SHA-512. `detail::nonnull(span)` (in `detail/limits.hpp`) returns `span.data()`,
+  or the address of a static constant byte when the span is empty, for every libsodium parameter
+  declared `nonnull` (salt and info pass through it too); Tasks 15 and 16 use it. An empty IKM,
+  salt and info are among the test's cases. Run on the four targets. Expected: PASS.
 - [ ] **Step 3: Commit** (library) `"hash: HKDF on libsodium (backends::sodium)"`.
 
 ## Task 12: OpenSSL: `/webcpp/hash//openssl` and `backends::openssl`
@@ -1691,7 +1774,9 @@ struct hkdf_engine<backends::sodium, hmac_sha2_256> {
   `test/openssl_one_copy_test.cpp`, `test/openssl_failure_test.cpp`,
   `test/messages/openssl_not_linked/`, `test/messages/ripemd128_on_openssl/`; the fixture
   `tools/test/fixtures/hash_jamfiles/openssl_on_emscripten/` (superproject; Task 19's test
-  builds it).
+  builds it: this task writes the fixture and cannot run it yet, which the ledger says); and it
+  modifies `test/Jamfile`, `hash.hpp`, the boundaries file, the changelog and
+  `test/hkdf_hash2_test.cpp` (Task 9's three independent cases, checked on OpenSSL too).
 
 - [ ] **Step 1: Write the failing tests:** RFC 5869 and RFC 6070/7914 through OpenSSL; every hmac
   of spec 3.2's OpenSSL column against `backends::hash2` (which also fills Task 9's three pending
@@ -1737,12 +1822,17 @@ boost::system::result<void> openssl_kdf(const char* kdf, std::span<std::uint8_t>
 
 ## Task 13: HKDF on `backends::bearssl`
 
-Waits for `/third_party//bearssl` on `main` (webcpp::crypto's Task 5).
+Builds on `/third_party//bearssl` of the base (`crypto/v0.1`).
 
 **Files:**
-- Modify (superproject): `third_party/Jamfile` (`bearssl` gains `$(HASH)/src/canary_bearssl.c`
-  and `WEBCPP_HASH_HAS_BEARSSL=1`), `tools/test/third_party_test.py` (both canaries in the
-  archive).
+- Modify (superproject): `third_party/Jamfile` (`bearssl` gains webcpp::hash's canary, when
+  `libs/hash` is checked out, and `WEBCPP_HASH_HAS_BEARSSL=1`), `tools/test/third_party_test.py`
+  (`test_bearssl_is_built_file_by_file`: 296 compiles, its scratch copy copies `hash` beside
+  `config` and `crypto`; both canaries in the archive; a checkout without `libs/hash` still builds
+  crypto's BearSSL with 295), `CODING-GUIDELINES.md` (chapter 10's `bearssl` row: "with
+  webcpp::crypto's and webcpp::hash's canaries").
+- Modify (library): `test/Jamfile`, `test/messages/Jamfile`, `include/webcpp/hash.hpp`, the
+  boundaries file, `doc/changelog.adoc`.
 - Create (library): `src/canary_bearssl.c`, `include/webcpp/hash/backends/bearssl.hpp`,
   `test/hkdf_bearssl_test.cpp`, `test/messages/{bearssl_not_linked,expand_on_bearssl,bearssl_hmac,pbkdf2_on_bearssl}/`.
 
@@ -1750,8 +1840,14 @@ Waits for `/third_party//bearssl` on `main` (webcpp::crypto's Task 5).
   `br_sha1_vtable`); `hmac_md5_128`, `hmac_sha2_224`, `hmac_sha2_384`, `hmac_sha2_512` against
   `backends::hash2`; the guards; the four messages; `nm` of `/third_party//bearssl` lists both
   `webcpp_crypto_bearssl_7bea48e_*` and `webcpp_hash_bearssl_7bea48e_*`. Expected: FAIL.
-- [ ] **Step 2: Write the canary** (webcpp::crypto's configuration logic, `HASH` names), the
-  target's two additions, and the engine:
+- [ ] **Step 2: Write the canary** (webcpp::crypto's configuration logic, `HASH` names) and the
+  target's additions: hash's canary is an `obj` of its own, `bearssl_hash_canary`, compiled with
+  BearSSL's defines and `<include>$(HASH)/include`, added to `bearssl`'s sources by a
+  `<conditional>` only when `$(HASH)/src/canary_bearssl.c` exists, so that a checkout without
+  `libs/hash` builds crypto's BearSSL as before; `WEBCPP_HASH_HAS_BEARSSL=1` joins the usage
+  requirements only then. Then `struct backends::bearssl {};`, the refusing
+  `pbkdf2_engine<backends::bearssl, Hmac>` with spec 3.3's BearSSL text (so the
+  `pbkdf2_on_bearssl` message is that text, not the primary's), and the engine:
 
 ```cpp
 template <class Hmac>
@@ -1787,8 +1883,10 @@ struct hkdf_engine<backends::bearssl, Hmac> {
   refusals, `detect_mismatch`), `include/webcpp/hash/kdf.hpp` (`default_backend`,
   `default_kdf_backend`). Create: `test/default_backend_test.cpp` (and one test per profile:
   `default_fastest_test.cpp`, `default_smallest_test.cpp`, `default_portable_test.cpp`,
-  `default_named_test.cpp`, `default_override_test.cpp`), `test/capabilities_test.cpp`,
-  `doc/capabilities.json`, `test/messages/{two_profiles,two_overrides,openssl_profile_on_emscripten,override_cannot_serve}/`.
+  `default_named_test.cpp`, `default_override_test.cpp`, `default_umbrella_test.cpp`),
+  `test/capabilities_test.cpp`, `test/overrides_list_test.cpp`, `doc/capabilities.json`,
+  `test/messages/{two_profiles,two_umbrella_profiles,two_overrides,override_cannot_serve}/`
+  (OpenSSL's profile on Emscripten is a fixture of Task 19's test, not a message test here).
 
 **Interfaces:**
 - Produces: spec 4.1, whole; `doc/capabilities.json` (spec 3.5, increment 1's rows).
@@ -1799,10 +1897,14 @@ struct hkdf_engine<backends::bearssl, Hmac> {
   kdfs::pbkdf2>` is never `sodium` or `bearssl` on any target or profile (Review Focus 4);
   `hmac_ripemd_128` always `hash2`. Each profile's test, and the override test
   (`WEBCPP_HASH_DEFAULT_BACKEND_HKDF_SODIUM` makes `hkdf<hmac_sha2_256>` libsodium's while PBKDF2 keeps
-  the profile's). `capabilities_test.cpp` reads `doc/capabilities.json` (Boost.JSON) and compares
-  each cell with `backend_has_v`. The messages: two profiles, two overrides of HKDF,
-  `WEBCPP_HASH_PROFILE_BACKEND_OPENSSL` on Emscripten (a fixture of Task 19's test), an override
-  that cannot serve. Expected: FAIL.
+  the profile's). `default_umbrella_test.cpp`: webcpp's umbrella `WEBCPP_PROFILE_SMALLEST` alone
+  follows the size order; with `WEBCPP_HASH_PROFILE_PORTABLE` too the library's profile wins; with
+  `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_OPENSSL` as well the override wins for HKDF (spec 4.1's
+  precedence: override, library profile, umbrella profile, measured default).
+  `capabilities_test.cpp` reads `doc/capabilities.json` (Boost.JSON) and compares
+  each cell with `backend_has_v`. The messages: two library profiles and two umbrella profiles (each text naming both defines,
+  as "webcpp::hash: WEBCPP_HASH_PROFILE_FASTEST and WEBCPP_HASH_PROFILE_SMALLEST are both defined.
+  Keep one."), two overrides of HKDF, an override that cannot serve. Expected: FAIL.
 - [ ] **Step 2: Write the selection** as a type computation over `detail::ranking` (Task 9's
   provisional file, Task 21's measured one):
 
@@ -1830,13 +1932,17 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
 }  // namespace webcpp::hash::detail
 ```
 
-  `profile_choice` picks `ranking<Algorithm, Hmac>::by_throughput` (fastest),
+  `profile_choice` takes the library's profile when one is defined, else webcpp's umbrella
+  (`WEBCPP_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE`), else `auto`, and picks
+  `ranking<Algorithm, Hmac>::by_throughput` (fastest),
   `::by_size` (smallest), `portable_order` (hash2, xkcp, blake3, sodium, bearssl), or the named
   backend when it serves and `auto`'s choice otherwise; `auto` is fastest natively and smallest on
   WebAssembly. An override macro `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>` specialises
-  `override_choice` in `config.hpp`'s expansion (a fixed list of the algorithms of the capability
-  table, one `#ifdef` each, generated by `tools/hash/measure.py --overrides` from
-  `doc/capabilities.json`, so that the list cannot drift). Run on the four targets. Expected: PASS.
+  `override_choice` in `config.hpp`'s expansion: a list of the algorithms of the capability
+  table, one `#ifdef` each, written by hand in this task (`tools/hash/measure.py` comes with Task
+  21), with `overrides_list_test.cpp` checking that every algorithm of `doc/capabilities.json` has
+  its lines and no other line exists; Task 21 adds `measure.py --overrides`, which regenerates the
+  list, and the test keeps it honest either way. Run on the four targets. Expected: PASS.
 - [ ] **Step 3: Commit** (library) `"hash: one profile for every default backend, and per-algorithm overrides"`.
 
 ## Task 15: Argon2id on libsodium
@@ -1848,19 +1954,26 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
   `static_assert`s), `test/Jamfile`, `hash.hpp`, the boundaries file, the changelog.
 
 - [ ] **Step 1: Write the failing tests.** `argon2_rfc9106_test.cpp`, with
-  `<library>/third_party//sodium-test-config`, includes libsodium's private `argon2.h` and runs RFC
+  `<library>/third_party//sodium-test-config`, includes libsodium's private `argon2.h` inside
+  `extern "C" { }` (the header has no guard of its own, so `argon2_ctx` would otherwise be looked
+  up with C++ linkage), and runs RFC
   9106 section 5.3's Argon2id case through `argon2_ctx(&context, Argon2_id)`: t 3, m 32 KiB, p 4
   (lanes and threads), password 32 bytes of `0x01`, salt 16 of `0x02`, secret 8 of `0x03`,
   associated data 12 of `0x04`, tag 32 bytes,
   `0d640df58d78766c08c037a34a8b53c9d01ef0452d75b65eb52520e96b01e659` (copied from the RFC's text
   and compared with it before the commit). `argon2id_test.cpp`: three cases of libsodium's
-  `test/default/pwhash_argon2id.c` table at the pin with their outputs from
-  `pwhash_argon2id.exp` (copied); `argon2id` against `argon2_ctx` with one lane on 20 random cases
+  `test/default/pwhash_argon2id.c` table at the pin that its `.exp` shows succeeding, with their
+  outputs (copied); the table's memory limits are not multiples of 1,024 and its salts are 32
+  bytes, so each case passes `memory` rounded down to a multiple of 1,024 (libsodium itself uses
+  `memlimit / 1024`, the same result) and the salt's first 16 bytes (the function reads 16), as
+  the test's comment says; `argon2id` against `argon2_ctx` with one lane on 20 random cases
   (memory 8 to 256 KiB, passes 1 to 3); every guard of spec 2.10; the presets equal libsodium's
   macros. Expected: FAIL.
-- [ ] **Step 2: Write `argon2.hpp`** (guards) and the engine (`crypto_pwhash_argon2id(output,
-  output.size(), password, password.size(), salt, passes, memory,
-  crypto_pwhash_ALG_ARGON2ID13)`; `-1` with `errno == ENOMEM` is `errc::not_enough_memory`).
+- [ ] **Step 2: Write `argon2.hpp`** (guards) and the engine (`errno = 0;` then
+  `crypto_pwhash_argon2id(output, output.size(), detail::nonnull(password), password.size(), salt,
+  passes, memory, crypto_pwhash_ALG_ARGON2ID13)`; `-1` with `errno == ENOMEM` is
+  `errc::not_enough_memory`, any other `-1` `backend_failure`: libsodium returns -1 without
+  setting `errno` when its core fails, so a stale value must not be read).
   Run on the four targets; the interactive preset (64 MiB) runs in its own program, with its
   time per target recorded. Expected: PASS.
 - [ ] **Step 3: Commit** (library) `"hash: Argon2id over libsodium"`.
@@ -1877,7 +1990,11 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
   cases 2 and 3 copied from the RFC); the fourth (N 1,048,576, r 8, p 1, 1 GiB) in
   `scrypt_rfc7914_large_test.cpp`; the guards of spec 2.11 (N 0, 1, 3, 2^(16 r); r 0; p 0; r p =
   2^30; 128 r (N + p) past `size_t` on wasm32). Expected: FAIL.
-- [ ] **Step 2: Write `scrypt.hpp` and the engine.** Run on the four targets. Run the large case
+- [ ] **Step 2: Write `scrypt.hpp` and the engine** (`errno = 0;` then
+  `crypto_pwhash_scryptsalsa208sha256_ll(detail::nonnull(password), password.size(),
+  detail::nonnull(salt), salt.size(), n, r, p, output.data(), output.size())`: declared `nonnull`
+  on every pointer and `warn_unused_result`, and RFC 7914's first case has an empty password and
+  salt). Run on the four targets. Run the large case
   natively and on each WebAssembly target; declare its program on the targets where it passed
   (each WebAssembly target's result, pass or the error and memory, recorded in the ledger and in
   the Jamfile's comment). Expected: PASS where declared.
@@ -2013,8 +2130,13 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
 
 ## Task 24: Increment 1 whole
 
-- [ ] **Step 1: The rulebook.** CODING-GUIDELINES.md chapter 10's rows (Tasks 4, 6, 8, 13) are in;
-  chapter 17's entry describes increment 1 as built; chapter 5's rule 2 names BLAKE3's exception.
+- [ ] **Step 1: The rulebook and the lint.** CODING-GUIDELINES.md chapter 10's rows (Tasks 4, 6, 8,
+  13) are in; chapter 17's entry describes increment 1 as built; chapter 5's rule 2 records its
+  three exceptions: BLAKE3's intrinsics files on their instruction sets alone, XKCP built from the
+  one file of Keccak-p[1600] (and the high-level files increment 3 lists), libsodium without its
+  `.S` files. The lint's rule 19, "canary pins" (`tools/lint/lint.sh`), reads hash's
+  `detail/canary.h` beside crypto's, mapping `sodium` to `libsodium` as it maps `ctaes` to
+  `bitcoin`, and its case in `tools/test/` gains a wrong hash pin that must fail.
 - [ ] **Step 2: Green, from scratch,** every lane of the Global Constraints: native, wasip2, wasip3,
   emscripten, gcc-15, the own lanes `c-suites` and `measure` on their targets,
   `python3 tools/test/hash_jamfiles_test.py`, `python3 tools/test/blake3_c_suite.py`,

@@ -205,8 +205,9 @@ never change the result.
 ### D11. libsodium as a pinned submodule, built file by file, shared with webcpp::crypto
 
 `third_party/libs/libsodium` at 1.0.22 (`77e1ce5`), every `.c` of `src/libsodium/` compiled one
-object per file by `third_party/Jamfile` as `/third_party//sodium`, with the defines of
-libsodium's own `build.zig` per target, `CONFIGURED=1`, `SODIUM_STATIC=1`,
+object per file by `third_party/Jamfile` as `/third_party//sodium`, with the defines
+libsodium's own `configure` finds, run once per target and recorded (each `HAVE_*` only where
+found, `DEV_MODE` off; MSVC from `builds/msvc/properties/`), `CONFIGURED=1`, `SODIUM_STATIC=1`,
 `NATIVE_LITTLE_ENDIAN=1`, and without `HAVE_AMD64_ASM` and `HAVE_AVX_ASM`, so that its seven
 `.S` files are not needed. `version.h`, which `configure` generates, is upstream's own
 `builds/msvc/version.h`, copied by b2 into the build directory. Every engine calls
@@ -214,7 +215,10 @@ libsodium's own `build.zig` per target, `CONFIGURED=1`, `SODIUM_STATIC=1`,
 target serves webcpp::crypto's later libsodium backend, which adds its canary to it.
 
 - **Why:** chapter 5; the owner's decision that libsodium is "one /third_party//sodium shared by
-  both"; build.zig is upstream's own file-by-file build, so its defines are upstream's.
+  both"; `configure` is upstream's own configuration step, so its defines are upstream's for
+  each target (`build.zig`'s lists give some defines on every target unconditionally). Its own
+  suite runs on every target, each run in a writable directory of the build, since `cmptest.h`
+  writes `<name>.res` there.
 - **Alternatives:** libsodium's autotools or its prebuilt Emscripten and WASI packages (not
   file by file, not one copy per program); the assembly (GNU as only; it speeds Curve25519 and
   Salsa20, which hash does not use, and webcpp::crypto's change reconsiders it).

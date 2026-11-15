@@ -194,7 +194,7 @@ The documentation SHALL state that libsodium allocates Argon2id's and scrypt's m
 - **THEN** it names libsodium's allocation in `argon2id` and `scrypt`, OpenSSL's in its KDFs, and the alternative
 
 ### Requirement: Build: the C libraries file by file, with webcpp::hash's canaries
-`third_party/Jamfile` SHALL build `/third_party//xkcp` (XKCP at `d20c8fc`, `KeccakP-1600-opt64.c`, webcpp's adapter and `config.h`), `/third_party//blake3` (BLAKE3 1.8.7 at `f3149ec`) and `/third_party//sodium` (libsodium 1.0.22 at `77e1ce5`, every `.c` of `src/libsodium/`, with upstream's `builds/msvc/version.h` copied into the build directory and the defines of its `build.zig` per target, without assembly) as static libraries from submodules under `third_party/libs/`, never edited, each with webcpp::hash's canary `src/canary_<name>.c`, `-ffunction-sections -fdata-sections`, `<warnings>off`, and usage requirements giving `WEBCPP_HASH_HAS_<NAME>=1` and the removal of unused sections. `/third_party//bearssl` MUST gain webcpp::hash's canary and `WEBCPP_HASH_HAS_BEARSSL=1`.
+`third_party/Jamfile` SHALL build `/third_party//xkcp` (XKCP at `d20c8fc`, `KeccakP-1600-opt64.c`, webcpp's adapter and `config.h`), `/third_party//blake3` (BLAKE3 1.8.7 at `f3149ec`) and `/third_party//sodium` (libsodium 1.0.22 at `77e1ce5`, every `.c` of `src/libsodium/`, with upstream's `builds/msvc/version.h` copied into the build directory and the defines libsodium's own `configure` finds for each target, `DEV_MODE` off, without assembly) as static libraries from submodules under `third_party/libs/`, never edited, each with webcpp::hash's canary `src/canary_<name>.c`, `-ffunction-sections -fdata-sections`, `<warnings>off`, and usage requirements giving `WEBCPP_HASH_HAS_<NAME>=1` and the removal of unused sections. `/third_party//bearssl` MUST gain webcpp::hash's canary and `WEBCPP_HASH_HAS_BEARSSL=1`.
 
 #### Scenario: libsodium's archive
 - **WHEN** `/third_party//sodium` is built natively with `-a -d+2`
@@ -233,7 +233,7 @@ A program that names `/third_party//xkcp`, `/third_party//blake3`, `/third_party
 - **THEN** every output of `backends::hash2`, `sodium` and `bearssl` equals WebCrypto's
 
 ### Requirement: Tests: the C libraries' own suites on webcpp's build
-The own lane `c-suites` SHALL run, on every target, libsodium's `test/default` programs with their `.exp` files (a test a target cannot run declared so with its reason), XKCP's `tests/UnitTests` with webcpp's `config.h` and `--SnP`, and BLAKE3's `c/main.c` with `BLAKE3_TESTING` over every case of `test_vectors.json` through `tools/test/blake3_c_suite.py`, on webcpp's builds of the three libraries.
+The own lane `c-suites` SHALL run, on every target, libsodium's `test/default` programs with their `.exp` files, every test on every target, each run in a writable directory of the build where `cmptest.h` writes its `.res` file, XKCP's `tests/UnitTests` with webcpp's `config.h` and `--SnP`, and BLAKE3's `c/main.c` with `BLAKE3_TESTING` over every case of `test_vectors.json` through `tools/test/blake3_c_suite.py`, on webcpp's builds of the three libraries.
 
 #### Scenario: libsodium's HKDF and pwhash tests
 - **WHEN** the lane runs on wasip2
