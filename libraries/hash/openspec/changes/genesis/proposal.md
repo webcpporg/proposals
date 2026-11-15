@@ -75,7 +75,7 @@ parallel asynchronous API. Nothing is built.
   form stays for Hash2's types, `keccak_256` and `blake3`.
 - **One profile changes every default backend:** none (`auto`: fastest natively, smallest on
   WebAssembly), `WEBCPP_HASH_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE` or `_BACKEND_<NAME>`,
-  plus per-algorithm overrides `WEBCPP_HASH_BACKEND_<ALGORITHM>_<NAME>`; the defaults come from
+  plus per-algorithm overrides `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>`; the defaults come from
   the build and a committed table of webcpp's own measurements, regenerated at every pin move.
 - **The browser backend through a parallel asynchronous API** (the owner's answer to O1):
   `async_digest`, `async_hmac`, `async_hkdf` and `async_pbkdf2` take a webcpp::asio completion

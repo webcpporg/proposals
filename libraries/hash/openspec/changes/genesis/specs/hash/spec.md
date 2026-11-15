@@ -128,7 +128,7 @@ A call of a KDF on a backend that lacks it, or over an hmac the backend lacks, S
 - **THEN** every derived key matches, the 16,777,216-iteration case included, in its own program
 
 ### Requirement: The default backend: one profile, per-algorithm overrides
-`config.hpp` SHALL take at most one profile define: none (`auto`: natively the fastest, on WebAssembly the smallest), `WEBCPP_HASH_PROFILE_FASTEST`, `WEBCPP_HASH_PROFILE_SMALLEST`, `WEBCPP_HASH_PROFILE_PORTABLE` (the first that has the algorithm of hash2, xkcp, blake3, sodium, bearssl) or `WEBCPP_HASH_PROFILE_BACKEND_<NAME>`, and per-algorithm overrides `WEBCPP_HASH_BACKEND_<ALGORITHM>_<NAME>`; `default_backend<Algorithm, Hmac>` (and `default_kdf_backend<Hmac, Kdf = kdfs::hkdf>`, the same) MUST be the override's backend, else the profile's choice among the linked backends that have the algorithm, by the build (target, `HAS` macros) and the measured orders of `detail/ranking.hpp`. More than one profile, two overrides of one algorithm, or OpenSSL selected on Emscripten MUST be an `#error`; on MSVC the profile and each override MUST carry `#pragma detect_mismatch`.
+`config.hpp` SHALL read webcpp's umbrella profile (`WEBCPP_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE`) and SHALL take at most one library profile define: none (`auto`: natively the fastest, on WebAssembly the smallest), `WEBCPP_HASH_PROFILE_FASTEST`, `WEBCPP_HASH_PROFILE_SMALLEST`, `WEBCPP_HASH_PROFILE_PORTABLE` (the first that has the algorithm of hash2, xkcp, blake3, sodium, bearssl) or `WEBCPP_HASH_PROFILE_BACKEND_<NAME>`, and per-algorithm overrides `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>`; `default_backend<Algorithm, Hmac>` (and `default_kdf_backend<Hmac, Kdf = kdfs::hkdf>`, the same) MUST be the override's backend, else the profile's choice among the linked backends that have the algorithm, by the build (target, `HAS` macros) and the measured orders of `detail/ranking.hpp`. The precedence MUST be: per-algorithm override, library profile, umbrella profile, the build's measured default. Two profiles of one level (each `#error` naming both defines), two overrides of one algorithm, or OpenSSL selected on Emscripten MUST be an `#error`; on MSVC the profile and each override MUST carry `#pragma detect_mismatch`.
 
 #### Scenario: Natively with OpenSSL, auto
 - **WHEN** a native program that names `/webcpp/hash//openssl` and gives no profile reads `default_kdf_backend<hmac_ripemd_128>`
@@ -142,8 +142,16 @@ A call of a KDF on a backend that lacks it, or over an hmac the backend lacks, S
 - **WHEN** a native program that links libsodium and OpenSSL is built with `WEBCPP_HASH_PROFILE_PORTABLE`
 - **THEN** every default is a backend present on all four targets (HKDF over SHA-256 is `hash2` or `sodium` by the portable order, never `openssl`)
 
+#### Scenario: The umbrella and the precedence
+- **WHEN** a native program that links libsodium and OpenSSL is built with `WEBCPP_PROFILE_SMALLEST`, `WEBCPP_HASH_PROFILE_PORTABLE` and `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_OPENSSL`
+- **THEN** `hkdf<hmac_sha2_256>` runs on OpenSSL (the override), `pbkdf2<hmac_sha2_256>` on `backends::hash2` (the library's portable profile over the umbrella's smallest), and with only `WEBCPP_PROFILE_SMALLEST` both follow the measured size order
+
+#### Scenario: Two profiles at once
+- **WHEN** a program defines `WEBCPP_HASH_PROFILE_FASTEST` and `WEBCPP_HASH_PROFILE_SMALLEST`
+- **THEN** compilation fails with "webcpp::hash: WEBCPP_HASH_PROFILE_FASTEST and WEBCPP_HASH_PROFILE_SMALLEST are both defined. Keep one."
+
 #### Scenario: An override that cannot serve
-- **WHEN** a program defines `WEBCPP_HASH_BACKEND_PBKDF2_SODIUM` and calls `pbkdf2<hmac_sha2_512>`
+- **WHEN** a program defines `WEBCPP_HASH_DEFAULT_BACKEND_PBKDF2_SODIUM` and calls `pbkdf2<hmac_sha2_512>`
 - **THEN** compilation fails with spec 3.3's text for PBKDF2 on `backends::sodium`
 
 ### Requirement: The defaults come from webcpp's own measurements, regenerated at every pin move

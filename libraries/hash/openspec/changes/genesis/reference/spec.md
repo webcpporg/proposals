@@ -171,7 +171,8 @@ Boost.
 #undef WEBCPP_HASH_PROFILE_SMALLEST
 #define WEBCPP_HASH_PROFILE_PORTABLE
 #undef WEBCPP_HASH_PROFILE_PORTABLE
-// ... and WEBCPP_HASH_PROFILE_BACKEND_<NAME> and WEBCPP_HASH_BACKEND_<ALGORITHM>_<NAME> (spec 4.1)
+// ... and WEBCPP_HASH_PROFILE_BACKEND_<NAME>, WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME> and
+// webcpp's umbrella WEBCPP_PROFILE_FASTEST, _SMALLEST, _PORTABLE (spec 4.1)
 #endif
 
 #if !defined(WEBCPP_HAS_EXCEPTIONS) && !defined(WEBCPP_HASH_NO_EXCEPTIONS)
@@ -997,20 +998,30 @@ which corrects the table where Botan lacks a function; no cell is assumed.
 
 ### 4.1 The profile and the overrides
 
-One setting in `config.hpp` changes every default backend at once, a **profile**, given by the
-program as exactly one define (more than one is an `#error`):
+One setting in `config.hpp` changes every default backend at once, a **profile**, one macro per
+value. A program gives it for webcpp::hash alone (`WEBCPP_HASH_PROFILE_*`) or for every library
+at once through webcpp's umbrella, `WEBCPP_PROFILE_FASTEST`, `WEBCPP_PROFILE_SMALLEST` or
+`WEBCPP_PROFILE_PORTABLE`, which webcpp::crypto reads too (its later change). Two library
+profiles, or two umbrella profiles, are an `#error` naming both defines, as
+"webcpp::hash: WEBCPP_HASH_PROFILE_FASTEST and WEBCPP_HASH_PROFILE_SMALLEST are both defined.
+Keep one." A library profile beside an umbrella profile is not an error: the library's wins.
 
 | Define | Profile | The default of each algorithm |
 | --- | --- | --- |
-| none | `auto`, the owner's rule | natively `fastest`; on WebAssembly `smallest` |
+| none | `auto`, the owner's rule, the build's measured default | natively `fastest`; on WebAssembly `smallest` |
+| `WEBCPP_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE` | the umbrella, for every webcpp library | as the library profile of the same name |
 | `WEBCPP_HASH_PROFILE_FASTEST` | fastest | the linked backend that has it with the best measured throughput on this target (natively measured; on a WebAssembly target its own measurement where the table has one, else the native order) |
 | `WEBCPP_HASH_PROFILE_SMALLEST` | smallest | the linked backend that has it with the smallest measured program on this target |
 | `WEBCPP_HASH_PROFILE_PORTABLE` | portable | the first that has it of `hash2`, `xkcp`, `blake3`, `sodium`, `bearssl`: the same code on every target, never a backend absent from one (OpenSSL, Botan, WebCrypto) |
 | `WEBCPP_HASH_PROFILE_BACKEND_<NAME>` | a named backend (`HASH2`, `XKCP`, `BLAKE3`, `SODIUM`, `BEARSSL`, `OPENSSL`, `BOTAN`; never `WEBCRYPTO`, which serves the asynchronous family alone, section 11) | that backend for every algorithm it has; for the others, `auto`'s choice |
 
-An **override** names the backend of one algorithm, whatever the profile:
-`WEBCPP_HASH_BACKEND_<ALGORITHM>_<NAME>` (`WEBCPP_HASH_BACKEND_HKDF_SODIUM`,
-`WEBCPP_HASH_BACKEND_PBKDF2_HASH2`, `WEBCPP_HASH_BACKEND_SHA2_256_OPENSSL`); an override whose
+**Precedence:** a per-algorithm override, then the library's profile, then webcpp's umbrella
+profile, then the build's measured default (`auto`).
+
+An **override** names the backend of one algorithm, whatever the profile, spelled as
+webcpp::crypto's `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`:
+`WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>` (`WEBCPP_HASH_DEFAULT_BACKEND_HKDF_SODIUM`,
+`WEBCPP_HASH_DEFAULT_BACKEND_PBKDF2_HASH2`, `WEBCPP_HASH_DEFAULT_BACKEND_SHA2_256_OPENSSL`); an override whose
 backend lacks the algorithm over the hmac used fails to compile with that backend's text of 3.3;
 two overrides of one algorithm are an `#error`. OpenSSL selected on Emscripten, by profile or
 override, is an `#error`. A backend the program does not link is never chosen by a profile; an
