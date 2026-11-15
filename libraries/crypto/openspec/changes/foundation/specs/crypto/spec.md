@@ -8,7 +8,7 @@ Each backend SHALL expose every primitive of its library that belongs to cryptog
 - **THEN** there is none, and the capability table points to webcpp::hash for them
 
 #### Scenario: crypto_auth is in crypto
-- **WHEN** a program makes `auth` (libsodium's `crypto_auth`) under a 32-byte key and verifies a tag
+- **WHEN** a program makes `ciphers::auth` (libsodium's `crypto_auth`) under a 32-byte key and verifies a tag
 - **THEN** the verification is constant time and a changed tag returns `authentication_failed`
 
 ### Requirement: Capability table: one committed source
@@ -26,25 +26,25 @@ The library SHALL hold `meta/capabilities.json`, listing for every algorithm, by
 The primary engine of every (algorithm, backend) pair that the table marks absent SHALL fail at compile time, only where the algorithm is called, with `webcpp::crypto: <backend> has no <algorithm>. The backends that have it: <backend> (<targets>), ...`, the list generated from the table. Each such message MUST come from a test in a directory of its own for at least one absent pair per family.
 
 #### Scenario: Ed25519 on BearSSL
-- **WHEN** a program calls `ed25519_keypair<backends::bearssl>::make(seed)`
+- **WHEN** a program calls `curves::ed25519::basic_keypair<backends::bearssl>::make(seed)`
 - **THEN** compilation stops with `webcpp::crypto: bearssl has no Ed25519. The backends that have it: sodium (native, wasip2, wasip3, emscripten), openssl (native, wasip2, wasip3), botan (native, emscripten), browser (emscripten, asynchronous).` as the table of that day gives it
 
 ### Requirement: Capability table: the supports trait and run-time availability
 `webcpp::crypto::supports_v<Algorithm, Backend>` SHALL be `true` exactly where the table marks the backend as having the algorithm on the current target. A cell whose availability is decided at run time MUST be present in the trait, and its `make` or `async_make` MUST return `boost::system::errc::not_supported` on a machine or browser that lacks it, before reading a key byte.
 
 #### Scenario: AES256-GCM on libsodium without AES instructions
-- **WHEN** `aes256_gcm_sodium::make(key)` runs where `crypto_aead_aes256gcm_is_available()` returns 0
+- **WHEN** `ciphers::aes256_gcm_sodium::make(key)` runs where `crypto_aead_aes256gcm_is_available()` returns 0
 - **THEN** it returns `not_supported`, and `supports_v<aes256_gcm_sodium, backends::sodium>` is `true` natively and `false` on WebAssembly
 
 ### Requirement: Profiles: one define chooses every default backend
 Every profile and override SHALL be a macro tested with `#ifdef`. `config.hpp` MUST read at most one of crypto's profiles, `WEBCPP_CRYPTO_PROFILE_FASTEST`, `WEBCPP_CRYPTO_PROFILE_SMALLEST`, `WEBCPP_CRYPTO_PROFILE_PORTABLE` and `WEBCPP_CRYPTO_PROFILE_BACKEND_<NAME>` (`SODIUM`, `BEARSSL`, `OPENSSL`, `BOTAN`, `BLST`, `SECP256K1`, `CTAES`), and at most one of the webcpp-wide profiles `WEBCPP_PROFILE_FASTEST`, `WEBCPP_PROFILE_SMALLEST` and `WEBCPP_PROFILE_PORTABLE`, which webcpp::hash reads alike. Every algorithm's default backend, `default_backend_t<Family>`, MUST follow them: `FASTEST` and `SMALLEST` take the measured ranking of the target (and natively of the architecture); `PORTABLE` takes the table's portable backend, refusing an algorithm that no backend has on all four targets; a named backend takes that backend for every algorithm it has and the next level for the others; with none defined, the build's measured default is `FASTEST` natively and `SMALLEST` on WebAssembly. `webcpp::crypto::profile_name` MUST give the resolved profile's name.
 
 #### Scenario: The owner's rule
-- **WHEN** a program links libsodium, BearSSL and OpenSSL natively on Linux x86-64 and uses `chacha20_poly1305` without a define
+- **WHEN** a program links libsodium, BearSSL and OpenSSL natively on Linux x86-64 and uses `ciphers::chacha20_poly1305` without a define
 - **THEN** its backend is the one `meta/measurements.json` ranks fastest there among the three, and on Emscripten, where OpenSSL is not built, the one ranked smallest among the other two
 
 #### Scenario: The webcpp-wide umbrella
-- **WHEN** a program defines only `WEBCPP_PROFILE_SMALLEST` natively and uses `chacha20_poly1305` and webcpp::hash's HKDF
+- **WHEN** a program defines only `WEBCPP_PROFILE_SMALLEST` natively and uses `ciphers::chacha20_poly1305` and webcpp::hash's HKDF
 - **THEN** both libraries take their smallest linked backend, and `crypto::profile_name` is `smallest`
 
 #### Scenario: Two profiles at once
@@ -55,23 +55,23 @@ Every profile and override SHALL be a macro tested with `#ifdef`. `config.hpp` M
 `default_backend_t<Family>` SHALL take, in the profile's order, the first backend that is linked (its `WEBCPP_CRYPTO_HAS_<NAME>` define), has the algorithm on the current target, and is not decided at run time. When none is linked it MUST be `detail::none_linked<Family>`, whose use stops compilation with the Jamfile lines that would give one, generated from the table.
 
 #### Scenario: Nothing linked for X25519
-- **WHEN** a program that links no backend having X25519 calls `x25519::agree`
+- **WHEN** a program that links no backend having X25519 calls `curves::x25519::agree`
 - **THEN** compilation stops naming `/third_party//sodium` and the other backends' lines for that target
 
 #### Scenario: A run-time backend is never a default
 - **WHEN** libsodium is the only linked backend having AES-256-GCM natively
-- **THEN** `aes256_gcm` still names a backend without a run-time check, or stops compilation with the lines that would give one
+- **THEN** `ciphers::aes256_gcm` still names a backend without a run-time check, or stops compilation with the lines that would give one
 
 ### Requirement: Profiles: per-family overrides, the genesis's defines and the precedence
 `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`, with the families of the capability table and the backends that have each, SHALL override one family's default; two overrides of one family MUST stop compilation with an `#error` naming both. `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` MUST keep their genesis meaning, as spellings of `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL` and `_GCM_OPENSSL`. The precedence MUST be: a per-family override, then crypto's profile, then the webcpp-wide profile, then the build's measured default; crypto's profile beside a webcpp-wide one is allowed and wins. On MSVC, `config.hpp` MUST carry `#pragma detect_mismatch("webcpp_crypto_profile", "<resolved profile>")` and one key per family's resolved override, so that two translation units that choose differently fail to link with LNK2038.
 
 #### Scenario: One family overridden
 - **WHEN** a program defines `WEBCPP_CRYPTO_PROFILE_BACKEND_SODIUM` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_ED25519_OPENSSL`
-- **THEN** `ed25519::backend_type` is `backends::openssl` and `x25519::backend_type` is `backends::sodium`
+- **THEN** `curves::ed25519::keypair::backend_type` is `backends::openssl` and `curves::x25519::algorithm<>::backend_type` is `backends::sodium`
 
 #### Scenario: The precedence across levels
 - **WHEN** a program defines `WEBCPP_PROFILE_PORTABLE`, `WEBCPP_CRYPTO_PROFILE_FASTEST` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL`, with BearSSL, OpenSSL and libsodium linked natively
-- **THEN** `aes256_gcm` is on BearSSL (the override), `chacha20_poly1305` on the backend ranked fastest (crypto's profile over the umbrella), and webcpp::hash's defaults follow `WEBCPP_PROFILE_PORTABLE`
+- **THEN** `ciphers::aes256_gcm` is on BearSSL (the override), `ciphers::chacha20_poly1305` on the backend ranked fastest (crypto's profile over the umbrella), and webcpp::hash's defaults follow `WEBCPP_PROFILE_PORTABLE`
 
 ### Requirement: Measurements: webcpp's own, committed and regenerated
 The library SHALL hold `meta/measurements.json`: per (algorithm, backend), the bytes added over the baseline program on each target (native at `<optimization>space`, wasip2, wasip3 and Emscripten at `-Os`, stripped, raw and `gzip -9n`) and the throughput of the family's fixed operation natively on Linux x86-64, Linux arm64 and macOS arm64 and under wasmtime and node, each the median of five runs. `tools/crypto/measure.py` MUST write it and generate `detail/rankings.hpp` and `doc/measurements.adoc`. A pin move MUST regenerate it in the same change. The own lane `sizes` MUST rebuild the WebAssembly size programs on every push and fail when a size or the size ranking differs from the committed file; two backends whose throughput medians differ by less than 10 % MUST keep their committed order.
@@ -88,28 +88,28 @@ The library SHALL hold `meta/measurements.json`: per (algorithm, backend), the b
 Every algorithm type SHALL state its sizes as `static constexpr` members, take its backend as its last template parameter with `default_backend_t<Family>` as default, and every keyed object MUST be made by `static make(...)` returning `boost::system::result<T>`, be move-only, wipe its secrets on destruction and on move, and answer `invalid_state` from every function when empty. A keyed object that can be drawn at random MUST also offer `static generate()`, which draws its seed from `random_device` and returns `entropy_unavailable` when the source fails. A backend's header MUST specialise only the family's `detail::<family>_state` and `detail::<family>_engine` traits; the guards MUST be written once, in the family's type.
 
 #### Scenario: A moved-from Ed25519 key pair
-- **WHEN** `auto b = std::move(a);` and then `a.sign(message)` on an `ed25519_keypair`
+- **WHEN** `auto b = std::move(a);` and then `a.sign(message)` on an `curves::ed25519::keypair`
 - **THEN** the result holds `invalid_state`, and `b` signs as `a` would have
 
 ### Requirement: Interface: secret outputs wipe themselves
 `webcpp::crypto::secret<N>` SHALL hold `N` bytes, wipe them by volatile stores on destruction and on move, be copyable only through `clone()`, and convert to `std::span<std::uint8_t const, N>`. Every function whose output is secret (a shared secret, session keys, a converted secret key, a KEM's shared secret, a tweaked secret key) MUST return it.
 
 #### Scenario: A shared secret goes out of scope
-- **WHEN** the wipe test destroys a `secret<32>` from `x25519::agree` and inspects its storage at -O2
+- **WHEN** the wipe test destroys a `secret<32>` from `curves::x25519::agree` and inspects its storage at -O2
 - **THEN** the 32 bytes are zero
 
 ### Requirement: Interface: one AEAD template for the one-shot AEADs
-`aead<Family, Backend>` SHALL implement the guards, the in-place `seal` and `open`, the tag apart, the zeroing of `data` after a failed `open` and the move rules of the genesis's `chacha20_poly1305` for every one-shot AEAD, its family tag giving `key_size`, `iv_size`, `tag_size` and `max_message_size`. `chacha20_poly1305` (12-byte nonce), `chacha20_poly1305_original` (8-byte nonce), `xchacha20_poly1305` (24-byte nonce), `aegis128l`, `aegis256` and `aes256_gcm_sodium` MUST be its aliases; `gcm<Cipher>` keeps its own class and its incremental seal.
+`ciphers::aead<Family, Backend>` SHALL implement the guards, the in-place `seal` and `open`, the tag apart, the zeroing of `data` after a failed `open` and the move rules of the genesis's `ciphers::chacha20_poly1305` for every one-shot AEAD, its family tag giving `key_size`, `iv_size`, `tag_size` and `max_message_size`. `ciphers::chacha20_poly1305` (12-byte nonce), `ciphers::chacha20_poly1305_original` (8-byte nonce), `ciphers::xchacha20_poly1305` (24-byte nonce), `ciphers::aegis128l`, `ciphers::aegis256` and `ciphers::aes256_gcm_sodium` MUST be its aliases; `ciphers::gcm<Cipher>` keeps its own class and its incremental seal.
 
 #### Scenario: XChaCha20-Poly1305's nonce
-- **WHEN** `xchacha20_poly1305::seal` is called with a 12-byte nonce
+- **WHEN** `ciphers::xchacha20_poly1305::seal` is called with a 12-byte nonce
 - **THEN** it returns `invalid_iv_size` and `data` is untouched
 
 ### Requirement: Errors: the values of the foundation
 The category SHALL add these fixed values, never reused: 15 `weak_public_key` (a public key of small order, or one giving an all-zero shared secret), 16 `invalid_point` (an encoding that is not a canonical group element), 17 `invalid_scalar` (a scalar not reduced, or zero where zero is refused), 18 `invalid_padding` (one value for every cause of a padding that cannot be removed), 19 `invalid_encoding` (hexadecimal or base64 that does not decode), 20 `invalid_ciphertext_size` (a KEM or RSA ciphertext of another size than the key's), each with its message.
 
 #### Scenario: A small-order X25519 key
-- **WHEN** `x25519::agree` is given a public key of order 8
+- **WHEN** `curves::x25519::agree` is given a public key of order 8
 - **THEN** it returns `weak_public_key`
 
 ### Requirement: Backend libsodium: the shared target with crypto's canary
@@ -127,61 +127,61 @@ The category SHALL add these fixed values, never reused: 15 `weak_public_key` (a
 Every engine of `backends::sodium` SHALL call `sodium_init()` before its first libsodium call and treat a return of -1 as `backend_failure`. libsodium's generator MUST be its default, which reads the system natively and on WASI and `crypto.getRandomValues` on Emscripten: the build MUST NOT select `randombytes_internal`, and webcpp MUST NOT call `randombytes_set_implementation`. webcpp's own key generation MUST draw seeds from `random_device` and call libsodium's `seed_keypair` functions.
 
 #### Scenario: A key pair from generate
-- **WHEN** `ed25519_keypair::generate()` runs with the test's failing entropy source
+- **WHEN** `curves::ed25519::keypair::generate()` runs with the test's failing entropy source
 - **THEN** it returns `entropy_unavailable` and libsodium's generator is never called
 
 ### Requirement: Ed25519: key pairs, signatures and strict verification
-`ed25519_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its 32-byte public key, sign a message into 64 bytes, and give its X25519 secret key as `secret<32>`; `verify_ed25519<Backend>(public_key, message, signature)` MUST return nothing on success and `invalid_signature` otherwise. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
+`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its 32-byte public key, sign a message into 64 bytes, and give its X25519 secret key as `secret<32>`; `curves::ed25519::verify<Backend>(public_key, message, signature)` MUST return nothing on success and `invalid_signature` otherwise. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
 
 #### Scenario: RFC 8032's test 1
 - **WHEN** the key pair is made from RFC 8032 section 7.1's first secret key and signs the empty message
-- **THEN** the public key and the signature are the RFC's, and `verify_ed25519` accepts them
+- **THEN** the public key and the signature are the RFC's, and `curves::ed25519::verify` accepts them
 
 #### Scenario: A small-order public key
-- **WHEN** `verify_ed25519<backends::sodium>` is given a small-order public key from Wycheproof
+- **WHEN** `curves::ed25519::verify<backends::sodium>` is given a small-order public key from Wycheproof
 - **THEN** it returns `invalid_signature`
 
 ### Requirement: Ed25519ph: an incremental signer
-`ed25519ph<Hash, Backend>`, with `Hash` webcpp::hash's `sha2_512` as RFC 8032 requires, SHALL sign and verify a message given in pieces (`begin`, `update`, `sign` or `verify`) through libsodium's `crypto_sign_ed25519ph_*`, and refuse another hash at compile time.
+`curves::ed25519::ph<Hash, Backend>`, with `Hash` webcpp::hash's `sha2_512` as RFC 8032 requires, SHALL sign and verify a message given in pieces (`begin`, `update`, `sign` or `verify`) through libsodium's `crypto_sign_ed25519ph_*`, and refuse another hash at compile time.
 
 #### Scenario: RFC 8032's Ed25519ph vector
 - **WHEN** RFC 8032 section 7.3's message is given in two pieces
 - **THEN** the signature is the RFC's
 
 ### Requirement: X25519: agreement and the conversion
-`x25519<Backend>` SHALL give a public key from a 32-byte secret, agree a `secret<32>` from a secret and a peer's public key, and return `weak_public_key` when the result is all zero on every backend. `ed25519_to_x25519_public(public_key)` MUST return the birational map's result or `invalid_public_key` for a key that is not canonical or of small order.
+`curves::x25519` SHALL give a public key from a 32-byte secret, agree a `secret<32>` from a secret and a peer's public key, and return `weak_public_key` when the result is all zero on every backend. `curves::ed25519::to_x25519_public(public_key)` MUST return the birational map's result or `invalid_public_key` for a key that is not canonical or of small order.
 
 #### Scenario: RFC 7748's agreement
 - **WHEN** Alice's and Bob's keys of RFC 7748 section 6.1 agree in both directions
 - **THEN** both give the RFC's shared secret
 
 #### Scenario: Conversion agrees with signing keys
-- **WHEN** a key pair's `x25519_secret()` gives a public key through `x25519::public_key`
-- **THEN** it equals `ed25519_to_x25519_public` of the key pair's Ed25519 public key
+- **WHEN** a key pair's `x25519_secret()` gives a public key through `curves::x25519::public_key`
+- **THEN** it equals `curves::ed25519::to_x25519_public` of the key pair's Ed25519 public key
 
 ### Requirement: Boxes: crypto_box, sealed boxes and secretbox
-The library SHALL offer `box` (X25519, XSalsa20-Poly1305) and `box_xchacha20poly1305`, made from a secret key and a peer's public key so that the shared key is computed once (libsodium's `beforenm`), with `seal` and `open` in place and the 16-byte tag apart; `sealed_box::seal(recipient_public_key, data, out)` and `sealed_box_keypair::open`; and `secretbox` and `secretbox_xchacha20poly1305`, keyed objects over 32-byte keys with 24-byte nonces. A failed `open` MUST zero `data`, as the genesis's AEADs do.
+The library SHALL offer `hybrid::box` (X25519, XSalsa20-Poly1305) and `hybrid::box_xchacha20poly1305`, made from a secret key and a peer's public key so that the shared key is computed once (libsodium's `beforenm`), with `seal` and `open` in place and the 16-byte tag apart; `hybrid::sealed_box::seal(recipient_public_key, data, out)` and `sealed_box_keypair::open`; and `ciphers::secretbox` and `ciphers::secretbox_xchacha20poly1305`, keyed objects over 32-byte keys with 24-byte nonces. A failed `open` MUST zero `data`, as the genesis's AEADs do.
 
 #### Scenario: A sealed box opened by its recipient
 - **WHEN** a message is sealed to a recipient's public key and opened with the recipient's key pair
 - **THEN** it opens, and a sealed box changed in one byte returns `authentication_failed` with `data` zeroed
 
 ### Requirement: Key exchange: crypto_kx
-`kx_keypair<Backend>` SHALL compute `client_session_keys(server_public_key)` and `server_session_keys(client_public_key)`, each returning a receive key and a transmit key as `secret<32>`, through libsodium's `crypto_kx`, and return `weak_public_key` where libsodium refuses the peer's key.
+`curves::x25519::kx_keypair<Backend>` SHALL compute `client_session_keys(server_public_key)` and `server_session_keys(client_public_key)`, each returning a receive key and a transmit key as `secret<32>`, through libsodium's `crypto_kx`, and return `weak_public_key` where libsodium refuses the peer's key.
 
 #### Scenario: Client and server agree
 - **WHEN** a client and a server compute their session keys from each other's public keys
 - **THEN** the client's transmit key is the server's receive key and the reverse
 
 ### Requirement: libsodium completed: secretstream, AEGIS, AES256-GCM, MACs and stream ciphers
-Increment 5 SHALL add `secretstream` (XChaCha20-Poly1305 secretstream: a header, `push` and `pull` with the tags message, push, rekey and final, each chunk verified before its plaintext is released, `invalid_state` after the final tag), `aegis128l`, `aegis256`, `aes256_gcm_sodium` (run-time available, native only), `auth` and `poly1305` MACs, the stream ciphers `chacha20`, `chacha20_original`, `xchacha20`, `salsa20`, `xsalsa20`, `salsa20_12` and `salsa20_8`, and the cores `hchacha20` and `hsalsa20`, all on libsodium.
+Increment 5 SHALL add `ciphers::secretstream` (XChaCha20-Poly1305 secretstream: a header, `push` and `pull` with the tags message, push, rekey and final, each chunk verified before its plaintext is released, `invalid_state` after the final tag), `ciphers::aegis128l`, `ciphers::aegis256`, `ciphers::aes256_gcm_sodium` (run-time available, native only), `ciphers::auth` and `ciphers::poly1305` MACs, and in `ciphers` the stream ciphers `chacha20`, `chacha20_original`, `xchacha20`, `salsa20`, `xsalsa20`, `salsa20_12` and `salsa20_8`, and the cores `hchacha20` and `hsalsa20`, all on libsodium.
 
 #### Scenario: A secretstream chunk tampered with
 - **WHEN** the second of three chunks is changed in one byte before `pull`
 - **THEN** `pull` returns `authentication_failed`, its output is zeroed, and the stream answers `invalid_state` afterwards
 
 ### Requirement: libsodium completed: groups, ML-KEM-768 and X-Wing
-Increment 5 SHALL add `ristretto255::point` and `ristretto255::scalar`, `edwards25519::point` and `edwards25519::scalar` (validation, addition, subtraction, `from_hash`, `from_uniform` for edwards25519, scalar multiplication with and without the base, scalar invert, negate, complement, add, sub, mul, reduce, random), returning `invalid_point` and `invalid_scalar` where libsodium refuses; and `ml_kem_768` and `x_wing` key pairs from a seed or `generate()`, `encapsulate` returning a ciphertext and a `secret<32>`, a deterministic `encapsulate` for tests, and `decapsulate`, which returns `invalid_ciphertext_size` for a ciphertext of the wrong size.
+Increment 5 SHALL add `curves::ristretto255::point` and `curves::ristretto255::scalar`, `curves::edwards25519::point` and `curves::edwards25519::scalar` (validation, addition, subtraction, `from_hash`, `from_uniform` for edwards25519, scalar multiplication with and without the base, scalar invert, negate, complement, add, sub, mul, reduce, random), returning `invalid_point` and `invalid_scalar` where libsodium refuses; and `post_quantum::ml_kem_768` and `post_quantum::x_wing` key pairs from a seed or `generate()`, `encapsulate` returning a ciphertext and a `secret<32>`, a deterministic `encapsulate` for tests, and `decapsulate`, which returns `invalid_ciphertext_size` for a ciphertext of the wrong size.
 
 #### Scenario: X-Wing round trip
 - **WHEN** a key pair from a seed encapsulates to its public key and decapsulates the ciphertext
@@ -217,17 +217,17 @@ Increment 2 SHALL add ElligatorSwift (`ellswift_encode`, `ellswift_create`, `ell
 - **THEN** the outputs and the found outputs are the vectors'
 
 ### Requirement: Backend BearSSL: the remaining parts
-Increment 3 SHALL add on BearSSL, on every target: `ecdsa<p256>`, `ecdsa<p384>` and `ecdsa<p521>` (RFC 6979 nonces, raw and DER signatures, over a digest the caller gives), `ecdh<p256>`, `ecdh<p384>` and `ecdh<p521>`, `x25519`, `chacha20_poly1305`, `ctr<aesN>`, `cbc<aesN>` with PKCS #7 padding (`invalid_padding` for every cause), `ccm<aesN, TagSize>`, `eax<aesN>`, and RSA (`rsa_pkcs1<Hash>` and `rsa_pss<Hash>` signatures, `rsa_oaep<Hash>` encryption, key generation from `random_device`). BearSSL's DRBGs MUST NOT be exposed.
+Increment 3 SHALL add on BearSSL, on every target: `curves::p256::ecdsa`, `curves::p384::ecdsa` and `curves::p521::ecdsa` (RFC 6979 nonces, raw and DER signatures, over a digest the caller gives), `curves::p256::ecdh`, `curves::p384::ecdh` and `curves::p521::ecdh`, `curves::x25519`, `ciphers::chacha20_poly1305`, `ciphers::ctr<ciphers::aesN>`, `ciphers::cbc<ciphers::aesN>` with PKCS #7 padding (`invalid_padding` for every cause), `ciphers::ccm<ciphers::aesN, TagSize>`, `ciphers::eax<ciphers::aesN>`, and RSA (`rsa::pkcs1<Hash>` and `rsa::pss<Hash>` signatures, `rsa::oaep<Hash>` encryption, key generation from `random_device`). BearSSL's DRBGs MUST NOT be exposed.
 
 #### Scenario: A passkey's ES256 signature
-- **WHEN** `verify` of `ecdsa<p256, backends::bearssl>` is given a WebAuthn assertion's DER signature, the digest and the credential's public key
+- **WHEN** `verify` of `curves::p256::ecdsa<backends::bearssl>` is given a WebAuthn assertion's DER signature, the digest and the credential's public key
 - **THEN** it accepts it, and refuses it with one bit of the digest changed
 
 ### Requirement: Backend browser: WebCrypto on Emscripten
 `backends::browser` SHALL exist on Emscripten only, its header stopping another target with the fix; its keys MUST be WebCrypto `CryptoKey` objects held in a JavaScript table and named in C++ by a handle, freed when their last owner is destroyed and kept alive while an operation uses them. It MUST offer AES-GCM, AES-CBC, AES-CTR, AES-KW, ECDSA and ECDH on P-256, P-384 and P-521, RSA-PSS, RSA-OAEP and RSASSA-PKCS1-v1_5, and Ed25519 and X25519 as run-time-available algorithms; it MUST have no synchronous member, and calling one MUST fail to compile with "backends::browser is asynchronous: call async_<name>".
 
 #### Scenario: A synchronous call on the browser
-- **WHEN** a program calls `seal` on `gcm<aes256<backends::browser>>`
+- **WHEN** a program calls `seal` on `ciphers::gcm<aes256<backends::browser>>`
 - **THEN** compilation stops with `backends::browser is asynchronous: call async_seal`
 
 ### Requirement: Asynchronous family: completion tokens, for what the browser offers
@@ -242,18 +242,18 @@ Increment 3 SHALL add on BearSSL, on every target: `ecdsa<p256>`, `ecdsa<p384>` 
 - **THEN** the flag is unset when `async_seal` returns, and set after the executor runs
 
 #### Scenario: No asynchronous variant of a cheap algorithm the browser lacks
-- **WHEN** a program calls `async_seal` on `xchacha20_poly1305`
-- **THEN** it does not compile, and `xchacha20_poly1305::seal` does
+- **WHEN** a program calls `async_seal` on `ciphers::xchacha20_poly1305`
+- **THEN** it does not compile, and `ciphers::xchacha20_poly1305::seal` does
 
 ### Requirement: Heavy operations run on another thread, only in a build with threads
 `config.hpp` SHALL define `WEBCPP_CRYPTO_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined and on Emscripten when `__EMSCRIPTEN_PTHREADS__` is defined, never on wasip2 or wasip3, unless `WEBCPP_CRYPTO_NO_THREADS` is defined, as webcpp::hash's `WEBCPP_HASH_HAS_THREADS` does. An operation is heavy when the capability table's generated `heavy` column marks it: the median of its fixed operation in `meta/measurements.json` exceeds 1 ms natively on the reference runner (ubuntu-24.04, x86-64) or under node on that runner, an order kept unless a new median crosses 1 ms by more than 10 %. Operations whose cost the caller's data size sets (AEADs, boxes, secretstream, stream ciphers, MACs) MUST NOT be marked heavy. With threads, every heavy operation MUST have an `async_` variant that takes an executor first (natively a `webcpp::asio::thread_pool`'s, on Emscripten a pool whose threads are Web Workers), runs the work there, and completes on the handler's associated executor; without threads, calling it MUST fail to compile with "webcpp::crypto: <name> runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call <synchronous name>.", except on `backends::browser`, which needs no thread. Cheap operations MUST stay synchronous only, unless the browser offers them.
 
 #### Scenario: RSA key generation off the caller's thread
-- **WHEN** a native test built with `threading=multi` calls `async_generate` for `rsa_pss<sha2_256>` at 3072 bits on BearSSL with a `thread_pool`'s executor and a callback bound to its own `io_context`, and runs a 10 ms timer on that `io_context`
+- **WHEN** a native test built with `threading=multi` calls `async_generate` for `rsa::pss<sha2_256>` at 3072 bits on BearSSL with a `thread_pool`'s executor and a callback bound to its own `io_context`, and runs a 10 ms timer on that `io_context`
 - **THEN** the key is generated on a pool thread, the timer fires before it completes, and the key signs and verifies
 
 #### Scenario: Without threads
-- **WHEN** a program built with b2's default `threading=single` calls `async_aggregate_verify` of `bls12_381::min_pk`
+- **WHEN** a program built with b2's default `threading=single` calls `async_aggregate_verify` of `curves::bls12_381::min_pk`
 - **THEN** compilation fails with "webcpp::crypto: async_aggregate_verify runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call aggregate_verify."
 
 #### Scenario: A Web Worker on Emscripten
@@ -268,7 +268,7 @@ A rejected WebCrypto promise SHALL map to the library's errors: `OperationError`
 - **THEN** it completes with `not_supported`
 
 ### Requirement: Backend blst: BLS12-381
-Increment 6 SHALL add `backends::blst` over blst v0.3.17 (`54e6e55674722fc2797ebb4bbb71b26d881eb4b8`), the submodule `third_party/libs/blst`, built as upstream's two translation units (`src/server.c`, `build/assembly.S`) with the assembly and `__BLST_PORTABLE__` natively on Linux and macOS and `__BLST_NO_ASM__` on MSVC and WebAssembly, the configuration in the canary's name. It MUST offer `bls12_381::min_pk` and `bls12_381::min_sig`, each with `secret_key::make(ikm)` (the IETF BLS draft's `KeyGen`), `sign`, `verify`, `aggregate`, `aggregate_verify`, `fast_aggregate_verify`, proofs of possession, and `hash_to_g1` and `hash_to_g2` with a caller's domain separation tag; pairing, field arithmetic and blst's EIP-2333 key tree MUST NOT be exposed.
+Increment 6 SHALL add `backends::blst` over blst v0.3.17 (`54e6e55674722fc2797ebb4bbb71b26d881eb4b8`), the submodule `third_party/libs/blst`, built as upstream's two translation units (`src/server.c`, `build/assembly.S`) with the assembly and `__BLST_PORTABLE__` natively on Linux and macOS and `__BLST_NO_ASM__` on MSVC and WebAssembly, the configuration in the canary's name. It MUST offer `curves::bls12_381::min_pk` and `curves::bls12_381::min_sig`, each with `secret_key::make(ikm)` (the IETF BLS draft's `KeyGen`), `sign`, `verify`, `aggregate`, `aggregate_verify`, `fast_aggregate_verify`, proofs of possession, and `hash_to_g1` and `hash_to_g2` with a caller's domain separation tag; pairing, field arithmetic and blst's EIP-2333 key tree MUST NOT be exposed.
 
 #### Scenario: The consensus vectors
 - **WHEN** the BLS vectors of Ethereum's consensus specifications run on `min_pk`
@@ -278,7 +278,7 @@ Increment 6 SHALL add `backends::blst` over blst v0.3.17 (`54e6e55674722fc2797eb
 Increment 7 SHALL make Botan the submodule `third_party/libs/botan` at 3.14.1 (`01af88c039fcfaedc418b1af4d6d3a139674e591`), configured by upstream's `configure.py` per target into the b2 variant directory with the modules webcpp exposes, and compiled by b2 one object per source from the list it writes, never patched, with crypto's canary and three layers. Botan MUST be available natively and on Emscripten; on wasip2 and wasip3 the table's cells MUST be what increment 7's spike finds (present where Botan's build passes its own tests under wasmtime). Its header MUST declare nothing without exceptions (the genesis's rule stands), every Botan call MUST sit in one `try` at the boundary, and Botan's randomness MUST come from `detail::botan_random`, which draws from `random_device`.
 
 #### Scenario: Botan on Emscripten
-- **WHEN** an Emscripten program names `/third_party//botan` and signs with `ed448`
+- **WHEN** an Emscripten program names `/third_party//botan` and signs with `curves::ed448`
 - **THEN** it builds and the signature verifies against RFC 8032's Ed448 vector
 
 #### Scenario: Botan's own RNGs
@@ -296,7 +296,7 @@ Increment 8 SHALL add on OpenSSL, through `/webcpp/crypto//openssl` on native, w
 Hash-to-curve per RFC 9380 SHALL come from blst (BLS12-381 G1 and G2) and Botan (the P-curves); ristretto255's and edwards25519's maps from a hash (`from_hash`, `from_uniform`) come from libsodium 1.0.22. The full `hash_to_curve` for ristretto255 and edwards25519 MUST join only with a libsodium release that holds `crypto_core_*_from_string`, moving the pin shared with webcpp::hash; webcpp MUST NOT write `expand_message_xmd` itself.
 
 #### Scenario: RFC 9496's one-way map
-- **WHEN** RFC 9496's `from_hash` vectors run on `ristretto255::point::from_hash`
+- **WHEN** RFC 9496's `from_hash` vectors run on `curves::ristretto255::point::from_hash`
 - **THEN** every output encoding is the RFC's
 
 ### Requirement: Tests: vectors and suites per backend
@@ -310,7 +310,7 @@ Every algorithm SHALL be tested on every backend that has it, on every target th
 The genesis's constant-time harness (memcheck's client requests, MemorySanitizer, dudect natively and under wasmtime, the planted leak that must fail) SHALL be built in increment 1 over libsodium's signing, agreement, AEAD and box code and webcpp's guards, and each later increment MUST extend it to its backend's secret-dependent paths before its last green.
 
 #### Scenario: Ed25519 signing under memcheck
-- **WHEN** the seed and the message are marked undefined and `ed25519_keypair::sign` runs under memcheck
+- **WHEN** the seed and the message are marked undefined and `curves::ed25519::keypair::sign` runs under memcheck
 - **THEN** no conditional jump depends on them, and the planted branch on the seed fails the same test
 
 ### Requirement: Documentation: a page per algorithm
@@ -346,21 +346,21 @@ webcpp::crypto SHALL hold cryptographic primitives only: algorithms with a speci
 - **THEN** webcpp::crypto does not expose it, and blst's C API stays reachable for webcpp::ethereum
 
 ### Requirement: KZG commitments over c-kzg-4844
-Increment 9 SHALL add `backends::ckzg` over c-kzg-4844 v2.1.8 (`e125905e5e01186e6ccb7a0ced4845bf7eddbcfe`), the submodule `third_party/libs/c-kzg-4844`, built file by file against the library's blst submodule, never c-kzg's own. It MUST offer `kzg::settings::make` from a trusted setup the caller gives, `blob_to_commitment`, `compute_proof`, `verify_proof`, `compute_blob_proof`, `verify_blob_proof`, `verify_blob_proof_batch` and c-kzg's cell functions, with c-kzg's own vectors; the trusted setup MUST NOT be embedded, and versioned hashes MUST NOT be offered.
+Increment 9 SHALL add `backends::ckzg` over c-kzg-4844 v2.1.8 (`e125905e5e01186e6ccb7a0ced4845bf7eddbcfe`), the submodule `third_party/libs/c-kzg-4844`, built file by file against the library's blst submodule, never c-kzg's own. It MUST offer `commitments::kzg::settings::make` from a trusted setup the caller gives, `blob_to_commitment`, `compute_proof`, `verify_proof`, `compute_blob_proof`, `verify_blob_proof`, `verify_blob_proof_batch` and c-kzg's cell functions, with c-kzg's own vectors; the trusted setup MUST NOT be embedded, and versioned hashes MUST NOT be offered.
 
 #### Scenario: c-kzg's vectors
 - **WHEN** c-kzg-4844's reference tests run through `kzg` with the ceremony's setup loaded as test data
 - **THEN** every commitment, proof and verification gives the expected result
 
 ### Requirement: The BN254 pairing over mcl
-Increment 10 SHALL add `backends::mcl` over mcl v4.43 (`50e4c6f2826de6b041f857caf9f253cc736ea926`), the submodule `third_party/libs/mcl`, built without its JIT (`MCL_DONT_USE_XBYAK`), offering `bn254::g1` and `bn254::g2` (decoding with subgroup checks, addition, scalar multiplication) and `bn254::pairing_check` for public data only, its capability cells marked not constant time.
+Increment 10 SHALL add `backends::mcl` over mcl v4.43 (`50e4c6f2826de6b041f857caf9f253cc736ea926`), the submodule `third_party/libs/mcl`, built without its JIT (`MCL_DONT_USE_XBYAK`), offering `curves::bn254::g1` and `curves::bn254::g2` (decoding with subgroup checks, addition, scalar multiplication) and `curves::bn254::pairing_check` for public data only, its capability cells marked not constant time.
 
 #### Scenario: A pairing check
 - **WHEN** `pairing_check` is given pairs whose product of pairings is one, and then the same with one point negated
 - **THEN** the first succeeds and the second returns `invalid_signature`
 
 ### Requirement: Shamir secret sharing over sss
-Increment 11 SHALL add `backends::sss` over dsprenkels/sss at `9f2a10b1c0d391bed485c4c7e93788ce37c360f1`, the submodule `third_party/libs/sss` without its `randombytes` submodule, offering `shamir::split_key`, `shamir::combine_key`, `shamir::split` and `shamir::combine`, refusing `k < 2`, `k > n` and `n > 255` before any call, and feeding sss's `randombytes` only bytes the wrapper drew from `random_device`, reporting `entropy_unavailable` before sss runs.
+Increment 11 SHALL add `backends::sss` over dsprenkels/sss at `9f2a10b1c0d391bed485c4c7e93788ce37c360f1`, the submodule `third_party/libs/sss` without its `randombytes` submodule, offering `secret_sharing::shamir::split_key`, `secret_sharing::shamir::combine_key`, `secret_sharing::shamir::split` and `secret_sharing::shamir::combine`, refusing `k < 2`, `k > n` and `n > 255` before any call, and feeding sss's `randombytes` only bytes the wrapper drew from `random_device`, reporting `entropy_unavailable` before sss runs.
 
 #### Scenario: Any k shares recover the key
 - **WHEN** a 32-byte key is split into 5 shares with threshold 3 and every 3-subset is combined
@@ -371,7 +371,7 @@ Increment 11 SHALL add `backends::sss` over dsprenkels/sss at `9f2a10b1c0d391bed
 - **THEN** it returns `entropy_unavailable` and sss is not called
 
 ### Requirement: HPKE over OpenSSL and Botan
-Increment 12 SHALL add `hpke<Kem, Kdf, Aead, Backend>` (RFC 9180: the base, PSK, auth and auth-PSK modes, a context with `seal`, `open` and `export` whose sequence number is guarded against overflow, and the single-shot calls) on OpenSSL (`OSSL_HPKE_*`, native, wasip2, wasip3) and on Botan (its `hpke` module, natively, on Emscripten, and on WASI as increment 7 finds), over the suites both have, and MUST NOT compose HPKE from another library's parts.
+Increment 12 SHALL add `hybrid::hpke<Kem, Kdf, Aead, Backend>` (RFC 9180: the base, PSK, auth and auth-PSK modes, a context with `seal`, `open` and `export` whose sequence number is guarded against overflow, and the single-shot calls) on OpenSSL (`OSSL_HPKE_*`, native, wasip2, wasip3) and on Botan (its `hpke` module, natively, on Emscripten, and on WASI as increment 7 finds), over the suites both have, and MUST NOT compose HPKE from another library's parts.
 
 #### Scenario: RFC 9180's vectors on two backends
 - **WHEN** RFC 9180's test vectors for DHKEM(X25519, HKDF-SHA256) with ChaCha20-Poly1305 run on OpenSSL and on Botan natively
@@ -391,21 +391,25 @@ The foundation SHALL proceed in twelve increments ordered by value: (1) libsodiu
 ## MODIFIED Requirements
 
 ### Requirement: Library: header-only target and namespace
-The library SHALL be header-only C++20, in namespace `webcpp::crypto` (with `webcpp::crypto::backends`, `webcpp::crypto::profiles`, `webcpp::crypto::secp256k1`, `webcpp::crypto::ristretto255`, `webcpp::crypto::edwards25519` and `webcpp::crypto::bls12_381`), with public headers under `<webcpp/crypto/...>`, one per responsibility, internals in `webcpp::crypto::detail`, macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). A program MUST reach it through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, `/webcpp/hash//hash`, and on Windows `bcrypt`.
+The library SHALL be header-only C++20, in namespace `webcpp::crypto`, organised in groups whose headers mirror them as `<webcpp/crypto/<group>/<name>.hpp>`: `ciphers` (block ciphers and their modes, AEADs, stream ciphers, MACs, `secretbox`, `secretstream`, `ipcrypt`), `curves` (one namespace per curve: `secp256k1` with its modules, `ed25519`, `x25519`, `ed448`, `x448`, `p256`, `p384`, `p521`, `brainpool`, `ristretto255`, `edwards25519`, `bls12_381`, `bn254`), `post_quantum` (`ml_kem`, `ml_dsa`, `slh_dsa`, `x_wing`), `rsa`, `hybrid` (`box`, `sealed_box`, `hpke`), `commitments::kzg` and `secret_sharing::shamir`; the root holds `error`, `random_device`, `equal`, the memory utilities, `secret<N>`, the configuration and profiles (`profiles`, `families`, `tags`, `default_backend_t`, `supports_v`) and the asynchronous family; `webcpp::crypto::backends` holds one tag per backend, outside the groups, with `<webcpp/crypto/backends/<name>.hpp>`. Internals MUST be in `webcpp::crypto::detail` alone (no group has a `detail` of its own), macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). Version 0.1's names are renamed to this layout before it closes, and no alias of the old names exists. A program MUST reach the library through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, `/webcpp/hash//hash`, and on Windows `bcrypt`.
 
 #### Scenario: A program that only draws random bytes links no backend
 - **WHEN** a Jamfile reads `exe app : app.cpp /webcpp/crypto//crypto ;` and `app.cpp` includes `<webcpp/crypto/random_device.hpp>` and `<webcpp/crypto/equal.hpp>`
 - **THEN** it compiles and links without any library of `/third_party` being named or built
 
+#### Scenario: A header and its namespace
+- **WHEN** a program includes `<webcpp/crypto/curves/ed25519.hpp>` and `<webcpp/crypto/ciphers/aes256_gcm.hpp>`
+- **THEN** it names `webcpp::crypto::curves::ed25519::keypair` and `webcpp::crypto::ciphers::aes256_gcm`, and `webcpp::crypto::aes256_gcm` does not exist
+
 ### Requirement: Library: the public headers
-The library SHALL provide the genesis's headers (`config.hpp`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `aes.hpp`, `gcm.hpp`, `chacha20_poly1305.hpp`, `aes256_gcm.hpp`, `secp256k1.hpp`, `backends/<name>.hpp`) and, as their increments add them, `supports.hpp`, `secret.hpp`, `aead.hpp`, `ed25519.hpp`, `ed448.hpp`, `x25519.hpp`, `x448.hpp`, `ecdsa.hpp`, `ecdh.hpp`, `rsa.hpp`, `ml_kem.hpp`, `ml_dsa.hpp`, `slh_dsa.hpp`, `x_wing.hpp`, `box.hpp`, `secretbox.hpp`, `secretstream.hpp`, `kx.hpp`, `ctr.hpp`, `cbc.hpp`, `stream.hpp`, `key_wrap.hpp`, `block.hpp`, `mac.hpp`, `ristretto255.hpp`, `edwards25519.hpp`, `bls12_381.hpp`, `random.hpp`, `memory.hpp`, `padding.hpp`, `encoding.hpp`, `ipcrypt.hpp`, `guarded_memory.hpp`, `async.hpp` and `secp256k1/*.hpp`, and the convenience header `<webcpp/crypto.hpp>`. Every public header MUST include `<webcpp/crypto/config.hpp>` first, and only the headers that call a C library need a backend linked.
+The library SHALL provide version 0.1's headers in their groups (`config.hpp`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `ciphers/aes.hpp`, `ciphers/gcm.hpp`, `ciphers/aes256_gcm.hpp`, `curves/secp256k1.hpp`, `backends/<name>.hpp`) and, as their increments add them, `ciphers/chacha20_poly1305.hpp`, `ciphers/aegis.hpp`, `ciphers/ccm.hpp`, `ciphers/eax.hpp`, `ciphers/ocb.hpp`, `ciphers/siv.hpp`, `ciphers/gcm_siv.hpp`, `curves/brainpool.hpp`, `curves/bn254.hpp`, `hybrid/sealed_box.hpp`, `hybrid/hpke.hpp`, `commitments/kzg.hpp`, `secret_sharing/shamir.hpp`, `supports.hpp`, `secret.hpp`, `ciphers/aead.hpp`, `curves/ed25519.hpp`, `curves/ed448.hpp`, `curves/x25519.hpp`, `curves/x448.hpp`, `curves/p256.hpp`, `curves/p384.hpp`, `curves/p521.hpp`, `rsa/keypair.hpp`, `rsa/pss.hpp`, `rsa/pkcs1.hpp`, `rsa/oaep.hpp`, `post_quantum/ml_kem.hpp`, `post_quantum/ml_dsa.hpp`, `post_quantum/slh_dsa.hpp`, `post_quantum/x_wing.hpp`, `hybrid/box.hpp`, `ciphers/secretbox.hpp`, `ciphers/secretstream.hpp`, `curves/x25519/kx.hpp`, `ciphers/ctr.hpp`, `ciphers/cbc.hpp`, `ciphers/stream.hpp`, `ciphers/keywrap.hpp`, `ciphers/block.hpp`, `ciphers/mac.hpp`, `curves/ristretto255.hpp`, `curves/edwards25519.hpp`, `curves/bls12_381.hpp`, `random.hpp`, `memory.hpp`, `padding.hpp`, `encoding.hpp`, `ciphers/ipcrypt.hpp`, `guarded_memory.hpp`, `async.hpp` and `curves/secp256k1/*.hpp`, and the convenience header `<webcpp/crypto.hpp>`. Every public header MUST include `<webcpp/crypto/config.hpp>` first, and only the headers that call a C library need a backend linked.
 
 #### Scenario: A program that only signs names only libsecp256k1
-- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//secp256k1 ;` and `sign.cpp` includes `<webcpp/crypto/secp256k1.hpp>`
+- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//secp256k1 ;` and `sign.cpp` includes `<webcpp/crypto/curves/secp256k1.hpp>`
 - **THEN** it builds and prints `schnorr ok`, with no encryption backend linked
 
 #### Scenario: A program that only signs with Ed25519 names only libsodium
-- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//sodium ;` and `sign.cpp` includes `<webcpp/crypto/ed25519.hpp>`
+- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//sodium ;` and `sign.cpp` includes `<webcpp/crypto/curves/ed25519.hpp>`
 - **THEN** it builds and prints `ed25519 ok backend=sodium`
 
 ### Requirement: Library: the convenience header
@@ -426,7 +430,7 @@ The library SHALL NOT offer a hash, an XOF, HMAC as a hash algorithm, a key deri
 Every operation of the synchronous API SHALL return before it yields, and the synchronous API MUST NOT call WebCrypto or offer a promise, a callback or an awaitable: with C code on every target nothing waits. A parallel asynchronous family, `<webcpp/crypto/async.hpp>`, exists beside it for two purposes only: the algorithms WebCrypto offers (the only interface of `backends::browser`; on another backend the synchronous call, posted) and, in a build with threads, the heavy operations, which run on another thread.
 
 #### Scenario: Browser and native run the same call
-- **WHEN** `aes256_gcm::seal` is called on Emscripten and natively
+- **WHEN** `ciphers::aes256_gcm::seal` is called on Emscripten and natively
 - **THEN** it returns its `result` directly in both builds, from C code
 
 #### Scenario: The browser only through the asynchronous family
@@ -437,7 +441,7 @@ Every operation of the synchronous API SHALL return before it yields, and the sy
 The backends SHALL be `backends::bearssl`, `backends::openssl`, `backends::ctaes`, `backends::secp256k1`, `backends::botan`, `backends::sodium`, `backends::blst` and `backends::browser`, each a tag type with `static constexpr std::string_view name`, exporting what `meta/capabilities.json` lists for it, on the targets it lists: BearSSL, ctaes, libsecp256k1, libsodium and blst on all four targets; OpenSSL on native, wasip2 and wasip3; Botan natively, on Emscripten, and on wasip2 and wasip3 as increment 7's spike finds; the browser on Emscripten, asynchronously. The documentation MUST give the generated table and, per backend, its Jamfile line, its headers and functions and every message with its fix, and each backend's own C API MUST stay reachable (`<bearssl.h>`, `<openssl/*.h>`, `<ctaes.h>`, `<secp256k1*.h>`, `<botan/*.h>`, `<sodium.h>`, `<blst.h>`).
 
 #### Scenario: The backend names
-- **WHEN** an example prints `aes256_gcm::backend_type::name`
+- **WHEN** an example prints `ciphers::aes256_gcm::backend_type::name`
 - **THEN** it prints `bearssl` on WebAssembly and `openssl` natively when OpenSSL is linked, as long as the measurement table ranks them so
 
 ### Requirement: Default backend: per target
@@ -445,7 +449,7 @@ The backends SHALL be `backends::bearssl`, `backends::openssl`, `backends::ctaes
 
 #### Scenario: Both linked, BearSSL chosen
 - **WHEN** a Jamfile links OpenSSL and BearSSL with `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL`
-- **THEN** `aes256_gcm::backend_type` is `backends::bearssl`
+- **THEN** `ciphers::aes256_gcm::backend_type` is `backends::bearssl`
 
 #### Scenario: Measured speed behind the rule
 - **WHEN** the throughput of AES-GCM is compared on the CI's runners
@@ -484,7 +488,7 @@ BearSSL, ctaes, libsodium, blst and libsecp256k1 (but its context) SHALL allocat
 In node and in Chrome, WebCrypto SHALL run every algorithm it offers against every synchronous backend that has it, on the vectors and on random inputs: byte for byte where the algorithm is deterministic (AES-GCM with keys of 16 and 32 bytes and trystero's 16-byte IVs, AES-CBC, AES-CTR, AES-KW, ECDH, X25519, Ed25519, RSA-OAEP decryption, RSASSA-PKCS1-v1_5), and by each side verifying the other's output where it is not (ECDSA, RSA-PSS, RSA-OAEP encryption). The lane `browser` runs on Emscripten, and an Emscripten audio worklet gives `fill` `errc::not_supported`.
 
 #### Scenario: Random messages under 16-byte IVs
-- **WHEN** random messages are sealed by `aes256_gcm` and by node's WebCrypto under the same key and IV
+- **WHEN** random messages are sealed by `ciphers::aes256_gcm` and by node's WebCrypto under the same key and IV
 - **THEN** ciphertext and tag are identical
 
 #### Scenario: ECDSA verified both ways
@@ -514,7 +518,7 @@ The genesis's work SHALL proceed as version 0.1 (its increment 1 without its def
 
 #### Scenario: ChaCha20-Poly1305 before BearSSL's engine
 - **WHEN** the foundation's increment 1 lands
-- **THEN** `chacha20_poly1305` exists on libsodium, and BearSSL's engine joins it in the foundation's increment 3
+- **THEN** `ciphers::chacha20_poly1305` exists on libsodium, and BearSSL's engine joins it in the foundation's increment 3
 
 ## REMOVED Requirements
 

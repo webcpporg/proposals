@@ -11,7 +11,7 @@ created: 2026-11-14
 
 **Goal of increment 1 (version 0.2 with increment 2):** libsodium as webcpp::crypto's backend
 `backends::sodium` (Ed25519, Ed25519ph, X25519, the Ed25519 to X25519 conversion, the three
-ChaCha20-Poly1305 AEADs, `box`, sealed boxes, `secretbox` in both forms, `kx`), the capability
+ChaCha20-Poly1305 AEADs, `hybrid::box`, sealed boxes, `ciphers::secretbox` in both forms, `kx`), the capability
 table and its generated refusals, the profiles and per-family overrides, the measurement table
 behind the defaults, the threads detection of the heavy variants, the constant-time lane for
 the new code, and the documentation's new form. The design is `../design.md` (D1 to D23); the
@@ -75,7 +75,7 @@ additions:
 | --- | --- |
 | `/third_party//sodium` | webcpp::hash's target; this plan adds `libs/crypto/src/canary_sodium.c` and `WEBCPP_CRYPTO_HAS_SODIUM=1` to its usage requirements |
 | `backends::sodium` | the libsodium backend, `backends/sodium.hpp` |
-| `families::<name>` | the family tags of the capability table (`ed25519`, `x25519`, `chacha20_poly1305`, `gcm`, ...) |
+| `families::<name>` | the family tags of the capability table (`ed25519`, `x25519`, `ciphers::chacha20_poly1305`, `gcm`, ...) |
 | `default_backend_t<Family>` | the default backend of a family (`detail/select.hpp`) |
 | `WEBCPP_CRYPTO_PROFILE_{FASTEST,SMALLEST,PORTABLE}`, `WEBCPP_CRYPTO_PROFILE_BACKEND_<NAME>` | crypto's profile, at most one |
 | `WEBCPP_PROFILE_{FASTEST,SMALLEST,PORTABLE}` | the webcpp-wide umbrella, read by crypto and hash, at most one |
@@ -83,7 +83,8 @@ additions:
 | `profiles::{automatic,fastest,smallest,portable,<backend>}`, `profile_name` | the resolved profile |
 | `supports_v<Algorithm, Backend>` | the capability table on the current target (`supports.hpp`) |
 | `secret<N>` | a self-wiping array (`secret.hpp`) |
-| `aead<Family, Backend>` | the one-shot AEAD template (`aead.hpp`) |
+| `ciphers::aead<Family, Backend>` | the one-shot AEAD template (`ciphers/aead.hpp`) |
+| groups `ciphers`, `curves::<curve>`, `post_quantum`, `rsa`, `hybrid`, `commitments::kzg`, `secret_sharing::shamir` | the namespaces, headers `<webcpp/crypto/<group>/<name>.hpp>` (design D29); the root keeps `error`, `random_device`, `equal`, the memory utilities, `secret<N>`, the profiles; `backends` stays outside |
 | `WEBCPP_CRYPTO_HAS_THREADS`, `WEBCPP_CRYPTO_NO_THREADS` | threads detection (D23) |
 | `tools/crypto/capabilities.py`, `tools/crypto/measure.py` | the generators (superproject) |
 | own lanes `sizes`, `throughput`, `constant-time`, `c-suites` | as the genesis named them; `throughput` runs in `runners.yml` |
@@ -102,7 +103,7 @@ additions:
 git -C <superproject> fetch origin
 git -C <superproject> worktree add <worktree> -b crypto/foundation-1 origin/main
 cd <worktree> && git submodule update --init
-ls libs/crypto/include/webcpp/crypto/secp256k1.hpp libs/hash/include/webcpp/hash.hpp third_party/libs/libsodium/src/libsodium/include/sodium.h
+ls libs/crypto/include/webcpp/crypto/curves/secp256k1.hpp libs/hash/include/webcpp/hash.hpp third_party/libs/libsodium/src/libsodium/include/sodium.h
 grep -n 'lib sodium\|alias sodium' third_party/Jamfile
 ln -s <superproject>/.local .local
 ```
@@ -928,14 +929,14 @@ using ranking_t = typename ranking<Family, Order, targets::current>::type;
   (`WEBCPP_PROFILE_FASTEST` and `_SMALLEST`), `override_ed25519_twice`, `profile_gcm_twice`
   (the genesis's define beside `_GCM_BEARSSL`),
   `none_linked_x25519` (the generated lines), each in its own directory.
-- [ ] **Step 6: Run** every lane; `aes256_gcm::backend_type` is unchanged on every lane against
+- [ ] **Step 6: Run** every lane; `ciphers::aes256_gcm::backend_type` is unchanged on every lane against
   version 0.1 (the genesis's scenario "The backend names" passes). Commit
   `crypto: one profile chooses every default, with per-family overrides`.
 
 ## Task 6: Ed25519 and Ed25519ph on libsodium
 
 **Files:**
-- Create: `include/webcpp/crypto/ed25519.hpp`, `test/ed25519_sodium_test.cpp`,
+- Create: `include/webcpp/crypto/curves/ed25519.hpp`, `test/ed25519_sodium_test.cpp`,
   `test/ed25519_wycheproof_sodium_test.cpp`, `test/ed25519ph_sodium_test.cpp`,
   `test/messages/ed25519_on_bearssl/`, `test/messages/ed25519ph_sha256/`.
 - Modify: `include/webcpp/crypto/backends/sodium.hpp` (the engine), `meta/capabilities.json`,
@@ -966,7 +967,7 @@ template <> struct ed25519_engine<tags::ed25519, B> {
   `crypto_sign_ed25519_pk_to_curve25519`. `ed25519_wycheproof_sodium_test.cpp` reads
   `testvectors_v1/ed25519_test.json` and expects every `valid` case accepted and every
   `invalid` case refused (libsodium is strict, so no case is listed as an exception here).
-- [ ] **Step 2: `ed25519.hpp`:**
+- [ ] **Step 2: `curves/ed25519.hpp`:**
 
 ```cpp
 // Copyright (c) 2026 WebCpp.org
@@ -981,8 +982,8 @@ template <> struct ed25519_engine<tags::ed25519, B> {
 
  @see "Ed25519", in the guide.
 */
-#ifndef WEBCPP_CRYPTO_ED25519_HPP
-#define WEBCPP_CRYPTO_ED25519_HPP
+#ifndef WEBCPP_CRYPTO_CURVES_ED25519_HPP
+#define WEBCPP_CRYPTO_CURVES_ED25519_HPP
 
 #include <webcpp/crypto/config.hpp>
 
@@ -999,9 +1000,7 @@ template <> struct ed25519_engine<tags::ed25519, B> {
 #include <span>
 #include <utility>
 
-namespace webcpp::crypto {
-
-namespace detail {
+namespace webcpp::crypto::detail {
 
 /** What an Ed25519 key pair stores on a backend; never refuses (the genesis's D3). */
 template <class Name, class Backend>
@@ -1013,7 +1012,9 @@ struct ed25519_engine {
     static_assert(dependent_false<Backend>, WEBCPP_CRYPTO_DETAIL_REFUSAL("this backend", ED25519));
 };
 
-}  // namespace detail
+}  // namespace webcpp::crypto::detail
+
+namespace webcpp::crypto::curves::ed25519 {
 
 /**
  An Ed25519 key pair.
@@ -1021,7 +1022,7 @@ struct ed25519_engine {
  @tparam Backend The backend; by default the family's (`default_backend_t<families::ed25519>`).
 */
 template <class Backend = default_backend_t<families::ed25519>>
-class ed25519_keypair {
+class basic_keypair {
     using state_type = detail::ed25519_state<tags::ed25519, Backend>;
     using engine = detail::ed25519_engine<tags::ed25519, Backend>;
 
@@ -1045,11 +1046,11 @@ public:
      @param seed 32 bytes.
      @return The key pair; `invalid_key_size`; `backend_failure`.
     */
-    static boost::system::result<ed25519_keypair> make(std::span<std::uint8_t const> seed) noexcept {
+    static boost::system::result<basic_keypair> make(std::span<std::uint8_t const> seed) noexcept {
         if (seed.size() != seed_size) {
             return error::invalid_key_size;
         }
-        ed25519_keypair made;
+        basic_keypair made;
         auto const keyed = engine::make(made.state_, seed.template first<seed_size>());
         if (!keyed) {
             return keyed.error();
@@ -1063,7 +1064,7 @@ public:
 
      @return The key pair; `entropy_unavailable`; `backend_failure`.
     */
-    static boost::system::result<ed25519_keypair> generate() noexcept {
+    static boost::system::result<basic_keypair> generate() noexcept {
         secret<seed_size> seed;
         auto const drawn = random_device().fill(seed.writable());  // lint-world: the seed
         if (!drawn) {
@@ -1073,13 +1074,13 @@ public:
     }
 
     /** Moves the key pair; the source is wiped and empty. */
-    ed25519_keypair(ed25519_keypair&& other) noexcept : keyed_(std::exchange(other.keyed_, false)) {
+    basic_keypair(basic_keypair&& other) noexcept : keyed_(std::exchange(other.keyed_, false)) {
         state_ = other.state_;
         engine::reset(other.state_);
     }
 
     /** Moves over this key pair, which is wiped first. */
-    ed25519_keypair& operator=(ed25519_keypair&& other) noexcept {
+    basic_keypair& operator=(basic_keypair&& other) noexcept {
         if (this != &other) {
             engine::reset(state_);
             keyed_ = std::exchange(other.keyed_, false);
@@ -1090,12 +1091,12 @@ public:
     }
 
     /** Not copyable: a secret key has one owner. */
-    ed25519_keypair(ed25519_keypair const&) = delete;
+    basic_keypair(basic_keypair const&) = delete;
     /** Not copyable: a secret key has one owner. */
-    ed25519_keypair& operator=(ed25519_keypair const&) = delete;
+    basic_keypair& operator=(basic_keypair const&) = delete;
 
     /** Wipes the secret key. */
-    ~ed25519_keypair() { engine::reset(state_); }
+    ~basic_keypair() { engine::reset(state_); }
 
     /**
      The public key.
@@ -1149,14 +1150,14 @@ public:
     }
 
 private:
-    ed25519_keypair() noexcept = default;
+    basic_keypair() noexcept = default;
 
     state_type state_{};
     bool keyed_ = false;
 };
 
 /** The key pair on the default backend. */
-using ed25519 = ed25519_keypair<>;
+using keypair = basic_keypair<>;
 
 /**
  Verifies an Ed25519 signature.
@@ -1168,7 +1169,7 @@ using ed25519 = ed25519_keypair<>;
  @return Nothing; `invalid_public_key` for a key of another size; `invalid_signature`.
 */
 template <class Backend = default_backend_t<families::ed25519>>
-boost::system::result<void> verify_ed25519(std::span<std::uint8_t const> public_key,
+boost::system::result<void> verify(std::span<std::uint8_t const> public_key,
                                            std::span<std::uint8_t const> message,
                                            std::span<std::uint8_t const> signature) noexcept {
     if (public_key.size() != 32) {
@@ -1181,14 +1182,14 @@ boost::system::result<void> verify_ed25519(std::span<std::uint8_t const> public_
         public_key.first<32>(), message, signature.first<64>());
 }
 
-}  // namespace webcpp::crypto
+}  // namespace webcpp::crypto::curves::ed25519
 
-#endif  // WEBCPP_CRYPTO_ED25519_HPP
+#endif  // WEBCPP_CRYPTO_CURVES_ED25519_HPP
 ```
 
 - [ ] **Step 3: The libsodium engine**, in `backends/sodium.hpp` under
-  `#ifdef WEBCPP_CRYPTO_ED25519_HPP` (so that a program that does not include `ed25519.hpp`
-  pays nothing), and `ed25519.hpp` includes the default backend's header as `aes256_gcm.hpp`
+  `#ifdef WEBCPP_CRYPTO_CURVES_ED25519_HPP` (so that a program that does not include `curves/ed25519.hpp`
+  pays nothing), and `curves/ed25519.hpp` includes the default backend's header as `ciphers/aes256_gcm.hpp`
   does:
 
 ```cpp
@@ -1252,11 +1253,11 @@ struct ed25519_engine<tags::ed25519, backends::sodium> {
 }  // namespace webcpp::crypto::detail
 ```
 
-- [ ] **Step 4: Ed25519ph.** `ed25519ph<Hash, Backend>` with `begin()`, `update(span)`,
+- [ ] **Step 4: Ed25519ph.** `curves::ed25519::ph<Hash, Backend>` with `begin()`, `update(span)`,
   `sign(keypair)` and `verify(public_key, signature)`, a state of
   `crypto_sign_ed25519ph_state` wiped on destruction and move; `Hash` other than
   `webcpp::hash::sha2_512` is refused by
-  `static_assert(std::is_same_v<Hash, hash::sha2_512>, "webcpp::crypto: Ed25519ph is defined over SHA-512 (RFC 8032 section 5.1); name ed25519ph<webcpp::hash::sha2_512>.")`.
+  `static_assert(std::is_same_v<Hash, hash::sha2_512>, "webcpp::crypto: Ed25519ph is defined over SHA-512 (RFC 8032 section 5.1); name curves::ed25519::ph<webcpp::hash::sha2_512>.")`.
   Its test runs RFC 8032 section 7.3 with the message in one piece and in two.
 - [ ] **Step 5: The table and the messages.** `capabilities.json` gains `ed25519ph`;
   `ed25519_on_bearssl` checks the generated refusal; `ed25519ph_sha256` the static assertion.
@@ -1264,26 +1265,29 @@ struct ed25519_engine<tags::ed25519, backends::sodium> {
 
 ## Task 7: X25519 and the conversion
 
-**Files:** create `include/webcpp/crypto/x25519.hpp`, `test/x25519_sodium_test.cpp`,
+**Files:** create `include/webcpp/crypto/curves/x25519.hpp`, `test/x25519_sodium_test.cpp`,
 `test/x25519_wycheproof_sodium_test.cpp`; modify `backends/sodium.hpp`,
 `meta/capabilities.json`, `test/Jamfile`.
 
 - [ ] **Step 1: The failing tests.** RFC 7748 section 5.2's two scalar multiplications and
   section 6.1's Alice and Bob; a peer key of order 8 from Wycheproof gives `weak_public_key`;
-  `x25519_secret()` of a key pair, through `x25519::public_key`, equals
-  `ed25519_to_x25519_public` of its public key; a small-order Ed25519 key gives
+  `x25519_secret()` of a key pair, through `curves::x25519::public_key`, equals
+  `curves::ed25519::to_x25519_public` of its public key; a small-order Ed25519 key gives
   `invalid_public_key` in the conversion; Wycheproof's `x25519_test.json`, every case, with the
   cases libsodium refuses for an all-zero result expected as `weak_public_key`.
-- [ ] **Step 2: `x25519.hpp`:**
+- [ ] **Step 2: `curves/x25519.hpp`:**
 
 ```cpp
+namespace webcpp::crypto::curves::x25519 {
+
 /**
- X25519 (RFC 7748) on a backend.
+ X25519 (RFC 7748) on a backend: the type `supports_v` names, whose functions the free
+ functions below call.
 
  @tparam Backend The backend; by default the family's.
 */
 template <class Backend = default_backend_t<families::x25519>>
-struct basic_x25519 {
+struct algorithm {
     /** The family, for `supports_v`. */
     using family_type = families::x25519;
     /** The algorithm, for `supports_v`. */
@@ -1344,17 +1348,35 @@ private:
     using engine = detail::x25519_engine<tags::x25519, Backend>;
 };
 
-/** X25519 on the default backend. */
-using x25519 = basic_x25519<>;
+/** The public key of a secret key: `algorithm<Backend>::public_key`. */
+template <class Backend = default_backend_t<families::x25519>>
+boost::system::result<std::array<std::uint8_t, 32>> public_key(
+    std::span<std::uint8_t const> secret_key) noexcept {
+    return algorithm<Backend>::public_key(secret_key);
+}
+
+/** The shared secret, refused when all zero: `algorithm<Backend>::agree`. */
+template <class Backend = default_backend_t<families::x25519>>
+boost::system::result<secret<32>> agree(std::span<std::uint8_t const> secret_key,
+                                        std::span<std::uint8_t const> peer_public_key) noexcept {
+    return algorithm<Backend>::agree(secret_key, peer_public_key);
+}
+
+}  // namespace webcpp::crypto::curves::x25519
+
+namespace webcpp::crypto::curves::ed25519 {
 
 /**
- The X25519 public key of an Ed25519 public key (the birational map).
+ The X25519 public key of an Ed25519 public key (the birational map), declared in
+ `curves/ed25519.hpp`.
 
  @return 32 bytes; `invalid_public_key` for a key that is not canonical or of small order.
 */
 template <class Backend = default_backend_t<families::ed25519>>
-boost::system::result<std::array<std::uint8_t, 32>> ed25519_to_x25519_public(
+boost::system::result<std::array<std::uint8_t, 32>> to_x25519_public(
     std::span<std::uint8_t const> ed25519_public_key) noexcept;
+
+}  // namespace webcpp::crypto::curves::ed25519
 ```
 
   `is_all_zero` is `detail::is_all_zero`, an OR-reduction over the bytes with no early exit,
@@ -1364,9 +1386,9 @@ boost::system::result<std::array<std::uint8_t, 32>> ed25519_to_x25519_public(
   `crypto_sign_ed25519_pk_to_curve25519` (whose -1 is `invalid_public_key`).
 - [ ] **Step 4: Run** every lane; commit `crypto: X25519 and the Ed25519 to X25519 conversion`.
 
-## Task 8: `aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs
+## Task 8: `ciphers::aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs
 
-**Files:** create `include/webcpp/crypto/aead.hpp`, `chacha20_poly1305.hpp` (the genesis's
+**Files:** create `include/webcpp/crypto/ciphers/aead.hpp`, `ciphers/chacha20_poly1305.hpp` (the genesis's
 planned header, now an alias), `test/support/aead_checks.hpp`,
 `test/chacha_sodium_test.cpp`, `test/chacha_wycheproof_sodium_test.cpp`,
 `test/xchacha_sodium_test.cpp`, `test/chacha_original_sodium_test.cpp`; modify
@@ -1407,15 +1429,15 @@ template <class Family, class Backend> struct aead_engine;  // primary: the gene
   the ciphertext, the tag, the additional data and the IV each giving `authentication_failed`
   with `data` zeroed, a guard's refusal leaving `data` untouched, adjacent and overlapping
   spans (the genesis's Review Focus 2), empty inputs (Review Focus 3), moves of empty objects
-  (Review Focus 6). RFC 8439 section 2.8.2 and appendix A.5 for `chacha20_poly1305`; the
-  XChaCha draft's appendix A.3.1 for `xchacha20_poly1305`; libsodium's own
+  (Review Focus 6). RFC 8439 section 2.8.2 and appendix A.5 for `ciphers::chacha20_poly1305`; the
+  XChaCha draft's appendix A.3.1 for `ciphers::xchacha20_poly1305`; libsodium's own
   `test/default/aead_chacha20poly1305.exp` cases for the original; Wycheproof's
   `chacha20_poly1305_test.json` and `xchacha20_poly1305_test.json`.
-- [ ] **Step 2: `aead.hpp`**: the genesis's `chacha20_poly1305` class body (its Task 35),
+- [ ] **Step 2: `ciphers/aead.hpp`**: the genesis's `ciphers::chacha20_poly1305` class body (its Task 35),
   with `Family` in place of the fixed sizes, `family_type` and `name_type` exposed for
   `supports_v`, and `aead_engine<Family, Backend>` in place of `chacha_engine<Backend>`;
-  `chacha20_poly1305.hpp` reads
-  `template <class Backend = default_backend_t<families::chacha20_poly1305>> using chacha20_poly1305 = aead<families::chacha20_poly1305, Backend>;`
+  `ciphers/chacha20_poly1305.hpp` reads
+  `template <class Backend = default_backend_t<families::chacha20_poly1305>> using chacha20_poly1305 = ciphers::aead<families::chacha20_poly1305, Backend>;`
   and the two others alike.
 - [ ] **Step 3: The libsodium engine**, one template for the three, since libsodium's detached
   functions differ only by name:
@@ -1498,21 +1520,24 @@ struct aead_engine<Family, backends::sodium> {
 - [ ] **Step 4: Run** every lane; commit
   `crypto: one AEAD template, and ChaCha20-Poly1305, its original form and XChaCha20-Poly1305 on libsodium`.
 
-## Task 9: `box`, sealed boxes and `secretbox`, in both forms
+## Task 9: `hybrid::box`, sealed boxes and `ciphers::secretbox`, in both forms
 
-**Files:** create `include/webcpp/crypto/box.hpp`, `secretbox.hpp`, `test/box_sodium_test.cpp`,
+**Files:** create `include/webcpp/crypto/hybrid/box.hpp`, `ciphers/secretbox.hpp`, `test/box_sodium_test.cpp`,
 `test/secretbox_sodium_test.cpp`; modify `backends/sodium.hpp`, `meta/capabilities.json`,
 `test/Jamfile`.
 
 - [ ] **Step 1: The failing tests:** libsodium's `test/default/box.exp`, `box2.exp`,
   `secretbox.exp` and `box_seal.exp` cases (the key pairs and nonces of NaCl's tests), the
-  generic AEAD checks of Task 8 applied to `secretbox` and to a `box` made from a key pair and
+  generic AEAD checks of Task 8 applied to `ciphers::secretbox` and to a `hybrid::box` made from a key pair and
   a peer key, a sealed box opened by its recipient and refused (`authentication_failed`, `data`
-  zeroed) by another key pair or after a change, and a `box` with a small-order peer key
+  zeroed) by another key pair or after a change, and a `hybrid::box` with a small-order peer key
   (`weak_public_key`, libsodium's `beforenm` refusing it).
 - [ ] **Step 2: The interface.**
 
 ```cpp
+// <webcpp/crypto/hybrid/box.hpp> and <webcpp/crypto/hybrid/sealed_box.hpp>
+namespace webcpp::crypto::hybrid {
+
 /**
  crypto_box: X25519 agreement and an AEAD, computed once per pair of keys (libsodium's
  beforenm), then `seal` and `open` in place with the tag apart.
@@ -1549,14 +1574,21 @@ struct basic_sealed_box {
 };
 using sealed_box = basic_sealed_box<>;
 
+}  // namespace webcpp::crypto::hybrid
+
+// <webcpp/crypto/ciphers/secretbox.hpp>
+namespace webcpp::crypto::ciphers {
+
 /** crypto_secretbox: XSalsa20-Poly1305 (or XChaCha20-Poly1305) under a 32-byte key. */
 template <class Backend = default_backend_t<families::secretbox_xsalsa20poly1305>>
 using secretbox = aead<families::secretbox_xsalsa20poly1305, Backend>;
 template <class Backend = default_backend_t<families::secretbox_xchacha20poly1305>>
 using secretbox_xchacha20poly1305 = aead<families::secretbox_xchacha20poly1305, Backend>;
+
+}  // namespace webcpp::crypto::ciphers
 ```
 
-  `secretbox` has no additional data: its family's `max_additional_data_size` is 0, and `aead`
+  `ciphers::secretbox` has no additional data: its family's `max_additional_data_size` is 0, and `aead`
   refuses a non-empty one with `invalid_input_size`. The sealed box's sizes are checked first
   (`invalid_input_size` for a wrong `out`), and a failed `open` zeroes `out`.
 - [ ] **Step 3: The libsodium engines:** `crypto_box_beforenm` and
@@ -1567,7 +1599,7 @@ using secretbox_xchacha20poly1305 = aead<families::secretbox_xchacha20poly1305, 
 
 ## Task 10: `kx`
 
-**Files:** create `include/webcpp/crypto/kx.hpp`, `test/kx_sodium_test.cpp`; modify
+**Files:** create `include/webcpp/crypto/curves/x25519/kx.hpp`, `test/kx_sodium_test.cpp`; modify
 `backends/sodium.hpp`, `meta/capabilities.json`, `test/Jamfile`.
 
 - [ ] **Step 1: The failing test:** libsodium's `test/default/kx.exp` (its seeded key pairs),
@@ -1576,6 +1608,9 @@ using secretbox_xchacha20poly1305 = aead<families::secretbox_xchacha20poly1305, 
 - [ ] **Step 2: The interface:**
 
 ```cpp
+// <webcpp/crypto/curves/x25519/kx.hpp>
+namespace webcpp::crypto::curves::x25519 {
+
 /** The session keys of one side: what it receives with and what it transmits with. */
 struct session_keys {
     secret<32> receive;
@@ -1597,6 +1632,8 @@ public:
         std::span<std::uint8_t const> client_public_key) const noexcept;
     // move-only, wiped
 };
+
+}  // namespace webcpp::crypto::curves::x25519
 ```
 
   over `crypto_kx_seed_keypair`, `crypto_kx_client_session_keys` and
@@ -1642,8 +1679,8 @@ public:
   two backends, the size ranking orders by raw bytes then gzip; two throughput medians within
   10 % keep the committed order and outside it reorder; an operation whose median exceeds
   1,000 microseconds on the reference runner or under node there is written `"heavy": true`
-  in `capabilities.json`, families whose cost the caller's data sets (`aead`, `box`,
-  `secretbox`, `secretstream`, `stream`, `mac`) never are; `--check-sizes` fails naming an
+  in `capabilities.json`, families whose cost the caller's data sets (`aead`, `hybrid::box`,
+  `ciphers::secretbox`, `ciphers::secretstream`, `stream`, `mac`) never are; `--check-sizes` fails naming an
   entry whose rebuilt size differs.
 - [ ] **Step 3: `tools/crypto/measure.py`** builds `libs/crypto/test/sizes` for each target at
   `<variant>release <optimization>space <debug-symbols>off` with `--strip`, reads each
@@ -1657,7 +1694,7 @@ public:
 - [ ] **Step 4: Measure** increment 1's cells and the genesis's (`gcm` on BearSSL and OpenSSL),
   libsodium's X25519 and Ed25519 also with `HAVE_AMD64_ASM` on Linux x86-64 in a scratch build
   (recorded in `doc/measurements.adoc` as design D7 asks, not used), regenerate, and check that
-  `aes256_gcm::backend_type` keeps version 0.1's value on every lane.
+  `ciphers::aes256_gcm::backend_type` keeps version 0.1's value on every lane.
 - [ ] **Step 5: Run** the tools test, the lane `sizes` on its four targets and `runners.yml` by
   hand (`gh workflow run` is the owner's; locally, `measure.py --throughput-only` on the
   developer's machine is reported and not committed). Commit (superproject)
@@ -1716,8 +1753,8 @@ compared with its `.exp`, on every target; webcpp::hash may already run it, in w
 task adds crypto's families to the same lane), `test/oracle/webcrypto_25519.mjs`,
 `test/oracle_25519_test.cpp`; modify `test/Jamfile`.
 
-- [ ] **Step 1:** the own lane `c-suites` runs libsodium's `sign`, `box`, `box2`, `box7`,
-  `box8`, `box_seal`, `secretbox`, `secretbox2`, `secretbox7`, `secretbox8`,
+- [ ] **Step 1:** the own lane `c-suites` runs libsodium's `sign`, `hybrid::box`, `box2`, `box7`,
+  `box8`, `box_seal`, `ciphers::secretbox`, `secretbox2`, `secretbox7`, `secretbox8`,
   `aead_chacha20poly1305`, `aead_chacha20poly1305_ietf` (where present in 1.0.22),
   `aead_xchacha20poly1305`, `kx`, `scalarmult`, `ed25519_convert` programs on every target,
   each bounded as the genesis's C suites are.
@@ -1733,7 +1770,7 @@ task adds crypto's families to the same lane), `test/oracle/webcrypto_25519.mjs`
 **Files:** the genesis's Task 20 files (`test/constant_time/ctgrind_test.cpp`,
 `msan_test.cpp`, `dudect_test.cpp`, `detail/declassify.hpp` already empty in version 0.1), now
 built, with libsodium's paths: Ed25519 signing (the seed secret), X25519 agreement (the secret
-key), the three AEADs' seal and open (key, plaintext, tag), `box` and `secretbox`, `kx`, and
+key), the three AEADs' seal and open (key, plaintext, tag), `hybrid::box` and `ciphers::secretbox`, `kx`, and
 webcpp's `equal`, `is_all_zero` and `secret<N>`'s wipe.
 
 - [ ] **Step 1:** write the harnesses as the genesis's Task 20 says, the planted leak first
@@ -1765,7 +1802,7 @@ ChaCha family), `box.adoc`, `secretbox.adoc`, `kx.adoc`, `profiles.adoc`,
   verbatim; each adapted page ends with "Adapted from libsodium's documentation
   (https://github.com/jedisct1/libsodium-doc), ISC licence; see LICENSE-LIBSODIUM-DOC.txt."
   Wikipedia appears only as links.
-- [ ] **Step 3:** `guide/privacy.adoc` opens with sealed boxes and `secretbox`, and
+- [ ] **Step 3:** `guide/privacy.adoc` opens with sealed boxes and `ciphers::secretbox`, and
   `guide/p2p.adoc` with Ed25519 identities and `kx`; each section says what goes wrong without
   the primitive, what it guarantees and how to use it right, and its example is webcpp's own
   code written after a named, linked public application built on noble (for example a Nostr
@@ -1794,7 +1831,7 @@ ChaCha family), `box.adoc`, `secretbox.adoc`, `kx.adoc`, `profiles.adoc`,
 
 ## Increment 2: libsecp256k1's remaining modules (beside increment 1)
 
-Files: `include/webcpp/crypto/secp256k1.hpp` and `secp256k1/{recovery,tweak,ellswift,musig,silentpayments}.hpp`,
+Files: `include/webcpp/crypto/curves/secp256k1.hpp` and `curves/secp256k1/{recovery,tweak,ellswift,musig,silentpayments}.hpp`,
 their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
 1. `ecdh` returns `secret<32>` (BREAKING, its changelog line); `ecdh_x` and `ecdh_point` through
    `secp256k1_ecdh` with webcpp's copying hash functions; Wycheproof's ECDH file and NIP-44's
@@ -1835,13 +1872,13 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
 ## Increment 5: libsodium completed (a stream after 1)
 
 1. `ristretto255` and `edwards25519` points and scalars; RFC 9496's vectors.
-2. `ml_kem_768` and `x_wing`; the X-Wing draft's vectors, ACVP's ML-KEM-768; their heavy rows
+2. `post_quantum::ml_kem_768` and `post_quantum::x_wing`; the X-Wing draft's vectors, ACVP's ML-KEM-768; their heavy rows
    as measured.
-3. `secretstream`, `aegis128l`, `aegis256`, `aes256_gcm_sodium` (run-time), `auth`,
+3. `ciphers::secretstream`, `ciphers::aegis128l`, `ciphers::aegis256`, `ciphers::aes256_gcm_sodium` (run-time), `auth`,
    `poly1305`, the stream ciphers and the cores; Wycheproof's AEGIS files, the drafts' vectors,
    libsodium's own.
 4. Utilities: `random_uniform`, `random_bytes_deterministic`, `memory.hpp`, `padding.hpp`,
-   `encoding.hpp`, `ipcrypt.hpp`, `guarded_memory.hpp` (native only).
+   `encoding.hpp`, `ciphers/ipcrypt.hpp`, `guarded_memory.hpp` (native only).
 5. Measurements, constant-time paths, pages (the privacy chapter's post-quantum and
    secretstream sections), green, review, pull requests.
 
@@ -1850,7 +1887,7 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
 1. The submodule `third_party/libs/blst` at v0.3.17 (`54e6e55`), its two translation units,
    assembly with `__BLST_PORTABLE__` natively on Linux and macOS, `__BLST_NO_ASM__` on MSVC and
    WebAssembly, its canary naming the configuration, chapter 10's row.
-2. `bls12_381::min_pk` and `min_sig`, proofs of possession, `hash_to_g1`, `hash_to_g2`; the
+2. `curves::bls12_381::min_pk` and `min_sig`, proofs of possession, `hash_to_g1`, `hash_to_g2`; the
    heavy variants (verification, aggregate and fast aggregate verification, aggregation over
    many signatures).
 3. The consensus specifications' BLS vectors (a test-data submodule pinned here), RFC 9380's
@@ -1882,7 +1919,7 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
 1. The submodule `third_party/libs/c-kzg-4844` at v2.1.8 (`e125905`), `src/` compiled file by
    file against webcpp's blst (c-kzg's `blst` submodule never checked out); c-kzg's own tests on
    blst v0.3.17, and the pin rule of D25 if they fail; chapter 10's row; the canary.
-2. `kzg::settings::make` from a caller's setup (the ceremony's file as test data), the
+2. `commitments::kzg::settings::make` from a caller's setup (the ceremony's file as test data), the
    commitment, proof and cell functions; the settings' allocation recorded; the heavy variants
    as measured; c-kzg's reference vectors.
 3. Measurements, pages (the cryptocurrencies chapter's KZG section, versioned hashes named as
@@ -1893,7 +1930,7 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
 1. The spike: mcl v4.43 (`50e4c6f`) with `MCL_DONT_USE_XBYAK` on each target, generic C++ and
    upstream's generated code where it exists, measured; the configuration per target fixed in
    the canary's name.
-2. The submodule, its sources file by file, `bn254::g1`, `g2`, `pairing_check`; vectors from
+2. The submodule, its sources file by file, `curves::bn254::g1`, `g2`, `pairing_check`; vectors from
    mcl's own tests and the pairing's bilinearity checks on random public points; the heavy
    variant of a many-pair check.
 3. Measurements, pages ("public data only"), green, review, pull requests.
@@ -1904,14 +1941,14 @@ their tests, `doc/secp256k1*.adoc`, `guide/cryptocurrencies.adoc`. Steps:
    out), `hazmat.c`, `sss.c`, `tweetnacl.c`, and webcpp's `src/sss_randombytes.c` handing over
    the thread-local bytes the wrapper drew; the spike on MSVC's missing VLAs (clang-cl, or the
    cell absent); the diff since v0.1.0 read and recorded.
-2. `shamir::split_key`, `combine_key`, `split`, `combine`, the guards `2 <= k <= n <= 255`,
+2. `secret_sharing::shamir::split_key`, `combine_key`, `split`, `combine`, the guards `2 <= k <= n <= 255`,
    sss's own `test_hazmat.c` and `test_sss.c` in `c-suites`, every subset recovery test, the
    constant-time lane over the split and the combination.
 3. Measurements, pages (SLIP-39 named as webcpp::bitcoin's), green, review, pull requests.
 
 ## Increment 12: HPKE (after increment 8; WebAssembly after increment 7)
 
-1. `hpke<Kem, Kdf, Aead, Backend>` on OpenSSL's `OSSL_HPKE_*` on native, wasip2 and wasip3;
+1. `hybrid::hpke<Kem, Kdf, Aead, Backend>` on OpenSSL's `OSSL_HPKE_*` on native, wasip2 and wasip3;
    RFC 9180's test vectors for every suite both backends have; the sequence number's guard.
 2. Botan's `hpke` module enabled in the Botan configuration of increment 7; the same vectors;
    agreement between OpenSSL and Botan natively; Emscripten served by Botan.

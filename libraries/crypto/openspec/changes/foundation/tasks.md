@@ -15,8 +15,8 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 - [ ] 1.5 The profiles, the overrides, `default_backend_t` and the seeded rankings (plan: Task 5)
 - [ ] 1.6 Ed25519 and Ed25519ph on libsodium (plan: Task 6)
 - [ ] 1.7 X25519 and the Ed25519 to X25519 conversion (plan: Task 7)
-- [ ] 1.8 `aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs on libsodium (plan: Task 8)
-- [ ] 1.9 `box`, sealed boxes and `secretbox`, in both forms (plan: Task 9)
+- [ ] 1.8 `ciphers::aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs on libsodium (plan: Task 8)
+- [ ] 1.9 `hybrid::box`, sealed boxes and `ciphers::secretbox`, in both forms (plan: Task 9)
 - [ ] 1.10 `kx` (plan: Task 10)
 - [ ] 1.11 The measurement table, `measure.py`, the lanes `sizes` and `throughput`, the heavy column (plan: Task 11)
 - [ ] 1.12 Threads: `WEBCPP_CRYPTO_HAS_THREADS` and the refusal of a heavy variant without them (plan: Task 12)
@@ -62,7 +62,7 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 ## 6. Increment 6: blst (a parallel stream after 1)
 
 - [ ] 6.1 The submodule, its two translation units, assembly per target, its canary (plan: Increment 6, step 1)
-- [ ] 6.2 `bls12_381::min_pk` and `min_sig`, proofs of possession, hash-to-curve; the heavy variants (plan: Increment 6, step 2)
+- [ ] 6.2 `curves::bls12_381::min_pk` and `min_sig`, proofs of possession, hash-to-curve; the heavy variants (plan: Increment 6, step 2)
 - [ ] 6.3 The consensus specifications' vectors; increment 6 whole (plan: Increment 6, step 3)
 
 ## 7. Increment 7: Botan as a submodule (a parallel stream after 1)
@@ -82,19 +82,19 @@ has merged and webcpp::hash's `/third_party//sodium` is on the superproject's `m
 ## 9. Increment 9: KZG over c-kzg-4844 (after 6)
 
 - [ ] 9.1 The submodule built against webcpp's blst, c-kzg's own tests on blst v0.3.17 (plan: Increment 9, step 1)
-- [ ] 9.2 `kzg::settings` and the commitment, proof and cell functions; their heavy variants (plan: Increment 9, step 2)
+- [ ] 9.2 `commitments::kzg::settings` and the commitment, proof and cell functions; their heavy variants (plan: Increment 9, step 2)
 - [ ] 9.3 Increment 9 whole (plan: Increment 9, step 3)
 
 ## 10. Increment 10: BN254 over mcl (a parallel stream after 1)
 
 - [ ] 10.1 The spike: mcl's portable configurations per target, without its JIT (plan: Increment 10, step 1)
-- [ ] 10.2 The submodule, its canary, `bn254::g1`, `g2`, `pairing_check` (plan: Increment 10, step 2)
+- [ ] 10.2 The submodule, its canary, `curves::bn254::g1`, `g2`, `pairing_check` (plan: Increment 10, step 2)
 - [ ] 10.3 Increment 10 whole (plan: Increment 10, step 3)
 
 ## 11. Increment 11: Shamir secret sharing over sss (a parallel stream after 1)
 
 - [ ] 11.1 The submodule without `randombytes`, webcpp's `sss_randombytes.c`, MSVC's VLAs (plan: Increment 11, step 1)
-- [ ] 11.2 `shamir::split_key`, `combine_key`, `split`, `combine`, the constant-time lane (plan: Increment 11, step 2)
+- [ ] 11.2 `secret_sharing::shamir::split_key`, `combine_key`, `split`, `combine`, the constant-time lane (plan: Increment 11, step 2)
 - [ ] 11.3 Increment 11 whole (plan: Increment 11, step 3)
 
 ## 12. Increment 12: HPKE (after 8; WebAssembly after 7)

@@ -47,6 +47,12 @@ this change the same day. It is version 0.2 onward, a series of increments after
   12. HPKE (RFC 9180) over OpenSSL natively and on WASI, and Botan on Emscripten.
   Increment 2 runs beside 1; after 1, increments 3 to 8, 10 and 11 run as parallel streams; 9
   follows 6, and 12 follows 8 (its WebAssembly cells 7).
+- **Groups, and headers that mirror them** (D29, the owner's decision of 2026-11-15):
+  `crypto::ciphers`, `crypto::curves::<curve>`, `crypto::post_quantum`, `crypto::rsa`,
+  `crypto::hybrid`, `crypto::commitments::kzg`, `crypto::secret_sharing::shamir`, headers
+  `<webcpp/crypto/<group>/<name>.hpp>`; the root keeps `error`, `random_device`, `equal`, the
+  memory utilities, the configuration and the profiles; `crypto::backends` stays outside. Version
+  0.1 is renamed to this layout before it closes, and the foundation starts from it.
 - **Primitives only** (D24, the owner's rule): whatever BIPs, EIPs, SLIPs and NIPs define goes to
   future domain libraries (webcpp::bitcoin, webcpp::ethereum, webcpp::nostr) built on crypto and
   hash; libsecp256k1's own modules stay as the primitives they are. Version 0.1's Taproot tweak
@@ -77,7 +83,7 @@ this change the same day. It is version 0.2 onward, a series of increments after
   chosen per algorithm by the profile and the measurements, the architecture included where the
   measurements differ; Botan is a submodule and may serve WebAssembly; the genesis's increments
   4 (ChaCha20-Poly1305) and 5 (Botan) are absorbed by this change's 1, 3, 7 and 8; HKDF comes
-  from webcpp::hash. **BREAKING (version 0)**: `secp256k1::basic_keypair::ecdh` returns
+  from webcpp::hash. **BREAKING (version 0)**: `curves::secp256k1::basic_keypair::ecdh` returns
   `secret<32>`, which wipes itself, in place of `std::array<std::uint8_t, 32>` (D9).
 - **Heavy operations on another thread, only with threads** (D23, the owner's decision, the
   same rule as webcpp::hash's): an operation measured above 1 ms on the reference runner (RSA
@@ -119,9 +125,9 @@ None.
   `reference/plan.md`:** Task 2 (`backends/sodium.hpp`, `src/canary_sodium.c`), Task 3
   (`secret.hpp`, the errors 15 to 20), Task 4 (`meta/capabilities.json`,
   `tools/crypto/capabilities.py`, `detail/capabilities.hpp`, `supports.hpp`), Task 5 (the
-  profiles in `config.hpp`, `detail/select.hpp`, `detail/rankings.hpp`), Task 6 (`ed25519.hpp`),
-  Task 7 (`x25519.hpp`), Task 8 (`aead.hpp` and the three ChaCha AEADs), Task 9 (`box.hpp`,
-  `secretbox.hpp`), Task 10 (`kx.hpp`) and Task 11 (`tools/crypto/measure.py`), with the tests
+  profiles in `config.hpp`, `detail/select.hpp`, `detail/rankings.hpp`), Task 6 (`curves/ed25519.hpp`),
+  Task 7 (`curves/x25519.hpp`), Task 8 (`ciphers/aead.hpp` and the three ChaCha AEADs), Task 9 (`hybrid/box.hpp`,
+  `ciphers/secretbox.hpp`), Task 10 (`curves/x25519/kx.hpp`) and Task 11 (`tools/crypto/measure.py`), with the tests
   and Jamfiles the other tasks give. Increments 2 to 8 are outlined there and written in full
   when each starts. `reference/STATUS.md` says where things stand and how to start.
 - **Dependencies:** webcpp::hash (`/webcpp/hash//hash`, its `/third_party//sodium`); libsodium

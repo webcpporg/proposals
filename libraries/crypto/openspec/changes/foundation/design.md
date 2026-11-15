@@ -8,7 +8,7 @@ task by task): AES-GCM on BearSSL and OpenSSL, the AES block cipher on OpenSSL a
 Taproot tweak of version 0.1, which a change of version 0.1 turns into a generic x-only tweak,
 D24). Its headers are `config.hpp`, `error.hpp` (values 1 to 12, 13 and
 14 reserved), `equal.hpp`, `random_device.hpp`, `aes.hpp`, `gcm.hpp`, `aes256_gcm.hpp`,
-`secp256k1.hpp` and `backends/{bearssl,openssl,ctaes,secp256k1}.hpp`, over the traits
+`secp256k1.hpp` (renamed into groups before 0.1 closes, D29) and `backends/{bearssl,openssl,ctaes,secp256k1}.hpp`, over the traits
 `detail::{block,gcm}_{state,engine}`.
 
 The same day two studies were read: one of the noble and scure stacks (@noble/curves, hashes
@@ -61,7 +61,7 @@ allocation through the program's allocator, every C library a pinned submodule b
 - A primitive written by webcpp. The constructions webcpp writes are the guards, the adapters,
   the canaries, `equal` and the wipe, as in version 0.1.
 - An incremental `open` that releases plaintext before its tag verifies (the genesis's D6
-  stands; `secretstream` verifies each chunk before releasing it, D7).
+  stands; `ciphers::secretstream` verifies each chunk before releasing it, D7).
 
 ## Decisions
 
@@ -88,7 +88,7 @@ Hash2's hmac when needed". hash never includes crypto's headers.
 
 | Backend | Library and pin | What it exposes in crypto | Targets |
 | --- | --- | --- | --- |
-| `sodium` | libsodium 1.0.22 (`77e1ce5`) | Ed25519, Ed25519ph, X25519, the Ed25519 to X25519 conversion, `crypto_box` (XSalsa20 and XChaCha20 forms) with precomputation, sealed boxes, `crypto_secretbox` (both forms), ChaCha20-Poly1305 IETF and original, XChaCha20-Poly1305, AEGIS-128L, AEGIS-256, AES256-GCM (where the CPU has it), `secretstream`, `crypto_kx`, `crypto_auth`, `crypto_onetimeauth`, the stream ciphers (ChaCha20 IETF and original, XChaCha20, Salsa20, XSalsa20, Salsa20/12, Salsa20/8) and the cores HChaCha20 and HSalsa20, ristretto255 and edwards25519 groups and scalars with their maps from hashes, ML-KEM-768, X-Wing, `randombytes_uniform` and `randombytes_buf_deterministic`, the memory utilities (`is_zero`, `compare`, `increment`, `add`, `sub`, `mlock`), ISO/IEC 7816-4 padding, constant-time hexadecimal and base64, IP address encryption (`crypto_ipcrypt`), guarded memory (`sodium_malloc`) | all four; AES256-GCM native only, guarded memory and `mlock` native only |
+| `sodium` | libsodium 1.0.22 (`77e1ce5`) | Ed25519, Ed25519ph, X25519, the Ed25519 to X25519 conversion, `crypto_box` (XSalsa20 and XChaCha20 forms) with precomputation, sealed boxes, `crypto_secretbox` (both forms), ChaCha20-Poly1305 IETF and original, XChaCha20-Poly1305, AEGIS-128L, AEGIS-256, AES256-GCM (where the CPU has it), `ciphers::secretstream`, `crypto_kx`, `crypto_auth`, `crypto_onetimeauth`, the stream ciphers (ChaCha20 IETF and original, XChaCha20, Salsa20, XSalsa20, Salsa20/12, Salsa20/8) and the cores HChaCha20 and HSalsa20, ristretto255 and edwards25519 groups and scalars with their maps from hashes, ML-KEM-768, X-Wing, `randombytes_uniform` and `randombytes_buf_deterministic`, the memory utilities (`is_zero`, `compare`, `increment`, `add`, `sub`, `mlock`), ISO/IEC 7816-4 padding, constant-time hexadecimal and base64, IP address encryption (`crypto_ipcrypt`), guarded memory (`sodium_malloc`) | all four; AES256-GCM native only, guarded memory and `mlock` native only |
 | `secp256k1` | libsecp256k1 v0.8.0 (`6e2c8bc`) | the genesis's (with version 0.1's generic x-only tweak, D24), and recovery, raw ECDH, seckey and pubkey tweaks, negation, combination, uncompressed keys, ElligatorSwift (BIP324), MuSig2 (BIP327), silent payments (BIP352), hedged ECDSA | all four |
 | `bearssl` | BearSSL (`7bea48e`) | the genesis's, and P-256, P-384, P-521 ECDSA (RFC 6979, raw and DER) and ECDH, X25519, ChaCha20-Poly1305, AES-CTR, AES-CBC, AES-CCM, AES-EAX, RSA (PKCS #1 v1.5 and PSS signatures, OAEP, key generation) | all four |
 | `openssl` | OpenSSL 3.5.9 (`45e844f`), the superproject's provider | the genesis's, and P-256, P-384, P-521, Ed25519, Ed448, X25519, X448, ML-KEM, ML-DSA, SLH-DSA, RSA, AES-CTR, CBC, CCM, OCB, KW, KWP, SIV, GCM-SIV, CMAC, ChaCha20-Poly1305 | native, wasip2, wasip3 |
@@ -115,19 +115,19 @@ answers `invalid_state` when empty; a keyed object that can be drawn at random a
 backend is the last template parameter, whose default is `default_backend_t<Family>` (D5). The
 families and their headers:
 
-| Family | Types (default backend aliases) | Header |
-| --- | --- | --- |
-| signatures | `ed25519`, `ed25519ph<Hash>`, `ed448`, `ecdsa<Curve>`, `rsa_pss<Hash>`, `rsa_pkcs1<Hash>`, `ml_dsa_44/65/87`, `slh_dsa<Set>` | `ed25519.hpp`, `ed448.hpp`, `ecdsa.hpp`, `rsa.hpp`, `ml_dsa.hpp`, `slh_dsa.hpp` |
-| key agreement | `x25519`, `x448`, `ecdh<Curve>` | `x25519.hpp`, `x448.hpp`, `ecdh.hpp` |
-| key encapsulation | `ml_kem_512/768/1024`, `x_wing` | `ml_kem.hpp`, `x_wing.hpp` |
-| AEADs | `aead<Family, Backend>`: `chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305`, `aegis128l`, `aegis256`, `aes256_gcm_sodium`, `ccm<Cipher, TagSize>`, `eax<Cipher>`, `ocb<Cipher>`, `siv<Cipher>`, `gcm_siv<Cipher>`; the genesis's `gcm<Cipher>` keeps its own class | `aead.hpp` and one header per family |
-| boxes | `box`, `box_xchacha20poly1305`, `sealed_box`, `secretbox`, `secretbox_xchacha20poly1305`, `secretstream` | `box.hpp`, `secretbox.hpp`, `secretstream.hpp` |
-| key exchange | `kx` | `kx.hpp` |
-| ciphers | `ctr<Cipher>`, `cbc<Cipher>`, `chacha20`, `chacha20_original`, `xchacha20`, `salsa20`, `xsalsa20`, `salsa20_12`, `salsa20_8`, `hchacha20`, `hsalsa20`, `key_wrap<Cipher>`, `key_wrap_padded<Cipher>`, the genesis's block ciphers and Botan's | `ctr.hpp`, `cbc.hpp`, `stream.hpp`, `key_wrap.hpp`, `aes.hpp`, `block.hpp` |
-| MACs | `auth`, `poly1305`, `cmac<Cipher>` | `mac.hpp` |
-| groups | `ristretto255::point`, `ristretto255::scalar`, `edwards25519::point`, `edwards25519::scalar`, `bls12_381::min_pk`, `bls12_381::min_sig` | `ristretto255.hpp`, `edwards25519.hpp`, `bls12_381.hpp` |
-| secp256k1 | the genesis's, and D11's | `secp256k1.hpp`, `secp256k1/*.hpp` |
-| utilities | `random_uniform`, `random_bytes_deterministic`, `memory.hpp`'s functions, `pad`, `unpad`, `hex`, `base64`, `ipcrypt`, `guarded_memory_resource` | `random.hpp`, `memory.hpp`, `padding.hpp`, `encoding.hpp`, `ipcrypt.hpp`, `guarded_memory.hpp` |
+Every type lives in its group's namespace and header, as D29 lays out:
+
+| Group (namespace, headers) | Types, by family (default backend aliases) |
+| --- | --- |
+| `webcpp::crypto::ciphers`, `<webcpp/crypto/ciphers/*.hpp>` | block ciphers `aes128`, `aes192`, `aes256` (and Botan's others); `gcm<Cipher>` (its own class, with the incremental seal), `aes128_gcm`, `aes256_gcm`; `aead<Family, Backend>` and its aliases `chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305`, `aegis128l`, `aegis256`, `aes256_gcm_sodium`, `ccm<Cipher, TagSize>`, `eax<Cipher>`, `ocb<Cipher>`, `siv<Cipher>`, `gcm_siv<Cipher>`, `secretbox`, `secretbox_xchacha20poly1305`; `secretstream`; `ctr<Cipher>`, `cbc<Cipher>`, `keywrap<Cipher>`, `keywrap_padded<Cipher>`; stream ciphers `chacha20`, `chacha20_original`, `xchacha20`, `salsa20`, `xsalsa20`, `salsa20_12`, `salsa20_8`, cores `hchacha20`, `hsalsa20`; MACs `poly1305`, `cmac<Cipher>`, `auth`; `ipcrypt` |
+| `webcpp::crypto::curves`, `<webcpp/crypto/curves/*.hpp>`, one namespace per curve | `secp256k1` (the genesis's, with D11's modules under `curves/secp256k1/`); `ed25519` (`basic_keypair`, `keypair`, `verify`, `ph<Hash>`, `to_x25519_public`); `x25519` (`public_key`, `agree`, `curves::x25519::kx_keypair` in `curves/x25519/kx.hpp`); `ed448`, `x448`; `p256`, `p384`, `p521`, `brainpool` (`ecdsa`, `ecdh`); `ristretto255` and `edwards25519` (`point`, `scalar`); `bls12_381` (`min_pk`, `min_sig`); `bn254` (`g1`, `g2`, `pairing_check`) |
+| `webcpp::crypto::post_quantum`, `<webcpp/crypto/post_quantum/*.hpp>` | `post_quantum::ml_kem_512`, `post_quantum::ml_kem_768`, `post_quantum::ml_kem_1024`, `ml_dsa_44`, `post_quantum::ml_dsa_65`, `ml_dsa_87`, `slh_dsa<Set>`, `post_quantum::x_wing` |
+| `webcpp::crypto::rsa`, `<webcpp/crypto/rsa/*.hpp>` | `keypair`, `pss<Hash>`, `pkcs1<Hash>`, `oaep<Hash>` |
+| `webcpp::crypto::hybrid`, `<webcpp/crypto/hybrid/*.hpp>` | `hybrid::box`, `hybrid::box_xchacha20poly1305`, `hybrid::sealed_box`, `hybrid::hpke<Kem, Kdf, Aead>` |
+| `webcpp::crypto::commitments::kzg`, `<webcpp/crypto/commitments/kzg.hpp>` | `settings`, the commitment, proof and cell functions |
+| `webcpp::crypto::secret_sharing::shamir`, `<webcpp/crypto/secret_sharing/shamir.hpp>` | `split_key`, `combine_key`, `split`, `combine` |
+| `webcpp::crypto`, `<webcpp/crypto/*.hpp>` (the root) | `error`, `random_device`, `equal`, `secret<N>`, `supports_v`, `default_backend_t`, `profile`, `families`, `tags`; `random_uniform`, `random_bytes_deterministic` (`random.hpp`); `memory.hpp`'s `wipe`, `is_zero`, `compare`, `increment`, `add`, `sub`, `lock`, `unlock`; `pad`, `unpad` (`padding.hpp`); `hex`, `base64` (`encoding.hpp`); `guarded_memory_resource` (`guarded_memory.hpp`); the asynchronous family (`async.hpp`) |
+| `webcpp::crypto::backends`, `<webcpp/crypto/backends/*.hpp>`, outside the groups | `bearssl`, `openssl`, `sodium`, `ctaes`, `secp256k1`, `botan`, `blst`, `ckzg`, `mcl`, `sss`, `browser` |
 
 Each family's guards are written once, in its type; a backend's header specialises
 `detail::<family>_state<Algorithm, Backend>` and `detail::<family>_engine<Algorithm,
@@ -282,7 +282,7 @@ initialised once under libsodium's lock.
 - **AES256-GCM** exists only where the CPU has AES and carry-less multiplication: natively, with
   `make` returning `not_supported` otherwise; it is never a default (D5).
 - **Ed25519ph** is an incremental signer over libsodium's `crypto_sign_ed25519ph_*`, typed
-  `ed25519ph<sha2_512>` because RFC 8032 fixes SHA-512.
+  `curves::ed25519::ph<sha2_512>` because RFC 8032 fixes SHA-512.
 - **Allocation:** libsodium's crypto functions allocate nothing; guarded memory is the one
   allocator, and it is the program's choice.
 
@@ -291,10 +291,10 @@ initialised once under libsodium's lock.
 
 ### D8. X25519 and the conversion refuse weak keys
 
-`x25519::agree` returns `weak_public_key` when the shared secret is all zero (libsodium's
+`curves::x25519::agree` returns `weak_public_key` when the shared secret is all zero (libsodium's
 `crypto_scalarmult` returns -1 then; the other backends are checked by webcpp's code after the
-call, the one comparison `equal` makes). `ed25519::keypair::x25519_secret()` and
-`ed25519_to_x25519_public` are libsodium's conversion functions; a public key of small order or
+call, the one comparison `equal` makes). `curves::ed25519::keypair::x25519_secret()` and
+`curves::ed25519::to_x25519_public` are libsodium's conversion functions; a public key of small order or
 not canonical is `invalid_public_key`. `crypto_box` and `crypto_kx` refuse what libsodium
 refuses. Every backend of X25519 gives the same answer on Wycheproof's X25519 file, and where a
 backend accepts what another refuses, the test records the difference as an expected one.
@@ -305,7 +305,7 @@ backend accepts what another refuses, the test records the difference as an expe
 move, copyable only explicitly (`clone()`), convertible to `std::span<std::uint8_t const, N>`.
 Every new function whose output is secret (a shared secret, session keys, a derived secret
 scalar, a KEM's shared secret, a converted secret key) returns it. The genesis's
-`secp256k1::basic_keypair::ecdh` changes to return `secret<32>` in increment 2.
+`curves::secp256k1::basic_keypair::ecdh` changes to return `secret<32>` in increment 2.
 
 - **Why:** a shared secret returned in a `std::array` stays on the stack of every caller that
   copies it; the library wipes its keys (the genesis's rule) and should not leave the secrets
@@ -419,7 +419,7 @@ how chapter 5 rule 2's "file by file, never a unity source of webcpp's" applies 
 x86-64 and arm64, the assembly is used with `__BLST_PORTABLE__` (the ADX instructions chosen at
 run time, so one binary runs on every x86-64); on MSVC and WebAssembly `__BLST_NO_ASM__` (blst's
 constant-time C). The configuration is in the canary's name. The interface:
-`bls12_381::min_pk` and `min_sig` (public keys in G1 and signatures in G2, or the reverse),
+`curves::bls12_381::min_pk` and `min_sig` (public keys in G1 and signatures in G2, or the reverse),
 each with `secret_key::make(ikm)` (the IETF BLS draft's `KeyGen`, `blst_keygen`), `sign`, `verify`, `aggregate`,
 `aggregate_verify`, `fast_aggregate_verify`, proofs of possession, and `hash_to_g1`,
 `hash_to_g2` (RFC 9380 suites with a caller's domain separation tag). Pairing and field
@@ -547,7 +547,7 @@ increment 3 (trystero's migration) keep their own schedule; its Tasks 20, 22, 23
 
 ### D21. Parallel streams
 
-- **Increments 1 and 2 run beside each other** from the start: 2 touches only `secp256k1.hpp`,
+- **Increments 1 and 2 run beside each other** from the start: 2 touches only `curves/secp256k1.hpp`,
   its tests and its documentation; its rows join the capability table once 1's table lands, by a
   rebase.
 - **After increment 1 merges, increments 3 to 8 run as six parallel streams.** Each touches its
@@ -652,7 +652,7 @@ Apache-2.0), the submodule `third_party/libs/c-kzg-4844`, built file by file (`s
 its bindings) against this change's blst, never c-kzg's own blst submodule (one copy per
 program, chapter 5 rule 10). c-kzg 2.1.8 pins blst v0.3.16 (`e7f90de`) and webcpp pins v0.3.17:
 the increment runs c-kzg's own tests on v0.3.17 first, and if they fail, the blst pin moves to
-the one c-kzg tests with, as a change of its own. The interface, `kzg::settings` and free
+the one c-kzg tests with, as a change of its own. The interface, `commitments::kzg::settings` and free
 functions: `settings::make` from a trusted setup the caller gives (G1 monomial and Lagrange
 points, G2 points; the Ethereum ceremony's file is test data, never embedded),
 `blob_to_commitment`, `compute_proof`, `verify_proof`, `compute_blob_proof`,
@@ -666,9 +666,9 @@ departure recorded as OpenSSL's and Botan's are; commitments and proofs over a b
 ### D26. The BN254 pairing over mcl (increment 10)
 
 `backends::mcl` over mcl v4.43 (`50e4c6f2826de6b041f857caf9f253cc736ea926`, BSD-3-Clause), the
-submodule `third_party/libs/mcl`, for pairing-based verification: `bn254::g1`, `bn254::g2`
+submodule `third_party/libs/mcl`, for pairing-based verification: `curves::bn254::g1`, `curves::bn254::g2`
 (decoding with subgroup checks, addition, scalar multiplication on public data, the
-serialisations mcl documents) and `bn254::pairing_check` (a product of pairings equal to one),
+serialisations mcl documents) and `curves::bn254::pairing_check` (a product of pairings equal to one),
 which zk-SNARK verifiers and the EVM's precompiles use. mcl is built without its JIT
 (`MCL_DONT_USE_XBYAK`: a library must not write executable memory at run time), file by file
 from its C++ sources; the increment opens with a spike that measures mcl's portable
@@ -683,10 +683,10 @@ precompile encodings are webcpp::ethereum's (D24).
 `backends::sss` over dsprenkels/sss (MIT) at `9f2a10b1c0d391bed485c4c7e93788ce37c360f1`
 (2025-08-18, its latest commit; its only tag, v0.1.0, is older and the increment reads the
 diff since it), the submodule `third_party/libs/sss`, compiling `hazmat.c` and `sss.c` and its
-`tweetnacl.c`, never its `randombytes` submodule. It offers `shamir::split_key` and
-`shamir::combine_key` (`sss_create_keyshares`, `sss_combine_keyshares`: a 32-byte key into `n`
-shares with threshold `k`, GF(2^8) arithmetic bitsliced and constant time) and `shamir::split`
-and `shamir::combine` (`sss_create_shares`, `sss_combine_shares`: a 64-byte message, encrypted
+`tweetnacl.c`, never its `randombytes` submodule. It offers `secret_sharing::shamir::split_key` and
+`secret_sharing::shamir::combine_key` (`sss_create_keyshares`, `sss_combine_keyshares`: a 32-byte key into `n`
+shares with threshold `k`, GF(2^8) arithmetic bitsliced and constant time) and `secret_sharing::shamir::split`
+and `secret_sharing::shamir::combine` (`sss_create_shares`, `sss_combine_shares`: a 64-byte message, encrypted
 under a key that is then split, with each share authenticated).
 
 - **Entropy:** sss draws its polynomial through a function `randombytes` and ignores its result.
@@ -713,7 +713,7 @@ webcpp from libsodium's parts (the rule against webcpp's own cryptography). Open
 `hpke` (`src/lib/pubkey/hpke/`, present at the 3.14.1 tag) serves Emscripten, and WASI where
 increment 7's spike builds Botan. So every target has HPKE, and the WebAssembly backend is
 Botan. libsodium has no HPKE; BoringSSL has one but is not pinned by webcpp and would be a
-second copy of a libcrypto beside OpenSSL. The interface, `hpke<Kem, Kdf, Aead, Backend>` over
+second copy of a libcrypto beside OpenSSL. The interface, `hybrid::hpke<Kem, Kdf, Aead, Backend>` over
 RFC 9180's suites both backends have (DHKEM(X25519, HKDF-SHA256), DHKEM(P-256, HKDF-SHA256),
 HKDF-SHA256 and SHA512, AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305): `setup_base_sender`,
 `setup_base_receiver`, the PSK, auth and auth-PSK modes, a context with `seal`, `open` and
@@ -728,6 +728,38 @@ RFC 9180's test vectors, and agreement between OpenSSL and Botan natively.
 | `bn254` (decode, add, multiply, pairing check; public data) | `mcl` | all four, as the spike configures each |
 | `shamir` (key shares, message shares) | `sss` | all four; MSVC as the spike finds |
 | `hpke` (RFC 9180 suites above) | `openssl`, `botan` | OpenSSL native, wasip2, wasip3; Botan native, Emscripten, WASI as increment 7 finds |
+
+### D29. Sub-namespaces, and headers that mirror them
+
+The owner's decision of 2026-11-15: webcpp::crypto is organised in groups, each a namespace
+whose headers are `<webcpp/crypto/<group>/<name>.hpp>`, as D3's table lists: `ciphers`
+(symmetric: block ciphers and their modes, AEADs, stream ciphers, MACs, `ciphers::secretbox`,
+`ciphers::secretstream`), `curves` (one namespace per curve: `secp256k1` with its modules, `ed25519`,
+`x25519`, `ed448`, `x448`, `p256`, `p384`, `p521`, `brainpool`, `ristretto255`,
+`edwards25519`, `bls12_381`, `bn254`), `post_quantum` (`ml_kem`, `ml_dsa`, `slh_dsa`,
+`post_quantum::x_wing`), `rsa`, `hybrid` (`hybrid::box`, `hybrid::sealed_box`, `hpke`), `commitments::kzg` and
+`secret_sharing::shamir`. The root keeps what every group uses: `error`, `random_device`,
+`equal` and the memory utilities, `secret<N>`, the configuration, the profiles, `supports_v`,
+`default_backend_t` and the asynchronous family. `backends` stays outside the groups, one
+header per backend. `families` and `tags`, the capability table's names, stay at the root.
+
+Inside a curve's namespace the names follow version 0.1's `secp256k1`: `basic_keypair<Backend>`
+with `keypair` its default alias, and free functions (`curves::ed25519::verify`,
+`curves::x25519::agree`). A sub-namespace has no `detail` of its own: every trait stays in
+`webcpp::crypto::detail`, so a backend's header specialises one namespace.
+
+**Version 0.1 is renamed to this layout before it closes** (a change of the genesis):
+`aes.hpp`, `gcm.hpp` and `aes256_gcm.hpp` become `ciphers/aes.hpp`, `ciphers/gcm.hpp` and
+`ciphers/aes256_gcm.hpp` with their types in `ciphers`, and `secp256k1.hpp` becomes
+`curves/secp256k1.hpp`, `curves::secp256k1`, with Task 27b's generalised x-only tweak (D24).
+The foundation starts from that layout and keeps no alias of the old names.
+
+- **Why:** a library of a few hundred algorithms needs a map a reader learns once; the groups
+  are the ones cryptography's textbooks and noble's packages use, and a header path says what
+  a program depends on.
+- **Alternatives:** a flat namespace (the first draft, with names like `curves::ed25519::keypair` and
+  `curves::ed25519::verify` that the groups make unnecessary); groups by backend (a program would name
+  its backend twice); aliases from the old names (two spellings for one type in version 0).
 
 ## Risks / Trade-offs
 
@@ -778,7 +810,7 @@ RFC 9180's test vectors, and agreement between OpenSSL and Botan natively.
 
 Nothing to migrate until increment 2: version 0.1's API is unchanged by increment 1 apart from
 additions (`default_backend` remains the AES-GCM family's default). Increment 2 changes
-`secp256k1::basic_keypair::ecdh` to return `secret<32>`: callers that copied the array read it
+`curves::secp256k1::basic_keypair::ecdh` to return `secret<32>`: callers that copied the array read it
 through the span it converts to, and the changelog says so. Programs that defined
 `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` or `_OPENSSL` keep their meaning.
 
