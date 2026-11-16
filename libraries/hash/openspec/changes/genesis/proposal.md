@@ -4,8 +4,8 @@ Programs above webcpp::crypto need hashing and key derivation that Boost.Hash2 d
 provide: Keccak-256 for Ethereum addresses and signatures, HKDF for every key hierarchy and
 every protocol that turns a shared secret into keys, PBKDF2-HMAC-SHA-512 for BIP39 seeds,
 Argon2id and scrypt for passwords, and BLAKE3 where a format asks for it. The research behind
-webcpp::crypto's roadmap (the noble and scure stacks, and the TypeScript wallet and identity
-stacks built on them) found each of these on the first page of their needs. Boost.Hash2 1.92 has
+webcpp::crypto's roadmap (the noble and scure libraries) found each of these on the first page
+of their needs. Boost.Hash2 1.92 has
 SHA-1/2/3, SHAKE, RIPEMD, BLAKE2 and HMAC, and none of them; webcpp::crypto's specification said
 only that HKDF "is written on Hash2's hmac when needed".
 

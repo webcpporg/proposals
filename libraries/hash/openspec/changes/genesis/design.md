@@ -3,8 +3,8 @@
 webcpp::hash is a header-only C++20 wrapper library: one entry point for hashing and key
 derivation, on native (Linux, macOS, Windows with MSVC), wasip2, wasip3 and Emscripten. The
 owner proposed it and decided its shape on 2026-11-14, while webcpp::crypto's version 0.1 was
-being built and the research behind crypto's roadmap (the noble and scure stacks, and the
-TypeScript wallet and identity stacks built on them) showed what programs above crypto need:
+being built and the research behind crypto's roadmap (the noble and scure
+libraries) showed what programs above crypto need:
 Keccak-256 for Ethereum, HKDF for every key hierarchy, PBKDF2 for BIP39 seeds, Argon2id and
 scrypt for passwords, BLAKE3 on demand. Boost.Hash2 1.92 already has SHA-1/2/3, SHAKE, RIPEMD,
 BLAKE2 and HMAC, and none of these. The specification is `reference/spec.md`, the plan
