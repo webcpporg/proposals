@@ -12,12 +12,15 @@ only that HKDF "is written on Hash2's hmac when needed".
 The owner proposed a library of its own on 2026-11-14: one entry point for hashing and key
 derivation, on every target webcpp has (native, wasip2, wasip3, Emscripten), whose primitives
 are Boost.Hash2's and proven C libraries', whose key derivations have backends as webcpp::crypto's
-algorithms do, and whose default backend is the fastest natively and the smallest on the web. He
-decided its shape the same day and accepted it, then widened it: every backend exposes all its
-library offers for hashing and key derivation, in increments by value; one profile in the
-configuration changes every default at once; the browser's WebCrypto becomes a backend through a
-parallel asynchronous API. Increment 1 is built in the library's own repository and green on
-every local lane; it is not yet published, and the spec records what building it decided.
+algorithms do, and whose default backend was first to be the fastest natively and the smallest
+on the web. He decided its shape the same day and accepted it, then widened it: every backend
+exposes all its library offers for hashing and key derivation, in increments by value; the
+browser's WebCrypto becomes a backend through a parallel asynchronous API. Increment 1 is built in
+the library's own repository and green on every local lane; it is not yet published, and the spec
+records what building it decided. Its measurements showed differences of nanoseconds natively and
+a few KB on WebAssembly between the backends of HKDF, so on 2026-11-16 the owner replaced the
+measured default, the profiles and the overrides by one default: `backends::hash2` for every key
+derivation on every target (design D33).
 
 ## What Changes
 
@@ -35,7 +38,7 @@ every local lane; it is not yet published, and the spec records what building it
   dispatch natively.
 - **HKDF (RFC 5869: `hkdf_extract`, `hkdf_expand`, `hkdf`) and PBKDF2 (RFC 8018: `pbkdf2`)** as
   function templates `template <class Hmac, class Backend = default_kdf_backend<Hmac, Kdf>>`,
-  the default chosen per operation through the public tags `kdfs::hkdf`, `kdfs::hkdf_extract`,
+  the default named per operation through the public tags `kdfs::hkdf`, `kdfs::hkdf_extract`,
   `kdfs::hkdf_expand` and `kdfs::pbkdf2`, over
   backends named after the library that does the work: `backends::hash2` (webcpp's construction
   over any Hash2 hmac, every target, the recorded departure from "webcpp writes no
@@ -44,11 +47,13 @@ every local lane; it is not yet published, and the spec records what building it
   later `backends::botan`. A backend without the function refuses at compile time, naming those
   that have it; a backend whose C interface holds a length in an `int` refuses past `INT_MAX`
   (OpenSSL, `detail::backend_limits`). Every function that returns a result is `[[nodiscard]]`.
-- **The default backend:** natively the fastest linked (the owner expected OpenSSL when linked,
-  else hash2; increment 1's measurement, on one loaded machine, put libsodium and hash2 ahead for
-  HKDF by under 1 percent, to be re-measured on an idle machine before a release); on
-  WebAssembly the one giving the smallest binary, from a measured size table (one KDF program per
-  backend per target), regenerated at every pin move and checked by an own lane.
+- **The default backend** (the owner's decision of 2026-11-16, design D33): `backends::hash2`
+  for `hkdf`, `hkdf_extract`, `hkdf_expand` and `pbkdf2`, over every hmac, on every target and
+  whatever the program links; `backends::sodium` for `argon2id` and `scrypt`, its only backend.
+  BearSSL, OpenSSL and libsodium's HKDF stay, tested as before, reached only by naming them in the
+  type (`hkdf<hmac_sha2_256, backends::openssl>`). No measurement and no define decides a default:
+  the measured default of increment 1, its profiles, its overrides, `detail/ranking.hpp` and the
+  lane `measure` are retired.
 - **`argon2id` and `scrypt`** from libsodium (`crypto_pwhash_argon2id`,
   `crypto_pwhash_scryptsalsa208sha256_ll`), with libsodium's allocation of their memory recorded
   as a departure; the Argon2 reference implementation's allocation callbacks stay the
@@ -59,17 +64,20 @@ every local lane; it is not yet published, and the spec records what building it
   program), `third_party/libs/xkcp` (`/third_party//xkcp`) and `third_party/libs/blake3`
   (`/third_party//blake3`). `/third_party//bearssl` gains webcpp::hash's canary.
 - **The superproject gains** `/webcpp/hash//openssl` (the one OpenSSL provider),
-  `tools/hash/measure.py` and the own lane `measure`, `tools/hash/doc_tables.py`,
-  `tools/test/hash_jamfiles_test.py` with its fixtures, chapter 10's three rows and chapter 17's
-  entry; libsodium links with `-sALLOW_MEMORY_GROWTH=1` on Emscripten. BLAKE3's own test program
-  runs in the library's own lane `c-suites`, beside libsodium's and XKCP's suites.
+  `tools/hash/doc_tables.py` (which renders `doc/backends.adoc` and the dated
+  `doc/measurements.adoc`; `tools/hash/measure.py` and the lane `measure` are retired by design
+  D33), `tools/test/hash_jamfiles_test.py` with its fixtures, chapter 10's
+  three rows and chapter 17's entry; libsodium links with `-sALLOW_MEMORY_GROWTH=1` on Emscripten.
+  BLAKE3's own test program runs in the library's own lane `c-suites`, beside libsodium's and XKCP's
+  suites.
 - **Tests:** RFC 5869, 6070, 7914 and 9106 vectors, Keccak-256's and BLAKE3's official vectors,
   cross-backend agreement natively (all backends, random inputs) and on WebAssembly (hash2 against
   sodium and bearssl), WebCrypto as an outside oracle on Emscripten under node, the C libraries'
   own suites, a test per message, a counting allocation test, every lane (native, wasip2,
   wasip3, emscripten, gcc-15; MSVC and Apple clang in the CI at the end), exceptions on and off.
-- **Measurements:** the measured table (program size per target, throughput natively), and
-  PBKDF2-HMAC-SHA-512 at 1,000,000 iterations for hash2, OpenSSL and libsodium.
+- **Measurements:** the measured table (program size per target, throughput natively), kept as
+  a reference dated 2026-11-16 that decides nothing, and PBKDF2-HMAC-SHA-512 at 1,000,000
+  iterations for hash2, OpenSSL and libsodium.
 - **Seven increments, the highest value first** (spec 1.5): 1, the above; 2, libsodium's whole
   hashing surface (BLAKE2b with key, salt, personalisation and length; SipHash-2-4 and -2-4x;
   `crypto_kdf` subkeys; Argon2i; SHAKE and TurboSHAKE; its SHA-2, SHA-3 and HMACs); 3, XKCP's
@@ -81,13 +89,12 @@ every local lane; it is not yet published, and the spec records what building it
   says which backend provides each function, and every refusal names the backends that have it.
   From increment 2, `digest`, `hasher`, `mac` and the KDF functions reach every backend; Hash2's
   form stays for Hash2's types, `keccak_256` and `blake3`.
-- **One profile changes every default backend,** for hash alone or, through webcpp's umbrella
-  `WEBCPP_PROFILE_FASTEST`/`_SMALLEST`/`_PORTABLE`, for every library (crypto by a later change):
-  none (`auto`: fastest natively, smallest on
-  WebAssembly), `WEBCPP_HASH_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE` or `_BACKEND_<NAME>`,
-  plus per-algorithm overrides `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>` (precedence: override,
-  library profile, umbrella profile, measured default); the defaults come from
-  the build and a committed table of webcpp's own measurements, regenerated at every pin move.
+- **No profile and no override** (retired on 2026-11-16, design D33): increment 1 built one
+  profile per program (`WEBCPP_HASH_PROFILE_*` and webcpp's umbrella `WEBCPP_PROFILE_*`) and
+  per-algorithm overrides `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>`; with the backend named
+  in the type, a define that changed what `hkdf<Hmac>` means across a program would make BearSSL
+  or OpenSSL a default again and hide the backend from the call's reader, so a former define has
+  no effect.
 - **The browser backend through a parallel asynchronous API** (the owner's answer to O1):
   `async_digest`, `async_hmac`, `async_hkdf` and `async_pbkdf2` take a webcpp::asio completion
   token (callback, coroutine in Asio or Cobalt, future); on Emscripten they default to
@@ -104,8 +111,8 @@ every local lane; it is not yet published, and the spec records what building it
 ### New Capabilities
 
 - `hash`: webcpp::hash, Boost.Hash2's algorithms and HMAC by alias, Keccak-256 and BLAKE3 in
-  Hash2's form, HKDF and PBKDF2 over backends with a measured default, Argon2id and scrypt, every
-  backend's further hashing and KDF functions in increments, the configuration profile, the
+  Hash2's form, HKDF and PBKDF2 over backends with `backends::hash2` as the default, Argon2id and
+  scrypt, every backend's further hashing and KDF functions in increments, the
   browser backend's asynchronous family, with their interface, error values, backends, build,
   messages, allocation rules, tests, measurements and documentation.
 
@@ -123,17 +130,18 @@ None.
   submodule `libs/hash` (gate G2), BSL-1.0, "Copyright (c) 2026 WebCpp.org".
 - **Implementation:** increment 1 (the plan's Tasks 0 to 24) is built: the library's repository
   (branch `main`, not yet on GitHub) and the superproject's integration branch hold it, green on
-  native, wasip2, wasip3, Emscripten and gcc-15 locally; MSVC and Apple clang wait for the CI
-  after the owner's gates. Increments 2 to 7 are not started. **The reference code
-  is the code written in the tasks of `reference/plan.md`:** Task 1 (`build.jam`, `config.hpp`,
-  the test Jamfile's `hash-run`), Task 2 (`error.hpp`), Task 3 (`algorithms.hpp`, `hmac.hpp`),
-  Task 4 (the XKCP target, `xkcp_adapter.c`, `canary.h`, `canary_xkcp.c`), Task 5
-  (`keccak.hpp`), Tasks 6 and 7 (the BLAKE3 target, `blake3.hpp`), Task 8 (the libsodium target),
-  Task 9 (`kdf.hpp`, `hkdf.hpp`, `detail/engines.hpp`, `backends/hash2.hpp`), Task 10
-  (`pbkdf2.hpp`), Tasks 11 to 13 (`backends/sodium.hpp`, `backends/openssl.hpp`,
-  `backends/bearssl.hpp`), Task 15 (`argon2.hpp`), Task 16 (`scrypt.hpp`) and Task 21
-  (`tools/hash/measure.py`), and the tasks of increments 2 to 7 (Tasks 25 to 47), with the tests
-  and Jamfiles the other tasks give.
+  native, wasip2, wasip3, Emscripten and gcc-15 locally; MSVC and Apple clang wait for the CI after
+  the owner's gates. Increments 2 to 7 are not started. **The reference code is the code written in
+  the tasks of `reference/plan.md`:** Task 1 (`build.jam`, `config.hpp`, the test Jamfile's
+  `hash-run`), Task 2 (`error.hpp`), Task 3 (`algorithms.hpp`, `hmac.hpp`), Task 4 (the XKCP target,
+  `xkcp_adapter.c`, `canary.h`, `canary_xkcp.c`), Task 5 (`keccak.hpp`), Tasks 6 and 7 (the BLAKE3
+  target, `blake3.hpp`), Task 8 (the libsodium target), Task 9 (`kdf.hpp`, `hkdf.hpp`,
+  `detail/engines.hpp`, `backends/hash2.hpp`), Task 10 (`pbkdf2.hpp`), Tasks 11 to 13
+  (`backends/sodium.hpp`, `backends/openssl.hpp`, `backends/bearssl.hpp`), Task 15 (`argon2.hpp`),
+  Task 16 (`scrypt.hpp`) and Task 21 (`tools/hash/measure.py`, deleted by design D33), and the tasks
+  of increments 2 to 7 (Tasks 25 to 47), with the tests and Jamfiles the other tasks give. What
+  Tasks 14 and 21 built for the profiles, the overrides, the ranking and the lane `measure` is
+  retired by design D33 (task 1.26).
   `reference/spec.md` is the full specification and `reference/STATUS.md` says where things
   stand and how to start.
 - **Dependencies:** Boost 1.92 (Hash2, System, Core's `lightweight_test`, JSON in tests);
@@ -149,7 +157,8 @@ None.
   (replacing its spec 1.2's "written on Hash2's hmac when needed"), its libsodium backend
   (version 0.2) uses `/third_party//sodium` as built here, and `/third_party//bearssl`, which its
   plan adds, gains webcpp::hash's canary here (the BearSSL task waits for that target on `main`).
-  A later change of webcpp::crypto takes the same profile idea for its own defaults, and
+  webcpp::hash reads no profile, webcpp's umbrella `WEBCPP_PROFILE_*` included (design D33);
+  whether webcpp::crypto takes a profile for its own defaults is that library's own later change.
   webcpp::crypto's Botan provisioning (its increment 5) is what increment 6 waits for.
   `libraries/asio` supplies the completion-token model and `browser::async_await` the
   asynchronous family uses. `organization` carries the rulebook this plan extends (chapter 10's

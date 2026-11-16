@@ -9,10 +9,23 @@ created: 2026-11-14
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Amended on 2026-11-16 (design D33).** The owner decided that every key derivation defaults to
+> `backends::hash2` on every target and link set, and `argon2id` and `scrypt` to `backends::sodium`;
+> BearSSL, OpenSSL and libsodium's HKDF are reached only by naming them in the type. The profiles,
+> hash's reading of webcpp's umbrella profile, the per-algorithm overrides with
+> `detail/overrides.hpp`, `detail/ranking.hpp`, MSVC's `detect_mismatch` of the profile and of the
+> overrides, and the own lane `measure` (`tools/hash/measure.py --check`, the CI matrix entry "Own
+> lane (hash, measure)", `test/measure`) are retired, with `tools/hash/measure.py` whole and its
+> test; `doc/measurements.*` stay as a reference dated 2026-11-16 that decides nothing, rendered and
+> checked by `tools/hash/doc_tables.py`. Increment 1's tasks that built them (9, 14, 21, 22, 24)
+> keep their steps as written, the record of what was built, with a note at their head; the Global
+> Constraints, the Review Focus and the tasks of increments 2 to 7 are amended. The retirement
+> itself is `../tasks.md` 1.26.
+
 **Goal:** a new library, webcpp::hash, at `libs/hash`, in seven increments (spec 1.5). Increment 1: Boost.Hash2 1.92's algorithms and HMAC by
 alias; `keccak_256` over XKCP's Keccak-p[1600] and `blake3` over BLAKE3's C implementation, both
 in Hash2's HashAlgorithm form; HKDF and PBKDF2 over four backends (`backends::hash2`, `sodium`,
-`bearssl`, `openssl`) with the owner's default rule and its measured size table; Argon2id and
+`bearssl`, `openssl`) with `backends::hash2` as the default (design D33); Argon2id and
 scrypt from libsodium; on native, wasip2, wasip3 and Emscripten, every test with exceptions on
 and off; and the PBKDF2-HMAC-SHA-512 throughput measured. Increments 2 to 6: every further hashing and
 KDF function of libsodium, XKCP, OpenSSL, BearSSL and Botan 3, through the families of spec 2.15.
@@ -24,8 +37,8 @@ Increment 7: the browser backend through the parallel asynchronous family (spec 
   specialises only the engines of `webcpp::hash::detail` (`hkdf_engine<Backend, Hmac>`,
   `pbkdf2_engine<Backend, Hmac>`, `argon2id_engine<Backend>`, `scrypt_engine<Backend>`), whose
   primary templates and refusing specialisations hold the `static_assert`s of spec 3.3. The
-  default backend is `default_kdf_backend<Hmac, Kdf>` (spec 4), from the `HAS` defines and the
-  generated `detail/ranking.hpp`, under the profile and the overrides of spec 4.1.
+  default backend is `default_kdf_backend<Hmac, Kdf>` (spec 4.1): `backends::hash2` for every key
+  derivation, `backends::sodium` for `argon2id` and `scrypt` (design D33).
 - **The C libraries** are submodules under `third_party/libs/` (`xkcp`, `blake3`, `libsodium`;
   BearSSL is webcpp::crypto's), built file by file by `third_party/Jamfile` into static
   libraries whose usage requirements give `WEBCPP_HASH_HAS_<NAME>=1`; webcpp::hash's
@@ -33,7 +46,8 @@ Increment 7: the browser backend through the parallel asynchronous family (spec 
   `src/xkcp/config.h`. OpenSSL is the superproject's provider, through hash's alias
   `/webcpp/hash//openssl`.
 - **The superproject** gains: three submodules and their targets; the test-data target
-  `/third_party//blake3_vectors`; `tools/hash/measure.py` and the own lane `measure`;
+  `/third_party//blake3_vectors`; `tools/hash/measure.py` and the own lane `measure` (both
+  retired by design D33);
   `tools/test/hash_jamfiles_test.py` and its fixtures;
   CODING-GUIDELINES.md chapter 10's three rows and chapter 17's entry. BLAKE3's own test program
   runs in the library's own lane `c-suites` (Task 6, Step 5; design D29).
@@ -158,9 +172,9 @@ favour of the real one.
   - gcc: `$B2 -a --build-dir=bin/lane-gcc toolset=gcc-15 libs/hash/test libs/hash/example`;
   - MSVC and Apple clang in the CI only, at the end (G4);
   - the own lane `c-suites` on target `<t>`: the target's command with
-    `libs/hash/test/c_suites//c-suites` in place of the two directories; the own lane `measure`:
-    `$B2 -a --build-dir=bin/lane-measure libs/hash/test/measure//measure` (it builds for the four
-    targets itself, Task 21);
+    `libs/hash/test/c_suites//c-suites` in place of the two directories (the own lane `measure`,
+    `$B2 -a --build-dir=bin/lane-measure libs/hash/test/measure//measure`, Task 21's, is retired
+    on 2026-11-16 by design D33);
   - the user's Jamfiles: `python3 tools/test/hash_jamfiles_test.py`.
 - The lint: `tools/lint/lint.sh --clang-format .local/wasi-sdk/bin/clang-format --clang-tidy .local/wasi-sdk/bin/clang-tidy`,
   ending `lint: clean`.
@@ -224,8 +238,8 @@ favour of the real one.
 | `WEBCPP_HASH_DETAIL_TEST_OPENSSL_DIGEST` | the seam that replaces OpenSSL's digest name, to provoke a backend failure (Task 12) |
 | `WEBCPP_HASH_DETAIL_TEST_WIPE_RECORD` | the seam through which `detail::wipe` reports each wipe to a test (Task 9) |
 | `tools/test/hash_jamfiles_test.py`, `tools/test/fixtures/hash_jamfiles/<case>/` | the user's Jamfiles and the build's stops (Task 19) |
-| `tools/hash/measure.py` | the measured table and `detail/ranking.hpp` (Task 21) |
-| own lanes `c-suites`, `measure` | `libs/hash/test/c_suites`, `libs/hash/test/measure` |
+| `tools/hash/measure.py` | the measured table and `detail/ranking.hpp` (Task 21); deleted by design D33, `tools/hash/doc_tables.py` renders the reference of 2026-11-16 |
+| own lane `c-suites` | `libs/hash/test/c_suites` (the lane `measure`, `libs/hash/test/measure`, retired by design D33) |
 | `.superpowers/sdd/WEBCPP_HASH_PLAN/progress.md` | the ledger, in the worktree, untracked |
 
 ## Review Focus
@@ -244,9 +258,10 @@ favour of the real one.
    call it is about, and only there: including a backend's header or naming
    `backends::bearssl` as a type is not an error; calling `hkdf_expand` on it is. Tasks 9, 13 and
    14 test it.
-4. **The default backend on WebAssembly is per KDF.** `default_kdf_backend<hmac_sha2_256,
-   kdfs::pbkdf2>` must never be `backends::sodium` or `backends::bearssl`, whatever the measured
-   order or the profile says. Task 14 tests it on each target with every library linked.
+4. **The default backend is `backends::hash2`.** `default_kdf_backend<Hmac, Kdf>` is
+   `backends::hash2` for every hmac and every key derivation, on each target with every library
+   linked, and a former profile or override define changes nothing (design D33; until 2026-11-16
+   this item was the measured default per KDF). Task 14's test, as task 1.26 rewrites it.
 5. **Secrets left behind.** HKDF's T blocks, PBKDF2's U values and accumulator, the keyed hmac
    copies and BearSSL's context are wiped on success and on failure; a backend's failure zeroes
    the output; a guard's refusal leaves it untouched. Tasks 9, 10 and 13 test it.
@@ -255,11 +270,12 @@ favour of the real one.
 7. **One copy per program.** A program naming `/webcpp/hash//openssl` and `/webcpp/crypto//openssl`
    links each OpenSSL archive once; `/third_party//bearssl` with both canaries is one archive.
    Tasks 12 and 13.
-8. **A lane or a check that passes having built nothing.** Every own lane names its targets; a
-   measure program that a target skips is a failure of the `measure` lane, not a missing row. Tasks 4,
-   6, 8 and 21.
-9. **Generated files.** `detail/ranking.hpp` and `doc/measurements.*` are written only by
-   `tools/hash/measure.py`; the `measure` lane fails on a hand edit. Task 21.
+8. **A lane or a check that passes having built nothing.** Every own lane names its targets.
+   Tasks 4, 6 and 8 (and Task 21's lane `measure` until design D33 retired it).
+9. **Generated files.** Until 2026-11-16 `detail/ranking.hpp` and `doc/measurements.*` were
+   written only by `tools/hash/measure.py`, checked by the lane `measure`; design D33 retired the
+   ranking, the lane and the tool, and `doc/measurements.*` stay as a reference dated 2026-11-16
+   whose digest `tools/hash/doc_tables.py --check` checks at every documentation build.
 10. **The asynchronous family completes, never inline.** A completion handler must not run
     inside the initiating call on any target, and an operation keeps the caller's spans until it
     completes or is cancelled (then `output` is zeroed). Task 46 tests it.
@@ -1436,6 +1452,9 @@ for local name in $(.sodium-tests)
 
 ## Task 9: The key derivations' layer, and HKDF on `backends::hash2`
 
+> **Note of 2026-11-16 (design D33).** The provisional `detail/ranking.hpp` and the rule it
+> encoded are retired: `default_kdf_backend` answers `backends::hash2` (`../tasks.md` 1.26).
+
 **Files:**
 - Create (library): `test/messages/Jamfile` (a temporary copy until Task 5's merges),
   `test/messages/kdf_not_digest/`, `include/webcpp/hash/kdf.hpp`, `include/webcpp/hash/hkdf.hpp`,
@@ -1892,6 +1911,17 @@ struct hkdf_engine<backends::bearssl, Hmac> {
 
 ## Task 14: The profile, the overrides and the default backend
 
+> **Note of 2026-11-16 (design D33).** Built as written, then retired: the profiles, the umbrella's
+> reading, the overrides, their `detect_mismatch`, `overrides_list_test`, the profiles' tests
+> (`default_fastest_test`, `default_smallest_test`, `default_portable_test`, `default_named_test`,
+> `default_override_test`, `default_umbrella_test`) and the messages `two_profiles`,
+> `two_umbrella_profiles`, `two_overrides` and `override_cannot_serve`, with Task 19's fixture of
+> OpenSSL's profile on Emscripten and the MSVC cases of the profile and the overrides.
+> `default_backend`, `default_kdf_backend`, the public tags, `doc/capabilities.json` and
+> `capabilities_test` stay;
+> `default_backend_test` checks `backends::hash2` everywhere and that a former define has no
+> effect (`../tasks.md` 1.26).
+
 **Files:**
 - Modify (library): `include/webcpp/hash/config.hpp` (the profile and override defines, their
   refusals, `detect_mismatch`), `include/webcpp/hash/kdf.hpp` (`default_backend`,
@@ -2079,6 +2109,12 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
 
 ## Task 21: The measured table
 
+> **Note of 2026-11-16 (design D33).** Built as written, then retired: `detail/ranking.hpp`, the
+> own lane `measure` (`test/measure/`, `measure.py --check`, the CI matrix entry "Own lane (hash,
+> measure)"), `measure.py` whole and `hash_measure_test.py`. `doc/measurements.json` and
+> `doc/measurements.adoc` stay, labelled as a reference measured on 2026-11-16 that decides
+> nothing, rendered and checked by `tools/hash/doc_tables.py` (`../tasks.md` 1.26).
+
 **Files:**
 - Create (superproject): `tools/hash/measure.py`, `tools/test/hash_measure_test.py`.
 - Create (library): `test/measure/Jamfile`, `test/measure/<algorithm>_<backend>.cpp` (one per
@@ -2103,6 +2139,10 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
 
 ## Task 22: PBKDF2-HMAC-SHA-512 at 1,000,000 iterations
 
+> **Note of 2026-11-16 (design D33).** The benchmark leaves the retired lane `measure`: its
+> correctness program `pbkdf2_sha512_key` runs in every lane of `libs/hash/test`, its times are
+> measured by hand with `bench/collect.py`, and `doc/performance.adoc` decides no default.
+
 **Files:**
 - Create (library): `bench/Jamfile`, `bench/pbkdf2_sha512.cpp`, `doc/performance.adoc`.
 
@@ -2121,7 +2161,9 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
 **Files:**
 - Create (library): `doc/` parts (one per header and per algorithm, in noble's README's manner:
   what it is, an example, its pitfalls), `doc/backends.adoc` (the capability table rendered from
-  `doc/capabilities.json` by `tools/hash/measure.py --capabilities`), `doc/profile.adoc`,
+  `doc/capabilities.json` by `tools/hash/doc_tables.py`, since design D33; first by
+  `tools/hash/measure.py --capabilities`), `doc/profile.adoc` (`doc/choosing_backend.adoc` since
+  design D33),
   `doc/departures.adoc`, `doc/use-cases/{p2p,cryptocurrencies,privacy}.adoc`,
   `doc/upstream.adoc`, `NOTICE.md`, `example/*.cpp` (each section's example) and its Jamfile.
 
@@ -2143,6 +2185,9 @@ template <class Algorithm, class Hmac> struct override_choice;  // void without 
   lint. Expected: clean. Commit (library) `"hash: the documentation, its examples and the Boost.Hash2 proposal's text"`.
 
 ## Task 24: Increment 1 whole
+
+> **Note of 2026-11-16 (design D33).** The own lane `measure` of Step 2 is retired; the lanes are
+> the others.
 
 - [ ] **Step 1: The rulebook and the lint.** CODING-GUIDELINES.md chapter 10's rows (Tasks 4, 6, 8,
   13) are in; chapter 17's entry describes increment 1 as built; chapter 5's rule 2 records its
@@ -2172,7 +2217,7 @@ Each increment's first task reads its backend at the pin and corrects its column
 never assumed. Each function follows increment 1's pattern: the official vectors first and seen
 failing, the engine, every target the backend has, exceptions on and off, agreement with every
 other backend that has the function (Task 17's tests gain each pair), the WebCrypto oracle where
-WebCrypto has it (Task 18's test gains it), the measured table regenerated (Task 21's lane), the
+WebCrypto has it (Task 18's test gains it), the
 capability table and the documentation's section (noble's manner: what it is, an example, its
 pitfalls), the changelog line.
 
@@ -2186,11 +2231,13 @@ Stream `sodium-2`, first; every later increment builds on it.
   `include/webcpp/hash/argon2.hpp` gains `argon2_parameters` and `argon2<Variant, Backend>`;
   `include/webcpp/hash/detail/engines.hpp` gains `digest_engine<Backend, Digest>`,
   `mac_engine<Backend, Mac>`, `argon2_engine<Backend, Variant>`, each primary template refusing
-  with the text generated from `doc/capabilities.json` (the backends of its row);
+  with the text of its row of `doc/capabilities.json` (the backends that have it), written by
+  hand and checked by `capabilities_test` against that file;
   `test/families_test.cpp`, `test/hasher_state_test.cpp`.
 - Modify (library): `error.hpp` (value 9, `invalid_state`, "the hasher was finished or moved
   from"), `kdf.hpp` (`default_backend` over every tag), `doc/capabilities.json`,
-  `tools/hash/measure.py --refusals` (superproject) to generate the refusal texts.
+  the refusal texts written and checked by `capabilities_test` against it (no generator:
+  `tools/hash/measure.py` is deleted by design D33).
 
 **Interfaces:**
 - Produces: spec 2.15; `hasher` is move-only, wipes its context in its destructor and on move,
@@ -2374,8 +2421,7 @@ Stream `openssl-4`; native, wasip2 and wasip3.
 
 ## Task 38: Increment 4 whole
 
-- [ ] Task 47 for increment 4: the agreement tests gain every OpenSSL pair; the measured table
-  gains its rows. Commit (library) `"hash: increment 4 whole"`.
+- [ ] Task 47 for increment 4: the agreement tests gain every OpenSSL pair. Commit (library) `"hash: increment 4 whole"`.
 
 ## Task 39: BearSSL's hashes, HMAC and SHAKE
 
@@ -2391,8 +2437,8 @@ Stream `bearssl-5`.
 
 ## Task 40: Increment 5 whole
 
-- [ ] Task 47 for increment 5: the `smallest` profile's choices on WebAssembly re-read from the
-  regenerated table and reported in the ledger. Commit (library) `"hash: increment 5 whole"`.
+- [ ] Task 47 for increment 5: BearSSL's functions reached by naming `backends::bearssl` in the
+  type, never a default (design D33). Commit (library) `"hash: increment 5 whole"`.
 
 ## Task 41: Botan's column, at its pin
 
@@ -2496,10 +2542,11 @@ Stream `async-7`.
 
 ## Task 47: An increment whole (run once per increment 2 to 7)
 
-- [ ] **Step 1:** `doc/capabilities.json` and `capabilities_test` agree; the refusal texts are
-  regenerated (`python3 tools/hash/measure.py --refusals --check`).
-- [ ] **Step 2:** the measured table regenerated (`python3 tools/hash/measure.py --write`), the
-  throughput re-measured natively, the `measure` lane green.
+- [ ] **Step 1:** `doc/capabilities.json` and `capabilities_test` agree, its defaults included;
+  the refusal texts are checked by `capabilities_test` against it, and `doc/backends.adoc` is
+  rendered by `tools/hash/doc_tables.py`.
+- [ ] **Step 2:** every new algorithm's default is the one design O3's answer gives, named
+  beside `doc/capabilities.json`, and no measurement decides it (design D33).
 - [ ] **Step 3:** every lane from scratch, the own lanes, the tools' tests, the lint, as Task 24's
   Step 2; a review by someone who did not write the increment.
 - [ ] **Step 4:** the documentation's sections of the increment (noble's manner; libsodium's

@@ -10,7 +10,9 @@ scrypt for passwords, BLAKE3 on demand. Boost.Hash2 1.92 already has SHA-1/2/3, 
 BLAKE2 and HMAC, and none of these. The specification is `reference/spec.md`, the plan
 `reference/plan.md`. Increment 1 (the plan's Tasks 0 to 24) is built in the library's own
 repository and green on every local lane, not yet published (the owner's gates); D25 to D32
-record what building it decided, and the spec and the plan are amended to match.
+record what building it decided, and the spec and the plan are amended to match. D33 records the
+owner's decision of 2026-11-16 that every key derivation defaults to `backends::hash2`, which
+retires the measured defaults, the profiles and the overrides of D8, D20, D28 and D32.
 
 Constraints every decision works within, from the superproject's `CODING-GUIDELINES.md`:
 
@@ -34,12 +36,12 @@ Constraints every decision works within, from the superproject's `CODING-GUIDELI
 - Boost.Hash2's algorithms and HMAC under webcpp::hash's names, as the Hash2 types themselves.
 - Keccak-256 (Ethereum's) and BLAKE3 (with keyed hashing, key derivation and extendable output)
   in Hash2's HashAlgorithm form, so that `hash_append` and the rest of Hash2 work with them.
-- HKDF and PBKDF2 over any Hash2 hmac, each on a backend chosen by a template parameter, with a
-  default chosen by the owner's rule, on every target.
+- HKDF and PBKDF2 over any Hash2 hmac, each on a backend chosen by a template parameter, with
+  `backends::hash2` as the default on every target (D33).
 - Argon2id and scrypt from libsodium.
 - Proof by the RFCs' vectors, the C libraries' own suites, agreement between backends, WebCrypto
   as an outside oracle, a counting allocation test and a test for every message; the size table
-  and the PBKDF2 throughput measured.
+  and the PBKDF2 throughput measured, kept as dated reference that decides no default (D33).
 
 **Non-Goals:**
 
@@ -125,7 +127,8 @@ first 64.
 `template <class Hmac, class Backend = default_kdf_backend<Hmac, Kdf>>` function templates, `Kdf`
 the tag of the operation itself (D25); `argon2id` and `scrypt` are
 `template <class Backend = default_backend<kdfs::argon2id>>` (and `kdfs::scrypt`), which is
-`backends::sodium` in increment 1 and honours or refuses their overrides. The backends are
+`backends::sodium` (until 2026-11-16 it also honoured or refused their overrides, retired by D33;
+the default of every other key derivation is `backends::hash2`, D33). The backends are
 `backends::hash2`, `backends::sodium`, `backends::bearssl`, `backends::openssl` (and later
 `backends::botan`). The public functions do every guard once; a backend's header specialises
 `detail::hkdf_engine<Backend, Hmac>`, `detail::pbkdf2_engine<Backend, Hmac>`,
@@ -172,6 +175,11 @@ wiped; it compares no secret.
   `escrypt_PBKDF2_SHA256` (private, SHA-256 alone).
 
 ### D8. The default backend: the fastest natively, the smallest on WebAssembly, per KDF
+
+> **Superseded on 2026-11-16 by D33.** No measurement decides a default any more: every key
+> derivation defaults to `backends::hash2`, and argon2id and scrypt to `backends::sodium`.
+> `detail/ranking.hpp` and the lane `measure` are retired. What still holds: the second
+> parameter of `default_kdf_backend<Hmac, Kdf = kdfs::hkdf>`, its name and its signature.
 
 `default_kdf_backend<Hmac, Kdf = kdfs::hkdf>`: the program's override or profile when it gives one
 (D20); natively the first linked backend having the KDF over the hmac in the measured throughput
@@ -300,6 +308,11 @@ library; exceptions on and off; every lane.
 
 ### D18. The measurements the owner asked for are tasks of the plan
 
+> **Superseded in part on 2026-11-16 by D33.** The measured table no longer orders the backends
+> or decides a default: `doc/measurements.json` and `doc/measurements.adoc` stay as a dated
+> reference measured on 2026-11-16, and no lane re-measures them. What still holds: the
+> measurements were made, and the PBKDF2-HMAC-SHA-512 throughput of `doc/performance.adoc`.
+
 The measured table (D8, D20) and PBKDF2-HMAC-SHA-512 at 1,000,000 iterations for `backends::hash2`,
 OpenSSL and libsodium. libsodium has no PBKDF2, so its line measures RFC 8018's loop over
 `crypto_auth_hmacsha512_*` in the benchmark program, never in the library: the measurement of
@@ -327,6 +340,13 @@ provides each function; every refusal names the backends that have it.
   user needs (the owner asked for as much as each library has).
 
 ### D20. One profile changes every default; overrides per algorithm; a measured table
+
+> **Superseded on 2026-11-16 by D33.** Every profile (`WEBCPP_HASH_PROFILE_FASTEST`, `_SMALLEST`,
+> `_PORTABLE`, `_BACKEND_<NAME>`), hash's reading of webcpp's umbrella `WEBCPP_PROFILE_*`, the
+> per-algorithm overrides `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>`, MSVC's
+> `detect_mismatch` of the profile and of the overrides, `detail/ranking.hpp` and the lane
+> `measure` are retired. Nothing of this decision still holds but its history; the measurements
+> it named are a dated reference (D18).
 
 `config.hpp` takes exactly one profile define: none (`auto`, the owner's rule: fastest natively,
 smallest on WebAssembly), `WEBCPP_HASH_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE` (the same code
@@ -423,6 +443,14 @@ Emscripten, a pool thread with a synchronous backend.
 
 ### D25. HKDF's two steps are public tags, and the default backend is chosen per operation
 
+> **Superseded in part on 2026-11-16 by D33.** The default is no longer chosen per operation from
+> a profile's order or a measured row: it is `backends::hash2` for `hkdf`, `hkdf_extract`,
+> `hkdf_expand` and `pbkdf2` alike, and there is no override. What still holds: the public tags
+> `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand`, `kdfs::pbkdf2`, `kdfs::argon2id` and
+> `kdfs::scrypt`; each function's default named through its own tag; `backend_has_v` answering
+> for the two steps (false for `backends::bearssl`); and BearSSL's HKDF refusing the steps at
+> compile time when named.
+
 `kdfs` declares a tag per operation of increment 1: `hkdf` (both steps at once, the function
 `hkdf`), `hkdf_extract`, `hkdf_expand`, `pbkdf2`, `argon2id` and `scrypt`. `default_backend<
 Algorithm, Hmac>` (and `default_kdf_backend<Hmac, Kdf>`, the same) is chosen for the operation
@@ -483,6 +511,10 @@ tests link with the flag.
   never enough for the sensitive costs).
 
 ### D28. The overrides' refusals live behind `kdf.hpp`, not `config.hpp`
+
+> **Superseded on 2026-11-16 by D33.** The overrides are retired, and with them the generated
+> `detail/overrides.hpp`, `tools/hash/measure.py` (deleted whole), `overrides_list_test` and their
+> `#error`s and `detect_mismatch`. Nothing of this decision still holds but its history.
 
 `config.hpp` keeps the profile's refusals (two library profiles, two umbrella profiles,
 `WEBCPP_HASH_PROFILE_BACKEND_OPENSSL` and `/webcpp/hash//openssl` on Emscripten) and the
@@ -552,6 +584,11 @@ measurements.
 
 ### D32. The measured native HKDF order is provisional
 
+> **Superseded on 2026-11-16 by D33.** No order is committed or compared any more, so none is
+> provisional, and no re-measurement is due before a release; O2 is closed. What still holds: the
+> facts it records about increment 1's measurement (one loaded macOS arm64 machine, HKDF's native
+> medians under 1 percent apart), which D33 cites among its reasons.
+
 The committed measurements were made on one machine, macOS on arm64 (Apple clang 21), shared and
 loaded (`doc/measurements.json` records `loaded: true`). The order follows spec 4.2's rule alone: by
 the median of the invocations' medians, a first measurement by the medians alone, and a committed
@@ -572,6 +609,90 @@ orders are always compared.
   decides, and a noise rule is the spec's to give); the recorded expectation kept against the
   measurement (the owner asked for a measured order).
 
+### D33. Every key derivation defaults to `backends::hash2`; no measurement decides a default
+
+The owner decided on 2026-11-16 to replace the measured default (D8, D20, D25's orders, D32) by a
+fixed one. Increment 1 had built the rule as specified: a profile per program, an override per
+algorithm, and orders of backends by size and throughput generated into `detail/ranking.hpp` from
+`doc/measurements.json` and checked by the own lane `measure`. Its measurements showed that the
+rule bought little: for HKDF the native medians of libsodium, hash2 and OpenSSL were under 1
+percent apart on a loaded machine (D32), and on WebAssembly the backends' isolated programs
+differed by a few KB; a default that followed them could change with a machine's load, a pin move
+or the set of libraries a program happened to link.
+
+- **The default.** The default backend of every key derivation, `hkdf`, `hkdf_extract`,
+  `hkdf_expand` and `pbkdf2`, over every hmac, on every target and whatever the program links, is
+  `backends::hash2`. `backends::sodium` is the default only for what hash2 does not offer,
+  `argon2id` and `scrypt`, of which it is the only backend; a program that calls them without
+  linking libsodium stops with libsodium's "needs" message (spec 5.7), which the primary template
+  of the default backend's engine in `detail/engines.hpp` raises for `backends::sodium`, tested by
+  the messages `argon2id_default_not_linked` and `scrypt_default_not_linked`.
+- **The capability table names each default.** `doc/capabilities.json` (layout version 3) gives
+  each function row a `"default"`: `hash2` for `hkdf_extract`, `hkdf_expand`, `hkdf` and `pbkdf2`,
+  `sodium` for `argon2id` and `scrypt`, `null` for a type; `capabilities_test` compares it with
+  `default_backend`, and `tools/hash/doc_tables.py` renders it. The backends' `"portable"` field
+  and the algorithms' `"overridable"` field are removed.
+- **The other backends are explicit choices.** `backends::bearssl` and `backends::openssl`, and
+  `backends::sodium`'s HKDF, stay and are tested as before (their vectors, the agreement tests,
+  their limits and refusals), but a program reaches them only by naming them in the type, as
+  `hkdf<hmac_sha2_256, backends::openssl>`; none is ever a default.
+- **The public names stay.** `default_backend<Algorithm, Hmac = void>` and
+  `default_kdf_backend<Hmac, Kdf = kdfs::hkdf>` keep their names and signatures, and the tags
+  `kdfs::hkdf_extract` and `kdfs::hkdf_expand` stay, so that `backend_has_v` answers for the steps;
+  the aliases' answer no longer depends on the hmac, the libraries linked or the target.
+- **No define changes a default.** A former profile or override define has no effect;
+  `default_backend_former_defines`, `default_backend_test` built with
+  `WEBCPP_HASH_PROFILE_FASTEST`, `WEBCPP_HASH_PROFILE_SMALLEST`,
+  `WEBCPP_HASH_PROFILE_BACKEND_BEARSSL`, `WEBCPP_PROFILE_FASTEST`,
+  `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_SODIUM` and `WEBCPP_HASH_DEFAULT_BACKEND_PBKDF2_BEARSSL` with
+  every library linked, proves it on the four targets.
+- **Why hash2:** it is the only backend that covers every hmac, every operation and every target
+  (D7); it is header-only, so a program carries only the code it calls and shares the SHA code of
+  Boost.Hash2 it already uses; and the measured differences that would have chosen another
+  backend are nanoseconds natively for HKDF and a few KB isolated on WebAssembly. A default that
+  is the same everywhere is one a reader of the call can name without knowing the build.
+- **Why the overrides go too** (the implementer's decision, recorded): with the backends named in
+  the type, an override that changes what `hkdf<Hmac>` means across a whole program would make
+  `backends::bearssl` or `backends::openssl` a default again, against this decision, and would hide
+  the backend from the reader of the call; and `argon2id` and `scrypt` have one backend, so their
+  overrides choose nothing.
+- **Retired:** every profile, `WEBCPP_HASH_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE` (which now
+  equals the default, since hash2 exists on every target) and `_BACKEND_<NAME>` (which would make
+  another backend a default); hash's reading of webcpp's umbrella `WEBCPP_PROFILE_*`; MSVC's
+  `detect_mismatch` of the profile (`webcpp_hash_profile`) and of the overrides
+  (`webcpp_hash_default_backend_<algorithm>`), since a fixed default cannot differ between two
+  translation units; the per-algorithm overrides
+  `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>` with the generated `detail/overrides.hpp` and
+  `overrides_list_test`; the generated `include/webcpp/hash/detail/ranking.hpp` and the code that
+  reads it; the profiles' tests and messages; the CI's measure lane, the matrix entry "Own lane
+  (hash, measure)" and `libs/hash/test/measure`; `tools/hash/measure.py` whole (`--write`,
+  `--check`, `--capabilities`, `--overrides`, `--refusals`) with `tools/test/hash_measure_test.py`;
+  and, used by the measure lane alone, `tools/ci/matrix.py`'s `EVERY_TARGET_LANES` (an own lane
+  naming no target that builds every target) and `tools/lint/compile_commands.py`'s handling of a
+  native lane's WebAssembly commands, each with its test.
+- **Kept:** `doc/measurements.json`, its records and orders unchanged, its about and layout text
+  relabelled as a reference measured on 2026-11-16 that decides nothing and its digest recomputed;
+  `doc/measurements.adoc`, now rendered from it by `tools/hash/doc_tables.py` without the orders and
+  the default of each key derivation, with that label and why hash2 is the default; `doc_tables.py`
+  also renders `doc/backends.adoc` from `doc/capabilities.json`, and its `--check`, run at every
+  documentation build, fails when `measurements.json`'s digest does not match its content (a hand
+  edit of the reference); the guide's comparison tables still read the measurements (D31); the
+  PBKDF2-HMAC-SHA-512 throughput of `doc/performance.adoc` (D18), its times measured by hand with
+  `bench/collect.py`, while the benchmark's correctness program `pbkdf2_sha512_key` (its derived
+  keys checked, never its time) runs in every lane of `libs/hash/test`; the guide's chapter on the
+  profile, now `choosing_backend.adoc` (anchors `hash-choosing-backend` and
+  `hash-default-backend`), with `guide.json`'s use-case field `profile` renamed `backend` (layout
+  version 2); `doc/capabilities.json` and
+  `capabilities_test`; every backend with its tests; and the asynchronous family's
+  `default_async_backend` (D23, increment 7), which this decision does not change: WebCrypto on
+  Emscripten for the algorithms it serves, else `default_backend`.
+- **Alternatives:** keeping the measured rule (a default that follows a loaded machine's
+  medians, a pin move or the link set, guarded by a lane that re-measures on four targets and an
+  open question per platform, O2, for differences of nanoseconds and a few KB); keeping the
+  overrides without the profiles (one define would still turn `hkdf<Hmac>` into BearSSL's or
+  OpenSSL's across a program, unseen at the call, and would choose nothing for argon2id and
+  scrypt).
+
 ## Risks / Trade-offs
 
 - [libsodium's `sodium_init` on Emscripten stirs its random generator through JavaScript that
@@ -580,20 +701,15 @@ orders are always compared.
   and a failure there is investigated as a build difference before anything else.
 - [The 1 GiB scrypt vector on wasm32] -> its own program; the plan measures on which WebAssembly
   targets it runs, and the page states the memory a WebAssembly program needs.
-- [OpenSSL `no-asm` on MSVC, wasip2 and wasip3] -> OpenSSL stays the native default (the
-  owner's rule, as webcpp::crypto's D22 rules); the throughput table shows the difference and the
-  page says how to choose `backends::hash2`.
-- [The size order may differ between hmacs or between targets] -> the generated file holds one
-  order per target and algorithm (KDFs over the two measured hmacs); a change is caught by the
-  `measure` lane.
-- [Throughput differs between machines] -> a committed native order changes only past a 10 percent
-  difference in the median, and the table records the machine; the owner sees each change.
-- [Increment 1's throughput was measured on one loaded macOS arm64 machine, and the native HKDF
-  order rests on medians under 1 percent apart] -> D32: re-measured on an idle machine before a
-  release; a lane on another native toolchain skips the native order comparison.
-- [The CI's own-lanes job for `measure` builds and runs every program on four targets] -> it may
-  reach the job's 60-minute limit; a later change can generate the measure lane's programs at
-  build time or split the lane by target.
+- [OpenSSL `no-asm` on MSVC, wasip2 and wasip3] -> OpenSSL is never a default (D33); the
+  throughput table shows the difference, and a program that wants OpenSSL's speed natively names
+  `backends::openssl` in the type.
+- [hash2 is slower than OpenSSL for PBKDF2 natively (OpenSSL 1.7 to 3.6 times faster in the
+  dated measurement)] -> accepted by the owner for a default that is the same on every target
+  (D33); the guide's comparison table and `doc/performance.adoc` show it, and the page says how to
+  name `backends::openssl`.
+- [The dated measurements age as the pins move] -> they decide nothing (D33) and are labelled
+  with their date.
 - [The scope of increments 2 to 6 is wide] -> each increment is usable alone and merged before the
   next; a cell of the capability table is checked against the library at its pin by the
   increment's first task, never assumed.
@@ -617,13 +733,28 @@ later change moves its HKDF need onto it (spec 9.2) and its libsodium backend on
 `/third_party//sodium`. To start, follow `reference/STATUS.md` ("How to resume"). Rollback: the
 change is a proposal; withdrawing it deletes `openspec/changes/genesis/`.
 
+D33 changes increment 1's built code before anything is published: the profiles, the overrides,
+`detail/ranking.hpp`, `detail/overrides.hpp`, their tests and messages and the lane `measure` are
+removed in the library's repository and the superproject's integration branch, and
+`default_backend` answers `backends::hash2` (`backends::sodium` for `argon2id` and `scrypt`). A
+program that named a backend in the type is unchanged; one that gave a former profile or override
+define still compiles, the define having no effect, and runs on `backends::hash2`; one that relied
+on a define to reach BearSSL or OpenSSL names that backend in the type instead.
+
 ## Open Questions
 
-- **O2. One native order, or one per platform?** The native throughput orders were measured on
-  macOS arm64 alone (D32). Whether that one order serves Linux and Windows (and x86-64), or each
-  platform gets an order of its own measured on it, is the owner's to decide before a release;
-  until then a lane on another native toolchain skips the native order comparison.
+- **O3. The default of the families for an algorithm hash2 lacks.** D33 decides the defaults of
+  increment 1. From increment 2 on, `digest`, `hasher`, `mac` and `argon2` default to
+  `default_backend<Algorithm>` over algorithms Boost.Hash2 does not have (Keccak-224, KMAC,
+  BLAKE2b with a salt, Argon2i, ...). The proposed answer, in D33's spirit, is a fixed default
+  written beside the capability table: the first that has the algorithm of `backends::hash2`,
+  `backends::xkcp`, `backends::blake3` and `backends::sodium`, never `backends::bearssl`,
+  `backends::openssl` or `backends::botan`; an algorithm only those have would then have no
+  default, and a call names its backend. It is the owner's to decide before increment 2's first
+  task.
 
-O1 (a browser backend over WebCrypto) was answered by the owner on 2026-11-14: D23. The owner's
+O1 (a browser backend over WebCrypto) was answered by the owner on 2026-11-14: D23. O2 (one
+native throughput order, or one per platform) was closed by the owner's decision of 2026-11-16,
+D33: no measured order decides a default any more. The owner's
 gates (creating `webcpporg/hash`, adding `libs/hash`, every push and
 merge, and opening the Boost.Hash2 contribution) are in the plan's "Owner gates".
