@@ -18,7 +18,10 @@ customization of webcpp::crypto's config"): OpenSSL's memory functions become an
 config (section 3.7), revised once more to that option's independent review (crypto-r3-review)
 and the controller's rulings on it: a resource that is never destroyed, OpenSSL's defaults
 recognised on every link, `make`'s errors when the resource fails, and the owner's decisions
-cited by date and title.
+cited by date and title. Brought in line with the library's code on 2026-11-15: OpenSSL is the
+superproject's, built from source, since the provider amendment of 2026-11-03 (sections 3.3
+and 4.4), and the names are grouped in namespaces since the owner's reshape of 2026-11-15
+(section 2.2).
 
 Sources, cited by short name below:
 
@@ -93,6 +96,8 @@ Hash2's `digest<N>::operator==` is `memcmp`, not constant time
 | 2026-10-11 | Bringing a C library into webcpp: twelve rules, three layers that stop a wrong build                                                                                                                                                                              | AGENTS:691-748             |
 | 2026-10-11 | The two departures of section 10 accepted: OpenSSL's and Botan's `make` allocate outside the user's allocator; their shared or static link is a b2 feature                                                                                                        | DESIGN, 2026-10-11 "webcpp::crypto's two departures accepted"                 |
 | 2026-10-11 | OpenSSL's memory functions are an option of webcpp::crypto's config; without it the departure stands; OpenSSL and Botan stay backends, both recommended where they apply                                                                                          | DESIGN, 2026-10-11 "OpenSSL's memory functions are a customization of webcpp::crypto's config"                 |
+| 2026-11-03 | The provider amendment: OpenSSL 3.5.9 built from source by the superproject, static, on native, wasip2 and wasip3, never the machine's; a program names `/webcpp/crypto//openssl`                                                                                 | CODING-GUIDELINES.md chapter 5 rule 7; `design.md` |
+| 2026-11-15 | webcpp::crypto holds primitives only, its names grouped by kind in namespaces that its headers mirror                                                                                                                                                             | `design.md`; `reference/plan.md` |
 
 The decision of 2026-10-10 that a C library comes in through one header included once, as
 Boost.JSON's `src.hpp` (DESIGN, 2026-10-10 "webcpp::crypto's backends are the C libraries
@@ -131,18 +136,29 @@ Data and keys are `std::span<std::uint8_t const>` and `std::span<std::uint8_t>`;
 
 ### 2.2 The headers
 
+The names are grouped by kind, and the headers mirror the namespaces as
+`<webcpp/crypto/<group>/<name>.hpp>` (the owner's decision of 2026-11-15): `webcpp::crypto`
+holds `error`, `random_device`, `equal`, the memory option and the configuration;
+`webcpp::crypto::backends` the backends; `webcpp::crypto::ciphers` the ciphers and their modes
+(`aes128`, `aes192`, `aes256`, `gcm`, `chacha20_poly1305`, `aes128_gcm`, `aes256_gcm`);
+`webcpp::crypto::curves::secp256k1` the curve. webcpp::crypto holds primitives only: a
+protocol's rules (a BIP's tweak, lax DER, transactions, sighashes, key derivation) belong to a
+future domain library. Nothing is released, so no alias or forwarding header keeps an old name.
+Where this specification writes `aes256`, `gcm` or `keypair` alone, it means the name in its
+namespace.
+
 | Header | What | Needs a backend linked |
 | --- | --- | --- |
 | `<webcpp/crypto/config.hpp>` | the target, the `HAS` defines, the default backend, `WEBCPP_CRYPTO_NO_EXCEPTIONS`, the option `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` (section 3.7) | no |
 | `<webcpp/crypto/error.hpp>` | `error`, its category | no |
 | `<webcpp/crypto/equal.hpp>` | `equal` | no |
 | `<webcpp/crypto/random_device.hpp>` | `random_device` | no |
-| `<webcpp/crypto/aes.hpp>` | `aes128`, `aes192`, `aes256` | the one it is used with |
-| `<webcpp/crypto/gcm.hpp>` | `gcm<Cipher>` | the cipher's |
-| `<webcpp/crypto/chacha20_poly1305.hpp>` | `chacha20_poly1305<Backend>` | the one it is used with |
-| `<webcpp/crypto/aes256_gcm.hpp>` | `aes128_gcm`, `aes256_gcm`, and the default backend's header | the default |
+| `<webcpp/crypto/ciphers/aes.hpp>` | `ciphers::aes128`, `aes192`, `aes256` | the one it is used with |
+| `<webcpp/crypto/ciphers/gcm.hpp>` | `ciphers::gcm<Cipher>` | the cipher's |
+| `<webcpp/crypto/ciphers/chacha20_poly1305.hpp>` | `ciphers::chacha20_poly1305<Backend>` | the one it is used with |
+| `<webcpp/crypto/ciphers/aes256_gcm.hpp>` | `ciphers::aes128_gcm`, `aes256_gcm`, and the default backend's header | the default |
 | `<webcpp/crypto/backends/<name>.hpp>` | one backend: its tag type, its compile-time check, its canary | that one |
-| `<webcpp/crypto/secp256k1.hpp>` | `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa` | libsecp256k1 |
+| `<webcpp/crypto/curves/secp256k1.hpp>` | `curves::secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, `to_der`, `from_der`, `normalize_ecdsa`, `tweak_xonly` | libsecp256k1 |
 | `<webcpp/crypto.hpp>` | everything that needs no backend, and the header of each backend whose `HAS` define is set | no |
 
 A program that only uses `random_device` and `equal` names no backend library. A program that
@@ -174,7 +190,7 @@ included, which then clashes with a later `winsock2.h` (Boost.Asio's). So:
 ### 2.3 Block ciphers
 
 ```cpp
-namespace webcpp::crypto {
+namespace webcpp::crypto::ciphers {
 
 // aes128 and aes192 are the same, with key_size 16 and 24.
 template <class Backend = default_backend>
@@ -216,7 +232,7 @@ public:
   `static_assert` of `make` on a backend without the block cipher says (new text; its test
   fixes it, section 8.6):
 
-      webcpp::crypto: aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes256<backends::ctaes>, aes256<backends::openssl> or aes256<backends::botan>, and add its library to the program's Jamfile.
+      webcpp::crypto: ciphers::aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in ciphers::aes256<backends::ctaes>, ciphers::aes256<backends::openssl> or ciphers::aes256<backends::botan>, and add its library to the program's Jamfile.
 
 - Guards: `make` gives `invalid_key_size` for a key of another size than `key_size`, then, on
   OpenSSL with the memory option, `memory_functions_not_installed` (section 3.7);
@@ -228,7 +244,7 @@ public:
 ### 2.4 AES-GCM
 
 ```cpp
-namespace webcpp::crypto {
+namespace webcpp::crypto::ciphers {
 
 template <class Cipher>
 class gcm {
@@ -281,7 +297,7 @@ its own on another library's AES: that would be the port the owner refused (DESI
 "webcpp::crypto's backends are the C libraries themselves"). The `static_assert` says (new
 text; its test fixes it, section 8.6):
 
-    webcpp::crypto: gcm<aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes256<backends::bearssl>>, gcm<aes256<backends::openssl>> or gcm<aes256<backends::botan>>.
+    webcpp::crypto: ciphers::gcm<ciphers::aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: ciphers::gcm<ciphers::aes256<backends::bearssl>>, ciphers::gcm<ciphers::aes256<backends::openssl>> or ciphers::gcm<ciphers::aes256<backends::botan>>.
 
 **Guards.** Each function checks every condition first, in this order, and returns before it
 reads a secret byte (AGENTS:682-683):
@@ -312,7 +328,7 @@ libsecp256k1's key pair, whose state lives inside the object). Every function of
 that first and returns `invalid_state` (LEDGER:24). Without that guard a moved-from BearSSL
 `gcm`, whose vtable survives the move, would seal under an all-zero key schedule and return a
 valid-looking tag (CR-REVIEW I3). The same holds for `aes128/192/256` (section 2.3),
-`chacha20_poly1305` (section 2.5) and `secp256k1::basic_keypair` (section 2.8); one test per
+`chacha20_poly1305` (section 2.5) and `curves::secp256k1::basic_keypair` (section 2.8); one test per
 type and backend.
 
 **Decisions on the behaviour, with their reasons.**
@@ -391,7 +407,7 @@ type and backend.
 ### 2.5 ChaCha20-Poly1305
 
 ```cpp
-namespace webcpp::crypto {
+namespace webcpp::crypto::ciphers {
 
 template <class Backend = default_backend>
 class chacha20_poly1305 {
@@ -504,7 +520,7 @@ public:
 ### 2.8 secp256k1
 
 ```cpp
-namespace webcpp::crypto::secp256k1 {
+namespace webcpp::crypto::curves::secp256k1 {
 
 template <class Backend = backends::secp256k1>
 class basic_keypair {
@@ -536,6 +552,9 @@ public:
     // The SHA-256 of the compressed shared point, libsecp256k1's default (secp256k1_ecdh.h).
     boost::system::result<std::array<std::uint8_t, 32>> ecdh(
         std::span<std::uint8_t const> public_key) const noexcept;
+    // In place by a 32-byte tweak t, the caller's: the x-only public key P becomes P + t*G
+    // (secp256k1_keypair_xonly_tweak_add); a tweak refused wipes the pair.
+    boost::system::result<void> tweak_xonly(std::span<std::uint8_t const, 32> tweak) noexcept;
 };
 using keypair = basic_keypair<>;
 
@@ -548,6 +567,27 @@ template <class Backend = backends::secp256k1>
 boost::system::result<void> verify_ecdsa(std::span<std::uint8_t const, 64> signature,
                                          std::span<std::uint8_t const, 32> hash,
                                          std::span<std::uint8_t const> public_key) noexcept;
+
+// ECDSA's encodings and the x-only tweak, with the static context too.
+inline constexpr std::size_t max_der_size = 72;
+template <class Backend = backends::secp256k1>
+boost::system::result<std::size_t> to_der(std::span<std::uint8_t const, 64> compact,
+                                          std::span<std::uint8_t> out) noexcept;  // strict DER
+template <class Backend = backends::secp256k1>
+boost::system::result<std::array<std::uint8_t, 64>> from_der(
+    std::span<std::uint8_t const> der) noexcept;                      // strict DER, BIP66
+template <class Backend = backends::secp256k1>
+boost::system::result<std::array<std::uint8_t, 64>> normalize_ecdsa(
+    std::span<std::uint8_t const, 64> compact) noexcept;              // the low-S form
+
+struct tweaked_xonly_key {
+    std::array<std::uint8_t, 32> key;
+    int parity;                                   // 0 when the point's y is even, 1 when odd
+};
+template <class Backend = backends::secp256k1>
+boost::system::result<tweaked_xonly_key> tweak_xonly(
+    std::span<std::uint8_t const, 32> xonly_public_key,
+    std::span<std::uint8_t const, 32> tweak) noexcept;  // P + t*G
 
 }
 ```
@@ -591,6 +631,22 @@ boost::system::result<void> verify_ecdsa(std::span<std::uint8_t const, 64> signa
   gives `invalid_signature`; `verify_ecdsa` gives it too for a compact signature that
   `secp256k1_ecdsa_signature_parse_compact` refuses (r or s not below the group order), and
   for one in high-S form, as `secp256k1_ecdsa_verify` does; the documentation says so.
+- **ECDSA's encodings and the x-only tweak** (Task 27b, the owner's decision of 2026-11-14,
+  reshaped on 2026-11-15). `to_der` writes a compact signature as strict DER into a caller's
+  buffer of at least `max_der_size` bytes, 72 (`invalid_input_size` when shorter, nothing
+  written), and returns its length; `from_der` reads strict DER (BIP66) with nothing after it;
+  `normalize_ecdsa` gives the low-S form `verify_ecdsa` requires. Each gives
+  `invalid_signature` for an r or an s that is zero or not below the group order, and
+  `from_der` for anything that is not strict DER. `tweak_xonly` tweaks an x-only key by any
+  32-byte tweak t, P + t*G, and gives the tweaked x-only key and its parity
+  (`secp256k1_xonly_pubkey_tweak_add`); `keypair::tweak_xonly` tweaks a key pair in place
+  (`secp256k1_keypair_xonly_tweak_add`). A tweak not below the group order, or one that gives
+  no valid key, gives `invalid_secret_key`, and the key pair is then wiped and empty, as moved
+  from; `tweak_xonly` gives `invalid_public_key` for a key that is not a point's x. Each is a
+  wrapper over libsecp256k1's own function, reads the canary and allocates nothing. The caller
+  computes the tweak: BIP341's TapTweak is a protocol's rule, not a primitive, and BIP341's
+  vectors are the tweak's test (section 8.1). Lax DER, the Taproot functions, transactions,
+  sighashes, BIP32 and addresses belong to a future domain library.
 - The whole C API of libsecp256k1 v0.8.0 stays reachable through `<secp256k1*.h>`, every
   module built (C-LIBS:249-262): what the C++ types do not wrap is used directly.
 
@@ -605,14 +661,14 @@ released, so the values start afresh:
 | 1 | `invalid_key_size` | every `make` |
 | 2 | `invalid_iv_size` | GCM (empty, or longer than 128 bytes), ChaCha20-Poly1305 (not 12) |
 | 3 | `invalid_tag_size` | `open` |
-| 4 | `invalid_input_size` | a block cipher on a partial block |
+| 4 | `invalid_input_size` | a block cipher on a partial block; `to_der` into a buffer shorter than `max_der_size` |
 | 5 | `message_too_long` | the AEADs' limits |
 | 6 | `authentication_failed` | `open` |
-| 7 | `invalid_state` | every function but `make`, assignment and destruction of a moved-from `aes128/192/256`, `gcm`, `chacha20_poly1305` or `secp256k1::basic_keypair`; the incremental seal out of order |
+| 7 | `invalid_state` | every function but `make`, assignment and destruction of a moved-from `aes128/192/256`, `gcm`, `chacha20_poly1305` or `curves::secp256k1::basic_keypair`; the incremental seal out of order |
 | 8 | `entropy_unavailable` | `random_device`, `keypair::make` |
-| 9 | `invalid_secret_key` | `keypair::make` |
-| 10 | `invalid_public_key` | `ecdh`, `verify_schnorr`, `verify_ecdsa` |
-| 11 | `invalid_signature` | `verify_schnorr`, `verify_ecdsa` |
+| 9 | `invalid_secret_key` | `keypair::make`; `tweak_xonly` and `keypair::tweak_xonly` (a tweak not below the group order, or one that gives no key) |
+| 10 | `invalid_public_key` | `ecdh`, `verify_schnorr`, `verify_ecdsa`, `tweak_xonly` |
+| 11 | `invalid_signature` | `verify_schnorr`, `verify_ecdsa`, `to_der`, `from_der`, `normalize_ecdsa` |
 | 12 | `backend_failure` | a backend failing where its contract says it does not |
 | 13 | `memory_functions_refused` | `backends::openssl::install_memory_functions` (section 3.7) |
 | 14 | `memory_functions_not_installed` | every `make` of the OpenSSL backend, with the memory option (section 3.7) |
@@ -667,9 +723,9 @@ Doc Comment says what depends on it (AGENTS:772-787, CR-REVIEW M2):
 | Backend | Library | Brought by | Targets | webcpp::crypto types it serves | Its own API, also reachable |
 | --- | --- | --- | --- | --- | --- |
 | `backends::bearssl` | BearSSL, MIT, commit 7bea48e5 of the mirror `webcpporg/bearssl` (DESIGN, 2026-10-11 "the BearSSL mirror") | built from source | native, wasip2, wasip3, emscripten | `gcm<aes128/192/256<bearssl>>`, `chacha20_poly1305<bearssl>`; no block cipher | `<bearssl.h>`, all of it |
-| `backends::openssl` | OpenSSL's libcrypto, 3.0 or later, the system's | found on the machine | native only | `aes128/192/256<openssl>`, `gcm<...<openssl>>`, `chacha20_poly1305<openssl>` | `<openssl/*.h>` |
+| `backends::openssl` | OpenSSL 3.5.9's libcrypto, the superproject's `/webcpp/third_party//openssl` | built from source by the superproject, static | native, wasip2, wasip3 | `aes128/192/256<openssl>`, `gcm<...<openssl>>`, `chacha20_poly1305<openssl>` | `<openssl/*.h>` |
 | `backends::ctaes` | ctaes as Bitcoin Core ships it, MIT, `src/crypto/ctaes` of `bitcoin/bitcoin` at tag v31.1 | built from source | native, wasip2, wasip3, emscripten | `aes128/192/256<ctaes>`: the block cipher alone | `<ctaes.h>`: `AES128/192/256_init`, `_encrypt`, `_decrypt` on whole blocks, nothing else at that tag (CR-PROBES `ctaes-pin.log`) |
-| `backends::secp256k1` | libsecp256k1 v0.8.0, MIT, commit 6e2c8bc4 | built from source, every module on | native, wasip2, wasip3, emscripten | `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa` | `<secp256k1*.h>`, 82 functions (C-LIBS:249-262) |
+| `backends::secp256k1` | libsecp256k1 v0.8.0, MIT, commit 6e2c8bc4 | built from source, every module on | native, wasip2, wasip3, emscripten | `curves::secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, DER, low-S and `tweak_xonly` | `<secp256k1*.h>`, 82 functions (C-LIBS:249-262) |
 | `backends::botan` | Botan 3, BSD-2-Clause, the system's | found on the machine | native only, for now (LEDGER:29) | `aes128/192/256<botan>`, `gcm<...<botan>>`, `chacha20_poly1305<botan>`; only with exceptions | `<botan/*.h>` |
 
 The documentation gives this table, and per backend its Jamfile line, its headers and
@@ -712,12 +768,24 @@ A backend's tag type has `static constexpr std::string_view name` (`"bearssl"`,
 
 ### 3.3 OpenSSL
 
-- **Found, not built.** webcpp does not build OpenSSL; `webcpp.external` finds it
-  (section 4.4). Native only: no OpenSSL for WASI or Emscripten exists in webcpp's tree, and
-  the target is refused on WebAssembly (C-LIBS:188-191, :559-560).
-- **Version.** OpenSSL 3.0 or later, for `EVP_CIPHER_fetch`. The header checks
-  `OPENSSL_VERSION_NUMBER >= 0x30000000L` and `#error`s otherwise (new text, with its test).
-  The CI runners have 3.0.13 (Linux) and 3.6.4 (macOS) (C-LIBS:424-426).
+- **Built from source by the superproject, never the machine's** (the provider amendment of
+  2026-11-03, CODING-GUIDELINES.md chapter 5 rule 7, which supersedes for OpenSSL the
+  decision of 2026-10-11 that found it). The superproject's provider builds OpenSSL 3.5.9,
+  static, as `/webcpp/third_party//openssl`, on native, wasip2 and wasip3, and a program names
+  crypto's alias over it, `/webcpp/crypto//openssl` (section 4.4). Emscripten has no OpenSSL:
+  the alias stops the compile there with the fix (section 4.4).
+- **Without assembly on MSVC, wasip2 and wasip3.** The provider builds OpenSSL there with
+  `no-asm`: its AES is table-based and its GHASH 4-bit, neither constant time, and there is no
+  AES-NI. The documentation says so, and that a program for which timing attacks matter there
+  defines `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` or names
+  `ciphers::gcm<ciphers::aes256<backends::bearssl>>`. OpenSSL stays the native default when
+  linked, MSVC included (section 5).
+- **Version.** OpenSSL 3.0 or later, for `EVP_CIPHER_fetch`; the provider builds 3.5.9. The
+  header checks `OPENSSL_VERSION_NUMBER >= 0x30000000L` and `#error`s otherwise, for a build
+  made by other means with an older OpenSSL's headers first (its test fixes the text):
+
+      webcpp::crypto: the backend OpenSSL needs OpenSSL 3.0 or later, and the headers found are of an older OpenSSL. In the program's Jamfile, name /webcpp/crypto//openssl, which builds OpenSSL 3.5.9. (without b2: put OpenSSL 3's include/ first)
+
 - **Calls.** `EVP_CIPHER_fetch` and `EVP_CIPHER_CTX_new` in `make`; each message re-initialises
   the same context (`EVP_EncryptInit_ex` with the IV length set by `EVP_CTRL_GCM_SET_IVLEN`),
   `EVP_EncryptUpdate` or `EVP_DecryptUpdate`, then `EVP_*Final_ex` and the tag controls. EVP
@@ -772,8 +840,8 @@ A backend's tag type has `static constexpr std::string_view name` (`"bearssl"`,
   with IVs of 12 and of 16 bytes. A good `open` and three failed ones made 0 each
   (CR-PROBES `ossl_open.out`). PROBE-R3 measured the same 6,061 for the first `make`, 2 for a
   second one, and 0 for seals and opens (`probe.log`, mode `on`). The documentation states
-  both. The CI's Linux runners carry 3.0.13, where the same counts are measured by section
-  8.5's test in increment 1.
+  both. On the source-built 3.5.9 the same counts are measured by section 8.5's test in
+  increment 1.
   - **By default, outside the user's allocator.** OpenSSL's allocator is replaced only for the
     whole process (`CRYPTO_set_mem_functions`, section 3.7), which webcpp never does on its
     own. This departure from the owner's allocators decision was accepted on 2026-10-11
@@ -786,9 +854,11 @@ A backend's tag type has `static constexpr std::string_view name` (`"bearssl"`,
     Section 3.7 gives the design, its errors and its limits.
 - **Process-wide state.** OpenSSL keeps a library context and its providers for the process.
   That state is OpenSSL's; webcpp adds none (AGENTS:639-640).
-- **Linked shared or static** by the feature `webcpp-crypto-openssl-link` (section 4.4),
-  confirmed by the owner on 2026-10-11 (DESIGN, 2026-10-11 "OpenSSL's memory functions are a
-  customization of webcpp::crypto's config").
+- **Linked static,** libssl and libcrypto from the provider's one build directory per
+  configuration, with the link flags the provider gives; the build's threading follows the
+  program's (`no-threads` under b2's default `threading=single`), and the documentation says
+  so. The feature `webcpp-crypto-openssl-link` the owner confirmed on 2026-10-11 left with the
+  machine's OpenSSL (section 10).
 
 ### 3.4 ctaes
 
@@ -844,17 +914,19 @@ A backend's tag type has `static constexpr std::string_view name` (`"bearssl"`,
 
 ### 3.6 Botan
 
-- **Found, not built,** as OpenSSL is: Botan is a C++ library with its own Python build, not
-  header-only and not built by b2 (`configure.py:517-621`, REVIEW:28). `webcpp.external`
-  finds Botan 3 by `botan-3/botan/aead.h`; it is linked shared or static by
-  `webcpp-crypto-botan-link`, as OpenSSL is. The header checks `BOTAN_VERSION_MAJOR == 3`.
+- **Found, not built,** as OpenSSL was until 2026-11-03 (section 4.4): Botan is a C++ library
+  with its own Python build, not header-only and not built by b2 (`configure.py:517-621`,
+  REVIEW:28). `webcpp.external` finds Botan 3 by `botan-3/botan/aead.h`; it is linked shared
+  or static by `webcpp-crypto-botan-link`, as OpenSSL was. The header checks
+  `BOTAN_VERSION_MAJOR == 3`.
 - **Targets: native only, for now** (LEDGER:29). No system Botan exists for Emscripten, and
   `webcpp.external` keeps one directory per target (`tools/webcpp.jam:973-987`), so an
   Emscripten Botan would need a build of webcpp's own, with Botan's `configure.py
   --os=emscripten`, the program's exception model (`-fwasm-exceptions` or `-fexceptions`) and
   both suspension variants (CR-REVIEW I8); none is defined, so `/third_party//botan` stops a
-  WebAssembly build, Emscripten included, as OpenSSL's does, and `config.hpp` refuses
-  `WEBCPP_CRYPTO_HAS_BOTAN` on WebAssembly as it refuses OpenSSL's (section 4.3). Botan 3.13.0 has no OS
+  WebAssembly build, Emscripten included, as `/webcpp/crypto//openssl` stops an Emscripten one,
+  and `config.hpp` refuses `WEBCPP_CRYPTO_HAS_BOTAN` on WebAssembly as it refuses OpenSSL's on
+  Emscripten (section 4.3). Botan 3.13.0 has no OS
   definition for wasip2 or wasip3 in any case (`src/build-data/os/`, REVIEW:29). A Botan
   WebAssembly build is a later increment's, if a user needs it.
 - **Only with exceptions on.** Botan reports every error by throwing, the tag check included
@@ -865,7 +937,7 @@ A backend's tag type has `static constexpr std::string_view name` (`"bearssl"`,
   exceptions and names it. A program built without exceptions that names `/third_party//botan`
   and uses the default backend gets an `#error` from `config.hpp` (new text, with its test):
   "webcpp::crypto: the backend Botan needs exceptions, and this program is built without them.
-  In the program's Jamfile, name /third_party//bearssl or /third_party//openssl in its place."
+  In the program's Jamfile, name /third_party//bearssl or /webcpp/crypto//openssl in its place."
 - **Its exceptions are caught at the boundary.** Every call into Botan sits in one `try`:
   `Botan::Invalid_Authentication_Tag` becomes `authentication_failed`,
   `Botan::Invalid_IV_Length` `invalid_iv_size`, `Botan::Invalid_Key_Length`
@@ -1027,8 +1099,8 @@ limits.
   the config as `WEBCPP_CRYPTO_DEFAULT_BACKEND_<NAME>` is (section 5), for native builds
   only. It is given to every target of the program that includes a header of
   webcpp::crypto, its own libraries included, and every target that gets it names
-  `/third_party//openssl`: the project's requirements carry both,
-  `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/third_party//openssl`, and a
+  `/webcpp/crypto//openssl`: the project's requirements carry both,
+  `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/webcpp/crypto//openssl`, and a
   WebAssembly build of the program is a project of its own (section 7.3).
 - **With it,** `<webcpp/crypto/backends/openssl.hpp>` declares a function that the program
   defines once, and the backend's tag type gets the install:
@@ -1205,7 +1277,7 @@ limits.
   OpenSSL backend does, natively (section 3.3). `config.hpp` refuses it (layer 1, section
   4.3; new text, with its tests, section 8.6):
   - on WebAssembly: `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE configures OpenSSL, a native backend, and this program is built for WebAssembly. Remove that define from the program's Jamfile.`
-  - natively, without `WEBCPP_CRYPTO_HAS_OPENSSL`: `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. In the program's Jamfile, add /third_party//openssl beside /webcpp/crypto//crypto, or remove that define. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)`
+  - natively, without `WEBCPP_CRYPTO_HAS_OPENSSL`: `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. In the program's Jamfile, add /webcpp/crypto//openssl beside /webcpp/crypto//crypto, or remove that define. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)`
 
   **A missing definition is a link error** (crypto-r3-review I2). Under the option every
   `make` of the backend compares OpenSSL's functions with the adapter's address, which
@@ -1286,14 +1358,15 @@ Windows `bcrypt` for `random_device` (section 6).
   `/third_party//bearssl` and the same program without it are byte-identical on all four
   targets; natively the two must be linked under the same output name, because ld64's ad hoc
   signature embeds it (C-LIBS:495-501). This holds for BearSSL, libsecp256k1 and ctaes, the
-  static archives webcpp builds. A shared OpenSSL or Botan named and not called still adds
-  its load command (Mach-O) or `DT_NEEDED` entry (ELF) and so a dependency at run time
-  (CR-REVIEW M5).
+  static archives webcpp builds. OpenSSL is the provider's static archive (section 4.4) and is
+  not part of this check. A shared Botan named and not called still adds its load command
+  (Mach-O) or `DT_NEEDED` entry (ELF) and so a dependency at run time (CR-REVIEW M5).
 
 ### 4.3 Three layers stop a wrong build
 
-Each layer says exactly what to add (AGENTS:716-725). The messages below are quoted as the
-probes produced them; a file path before a message is the prototype's.
+Each layer says exactly what to add (AGENTS:716-725). The messages below are the code's, which
+their tests fix; the probes produced their first form, and a file path before a message is the
+prototype's.
 
 **Layer 1: compile time, the `HAS` define.** `config.hpp` classifies the target, refuses
 impossible combinations and picks the default backend. The check that a backend is linked
@@ -1303,16 +1376,16 @@ the first error is the instruction and each following `use of undeclared identif
 comes from it; MSVC stops there, `fatal error C1189: #error: "webcpp::crypto: ..."`
 (C-LIBS:562-564).
 
-| Case | Message (clang, PROBES `jam/out/*.log`; the six marked * are in the prototype's headers, `jam/crypto/include/webcpp/crypto/config.hpp:21,24,27`, `backends/bearssl.hpp:19`, `openssl.hpp:14`, `ctaes.hpp:10`, and were reproduced by the review, CR-PROBES `star-messages.log`) |
+| Case | Message (clang; first produced by the probes, PROBES `jam/out/*.log`, and since then reworded with the provider amendment of 2026-11-03 where they name OpenSSL; the six marked * are in the prototype's headers, `jam/crypto/include/webcpp/crypto/config.hpp:21,24,27`, `backends/bearssl.hpp:19`, `openssl.hpp:14`, `ctaes.hpp:10`, and were reproduced by the review, CR-PROBES `star-messages.log`) |
 | --- | --- |
 | no backend, WebAssembly (wasip2, wasip3, emscripten) | `error: "webcpp::crypto: no backend is linked. On WebAssembly the backend is BearSSL: in the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ; (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"` |
-| no backend, native | `error: "webcpp::crypto: no backend is linked. In the program's Jamfile, add /third_party//openssl (the system's OpenSSL) or /third_party//bearssl (built from source) beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl ; (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto, or define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"` |
-| BearSSL selected, not linked * | `error: "webcpp::crypto: the backend BearSSL is used and not linked. In the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto. (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"` |
-| OpenSSL used, not linked * | `error: "webcpp::crypto: the backend OpenSSL is used and not linked. In the program's Jamfile, add /third_party//openssl beside /webcpp/crypto//crypto; b2 links it when it finds OpenSSL (-sOPENSSL_ROOT=<dir> names it). (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)"` |
+| no backend, native | `error: "webcpp::crypto: no backend is linked. In the program's Jamfile, add /webcpp/crypto//openssl (OpenSSL built from source) or /third_party//bearssl (built from source) beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl ; (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto, or define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"` |
+| BearSSL selected, not linked * | `error: "webcpp::crypto: the backend BearSSL is used and not linked. In the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, or, with /webcpp/crypto//openssl linked, select OpenSSL with <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL. (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"` |
+| OpenSSL used, not linked * | `error: "webcpp::crypto: the backend OpenSSL is used and not linked. In the program's Jamfile, add /webcpp/crypto//openssl beside /webcpp/crypto//crypto. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)"` |
 | ctaes used, not linked * | `error: "webcpp::crypto: the backend ctaes is used and not linked. In the program's Jamfile, add /third_party//ctaes beside /webcpp/crypto//crypto. (without b2: define WEBCPP_CRYPTO_HAS_CTAES=1 and link ctaes.c with webcpp's src/canary_ctaes.c)"` |
-| libsecp256k1 not linked | `error: "webcpp::crypto: <webcpp/crypto/secp256k1.hpp> needs libsecp256k1, which is not linked. In the program's Jamfile, add /third_party//secp256k1 beside /webcpp/crypto//crypto. (without b2: define WEBCPP_CRYPTO_HAS_SECP256K1=1 and link libsecp256k1 built with webcpp's src/canary_secp256k1.c)"` |
-| OpenSSL's `HAS` on WebAssembly, without b2 * (wasi-sdk 34, wasm32-wasip2) | `error: "webcpp::crypto: OpenSSL is a native backend and this program is built for WebAssembly. In the program's Jamfile, replace /third_party//openssl with /third_party//bearssl."` |
-| `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` on WebAssembly * | `error: "webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects a native backend and this program is built for WebAssembly. Remove that define, or make it WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL."` |
+| libsecp256k1 not linked | `error: "webcpp::crypto: <webcpp/crypto/curves/secp256k1.hpp> needs libsecp256k1, which is not linked. In the program's Jamfile, add /third_party//secp256k1 beside /webcpp/crypto//crypto. (without b2: define WEBCPP_CRYPTO_HAS_SECP256K1=1 and link libsecp256k1 built with webcpp's src/canary_secp256k1.c)"` |
+| OpenSSL's `HAS` on Emscripten, without b2 * | `error: "webcpp::crypto: OpenSSL is not built for Emscripten. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl."` |
+| `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` on Emscripten * | `error: "webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects OpenSSL, which is not built for Emscripten. Remove that define, or make it WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL."` |
 | two defaults selected * | `error: "webcpp::crypto: both WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL and WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL are defined. Keep one."` |
 
 New messages, not yet produced by a probe, whose tests fix their text: `gcm` and
@@ -1376,68 +1449,67 @@ features and do not change its path: b2 reused the object compiled with
 `WEBCPP_CRYPTO_HAS_BEARSSL` for the program without it, which then failed at link instead. Each
 error case has a directory of its own (C-LIBS:565-569).
 
-### 4.4 External libraries: found, or the build stops
+### 4.4 OpenSSL built from source; Botan found, or the build stops
 
-OpenSSL and Botan are found by `webcpp.external`, where `-s<NAME>_ROOT=<dir>` says, else in
-webcpp's `.local/<name>`, else in the system's directories (`tools/webcpp.jam:967-986`). In
-`third_party/Jamfile` (C-LIBS:630-639):
+**OpenSSL is the superproject's, built from source** (the provider amendment of 2026-11-03,
+CODING-GUIDELINES.md chapter 5 rule 7). It supersedes for OpenSSL the decisions of 2026-10-11
+that found OpenSSL on the machine and linked it shared or static: the superproject's provider
+builds OpenSSL 3.5.9 from its own submodule as `/webcpp/third_party//openssl`, static, on
+native, wasip2 and wasip3, and webcpp never links a copy of the machine's. A program names
+crypto's alias over it, `/webcpp/crypto//openssl` (`libs/crypto/build.jam`):
 
-    webcpp.external crypto : OpenSSL : OPENSSL_ROOT : openssl : openssl/evp.h : native
-    lib openssl-crypto : : <file>$(root)/lib/libcrypto.a <webcpp-crypto-openssl-link>static ...
-    lib openssl-crypto : : <name>crypto <search>$(root)/lib <webcpp-crypto-openssl-link>shared ...
-    alias openssl : openssl-crypto : <conditional>@openssl-found
-      : : <define>WEBCPP_CRYPTO_HAS_OPENSSL=1 ... ;
+    rule openssl-linked ( properties * )
+    {
+        if [ webcpp-target.target-of $(properties) ] in native wasip2 wasip3
+        {
+            return <library>/webcpp/third_party//openssl
+                <define>WEBCPP_CRYPTO_HAS_OPENSSL=1 ;
+        }
+    }
 
-**Shared or static.**
-`feature.feature webcpp-crypto-openssl-link : shared static : propagated ;`, shared first and
-so the default. Propagated, so a program's request reaches the library; not free or incidental, so the two builds get directories of their own (C-LIBS:273-286).
-Measured: shared, the program is 34,864 bytes and depends on `libcrypto.3.dylib`; static, with
-`-sOPENSSL_ROOT=/opt/homebrew/opt/openssl@3`, 3,623,296 bytes with no libcrypto dependency
-(C-LIBS:539-540). A static link needs `-pthread` (and `-ldl` on older glibc) on Linux and
-`ws2_32 crypt32 user32 advapi32` on Windows, which the static alternative's usage requirements
-give; with MSVC the library is `libcrypto.lib` in `lib/VC/x64/MD` (C-LIBS:291-294). WebAssembly
-has no shared libraries in scope, so the feature exists only natively. Static on a root without
-`lib/libcrypto.a` stops the build, naming the file (new text, with its test). The 2026-10-10
-entry put this choice in the config (DESIGN, 2026-10-10 "webcpp::crypto's backends are the C
-libraries themselves"); a header cannot change how a program is linked, so the feature carries
-it, and `config.hpp` only reads what the build says (C-LIBS:296-304). This departed from the
-letter of the owner's decision; the owner confirmed the feature on 2026-10-11 (DESIGN,
-2026-10-11 "webcpp::crypto's two departures accepted"; 2026-10-11 "OpenSSL's memory functions
-are a customization of webcpp::crypto's config"; section 10). Botan's
-`webcpp-crypto-botan-link` is the same.
+    path-constant WEBCPP_CRYPTO_ROOT : . ;
+    alias openssl : : : : <conditional>@openssl-linked
+        <toolset>emscripten:<cflags>"-include \"$(WEBCPP_CRYPTO_ROOT)/src/openssl_on_emscripten.hpp\""
+        <toolset>emscripten:<cxxflags>"-include \"$(WEBCPP_CRYPTO_ROOT)/src/openssl_on_emscripten.hpp\"" ;
 
-**OpenSSL on WebAssembly stops the build before compiling** (`jam/out/openssl-emscripten.log`):
+The define is the alias's, not a usage requirement of the provider, which stays free of any
+one library. The provider links libssl and libcrypto from one build directory per
+configuration, with the link flags it gives, and the build's threading follows the program's
+(`no-threads` under b2's default `threading=single`). On MSVC, wasip2 and wasip3 it builds
+OpenSSL without assembly (section 3.3). Nothing is looked for on the machine, so OpenSSL has
+no root to give, no stop for a missing OpenSSL and no shared link. The provider injects
+nothing into upstream, so OpenSSL has no link-time canary: its layers are the compile-time
+messages of section 4.3 and MSVC's `detect_mismatch`.
 
-    error: /third_party//openssl: OpenSSL is a native backend, and this build is for WebAssembly. In the program's Jamfile, name /third_party//bearssl in its place.
+**Emscripten stops the compile.** webcpp builds no OpenSSL for Emscripten. There the alias
+forces `src/openssl_on_emscripten.hpp` into every file the program compiles, C and C++, and its
+`#error` says (a fixture of the superproject's Jamfile test fixes it, section 8.6):
 
-**A wrong root stops it** (`jam/out/openssl-wrong-root.log`):
+    webcpp::crypto: /webcpp/crypto//openssl is named in a build for Emscripten, where webcpp does not build OpenSSL. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl, or name OpenSSL for native and WASI builds alone, by a condition in the project's requirements: project : requirements <conditional>@native-openssl ; rule native-openssl ( properties * ) { if ! <toolset>emscripten in $(properties) { return <library>/webcpp/crypto//openssl ; } } (without b2: link OpenSSL into native and WASI programs only)
 
-    error: -sOPENSSL_ROOT=/tmp/no-openssl holds no include/openssl/evp.h: give the directory of OpenSSL's include/ and lib/, or no -sOPENSSL_ROOT to look for OpenSSL in ~/dev/webcpp/.local/openssl, else on the system.
+**Botan is found** by `webcpp.external`, where `-sBOTAN_ROOT=<dir>` says, else in webcpp's
+`.local/botan`, else in the system's directories (`tools/webcpp.jam:967-986`). OpenSSL was
+found the same way until 2026-11-03, and the prototype measured the mechanism on it
+(C-LIBS:273-304, :539-540, :630-639). Botan is linked shared, the default, or static by the
+feature `webcpp-crypto-botan-link` (`shared static`, propagated, so that a program's request
+reaches the library, and not free or incidental, so that the two builds get directories of
+their own). A header cannot change how a program is linked, so the feature carries the choice
+the decision of 2026-10-10 put in the config, and `config.hpp` only reads what the build says;
+the owner confirmed the feature on 2026-10-11 (section 10). A static link on a root without the
+static library stops the build, naming the file, and a wrong root stops it too.
 
-**OpenSSL not found stops a program's build** (DESIGN, 2026-10-11 "an external library a
-program names and the machine lacks stops the build", AGENTS:726-732). The prototype still left
-the program out and exited 0 (`jam/out/openssl-left-out.log`):
-
-    webcpp: crypto is left out: OpenSSL was not found: -sOPENSSL_ROOT=<dir> was not given, and /tmp/fakeroot/.local/openssl/include holds no openssl/evp.h, nor does /usr/include or /usr/local/include. Give -sOPENSSL_ROOT=<dir>, the directory of its include/ and lib/, or install it in /tmp/fakeroot/.local/openssl, as libs/crypto/README.md says.
-
-A user's program that names `/third_party//openssl` has asked for it, so the build stops
-instead, with the three ways out the owner named: how to install it, `-sOPENSSL_ROOT`, or
-another backend. The text is new and its test fixes it; it reuses the "where it looked" part
-that `webcpp.external-found` already writes (`tools/webcpp.jam:996-1032`):
-
-    error: /third_party//openssl: the program names OpenSSL, and it was not found: <where it looked>. Install it (apt install libssl-dev; brew install openssl@3, then give -sOPENSSL_ROOT=<the directory that brew --prefix openssl@3 prints>; or OpenSSL's Windows installer), give -sOPENSSL_ROOT=<dir>, the directory of its include/ and lib/, or name /third_party//bearssl in its place.
-
-Homebrew's `openssl@3` is keg-only: it is installed under the directory `brew --prefix
-openssl@3` prints (`/opt/homebrew/opt/openssl@3` on Apple silicon, C-LIBS:539-540), not in
-`/usr/include` or `/usr/local/include`, where b2 looks, so the message pairs the install with
-the root to give (CR-REVIEW M8). The message holds no `$(`, which b2 would expand.
-
-Only webcpp's own tests and examples are left out with the measured message, as chapter 9
-says, and the CI requires them anyway with `webcpp-require-external=on`
+**Botan not found stops a program's build** (DESIGN, 2026-10-11 "an external library a program
+names and the machine lacks stops the build", AGENTS:726-732). A user's program that names
+`/third_party//botan` has asked for it, so the build stops with the three ways out the owner
+named: how to install it, `-sBOTAN_ROOT`, or another backend. The text is written with the
+backend (increment 5) and its test fixes it; it reuses the "where it looked" part that
+`webcpp.external-found` already writes (`tools/webcpp.jam:996-1032`), and holds no `$(`, which
+b2 would expand. Only webcpp's own tests and examples are left out, with a message, as
+chapter 9 says, and the CI requires them anyway with `webcpp-require-external=on`
 (`tools/webcpp.jam:1016-1023`). The two cases are told apart by an incidental propagated
 feature that webcpp's test rules (`webcpp.run` and its kin) and `webcpp.example` set on their
-programs; any other program gets the stop. Botan's target behaves the same way, with
-`-sBOTAN_ROOT`, and stops every WebAssembly build (section 3.6).
+programs; any other program gets the stop. `/third_party//botan` also stops every WebAssembly
+build (section 3.6).
 
 ### 4.5 One copy per program
 
@@ -1456,13 +1528,17 @@ enter the choice, since BearSSL picks AES-NI and PCLMUL by CPUID inside its own 
 | Target | Default | The measured reason |
 | --- | --- | --- |
 | Emscripten | `backends::bearssl` | OpenSSL and Botan do not exist there. BearSSL's AES-GCM adds about 17.6 KB raw, 7.8 KB gzip, to a program at -Os (26,387 bytes against a baseline of 8,779; C-LIBS:177, :462) and runs at 146 to 160 MiB/s (C-LIBS:207-208) |
-| wasip2, wasip3 | `backends::bearssl` | the only backend; about 15.6 KB raw, 6.2 KB gzip, at -Os stripped (wasip2 59,887 against 44,264; wasip3 67,871 against 52,188; C-LIBS:180-182, :464-466), 147 to 160 MiB/s |
+| wasip2, wasip3 | `backends::bearssl` | the default even with OpenSSL linked, which a program selects with `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` or names in the type; about 15.6 KB raw, 6.2 KB gzip, at -Os stripped (wasip2 59,887 against 44,264; wasip3 67,871 against 52,188; C-LIBS:180-182, :464-466), 147 to 160 MiB/s |
 | native, OpenSSL linked | `backends::openssl` | the fastest on every architecture measured: x86-64 (AMD EPYC 7763) 3,333 to 3,509 MiB/s against BearSSL's AES-NI 2,373 to 2,496, about 1.4 times; Linux aarch64 2,821 to 2,825 against 92.4 to 92.5, about 30 times; macOS-15 (Apple M1) 5,571 to 5,908 against 90.1 to 94.1, about 62 times (CI run 38113681987, C-LIBS:416-426); Apple M5 Max 7,501 to 7,687 against 159 to 175, about 46 times (C-LIBS:199-211). Shared, it adds nothing to the executable beyond the system's libcrypto (4.87 MB, already on a server) |
 | native, OpenSSL not linked | `backends::bearssl` | it builds everywhere from source; with AES-NI it is within 1.4 times of OpenSSL on x86-64, but it has no ARM hardware path and runs at 90 to 175 MiB/s there |
 
 - With more than one AEAD backend linked, the default is the first linked in this order:
   natively `openssl`, `bearssl`, `botan`; Botan comes last because it needs exceptions. On
-  WebAssembly BearSSL is the only AEAD backend (Botan is native only for now, section 3.6).
+  wasip2 and wasip3 the default is BearSSL, OpenSSL linked or not; on Emscripten BearSSL is the
+  only AEAD backend (Botan is native only for now, section 3.6).
+- The table's OpenSSL figures were measured on the runners' own OpenSSL, with its assembly
+  (C-LIBS:416-426). The source-built 3.5.9 is not measured until the throughput lane, which
+  comes after version 0.1; on MSVC, wasip2 and wasip3 it has no assembly (section 3.3).
 - A program selects another with `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_<NAME>`, and names a
   backend at any use with the template argument (`gcm<aes256<backends::bearssl>>`).
 - The default backend is the AEADs'. The block cipher has none of its own: on WebAssembly a
@@ -1471,8 +1547,9 @@ enter the choice, since BearSSL picks AES-NI and PCLMUL by CPUID inside its own 
   on Emscripten, the web; large on wasip2 and wasip3, the server and cloud targets, and
   natively (section 3.5).
 - **The documentation warns** on the backends' page and on the page of `gcm`: natively without
-  OpenSSL, BearSSL is slow on ARM, 30 to 62 times slower than OpenSSL on the CI's ARM runners,
-  because BearSSL has no ARMv8 AES or PMULL code; a server on ARM names `/third_party//openssl`.
+  OpenSSL, BearSSL is slow on ARM, because BearSSL has no ARMv8 AES or PMULL code; a server on
+  ARM names `/webcpp/crypto//openssl`. The page gives no factor: the slowdown is not measured
+  on the source-built OpenSSL until the throughput lane (deferred).
 
 ## 6. Entropy (the owner, 2026-10-11)
 
@@ -1535,17 +1612,18 @@ backend was a free function, `backends::ctaes::aes256_encrypt` (`jam/app/ctaes/b
 ### 7.1 The rule
 
 webcpp::crypto is header-only, and every algorithm runs on a backend: a C library that webcpp
-builds from its original sources (BearSSL, libsecp256k1, ctaes) or finds on the system
-(OpenSSL, Botan). A program names two things in its Jamfile: `/webcpp/crypto//crypto`, and
-the library of each backend it uses, `/third_party//<backend>`. Nothing is linked that the
-program does not name, and a backend built from source (BearSSL, libsecp256k1, ctaes) named
-but not called adds no byte to the program; a shared OpenSSL or Botan named still adds its
-dependency at run time (section 4.2).
+builds from its original sources (BearSSL, libsecp256k1, ctaes), that the superproject builds
+from source (OpenSSL, static), or that webcpp finds on the system (Botan). A program names two
+things in its Jamfile: `/webcpp/crypto//crypto`, and the library of each backend it uses,
+`/third_party//<backend>`, or for OpenSSL crypto's alias `/webcpp/crypto//openssl`. Nothing
+is linked that the program does not name, and a backend built from source (BearSSL,
+libsecp256k1, ctaes) named but not called adds no byte to the program; a shared Botan named
+still adds its dependency at run time (section 4.2).
 
 A program names a backend in C++ by including its header,
 `<webcpp/crypto/backends/<name>.hpp>` (`backends/ctaes.hpp`, `backends/openssl.hpp`), and
 using its tag type, `backends::<name>`, as the template argument. The default backend needs
-no include of its own: `<webcpp/crypto/aes256_gcm.hpp>` brings it.
+no include of its own: `<webcpp/crypto/ciphers/aes256_gcm.hpp>` brings it.
 
     exe <program> : <sources> /webcpp/crypto//crypto /third_party//<backend> ;
 
@@ -1572,7 +1650,7 @@ and natively (`b2`). On WebAssembly BearSSL is the backend of encryption, and th
 ```cpp
 // Seals one zero block under AES-256-GCM with the default backend and checks it against the
 // NIST test vector (key, IV and plaintext all zero: GCM test case 14), then opens it again.
-#include <webcpp/crypto/aes256_gcm.hpp>
+#include <webcpp/crypto/ciphers/aes256_gcm.hpp>
 #include <webcpp/crypto/equal.hpp>
 
 #include <array>
@@ -1587,50 +1665,50 @@ int main() {
                                               0x07, 0x4e, 0xc5, 0xd3, 0xba, 0xf3, 0x9d, 0x18};
     std::array<std::uint8_t, 16> const expected_tag{0xd0, 0xd1, 0xc8, 0xa7, 0x99, 0x99, 0x6b, 0xf0,
                                                     0x26, 0x5b, 0x98, 0xb5, 0xd4, 0x8a, 0xb9, 0x19};
-    auto aead = webcpp::crypto::aes256_gcm::make(key);
+    auto aead = webcpp::crypto::ciphers::aes256_gcm::make(key);
     if (!aead) {
         return 1;
     }
     auto const tag = aead->seal(iv, {}, data);
     bool const sealed = tag && data == cipher && webcpp::crypto::equal(*tag, expected_tag);
     bool const opened = aead->open(iv, {}, data, expected_tag) && data == std::array<std::uint8_t, 16>{};
-    auto const name = webcpp::crypto::aes256_gcm::backend_type::name;
+    auto const name = webcpp::crypto::ciphers::aes256_gcm::backend_type::name;
     std::printf("aes256_gcm %s backend=%.*s\n", sealed && opened ? "ok" : "FAILED",
                 static_cast<int>(name.size()), name.data());
     return sealed && opened ? 0 : 1;
 }
 ```
 
-### 7.3 A server, natively, with OpenSSL linked shared
+### 7.3 A server, natively, with OpenSSL
 
 `Jamfile`:
 
-    exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl ;
+    exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl ;
 
 Build and run (the same `app.cpp`):
 
     b2
     ./app                  # prints: aes256_gcm ok backend=openssl
 
-b2 looks for OpenSSL in `-sOPENSSL_ROOT=<dir>` when given, else in webcpp's `.local/openssl`,
-else in `/usr/include` and `/usr/local/include`; when it finds none, the build stops and says
-how to install it. OpenSSL is linked shared by default. To link it statically, the directory
-must hold `lib/libcrypto.a`:
-
-    exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl
-      : <webcpp-crypto-openssl-link>static ;
-
-    b2 -sOPENSSL_ROOT=/opt/homebrew/opt/openssl@3
+`/webcpp/crypto//openssl` links the superproject's OpenSSL 3.5.9, built from source and
+static; nothing is looked for on the machine (section 4.4).
 
 Natively, OpenSSL is the default backend whenever it is linked, even when BearSSL is linked too.
 To make BearSSL the default with both linked:
 
-    exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl /third_party//bearssl
+    exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl /third_party//bearssl
       : <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL ;
 
-OpenSSL is native only: never name `/third_party//openssl` in a program built for Emscripten
-or WASI. On an ARM server without OpenSSL, BearSSL is 30 to 62 times slower than OpenSSL
-(section 5): name OpenSSL there.
+OpenSSL builds natively, on wasip2 and on wasip3, and never for Emscripten, where the build
+stops and says to name BearSSL (section 4.4). On wasip2 and wasip3 the default stays BearSSL
+even with OpenSSL linked: a WASI program that wants OpenSSL names it in the type,
+`ciphers::gcm<ciphers::aes256<backends::openssl>>`, or defines
+`WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL`. On MSVC, wasip2 and wasip3 the source-built OpenSSL has
+no assembly: its AES is table-based and its GHASH 4-bit, neither constant time, and there is
+no AES-NI; a program for which timing attacks matter there defines
+`WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL`, or names
+`ciphers::gcm<ciphers::aes256<backends::bearssl>>`. On an ARM server without OpenSSL, BearSSL
+is slow, since it has no ARMv8 AES or PMULL code (section 5): name OpenSSL there.
 
 **OpenSSL's allocations in your own memory resource.** By default OpenSSL allocates with its
 own `malloc`, outside any allocator of the program's (section 3.3). To send every allocation
@@ -1640,20 +1718,20 @@ things below; section 3.7 says why each is needed.
 1. Give the option, and OpenSSL with it, to every target of the program, in the requirements
    of the program's project, so that its own libraries get both too. The option is for native
    builds only: `config.hpp` stops a target that has the define without OpenSSL, or that is
-   built for WebAssembly, with an `#error` (section 7.7). Carrying `/third_party//openssl` in
+   built for WebAssembly, with an `#error` (section 7.7). Carrying `/webcpp/crypto//openssl` in
    the same requirements is what keeps every target that gets the define linked with OpenSSL,
    a tool or a library that only uses `random_device` or `equal` included (this form is not
    yet built with b2; section 7's introduction):
 
        project app
          : requirements <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE
-                        <library>/third_party//openssl ;
+                        <library>/webcpp/crypto//openssl ;
        exe app : app.cpp /webcpp/crypto//crypto ;
 
    A WebAssembly build of the same program is a project of its own, in a directory of its own
    with its own Jamfile, which has neither the define nor OpenSSL and names
    `/third_party//bearssl` (section 7.2): the requirements above cannot be built for
-   WebAssembly, since `/third_party//openssl` stops a WebAssembly build (section 4.4).
+   WebAssembly, since `/webcpp/crypto//openssl` stops an Emscripten build (section 4.4).
 
 2. Define `webcpp::crypto::openssl_memory_resource()` once in the program. Without the
    definition the program does not link. It returns a resource that is thread-safe and is
@@ -1670,7 +1748,7 @@ things below; section 3.7 says why each is needed.
 ```cpp
 // Sends every allocation of OpenSSL's to the program's resource, then seals and opens one
 // block with AES-256-GCM on OpenSSL.
-#include <webcpp/crypto/aes256_gcm.hpp>
+#include <webcpp/crypto/ciphers/aes256_gcm.hpp>
 #include <webcpp/crypto/backends/openssl.hpp>
 
 #include <array>
@@ -1695,7 +1773,7 @@ int main() {
     std::array<std::uint8_t, 32> const key{};
     std::array<std::uint8_t, 12> const iv{};
     std::array<std::uint8_t, 16> data{};
-    auto aead = webcpp::crypto::aes256_gcm::make(key);
+    auto aead = webcpp::crypto::ciphers::aes256_gcm::make(key);
     if (!aead) {
         std::fprintf(stderr, "%s\n", aead.error().message().c_str());
         return 1;
@@ -1758,14 +1836,14 @@ Build and run: `b2`, then `./sign`, which prints `schnorr ok` (on every target).
 
 ```cpp
 // Signs a message with BIP340 through libsecp256k1, verifies it, and refuses a changed one.
-#include <webcpp/crypto/secp256k1.hpp>
+#include <webcpp/crypto/curves/secp256k1.hpp>
 
 #include <array>
 #include <cstdint>
 #include <cstdio>
 
 int main() {
-    namespace secp256k1 = webcpp::crypto::secp256k1;
+    namespace secp256k1 = webcpp::crypto::curves::secp256k1;
     std::array<std::uint8_t, 32> secret{};
     secret.fill(0x42);
     std::array<std::uint8_t, 32> message{};
@@ -1804,7 +1882,7 @@ encryption by itself; a program that encrypts messages uses `gcm` (section 2.4).
 
 ```cpp
 // Encrypts the FIPS-197 appendix C.3 block with AES-256 on ctaes, checks it, and decrypts it again.
-#include <webcpp/crypto/aes.hpp>
+#include <webcpp/crypto/ciphers/aes.hpp>
 #include <webcpp/crypto/backends/ctaes.hpp>
 
 #include <array>
@@ -1822,7 +1900,7 @@ int main() {
     std::array<std::uint8_t, 16> const expected{0x8e, 0xa2, 0xb7, 0xca, 0x51, 0x67, 0x45, 0xbf,
                                                 0xea, 0xfc, 0x49, 0x90, 0x4b, 0x49, 0x60, 0x89};
     std::array<std::uint8_t, 16> block = plain;
-    auto aes = webcpp::crypto::aes256<webcpp::crypto::backends::ctaes>::make(key);
+    auto aes = webcpp::crypto::ciphers::aes256<webcpp::crypto::backends::ctaes>::make(key);
     bool const ok = aes && aes->encrypt(block) && block == expected && aes->decrypt(block) &&
                     block == plain;
     std::printf("ctaes aes256 %s\n", ok ? "ok" : "FAILED");
@@ -1832,13 +1910,13 @@ int main() {
 
 ### 7.6 The backends
 
-| Name in the Jamfile       | Library                                                 | Targets                            | Options                                                                                                                                                                                            | What it exports                                                                                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/third_party//bearssl`   | BearSSL, built from source                              | native, emscripten, wasip2, wasip3 | none                                                                                                                                                                                               | `gcm<aes128/192/256<backends::bearssl>>` (`aes256_gcm` by default on WebAssembly, and natively without OpenSSL), `chacha20_poly1305<backends::bearssl>`; BearSSL's whole C API through `<bearssl.h>`                                                  |
-| `/third_party//openssl`   | OpenSSL's libcrypto 3, found on the system              | native only                        | `<webcpp-crypto-openssl-link>shared` (default) or `static`; `-sOPENSSL_ROOT=<dir>`; `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` with `<library>/third_party//openssl` in the project's requirements, natively only, OpenSSL's allocations in the program's resource (section 7.3) | `aes128/192/256<backends::openssl>`, `gcm<...>` (`aes256_gcm` by default natively when linked), `chacha20_poly1305<backends::openssl>`; OpenSSL's C API through `<openssl/*.h>`                                                                       |
-| `/third_party//secp256k1` | libsecp256k1 v0.8.0, built from source, every module on | native, emscripten, wasip2, wasip3 | `<webcpp-secp256k1-tables>auto` (default: small on Emscripten, large elsewhere), `small` or `large`                                                                                                | `webcpp::crypto::secp256k1::keypair` (BIP340, ECDSA, ECDH), `verify_schnorr`, `verify_ecdsa` in `<webcpp/crypto/secp256k1.hpp>`; the C API of `<secp256k1.h>` and its modules: ecdh, recovery, extrakeys, schnorrsig, musig, ellswift, silentpayments |
-| `/third_party//ctaes`     | ctaes as Bitcoin Core v31.1 ships it, built from source | native, emscripten, wasip2, wasip3 | none                                                                                                                                                                                               | `aes128/192/256<backends::ctaes>` in `<webcpp/crypto/backends/ctaes.hpp>`: the AES block cipher alone, constant time, no mode; the C API of `<ctaes.h>`, `AES128/192/256_init`, `_encrypt`, `_decrypt`                                                |
-| `/third_party//botan`     | Botan 3, found on the system                            | native only, for now               | `<webcpp-crypto-botan-link>shared` (default) or `static`; `-sBOTAN_ROOT=<dir>`                                                                                                                     | `aes128/192/256<backends::botan>`, `gcm<...>`, `chacha20_poly1305<backends::botan>`, only in a build with exceptions; Botan's C++ API                                                                                                                 |
+| Name in the Jamfile       | Library                                                 | Targets                            | Options                                                                                                                                                                                            | What it exports                                                                                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/third_party//bearssl`   | BearSSL, built from source                              | native, emscripten, wasip2, wasip3 | none                                                                                                                                                                                               | `gcm<aes128/192/256<backends::bearssl>>` (`aes256_gcm` by default on WebAssembly, and natively without OpenSSL), `chacha20_poly1305<backends::bearssl>`; BearSSL's whole C API through `<bearssl.h>`                                                                 |
+| `/webcpp/crypto//openssl` | OpenSSL 3.5.9's libcrypto, built from source, static    | native, wasip2, wasip3             | none; `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` with `<library>/webcpp/crypto//openssl` in the project's requirements, natively only, OpenSSL's allocations in the program's resource (section 7.3)                                                                             | `aes128/192/256<backends::openssl>`, `gcm<...>` (`aes256_gcm` by default natively when linked; on MSVC, wasip2 and wasip3 without assembly), `chacha20_poly1305<backends::openssl>`; OpenSSL's C API through `<openssl/*.h>`                                                                                      |
+| `/third_party//secp256k1` | libsecp256k1 v0.8.0, built from source, every module on | native, emscripten, wasip2, wasip3 | `<webcpp-secp256k1-tables>auto` (default: small on Emscripten, large elsewhere), `small` or `large`                                                                                                | `webcpp::crypto::curves::secp256k1::keypair` (BIP340, ECDSA, ECDH), `verify_schnorr`, `verify_ecdsa` in `<webcpp/crypto/curves/secp256k1.hpp>`; the C API of `<secp256k1.h>` and its modules: ecdh, recovery, extrakeys, schnorrsig, musig, ellswift, silentpayments |
+| `/third_party//ctaes`     | ctaes as Bitcoin Core v31.1 ships it, built from source | native, emscripten, wasip2, wasip3 | none                                                                                                                                                                                               | `aes128/192/256<backends::ctaes>` in `<webcpp/crypto/backends/ctaes.hpp>`: the AES block cipher alone, constant time, no mode; the C API of `<ctaes.h>`, `AES128/192/256_init`, `_encrypt`, `_decrypt`                                                               |
+| `/third_party//botan`     | Botan 3, found on the system                            | native only, for now               | `<webcpp-crypto-botan-link>shared` (default) or `static`; `-sBOTAN_ROOT=<dir>`                                                                                                                     | `aes128/192/256<backends::botan>`, `gcm<...>`, `chacha20_poly1305<backends::botan>`, only in a build with exceptions; Botan's C++ API                                                                                                                                |
 
 ### 7.7 Every message, and what to do
 
@@ -1848,23 +1926,22 @@ At compile time, the first error is the one to read: the lines after it
 | Message | Fix |
 | --- | --- |
 | `webcpp::crypto: no backend is linked. On WebAssembly the backend is BearSSL: in the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ; ...` | Add `/third_party//bearssl` to the program's sources. |
-| `webcpp::crypto: no backend is linked. In the program's Jamfile, add /third_party//openssl (the system's OpenSSL) or /third_party//bearssl (built from source) beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//openssl ; ...` | Natively: add `/third_party//openssl`, or `/third_party//bearssl`. |
-| `webcpp::crypto: the backend BearSSL is used and not linked. In the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto. ...` | Add `/third_party//bearssl`. The same message names OpenSSL, ctaes or Botan for those. |
-| `webcpp::crypto: <webcpp/crypto/secp256k1.hpp> needs libsecp256k1, which is not linked. In the program's Jamfile, add /third_party//secp256k1 beside /webcpp/crypto//crypto. ...` | Add `/third_party//secp256k1`. |
-| `webcpp::crypto: gcm<aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, ...` | Use `gcm<aes256<>>` with BearSSL, OpenSSL or Botan linked. |
-| `webcpp::crypto: aes256<backends::bearssl>: BearSSL exports AES only inside its modes, ...` | Name `aes256<backends::ctaes>` (or OpenSSL's or Botan's), include its header, and add its library, as in section 7.5. |
-| `/third_party//openssl: OpenSSL is a native backend, and this build is for WebAssembly. In the program's Jamfile, name /third_party//bearssl in its place.` (from b2) | Replace `/third_party//openssl` with `/third_party//bearssl`. |
-| `webcpp::crypto: OpenSSL is a native backend and this program is built for WebAssembly. ...` (without b2) | The same. |
-| `webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects a native backend and this program is built for WebAssembly. ...` | Remove that define. |
+| `webcpp::crypto: no backend is linked. In the program's Jamfile, add /webcpp/crypto//openssl (OpenSSL built from source) or /third_party//bearssl (built from source) beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /webcpp/crypto//openssl ; ...` | Natively, on wasip2 or on wasip3: add `/webcpp/crypto//openssl`, or `/third_party//bearssl`. |
+| `webcpp::crypto: the backend BearSSL is used and not linked. In the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, or, with /webcpp/crypto//openssl linked, select OpenSSL with <define>WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL. ...` | Add `/third_party//bearssl`, or, with OpenSSL linked, select OpenSSL. The same message names ctaes or Botan for those; OpenSSL's says to add `/webcpp/crypto//openssl`. |
+| `webcpp::crypto: <webcpp/crypto/curves/secp256k1.hpp> needs libsecp256k1, which is not linked. In the program's Jamfile, add /third_party//secp256k1 beside /webcpp/crypto//crypto. ...` | Add `/third_party//secp256k1`. |
+| `webcpp::crypto: ciphers::gcm<ciphers::aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, ...` | Use `gcm<aes256<>>` with BearSSL, OpenSSL or Botan linked. |
+| `webcpp::crypto: ciphers::aes256<backends::bearssl>: BearSSL exports AES only inside its modes, ...` | Name `aes256<backends::ctaes>` (or OpenSSL's or Botan's), include its header, and add its library, as in section 7.5. |
+| `webcpp::crypto: /webcpp/crypto//openssl is named in a build for Emscripten, where webcpp does not build OpenSSL. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl, or name OpenSSL for native and WASI builds alone, ...` | Replace `/webcpp/crypto//openssl` with `/third_party//bearssl`, or name OpenSSL only for native and WASI builds, by the condition the message gives (section 4.4). |
+| `webcpp::crypto: OpenSSL is not built for Emscripten. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl.` (without b2) | The same. |
+| `webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects OpenSSL, which is not built for Emscripten. ...` | Remove that define. |
 | `webcpp::crypto: both WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL and WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL are defined. Keep one.` | Keep one. |
-| `/third_party//openssl: the program names OpenSSL, and it was not found: ... Install it ..., give -sOPENSSL_ROOT=<dir>, ..., or name /third_party//bearssl in its place.` (from b2) | Install OpenSSL, or give `-sOPENSSL_ROOT=<dir>` on b2's command line, or use BearSSL. |
-| `-sOPENSSL_ROOT=<dir> holds no include/openssl/evp.h: give the directory of OpenSSL's include/ and lib/ ...` | Give the directory that holds `include/` and `lib/`. |
 | `webcpp::crypto: the backend Botan needs exceptions, and this program is built without them. ...` | Build with exceptions, or name BearSSL or OpenSSL. |
 | `/third_party//botan: ...` on WebAssembly (from b2), or `webcpp::crypto: Botan is a native backend ...` (without b2) | Name `/third_party//bearssl`: Botan is native only for now. |
+| Botan not found for a program, or a wrong `-sBOTAN_ROOT=<dir>` (from b2; the texts come with increment 5, section 4.4) | Install Botan, or give `-sBOTAN_ROOT=<dir>`, the directory of its `include/` and `lib/`, or use BearSSL or OpenSSL (section 4.4). |
 | `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE configures OpenSSL, a native backend, and this program is built for WebAssembly. ...` | Remove `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` from the WebAssembly build: give that build a project of its own, without the define and OpenSSL, naming `/third_party//bearssl` (section 7.3). On WebAssembly the backend is BearSSL, which allocates nothing. |
-| `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. ...` | A target has the define and not OpenSSL: put `<library>/third_party//openssl` in the same project requirements as the define (section 7.3), or remove the define. |
+| `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. ...` | A target has the define and not OpenSSL: put `<library>/webcpp/crypto//openssl` in the same project requirements as the define (section 7.3), or remove the define. |
 | `Undefined symbols ...: "webcpp::crypto::openssl_memory_resource()"`, at link time (ld64, PROBE-R3; GNU ld and MSVC's `link.exe` name the same function in their own forms, which the link test of section 8.6 fixes) | The program sets `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE`, uses the OpenSSL backend (any `make`, or the install) and does not define the function: define `std::pmr::memory_resource& webcpp::crypto::openssl_memory_resource() noexcept` once, returning a resource that is never destroyed, as in section 7.3. |
-| `LNK2038: mismatch detected for 'webcpp_crypto_openssl_memory'` (MSVC) | Some files of the program were compiled with `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` and some without: give the define in the requirements of the program's project, with OpenSSL beside it, `project app : requirements <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/third_party//openssl ;`, so that every target of the program gets both (natively only; section 7.3). |
+| `LNK2038: mismatch detected for 'webcpp_crypto_openssl_memory'` (MSVC) | Some files of the program were compiled with `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` and some without: give the define in the requirements of the program's project, with OpenSSL beside it, `project app : requirements <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/webcpp/crypto//openssl ;`, so that every target of the program gets both (natively only; section 7.3). |
 
 At run time, two errors of `webcpp.crypto` concern the memory option, and their messages say
 what to do (section 3.7):
@@ -1976,6 +2053,15 @@ whole, and the result opened one shot (there is no incremental `open`, section 2
   - webcpp's `ecdh` itself: agreement between the two parties, `a.ecdh(B) == b.ecdh(A)` on
     random key pairs, and equality with the SHA-256 of the compressed shared point that the C
     API computes with its default hash function, on Wycheproof's valid ECDH cases;
+  - ECDSA's encodings and the x-only tweak (section 2.8): every signature of `sign_ecdsa`
+    through `to_der` and back through `from_der`, every refusal of `to_der`, the strict decoder
+    on Wycheproof's Bitcoin ECDSA file (counted per flag), and `normalize_ecdsa` on a high-S
+    signature that `verify_ecdsa` refuses; BIP341's `wallet-test-vectors.json`, the test
+    computing each TapTweak with libsecp256k1's tagged hash and passing it: `tweak_xonly` gives
+    each `scriptPubKey` case's `tweakedPubkey` (7 cases), a key pair tweaked by
+    `keypair::tweak_xonly` signs each `keyPathSpending` sighash into the vector's witness (7
+    inputs), and a tweak of 32 bytes of 0xff gives `invalid_secret_key` to both, the key pair
+    wiped and empty;
   - libsecp256k1's own test program on webcpp's build, on every target (AGENTS:742-743).
     `src/tests.c` includes `secp256k1.c` itself (`src/tests.c:21`), so it recompiles the
     library with webcpp's flags and defines rather than testing the archive webcpp links; the
@@ -1992,7 +2078,7 @@ whole, and the result opened one shot (there is no incremental `open`, section 2
   message (`message_too_long` from an `update`) that ends it, a move during a message, each
   with its `invalid_state` or its error, and a fresh `begin_seal` that works after each.
 - **Moved-from objects:** every function of a moved-from `aes128/192/256`, `gcm`,
-  `chacha20_poly1305` and `secp256k1::basic_keypair` returns `invalid_state`, one test per
+  `chacha20_poly1305` and `curves::secp256k1::basic_keypair` returns `invalid_state`, one test per
   type and backend (section 2.4).
 - **WebCrypto as an outside oracle:** in node and in Chrome, WebCrypto seals the same AES-GCM
   cases with keys of 16 and 32 bytes, and also random messages under 16-byte IVs, the ones
@@ -2008,13 +2094,14 @@ replays. What one seals each other opens, and the ciphertexts and tags are byte-
 
 | Algorithm | Backends compared | Where |
 | --- | --- | --- |
-| AES-GCM | BearSSL, OpenSSL, Botan | natively all three; on WebAssembly BearSSL alone, against the vectors |
-| the AES block cipher | ctaes, OpenSSL, Botan | natively all three; on WebAssembly ctaes alone, against the vectors |
+| AES-GCM | BearSSL, OpenSSL, Botan | natively all three; on wasip2 and wasip3 BearSSL and OpenSSL; on Emscripten BearSSL alone, against the vectors |
+| the AES block cipher | ctaes, OpenSSL, Botan | natively all three; on wasip2 and wasip3 ctaes and OpenSSL; on Emscripten ctaes alone, against the vectors |
 | ChaCha20-Poly1305 | BearSSL, OpenSSL, Botan | as AES-GCM |
 
-Botan is native only for now (LEDGER:29), so on WebAssembly each algorithm is compared among
-the backends built there, which is one; the vectors and WebCrypto's oracle (section 8.1) stand
-in for a second backend. The IV lengths of 1 to 64 bytes are inside the cap of section 2.4.
+Botan is native only for now (LEDGER:29), and OpenSSL is not built for Emscripten, so on
+Emscripten each algorithm is compared among the backends built there, which is one; the
+vectors and WebCrypto's oracle (section 8.1) stand in for a second backend. The IV lengths of
+1 to 64 bytes are inside the cap of section 2.4.
 
 On x86-64, BearSSL runs once with its AES-NI and PCLMUL path and once forced onto
 `aes_ct64` and `ghash_ctmul64` (a test seam of the backend), so that both of its code paths
@@ -2164,9 +2251,13 @@ directory of its own (section 4.3's pitfall), which checks its exact text:
 - a link test per canary case (library missing, of another commit, of another configuration,
   without the canary) on ld64, wasm-ld, Emscripten and MSVC, and LNK2038 on MSVC between two
   files compiled with different configurations;
-- a b2 test per stop (OpenSSL on WebAssembly, OpenSSL not found for a program, a wrong root,
-  static without `libcrypto.a`, Botan on WebAssembly), run on a fixture project, and the
-  left-out message for webcpp's own test.
+- a fixture of the superproject's Jamfile test (`tools/test/crypto_jamfiles_test.py`) per
+  message raised on Emscripten, where the compiler's line starts with a path of the machine:
+  `/webcpp/crypto//openssl` named there, OpenSSL's `HAS` and
+  `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` there; with Botan (increment 5), a b2 test per stop
+  of `webcpp.external` (Botan not found for a program, a wrong root, static without the static
+  library, Botan on WebAssembly), run on a fixture project, and the left-out message for
+  webcpp's own test.
 
 The CI also compares each pin in `<webcpp/crypto/detail/canary.h>` with
 `git -C third_party/libs/<name> rev-parse --short=7 HEAD` (AGENTS:745-746).
@@ -2180,13 +2271,14 @@ lint's raw b2 rules), and no rule of `tools/webcpp.jam` builds a pair and compar
 increment 1 adds one, `webcpp.same-program <name> : <sources> : <library> : <targets>`: it
 builds `<sources>` with and without `<library>` under the same output name in two directories
 of its own, and passes when the two files are byte-identical (CR-REVIEW M6). OpenSSL and
-Botan are left out: a shared library named adds its dependency (section 4.2).
+Botan are left out: OpenSSL is the provider's archive, not one webcpp builds, and a shared
+Botan named adds its dependency (section 4.2).
 
 ### 8.8 Sizes and throughput
 
 - **Sizes:** the CI builds, through b2, on every target at -O2 and -Os: the baseline program,
   the AES-GCM program on each backend, the signing program with the small and the large
-  tables, and natively the OpenSSL program shared and static. It writes the table, raw and
+  tables, and natively the OpenSSL program, static. It writes the table, raw and
   `gzip -9n` (C-LIBS:455-457), into the report, and the documentation's table is regenerated
   from it; moving a pin regenerates it (AGENTS:747-748).
 - **Throughput:** seal and open of 100 B and of 1 MiB per backend, natively on the CI's
@@ -2203,8 +2295,8 @@ Botan are left out: a shared library named adds its dependency (section 4.2).
      convenience header; OpenSSL's memory option with its adapter and its errors (section
      3.7).
    - The submodule `third_party/libs/bearssl` on the mirror; `third_party/Jamfile` with
-     `bearssl` and `openssl`; the canary; `detect_mismatch`; OpenSSL found or stopping, shared
-     and static; the `webcpp.external` change that stops a program's build (section 4.4).
+     `bearssl`; crypto's alias `/webcpp/crypto//openssl` over the superproject's source-built
+     OpenSSL, and its stop on Emscripten (section 4.4); the canary; `detect_mismatch`.
    - The tests of section 8 for these: vectors, BearSSL against OpenSSL, constant time,
      entropy, allocation (the memory option's on Linux, macOS and MSVC, shared and static,
      without its parts on ChaCha20-Poly1305 and its neighbours), every message, the unused
@@ -2213,8 +2305,9 @@ Botan are left out: a shared library named adds its dependency (section 4.2).
      so that section 5's table is measured by the library's own CI from the start.
    - The documentation, with section 7 as its page on Jamfiles and the warning on ARM.
 2. **libsecp256k1 and ctaes.** The submodules (ctaes as Bitcoin Core v31.1's
-   `src/crypto/ctaes`, section 3.4), their targets, `secp256k1::keypair`,
-   `verify_schnorr`, `verify_ecdsa`, ECDH; `aes128/192/256<ctaes>` and the diagnostic of
+   `src/crypto/ctaes`, section 3.4), their targets, `curves::secp256k1::keypair`,
+   `verify_schnorr`, `verify_ecdsa`, ECDH, the DER encodings, low-S and the x-only tweak
+   (Task 27b); `aes128/192/256<ctaes>` and the diagnostic of
    `gcm<aes256<ctaes>>`; the tables feature with `auto`; their tests, the block cipher compared
    across ctaes and OpenSSL.
 3. **trystero's migration.**
@@ -2225,9 +2318,10 @@ Botan are left out: a shared library named adds its dependency (section 4.2).
      no entropy (`native/backend.hpp:240-245`); it then reports `entropy_unavailable` as a
      failure of the operation that needed the bytes (a join, a seal), through its errors, as
      errors are values (AGENTS:636-638). Its documentation records the change.
-   - Its `signer` and `verify` (`protocol/nostr.hpp:118-221`) move to `secp256k1::keypair` and
-     `verify_schnorr`, and its Jamfiles name `/third_party//secp256k1` in place of its external
-     libsecp256k1 (`build.jam:32-33`), in the same change (section 4.5).
+   - Its `signer` and `verify` (`protocol/nostr.hpp:118-221`) move to
+     `curves::secp256k1::keypair` and `verify_schnorr`, and its Jamfiles name
+     `/third_party//secp256k1` in place of its external libsecp256k1 (`build.jam:32-33`), in
+     the same change (section 4.5).
    - Its direct use of OpenSSL is gone. Natively OpenSSL stays a transitive dependency,
      through libdatachannel's DTLS and Beast's TLS.
    - The memory option's tests with its neighbours in the process, Boost.Asio's SSL and
@@ -2236,7 +2330,8 @@ Botan are left out: a shared library named adds its dependency (section 4.2).
    its part of the memory option's tests (section 8.5).
 5. **Botan**, found, native only (LEDGER:29), only with exceptions: AES, GCM and
    ChaCha20-Poly1305, its exception mapping, the additional data set on every message, its
-   allocation statement, and its place in every native cross-backend lane.
+   allocation statement, its place in every native cross-backend lane, and the
+   `webcpp.external` change that stops a program's build (section 4.4).
 
 ## 10. Every departure, and the owner's answers
 
@@ -2282,7 +2377,9 @@ approval of the whole spec.
    C-LIBS:296-304); Botan's `webcpp-crypto-botan-link` is the same. The spec proposed to
    confirm the feature as the decision's form. **Confirmed on 2026-10-11** (DESIGN, 2026-10-11
    "webcpp::crypto's two departures accepted"; 2026-10-11 "OpenSSL's memory functions are a
-   customization of webcpp::crypto's config").
+   customization of webcpp::crypto's config"). Since the provider amendment of 2026-11-03
+   OpenSSL is built from source and linked static (section 4.4), so the feature is Botan's
+   alone.
 
 **Rulings** (LEDGER:22-29), each in the section that applies it. The first three depart from
 a decision; the others narrow one, or restore it where the first version of this spec had

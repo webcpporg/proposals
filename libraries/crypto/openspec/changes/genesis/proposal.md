@@ -13,7 +13,9 @@ and Windows, wasip2, wasip3 and Emscripten), whose algorithms are the proven C l
 themselves and not webcpp's own port of them, whose errors are values, that allocates nothing
 in the program's way, and that stops a wrong build with an instruction instead of a linker
 puzzle. The owner decided its shape on 2026-10-10 and 2026-10-11, approved its specification on
-2026-10-11, and it has a plan of 43 tasks in five increments. Nothing is built: the library's
+2026-10-11, and it has a plan of 43 tasks in five increments. On 2026-11-14 the owner set the
+first version, 0.1, to increment 1 without its heaviest parts, and increment 2, and the plan was
+revised against the superproject of that day (`design.md` D22). Nothing is built: the library's
 repository has no commit.
 
 ## What Changes
@@ -36,9 +38,10 @@ repository has no commit.
   `boost::system::result<T>`.
 - **Backends are the C libraries themselves** (BearSSL, OpenSSL, ctaes, libsecp256k1) and
   Botan, never a port. BearSSL, libsecp256k1 and ctaes are built from their own sources, file
-  by file, by the superproject's `third_party/Jamfile`; OpenSSL and Botan are found on the
-  machine. A program names `/webcpp/crypto//crypto` and `/third_party//<backend>` in its own
-  Jamfile.
+  by file, by the superproject's `third_party/Jamfile`; OpenSSL is the superproject's
+  source-built provider (OpenSSL 3.5.9, static), which a program links through
+  `/webcpp/crypto//openssl`; Botan is found on the machine. A program names
+  `/webcpp/crypto//crypto` and its backend's target in its own Jamfile.
 - **A wrong build stops with an instruction,** in three layers: a compile-time `#error` or
   `static_assert` that says exactly what to add, a link-time canary symbol whose name is the
   instruction, and `#pragma detect_mismatch` on MSVC.
@@ -80,6 +83,7 @@ None.
   the owner creates it, plan gate G1), checked out as the submodule `libs/crypto` (gate G2),
   BSL-1.0, "Copyright (c) 2026 WebCpp.org".
 - **Implementation:** not started. The library's repository has no commit and no file.
+  Version 0.1 is the plan's Tasks 0 to 14, 17 to 19, 21, 24 to 30a (`design.md` D22).
   **The reference code is the code written in the tasks of `reference/plan.md`:** Task 1
   (the skeleton, `build.jam`, the test Jamfile's `crypto-run`), Task 2 (`error.hpp`), Task 3
   (`equal.hpp`, `detail/wipe.hpp`), Task 4 (`random_device.hpp`, `detail/entropy.hpp`,
@@ -92,16 +96,16 @@ None.
   `reference/STATUS.md` says where things stand and how to resume.
 - **Dependencies:** Boost 1.92 (System, Hash2, Core's `lightweight_test`, JSON in tests);
   BearSSL at `7bea48e5e850ab4cafbe68d3765cdaba13a86d6f` from the mirror `webcpporg/bearssl`
-  (MIT); libsecp256k1 v0.8.0 (MIT); ctaes as Bitcoin Core v31.1 ships it (MIT); OpenSSL 3.0 or
-  later, found on the machine (Apache-2.0); Botan 3 (3.13.0 measured), found on the machine
+  (MIT); libsecp256k1 v0.8.0 (MIT); ctaes as Bitcoin Core v31.1 ships it (MIT); OpenSSL 3.5.9,
+  the superproject's source-built provider (Apache-2.0); Botan 3 (3.13.0 measured), found on the machine
   (BSD-2-Clause); for tests, Wycheproof, BIP340's test vectors, NIST CAVP's archives, Valgrind,
   MemorySanitizer, wasmtime, node and Chrome. The superproject's `tools/webcpp.jam`,
   `third_party/Jamfile` and the asio track's test support (`webcpp::test::exit_status`).
-- **Status:** accepted on 2026-10-11 (the owner approved the specification); not built, no
-  release.
-- **Other proposals:** `libraries/trystero` is changed by increment 3 (its sealer, entropy and
-  signer move onto this library) and must have integrated its shared-connection change first;
-  `libraries/asio` moves its OpenSSL onto `/third_party//openssl` in Task 25a and supplies the
-  test support every test here uses; `libraries/webrtc` and `libraries/beast` may use this
+- **Status:** accepted on 2026-10-11 (the owner approved the specification), revised on
+  2026-11-14 for version 0.1; not built, no release.
+- **Other proposals:** `libraries/trystero` links this library's libsecp256k1 build from
+  version 0.1 (Task 30a) and is changed by increment 3 (its sealer, entropy and signer move onto
+  this library), its shared-connection change having integrated; `libraries/asio` shares the
+  source-built OpenSSL with this library and supplies the test support every test here uses; `libraries/webrtc` and `libraries/beast` may use this
   library later; `organization` carries the superproject's rulebook and CI levels these tasks
   extend.

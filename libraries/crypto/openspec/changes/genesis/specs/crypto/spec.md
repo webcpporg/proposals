@@ -11,21 +11,21 @@ of the build, tests and tools of `reference/plan.md`; the library is not built y
 ## ADDED Requirements
 
 ### Requirement: Library: header-only target and namespace
-The library SHALL be header-only C++20, in namespace `webcpp::crypto` (with `webcpp::crypto::backends` and `webcpp::crypto::secp256k1`), with public headers under `<webcpp/crypto/...>`, one per responsibility, internals in `webcpp::crypto::detail`, macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). A program MUST reach it through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, and on Windows `bcrypt`.
+The library SHALL be header-only C++20 and hold cryptographic primitives only (a protocol's rules belong to a domain library), in namespace `webcpp::crypto` (with `webcpp::crypto::backends`, `webcpp::crypto::ciphers` and `webcpp::crypto::curves::secp256k1`), with public headers under `<webcpp/crypto/...>` that mirror the namespaces as `<webcpp/crypto/<group>/<name>.hpp>`, one per responsibility, internals in `webcpp::crypto::detail`, macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). A program MUST reach it through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, and on Windows `bcrypt`.
 
 #### Scenario: A program that only draws random bytes links no backend
 - **WHEN** a Jamfile reads `exe app : app.cpp /webcpp/crypto//crypto ;` and `app.cpp` includes `<webcpp/crypto/random_device.hpp>` and `<webcpp/crypto/equal.hpp>`
 - **THEN** it compiles and links without any library of `/third_party` being named or built
 
 ### Requirement: Library: the public headers
-The library SHALL provide `<webcpp/crypto/config.hpp>`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `aes.hpp` (`aes128`, `aes192`, `aes256`), `gcm.hpp` (`gcm<Cipher>`), `chacha20_poly1305.hpp`, `aes256_gcm.hpp` (`aes128_gcm`, `aes256_gcm` and the default backend's header), `backends/<name>.hpp` (a backend's tag type, compile-time check and canary), `secp256k1.hpp` (`secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`) and the convenience header `<webcpp/crypto.hpp>`. Every public header MUST include `<webcpp/crypto/config.hpp>` first, and only the headers that call a C library need a backend linked.
+The library SHALL provide `<webcpp/crypto/config.hpp>`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `ciphers/aes.hpp` (`ciphers::aes128`, `aes192`, `aes256`), `ciphers/gcm.hpp` (`ciphers::gcm<Cipher>`), `ciphers/chacha20_poly1305.hpp`, `ciphers/aes256_gcm.hpp` (`ciphers::aes128_gcm`, `aes256_gcm` and the default backend's header), `backends/<name>.hpp` (a backend's tag type, compile-time check and canary), `curves/secp256k1.hpp` (`curves::secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`) and the convenience header `<webcpp/crypto.hpp>`. Every public header MUST include `<webcpp/crypto/config.hpp>` first, and only the headers that call a C library need a backend linked.
 
 #### Scenario: A program that only signs names only libsecp256k1
-- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//secp256k1 ;` and `sign.cpp` includes `<webcpp/crypto/secp256k1.hpp>`
+- **WHEN** a Jamfile reads `exe sign : sign.cpp /webcpp/crypto//crypto /third_party//secp256k1 ;` and `sign.cpp` includes `<webcpp/crypto/curves/secp256k1.hpp>`
 - **THEN** it builds and prints `schnorr ok`, with no encryption backend linked
 
 ### Requirement: Library: the convenience header
-`<webcpp/crypto.hpp>` SHALL include everything that needs no backend (`config.hpp`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `aes.hpp`, `gcm.hpp`) and the header of each backend whose `WEBCPP_CRYPTO_HAS_<NAME>` define is set. It MUST NOT make a program that links no backend fail to compile.
+`<webcpp/crypto.hpp>` SHALL include everything that needs no backend (`config.hpp`, `error.hpp`, `equal.hpp`, `random_device.hpp`, `ciphers/aes.hpp`, `ciphers/gcm.hpp`) and the header of each backend whose `WEBCPP_CRYPTO_HAS_<NAME>` define is set. It MUST NOT make a program that links no backend fail to compile.
 
 #### Scenario: The convenience header with no backend linked
 - **WHEN** a program that links no backend includes only `<webcpp/crypto.hpp>` and uses `equal`
@@ -92,7 +92,7 @@ A keyed object SHALL be built by `static make(...)` returning `result<T>`, MUST 
 - **THEN** it returns `error::invalid_input_size` and the span is untouched
 
 ### Requirement: Block cipher: BearSSL has none, and aes256 has no default of its own
-`aes256<backends::bearssl>::make` SHALL fail to compile with the `static_assert` text "webcpp::crypto: aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in aes256<backends::ctaes>, aes256<backends::openssl> or aes256<backends::botan>, and add its library to the program's Jamfile." The block cipher MUST get no default backend of its own, because `aes256<>` must stay the cipher of `aes256_gcm`; on WebAssembly a program names `aes256<backends::ctaes>` and includes `<webcpp/crypto/backends/ctaes.hpp>`.
+`aes256<backends::bearssl>::make` SHALL fail to compile with the `static_assert` text "webcpp::crypto: ciphers::aes256<backends::bearssl>: BearSSL exports AES only inside its modes, with no block cipher. Name a backend that exports it, as in ciphers::aes256<backends::ctaes> or ciphers::aes256<backends::openssl>, and add its library to the program's Jamfile." (Botan joins the list with increment 5) The block cipher MUST get no default backend of its own, because `aes256<>` must stay the cipher of `aes256_gcm`; on WebAssembly a program names `aes256<backends::ctaes>` and includes `<webcpp/crypto/backends/ctaes.hpp>`.
 
 #### Scenario: make on BearSSL
 - **WHEN** a program calls `aes256<backends::bearssl>::make(key)`
@@ -234,7 +234,7 @@ BearSSL SHALL be compiled with `BR_USE_GETENTROPY=1` (and `_DEFAULT_SOURCE`, and
 - **THEN** it names `getentropy` on every target but Windows, and the seeder is absent on Windows
 
 ### Requirement: secp256k1: the key pair
-`secp256k1::basic_keypair<Backend = backends::secp256k1>` (aliased `keypair`) SHALL be built by `static make(secret, memory = std::pmr::get_default_resource())`, move-only with a wiping destructor that gives the context back, and its `make` MUST create a libsecp256k1 context in the given resource with `secp256k1_context_preallocated_create`, aligned to `alignof(std::max_align_t)`, and randomize it with 32 bytes of `random_device`. `make` is not `noexcept`: the resource reports a failed allocation as it does, by throwing `std::bad_alloc` with exceptions on.
+`curves::secp256k1::basic_keypair<Backend = backends::secp256k1>` (aliased `keypair`) SHALL be built by `static make(secret, memory = std::pmr::get_default_resource())`, move-only with a wiping destructor that gives the context back, and its `make` MUST create a libsecp256k1 context in the given resource with `secp256k1_context_preallocated_create`, aligned to `alignof(std::max_align_t)`, and randomize it with 32 bytes of `random_device`. `make` is not `noexcept`: the resource reports a failed allocation as it does, by throwing `std::bad_alloc` with exceptions on.
 
 #### Scenario: make allocates only in the given resource
 - **WHEN** a counting `std::pmr::memory_resource` is passed to `keypair::make` with a valid 32-byte secret
@@ -322,7 +322,7 @@ The key schedules that live inside webcpp's objects (BearSSL's, ctaes's, libsecp
 - **THEN** the key schedule bytes are zero
 
 ### Requirement: Backends: the five and what each exports
-The backends SHALL be `backends::bearssl`, `backends::openssl`, `backends::ctaes`, `backends::secp256k1` and `backends::botan`, each a tag type with `static constexpr std::string_view name` (`"bearssl"`, `"openssl"`, ...), exporting: BearSSL `gcm<aes128/192/256<bearssl>>` and `chacha20_poly1305<bearssl>` (no block cipher; native, wasip2, wasip3, emscripten); OpenSSL `aes128/192/256`, `gcm` and `chacha20_poly1305` (native only); ctaes `aes128/192/256<ctaes>` as the block cipher alone (all targets); libsecp256k1 `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa` (all targets); Botan `aes128/192/256`, `gcm` and `chacha20_poly1305` (native only, with exceptions). The documentation MUST give this table and, per backend, its Jamfile line, its headers and functions and every message with its fix, and each backend's own C API MUST stay reachable (`<bearssl.h>`, `<openssl/*.h>`, `<ctaes.h>`, `<secp256k1*.h>`, `<botan/*.h>`).
+The backends SHALL be `backends::bearssl`, `backends::openssl`, `backends::ctaes`, `backends::secp256k1` and `backends::botan`, each a tag type with `static constexpr std::string_view name` (`"bearssl"`, `"openssl"`, ...), exporting: BearSSL `gcm<aes128/192/256<bearssl>>` and `chacha20_poly1305<bearssl>` (no block cipher; native, wasip2, wasip3, emscripten); OpenSSL `aes128/192/256`, `gcm` and `chacha20_poly1305` (native, wasip2, wasip3; built from source by the superproject); ctaes `aes128/192/256<ctaes>` as the block cipher alone (all targets); libsecp256k1 `curves::secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, the DER encodings, low-S and `tweak_xonly` (all targets); Botan `aes128/192/256`, `gcm` and `chacha20_poly1305` (native only, with exceptions). The documentation MUST give this table and, per backend, its Jamfile line, its headers and functions and every message with its fix, and each backend's own C API MUST stay reachable (`<bearssl.h>`, `<openssl/*.h>`, `<ctaes.h>`, `<secp256k1*.h>`, `<botan/*.h>`).
 
 #### Scenario: The backend names
 - **WHEN** an example prints `aes256_gcm::backend_type::name`
@@ -349,12 +349,16 @@ BearSSL's GCM context points at the key schedule (`br_gcm_context::bctx`), so a 
 - **WHEN** a `gcm` with a message in progress is moved
 - **THEN** the destination has no message in progress and the source is empty
 
-### Requirement: Backend OpenSSL: found, native only, version 3
-The OpenSSL backend SHALL use the machine's libcrypto and never build it, SHALL be native only (the target is refused on WebAssembly), and `backends/openssl.hpp` MUST check `OPENSSL_VERSION_NUMBER >= 0x30000000L` and `#error` otherwise.
+### Requirement: Backend OpenSSL: the superproject's source-built OpenSSL, through crypto's alias
+The OpenSSL backend SHALL use the superproject's source-built OpenSSL (`/webcpp/third_party//openssl`, OpenSSL 3.5.9, static), never a copy of the machine's, through crypto's alias `/webcpp/crypto//openssl`, which on native, wasip2 and wasip3 links it and defines `WEBCPP_CRYPTO_HAS_OPENSSL=1`, and on Emscripten MUST stop the compile with "webcpp::crypto: /webcpp/crypto//openssl is named in a build for Emscripten, where webcpp does not build OpenSSL. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl ...". `backends/openssl.hpp` MUST check `OPENSSL_VERSION_NUMBER >= 0x30000000L` and `#error` otherwise. OpenSSL has no link-time canary, since the provider injects nothing into upstream.
 
 #### Scenario: OpenSSL 1.1
 - **WHEN** `backends/openssl.hpp` is included with `OPENSSL_VERSION_NUMBER` below 3.0
 - **THEN** compilation stops with an `#error` whose text a test fixes
+
+#### Scenario: Emscripten names crypto's OpenSSL
+- **WHEN** an Emscripten program names `/webcpp/crypto//openssl`
+- **THEN** its compile stops with the alias's message, which names `/third_party//bearssl`
 
 ### Requirement: Backend OpenSSL: the calls and the key
 `make` SHALL call `EVP_CIPHER_fetch` and `EVP_CIPHER_CTX_new`; each message MUST re-initialise the same context (`EVP_EncryptInit_ex` with the IV length set by `EVP_CTRL_GCM_SET_IVLEN`), call `EVP_EncryptUpdate` or `EVP_DecryptUpdate`, then `EVP_*Final_ex` and the tag controls. The key MUST be given to EVP once, in `make`, with webcpp keeping no copy (each message re-initialises with a null key, which keeps the expanded key, and a seal then an `open` on the same context works), and lengths MUST be fed in pieces of at most `INT_MAX` rounded down to a multiple of 16.
@@ -377,15 +381,15 @@ The OpenSSL backend SHALL use the machine's libcrypto and never build it, SHALL 
 - **WHEN** a test raises an entry of its own before each `make`, including a `make` that fails
 - **THEN** after it the queue holds that entry alone
 
-### Requirement: Backend OpenSSL: linked shared or static
-The OpenSSL link SHALL be the propagated b2 feature `webcpp-crypto-openssl-link`, `shared` (the default) or `static`, because a header cannot change how a program is linked; a static link needs `-pthread` (and `-ldl` on older glibc) on Linux and `ws2_32 crypt32 user32 advapi32` on Windows, given by the static alternative's usage requirements. libssl and libcrypto MUST follow the one feature as one target, so that a process never holds two copies of libcrypto.
+### Requirement: Backend OpenSSL: static, as the provider builds it
+The OpenSSL backend SHALL link OpenSSL statically, libssl and libcrypto from the provider's one build directory per configuration, with the link flags the provider gives; the threading of the build MUST follow the program's (`no-threads` under b2's default `threading=single`), and the documentation MUST say so, and that on MSVC, wasip2 and wasip3 the provider builds OpenSSL without assembly (table AES and GHASH, no AES-NI, not constant time).
 
-#### Scenario: Sizes of the two links
-- **WHEN** the same program is linked shared and static on macOS (static with `-sOPENSSL_ROOT=/opt/homebrew/opt/openssl@3`)
-- **THEN** the shared executable is 34,864 bytes and depends on `libcrypto.3.dylib`, and the static one 3,623,296 bytes with no libcrypto dependency
+#### Scenario: Two threads
+- **WHEN** a native program built with `<threading>multi` seals and opens on two threads, each with its own object
+- **THEN** both succeed and each thread's error queue is left as it was found
 
 ### Requirement: Backend ctaes: Bitcoin Core's copy, the block cipher alone
-The ctaes backend SHALL be `src/crypto/ctaes` of `github.com/bitcoin/bitcoin` at tag v31.1 (commit `9be056a8a72b624dae9623b2f7bded92c2a21c91`, whose `src/crypto/ctaes` is tree `1b6c31139a71f80245c09597c343936a8e41d021`), as the shallow submodule `third_party/libs/ctaes`, and `third_party/Jamfile` MUST compile `ctaes.c` alone (and ctaes's `test.c` for its own suite). It exports AES-128, AES-192 and AES-256 on whole blocks and nothing else, so `aes256<backends::ctaes>` works and `gcm<aes256<backends::ctaes>>` MUST fail to compile with "webcpp::crypto: gcm<aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: gcm<aes256<backends::bearssl>>, gcm<aes256<backends::openssl>> or gcm<aes256<backends::botan>>." It MUST NOT be `bitcoin-core/ctaes`, which is a different copy.
+The ctaes backend SHALL be `src/crypto/ctaes` of `github.com/bitcoin/bitcoin` at tag v31.1 (commit `9be056a8a72b624dae9623b2f7bded92c2a21c91`, whose `src/crypto/ctaes` is tree `1b6c31139a71f80245c09597c343936a8e41d021`), as the shallow submodule `third_party/libs/bitcoin`, and `third_party/Jamfile` MUST compile its `src/crypto/ctaes/ctaes.c` alone, with only that directory on an include path, (and ctaes's `test.c` for its own suite). It exports AES-128, AES-192 and AES-256 on whole blocks and nothing else, so `aes256<backends::ctaes>` works and `gcm<aes256<backends::ctaes>>` MUST fail to compile with "webcpp::crypto: ciphers::gcm<ciphers::aes256<backends::ctaes>>: ctaes exports the AES block cipher alone, and webcpp builds no GCM on another library's AES. Use a backend that exports GCM: ciphers::gcm<ciphers::aes256<backends::bearssl>> or ciphers::gcm<ciphers::aes256<backends::openssl>>." (Botan joins the list with increment 5) It MUST NOT be `bitcoin-core/ctaes`, which is a different copy.
 
 #### Scenario: GCM over ctaes
 - **WHEN** a program names `gcm<aes256<backends::ctaes>>`
@@ -406,7 +410,7 @@ webcpp's build of libsecp256k1 SHALL never be linked with another libsecp256k1, 
 - **THEN** it names `/third_party//secp256k1` and no external libsecp256k1
 
 ### Requirement: Backend Botan: found, native only, with exceptions
-The Botan backend SHALL find Botan 3 by `botan-3/botan/aead.h` through `webcpp.external`, check `BOTAN_VERSION_MAJOR == 3`, be native only for now (`/third_party//botan` stops every WebAssembly build, Emscripten included, and `config.hpp` refuses `WEBCPP_CRYPTO_HAS_BOTAN` there), and be available only with exceptions: `backends/botan.hpp` MUST declare nothing under `WEBCPP_CRYPTO_NO_EXCEPTIONS`, and a program built without exceptions that names it gets the `#error` "webcpp::crypto: the backend Botan needs exceptions, and this program is built without them. In the program's Jamfile, name /third_party//bearssl or /third_party//openssl in its place." Its link is `webcpp-crypto-botan-link`, shared or static.
+The Botan backend SHALL find Botan 3 by `botan-3/botan/aead.h` through `webcpp.external`, check `BOTAN_VERSION_MAJOR == 3`, be native only for now (`/third_party//botan` stops every WebAssembly build, Emscripten included, and `config.hpp` refuses `WEBCPP_CRYPTO_HAS_BOTAN` there), and be available only with exceptions: `backends/botan.hpp` MUST declare nothing under `WEBCPP_CRYPTO_NO_EXCEPTIONS`, and a program built without exceptions that names it gets the `#error` "webcpp::crypto: the backend Botan needs exceptions, and this program is built without them. In the program's Jamfile, name /third_party//bearssl or /webcpp/crypto//openssl in its place." Its link is `webcpp-crypto-botan-link`, shared or static.
 
 #### Scenario: Botan without exceptions
 - **WHEN** a program built with `<exception-handling>off` names `/third_party//botan` and uses the default backend
@@ -427,7 +431,7 @@ Every call into Botan SHALL sit in one `try`: `Botan::Invalid_Authentication_Tag
 - **THEN** the second equals BearSSL's seal of that message with none
 
 ### Requirement: Memory option: the define and where it exists
-The option SHALL be `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE`, a macro of the config, for native builds only, given to every target of the program that includes a header of the library, its own libraries included, and every target that gets it MUST name `/third_party//openssl`: the project's requirements carry `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/third_party//openssl`, and a WebAssembly build is a project of its own, without the define, naming `/third_party//bearssl`. `config.hpp` MUST refuse it on WebAssembly with "webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE configures OpenSSL, a native backend, and this program is built for WebAssembly. Remove that define from the program's Jamfile." and natively without `WEBCPP_CRYPTO_HAS_OPENSSL` with "webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. In the program's Jamfile, add /third_party//openssl beside /webcpp/crypto//crypto, or remove that define. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)".
+The option SHALL be `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE`, a macro of the config, for native builds only, given to every target of the program that includes a header of the library, its own libraries included, and every target that gets it MUST name `/webcpp/crypto//openssl`: the project's requirements carry `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/webcpp/crypto//openssl`, and a WebAssembly build is a project of its own, without the define, naming `/third_party//bearssl`. `config.hpp` MUST refuse it on WebAssembly with "webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE configures OpenSSL, a native backend, and this program is built for WebAssembly. Remove that define from the program's Jamfile." and natively without `WEBCPP_CRYPTO_HAS_OPENSSL` with "webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. In the program's Jamfile, add /webcpp/crypto//openssl beside /webcpp/crypto//crypto, or remove that define. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)".
 
 #### Scenario: The option on wasip2
 - **WHEN** a wasip2 program is built with the define
@@ -509,7 +513,7 @@ On MSVC `backends/openssl.hpp` SHALL carry `#pragma detect_mismatch("webcpp_cryp
 - **THEN** the link fails with "mismatch detected for 'webcpp_crypto_openssl_memory'"
 
 ### Requirement: Build: C libraries from their own sources
-BearSSL, libsecp256k1 and ctaes SHALL be submodules `third_party/libs/bearssl` (`webcpporg/bearssl`, `7bea48e5e850ab4cafbe68d3765cdaba13a86d6f`), `third_party/libs/secp256k1` (`bitcoin-core/secp256k1`, v0.8.0, `6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d`) and `third_party/libs/ctaes` (`bitcoin/bitcoin` shallow, v31.1, `9be056a8a72b624dae9623b2f7bded92c2a21c91`), and `third_party/Jamfile` (project `/third_party`) MUST build each from its own files, one object per file, as a static library on every target: all 294 `.c` files of BearSSL's `src/`, the POWER8 ones included (off POWER they compile to the stubs other files call), for ctaes `ctaes.c` alone. No `-std` is given, so each compiles in its compiler's GNU dialect; the project's requirements are `<link>static`, `<warnings>off`, `-ffunction-sections -fdata-sections` for clang, gcc and Emscripten, and `/Gy /Gw` for MSVC. webcpp's `libs/crypto/src/canary_<name>.c` MUST join each library's sources.
+BearSSL, libsecp256k1 and ctaes SHALL be submodules `third_party/libs/bearssl` (`webcpporg/bearssl`, `7bea48e5e850ab4cafbe68d3765cdaba13a86d6f`), `third_party/libs/secp256k1` (`bitcoin-core/secp256k1`, v0.8.0, `6e2c8bc4ecdc6e71dbe7a368f360d8d453ce435d`) and `third_party/libs/bitcoin` for ctaes (`bitcoin/bitcoin` shallow, v31.1, `9be056a8a72b624dae9623b2f7bded92c2a21c91`), and `third_party/Jamfile` (project `/third_party`) MUST build each from its own files, one object per file, as a static library on every target: all 294 `.c` files of BearSSL's `src/`, the POWER8 ones included (off POWER they compile to the stubs other files call), for ctaes `ctaes.c` alone. No `-std` is given, so each compiles in its compiler's GNU dialect; the project's requirements are `<link>static`, `<warnings>off`, `-ffunction-sections -fdata-sections` for clang, gcc and Emscripten, and `/Gy /Gw` for MSVC. webcpp's `libs/crypto/src/canary_<name>.c` MUST join each library's sources.
 
 #### Scenario: A user names a backend by its project id
 - **WHEN** a Jamfile names `/third_party//bearssl`, and another names `/webcpp/third_party//bearssl`
@@ -544,7 +548,7 @@ Built file by file, BearSSL's AES-GCM program SHALL never be larger in code than
 - **THEN** its size is recorded in `sizes.json` and compared with `doc/sizes.adoc`
 
 ### Requirement: Build layer 1: compile-time messages
-`config.hpp` SHALL classify the target (`__EMSCRIPTEN__`, `__wasi__`, the `HAS` defines), refuse impossible combinations and pick the default backend, and the check that a backend is linked MUST sit in the backend's own header. The messages SHALL be: no backend linked on WebAssembly ("webcpp::crypto: no backend is linked. On WebAssembly the backend is BearSSL: in the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ; (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"); none natively (naming OpenSSL or BearSSL); "the backend BearSSL is used and not linked", and the same for OpenSSL, ctaes and Botan; "<webcpp/crypto/secp256k1.hpp> needs libsecp256k1, which is not linked"; "OpenSSL is a native backend and this program is built for WebAssembly. In the program's Jamfile, replace /third_party//openssl with /third_party//bearssl."; "WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects a native backend and this program is built for WebAssembly. Remove that define, or make it WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL."; and "both WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL and WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL are defined. Keep one." Each MUST come from a test of its own, a `webcpp.compile-diagnostic` that states the whole text on the header that raises it, in a directory of its own.
+`config.hpp` SHALL classify the target (`WEBCPP_TARGET_*` from `<webcpp/config.hpp>`, the `HAS` defines), refuse impossible combinations and pick the default backend, and the check that a backend is linked MUST sit in the backend's own header. The messages SHALL be: no backend linked on WebAssembly ("webcpp::crypto: no backend is linked. On WebAssembly the backend is BearSSL: in the program's Jamfile, add /third_party//bearssl beside /webcpp/crypto//crypto, as in: exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ; (without b2: define WEBCPP_CRYPTO_HAS_BEARSSL=1 and link BearSSL built with webcpp's src/canary_bearssl.c)"); none natively (naming OpenSSL or BearSSL); "the backend BearSSL is used and not linked", and the same for OpenSSL, ctaes and Botan; "<webcpp/crypto/curves/secp256k1.hpp> needs libsecp256k1, which is not linked"; "OpenSSL is not built for Emscripten. In the program's Jamfile, replace /webcpp/crypto//openssl with /third_party//bearssl."; "WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL selects OpenSSL, which is not built for Emscripten. Remove that define, or make it WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL."; and "both WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL and WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL are defined. Keep one." Each MUST come from a test of its own, in a directory of its own: a `webcpp.compile-diagnostic` that states the whole text on the header that raises it, or, for a message raised on Emscripten, a fixture of the tools' test of the user's Jamfiles.
 
 #### Scenario: wasip2 with no backend
 - **WHEN** a wasip2 program includes `<webcpp/crypto/backends/bearssl.hpp>` with no backend linked
@@ -562,7 +566,7 @@ Every function of a backend's header that calls the C library SHALL read, with a
 - **THEN** the canary symbol is the only link error
 
 ### Requirement: Build layer 3: detect_mismatch on MSVC
-Each backend header and each canary file SHALL carry `#pragma detect_mismatch("webcpp_crypto_backend_<name>", "<name>-<commit7>-<configuration>")` under `_MSC_VER`, one key per backend (one key for all would fail a program that uses BearSSL and libsecp256k1), and `<webcpp/crypto/aes256_gcm.hpp>` MUST carry `detect_mismatch("webcpp_crypto_default_backend", "<name>")` so that two files that choose different default backends fail with LNK2038 instead of an ODR violation that links silently. Through a static library a mismatching canary member is not loaded, so another commit gives LNK2001; LNK2038 fires between two of the program's own files.
+Each backend header and each canary file SHALL carry `#pragma detect_mismatch("webcpp_crypto_backend_<name>", "<name>-<commit7>-<configuration>")` under `_MSC_VER`, one key per backend (one key for all would fail a program that uses BearSSL and libsecp256k1), and `<webcpp/crypto/ciphers/aes256_gcm.hpp>` MUST carry `detect_mismatch("webcpp_crypto_default_backend", "<name>")` so that two files that choose different default backends fail with LNK2038 instead of an ODR violation that links silently. Through a static library a mismatching canary member is not loaded, so another commit gives LNK2001; LNK2038 fires between two of the program's own files.
 
 #### Scenario: Two files with different configurations
 - **WHEN** two files of one MSVC program are compiled with different BearSSL configurations
@@ -575,33 +579,29 @@ Two `exe` of one Jamfile built from the same source and differing only by a free
 - **WHEN** two message tests need the same `.cpp` with different defines
 - **THEN** each has its own directory and Jamfile
 
-### Requirement: Build: OpenSSL and Botan found, or the build stops
-OpenSSL and Botan SHALL be found by `webcpp.external`: `-sOPENSSL_ROOT=<dir>` (`-sBOTAN_ROOT`) when given, else webcpp's `.local/<name>`, else the system's directories; the declaration lives in `libs/crypto/build.jam` (the index's "left out" reads the libraries' `build.jam`) and `third_party/Jamfile` reads the root through `webcpp.external-root <owner> : <library> : <target>`, with `webcpp.external-looked` giving where it looked. A user's program that names `/third_party//openssl` and does not find it MUST stop the build with "/third_party//openssl: the program names OpenSSL, and it was not found: <where it looked>. Install it (apt install libssl-dev; brew install openssl@3, then give -sOPENSSL_ROOT=<the directory that brew --prefix openssl@3 prints>; or OpenSSL's Windows installer), give -sOPENSSL_ROOT=<dir>, the directory of its include/ and lib/, or name /third_party//bearssl in its place." The message holds no `$(`, which b2 would expand. webcpp's own tests and examples, told apart by the incidental propagated feature `webcpp-own`, MUST be left out with the measured one-line message, and the CI requires them anyway with `webcpp-require-external=on`.
+### Requirement: Build: Botan found, or the build stops
+Botan SHALL be found by `webcpp.external`: `-sBOTAN_ROOT` when given, else webcpp's `.local/botan`, else the system's directories, its declaration in `libs/crypto/build.jam`; a user's program that names `/third_party//botan` and does not find it MUST stop the build with an instruction that names where it looked, how to install Botan 3, and `/third_party//bearssl` in its place. OpenSSL is never found: it is the superproject's source-built provider.
 
-#### Scenario: OpenSSL not found for a user's program
-- **WHEN** a Jamfile names `/third_party//openssl` on a machine without OpenSSL
-- **THEN** the build stops with that error and exits non-zero
+#### Scenario: Botan not found for a user's program
+- **WHEN** a Jamfile names `/third_party//botan` on a machine without Botan
+- **THEN** the build stops with that instruction and exits non-zero
 
-#### Scenario: A wrong root
-- **WHEN** b2 is run with `-sOPENSSL_ROOT=/tmp/no-openssl`
-- **THEN** it stops with "-sOPENSSL_ROOT=/tmp/no-openssl holds no include/openssl/evp.h: give the directory of OpenSSL's include/ and lib/, or no -sOPENSSL_ROOT to look for OpenSSL in ..." and a static link on a root without `lib/libcrypto.a` stops naming the file
+### Requirement: Build: Botan on WebAssembly stops the build
+`/third_party//botan` on a WebAssembly build SHALL stop before compiling with "/third_party//botan: Botan is a native backend, and this build is for WebAssembly. In the program's Jamfile, name /third_party//bearssl in its place."; a webcpp test declared native that names it MUST be skipped on WebAssembly without evaluating the stop.
 
-### Requirement: Build: OpenSSL and Botan on WebAssembly stop the build
-`/third_party//openssl` on a WebAssembly build SHALL stop before compiling with "/third_party//openssl: OpenSSL is a native backend, and this build is for WebAssembly. In the program's Jamfile, name /third_party//bearssl in its place.", and `/third_party//botan` MUST do the same; a webcpp test declared native that names such an alias MUST be skipped on WebAssembly without evaluating the stop.
-
-#### Scenario: Emscripten names OpenSSL
-- **WHEN** an Emscripten program names `/third_party//openssl`
+#### Scenario: Emscripten names Botan
+- **WHEN** an Emscripten program names `/third_party//botan`
 - **THEN** the build stops with that text
 
 ### Requirement: Build: one copy of a C library per program
-webcpp's build of a C library SHALL never be linked together with another copy of it, and `/third_party//openssl` MUST give libssl and libcrypto as one choice (shared or static), so that a program of asio and crypto holds one libcrypto; asio's `/webcpp/asio//openssl` moves onto it.
+webcpp's build of a C library SHALL never be linked together with another copy of it: asio's `/webcpp/asio//openssl` and crypto's `/webcpp/crypto//openssl` MUST link the one source-built OpenSSL, and trystero MUST link `/third_party//secp256k1`, not a libsecp256k1 of the machine's, once crypto brings it.
 
 #### Scenario: asio and crypto in one program
-- **WHEN** a native program links Boost.Asio's SSL and webcpp::crypto's OpenSSL backend
-- **THEN** it holds one libcrypto
+- **WHEN** a native program names `/webcpp/asio//openssl` and `/webcpp/crypto//openssl`
+- **THEN** its link line holds `libssl.a` and `libcrypto.a` once each, from one build directory
 
 ### Requirement: Default backend: per target
-`config.hpp` SHALL define `default_backend` from `__EMSCRIPTEN__`, `__wasi__` and the `HAS` defines for the AEADs: BearSSL on Emscripten, wasip2 and wasip3; natively OpenSSL when linked, else BearSSL. With more than one AEAD backend linked, the default MUST be the first linked of OpenSSL, BearSSL, Botan natively and BearSSL on WebAssembly; a program selects another with `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_<NAME>` and names a backend at any use with the template argument. The architecture MUST NOT enter the choice.
+`config.hpp` SHALL define `default_backend` from `WEBCPP_TARGET_*` and the `HAS` defines for the AEADs: BearSSL on Emscripten, wasip2 and wasip3; natively OpenSSL when linked, else BearSSL, MSVC included. With more than one AEAD backend linked, the default MUST be the first linked of OpenSSL, BearSSL, Botan natively and BearSSL on WebAssembly; a program selects another with `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_<NAME>` and names a backend at any use with the template argument. The architecture MUST NOT enter the choice.
 
 #### Scenario: Both linked, BearSSL chosen
 - **WHEN** a Jamfile links OpenSSL and BearSSL with `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL`
@@ -612,7 +612,7 @@ webcpp's build of a C library SHALL never be linked together with another copy o
 - **THEN** OpenSSL is about 1.4 times BearSSL's AES-NI on x86-64, about 30 times on Linux aarch64 (2,821 against 92.4 MiB/s) and about 62 times on macOS-15 (5,571 to 5,908 against 90.1 to 94.1 MiB/s)
 
 ### Requirement: Default backend: the documentation warns about ARM
-The documentation SHALL warn on the backends' page and on the page of `gcm` that natively without OpenSSL BearSSL is 30 to 62 times slower than OpenSSL on ARM, because BearSSL has no ARMv8 AES or PMULL code, and that a server on ARM names `/third_party//openssl`.
+The documentation SHALL warn on the backends' page and on the page of `gcm` that natively without OpenSSL BearSSL is slow on ARM, because BearSSL has no ARMv8 AES or PMULL code, and that a server on ARM names `/webcpp/crypto//openssl`; it MUST NOT give a factor, since the slowdown is not measured on the source-built OpenSSL until the throughput lane, which is deferred after version 0.1.
 
 #### Scenario: The backends page
 - **WHEN** the documentation is built
@@ -703,14 +703,14 @@ With increment 3 one program SHALL link Boost.Asio's SSL headers and libdatachan
 - **THEN** it completes and every allocation of libssl is in the counting resource
 
 ### Requirement: Tests: every message from a test of its own
-Each message of the GCM and block-cipher `static_assert`s, OpenSSL's version check, Botan's, the memory option's two refusals and their run-time errors, the layer-1 `#error`s, the stops of b2 (OpenSSL on WebAssembly, OpenSSL not found for a program, a wrong root, static without `libcrypto.a`, Botan on WebAssembly) and the left-out message SHALL come from a test in a directory of its own that checks the exact text. Two link tests natively MUST show that a program with the memory option and no `openssl_memory_resource()` definition fails to link, one calling `install_memory_functions()` and one only a `make`; a link test per canary case (library missing, of another commit, of another configuration, without the canary) MUST run on ld64, wasm-ld, Emscripten and MSVC; MSVC's `C1189`, `C2338`, `LNK2001` and `LNK2038` are checked by building the cases with MSVC in the tools test on its nightly Windows leg.
+Each message of the GCM and block-cipher `static_assert`s, OpenSSL's version check, Botan's, the memory option's two refusals and their run-time errors, the layer-1 `#error`s, the compile stop of `/webcpp/crypto//openssl` on Emscripten, the stops of b2 for Botan (Botan not found for a program, a wrong root, static without the static library, Botan on WebAssembly) and the left-out message SHALL come from a test in a directory of its own that checks the exact text. Two link tests natively MUST show that a program with the memory option and no `openssl_memory_resource()` definition fails to link, one calling `install_memory_functions()` and one only a `make`; a link test per canary case (library missing, of another commit, of another configuration, without the canary) MUST run on ld64, wasm-ld, Emscripten and MSVC; MSVC's `C1189`, `C2338`, `LNK2001` and `LNK2038` are checked by building the cases with MSVC in the tools test on its nightly Windows leg.
 
 #### Scenario: The user's Jamfiles as fixtures
 - **WHEN** `python3 tools/test/crypto_jamfiles_test.py` runs on a scratch superproject
 - **THEN** it builds each fixture under `tools/test/fixtures/crypto_jamfiles/<case>/` and compares its outcome with `<case>.outcome`, giving a "not found" case only the roots it names
 
 ### Requirement: Tests: sizes and throughput
-The CI SHALL build, through b2 on every target at `<variant>release` with `<optimization>speed` and `space`, the baseline program, the AES-GCM program on each backend, the signing program with small and large tables, and natively the OpenSSL program shared and static, writing the table raw and `gzip -9n` into the job's summary and an artifact; the documentation's `doc/sizes.adoc` MUST be regenerated from the sizes lane, its WebAssembly rows (pinned toolchains) checked byte for byte and its native rows reported. Throughput of `seal` and `open` of 100 B and 1 MiB per backend MUST be measured natively on ubuntu-24.04, ubuntu-24.04-arm and macos-15 (the library's `runners.yml`), under wasmtime, under node and in Chrome against WebCrypto, three runs each.
+The CI SHALL build, through b2 on every target at `<variant>release` with `<optimization>speed` and `space`, the baseline program, the AES-GCM program on each backend, the signing program with small and large tables, and natively the OpenSSL program, static, writing the table raw and `gzip -9n` into the job's summary and an artifact; the documentation's `doc/sizes.adoc` MUST be regenerated from the sizes lane, its WebAssembly rows (pinned toolchains) checked byte for byte and its native rows reported. Throughput of `seal` and `open` of 100 B and 1 MiB per backend MUST be measured natively on ubuntu-24.04, ubuntu-24.04-arm and macos-15 (the library's `runners.yml`), under wasmtime, under node and in Chrome against WebCrypto, three runs each.
 
 #### Scenario: BearSSL's code size on WebAssembly
 - **WHEN** the sizes lane builds the AES-GCM program at -Os stripped
@@ -724,7 +724,7 @@ The ordinary lanes (native clang and gcc-15, wasip2, wasip3, Emscripten) SHALL r
 - **THEN** the ordinary lanes and the light own lane `sizes` run, and the heavy lanes wait for the nightly run
 
 ### Requirement: Documentation: the page and the user's Jamfiles
-The documentation SHALL be built by the superproject's `doc` target and include `doc/jamfile.adoc` (the rule: a program names `/webcpp/crypto//crypto` and `/third_party//<backend>`), `aead.adoc`, `block.adoc`, `equal.adoc`, `entropy.adoc`, `backends.adoc`, `memory.adoc`, `errors.adoc` and `sizes.adoc`, with every Jamfile line and every printed result built and run as a fixture (web on Emscripten with BearSSL printing `aes256_gcm ok backend=bearssl`, server with OpenSSL shared and static, both BearSSL default, signing with `schnorr ok`, ctaes with `ctaes aes256 ok`, the memory option). Every public symbol MUST have a Doc Comment (a one-sentence brief, `@param`, `@tparam`, `@return`), and the page of every message of section 7.7 of the specification MUST say what to do.
+The documentation SHALL be built by the superproject's `doc` target and include `doc/jamfile.adoc` (the rule: a program names `/webcpp/crypto//crypto` and `/third_party//<backend>`), `aead.adoc`, `block.adoc`, `equal.adoc`, `entropy.adoc`, `backends.adoc`, `memory.adoc`, `errors.adoc` and `sizes.adoc`, with every Jamfile line and every printed result built and run as a fixture (web on Emscripten with BearSSL printing `aes256_gcm ok backend=bearssl`, server with the source-built OpenSSL, both BearSSL default, signing with `schnorr ok`, ctaes with `ctaes aes256 ok`, the memory option). Every public symbol MUST have a Doc Comment (a one-sentence brief, `@param`, `@tparam`, `@return`), and the page of every message of section 7.7 of the specification MUST say what to do.
 
 #### Scenario: The WebAssembly Jamfile
 - **WHEN** the fixture `web/` builds `exe app : app.cpp /webcpp/crypto//crypto /third_party//bearssl ;` on Emscripten, wasip2, wasip3 and native
@@ -737,15 +737,30 @@ The repository SHALL hold `build.jam` (project `/webcpp/crypto`, alias `crypto`)
 - **WHEN** a new `.hpp` is added without the licence notice
 - **THEN** the lint fails naming the file
 
+### Requirement: secp256k1: its encodings and the x-only tweak
+The interface of `curves::secp256k1` SHALL offer `to_der` (a compact signature as strict DER, at most `max_der_size` = 72 bytes, into a caller's buffer), `from_der` (strict DER, BIP66), `normalize_ecdsa` (the low-S form `verify_ecdsa` requires), `tweak_xonly` (an x-only key tweaked by any 32-byte tweak: the tweaked x-only key and its parity, `secp256k1_xonly_pubkey_tweak_add`) and `basic_keypair::tweak_xonly` (the key pair tweaked in place by any 32-byte tweak, `secp256k1_keypair_xonly_tweak_add`), each a wrapper over libsecp256k1's own function, reading the canary and allocating nothing; a key pair whose tweak gives no valid key is wiped. The caller computes a tweak; crypto MUST NOT compute a protocol's tweak, decode lax DER, serialize transactions, compute sighashes or derive keys.
+
+#### Scenario: BIP341's wallet vectors through the generic tweak
+- **WHEN** every `scriptPubKey` and `keyPathSpending` case of BIP341's `wallet-test-vectors.json` is run, the test computing each TapTweak with libsecp256k1's tagged hash and passing it
+- **THEN** `tweak_xonly` gives each `tweakedPubkey` (7 cases), and a key pair tweaked by `keypair::tweak_xonly` signs each sighash into the vector's witness (7 inputs)
+
+#### Scenario: A tweak not below the group order
+- **WHEN** an x-only key or a key pair is tweaked by 32 bytes of 0xff
+- **THEN** both give `invalid_secret_key`, and the key pair is wiped and empty, as moved from
+
+#### Scenario: A high-S signature
+- **WHEN** a valid signature's `s` is replaced by `n - s`
+- **THEN** `verify_ecdsa` refuses it and `normalize_ecdsa` returns the original, which verifies
+
 ### Requirement: Increments: five, in order
-The work SHALL proceed in five increments: (1) the foundation and AES-GCM on BearSSL and OpenSSL (config, errors, `equal`, `random_device`, `aes128/192/256`, `gcm` one shot and incremental, both backends, the memory option, the submodule `bearssl`, the canary, `detect_mismatch`, OpenSSL found or stopping, the tests, the unused-library rule, sizes, the x86-64 throughput job beside ARM and macOS, the documentation); (2) libsecp256k1 and ctaes (submodules, `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, ECDH, `aes128/192/256<ctaes>`, the diagnostic of `gcm<aes256<ctaes>>`, the tables feature); (3) trystero's migration; (4) ChaCha20-Poly1305 on BearSSL and OpenSSL with its part of the memory option's tests; (5) Botan, found, native only, with exceptions only, in every native cross-backend lane. Each increment ends with the definition of green, a review against the plan's Review Focus, and the push gates with the owner's agreement.
+The work SHALL proceed in five increments: (1) the foundation and AES-GCM on BearSSL and OpenSSL (config, errors, `equal`, `random_device`, `aes128/192/256`, `gcm` one shot and incremental, both backends, the submodule `bearssl`, the canary, `detect_mismatch`, crypto's alias over the source-built OpenSSL, the tests, the unused-library rule, the documentation; then, after version 0.1, the memory option, constant time, sizes, throughput, the browser lane and NIST's vectors); (2) libsecp256k1 and ctaes (submodules, `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, ECDH, `aes128/192/256<ctaes>`, the diagnostic of `gcm<aes256<ctaes>>`, the tables feature, and trystero's build onto `/third_party//secp256k1`); version 0.1 is (1) without its deferred parts and (2); (3) trystero's migration; (4) ChaCha20-Poly1305 on BearSSL and OpenSSL with its part of the memory option's tests; (5) Botan, found, native only, with exceptions only, in every native cross-backend lane. Each increment ends with the definition of green, a review against the plan's Review Focus, and pull requests the owner merges.
 
 #### Scenario: Increment 4 without Botan
 - **WHEN** ChaCha20-Poly1305 lands in increment 4
 - **THEN** its agreement lane compares BearSSL and OpenSSL, and Botan joins it in increment 5
 
 ### Requirement: Migration: trystero moves onto the library
-In increment 3 webcpp::trystero (in its own repository, on a branch `crypto`, after its shared-connection track has integrated and with a re-read of the table of call sites) SHALL replace `native/sealer.hpp` and its browser twin with `aes256_gcm` using trystero's 16-byte IVs, its asynchronous `sealer` interface with a direct call, its `random` with `random_device::fill` reporting `entropy_unavailable` as a failure of the operation that needed the bytes (it aborts today natively when the system has no entropy), and its `signer` and `verify` with `secp256k1::keypair` and `verify_schnorr`, with its Jamfiles naming `/third_party//secp256k1` in place of its external libsecp256k1 in the same change. Its direct use of OpenSSL MUST go, natively OpenSSL staying a transitive dependency through libdatachannel's DTLS and Beast's TLS, and every test of trystero MUST pass before each commit on its four lanes.
+In increment 3 webcpp::trystero (in its own repository, on a branch `crypto`, after its shared-connection track has integrated and with a re-read of the table of call sites) SHALL replace `native/sealer.hpp` and its browser twin with `aes256_gcm` using trystero's 16-byte IVs, its asynchronous `sealer` interface with a direct call, its `random` with `random_device::fill` reporting `entropy_unavailable` as a failure of the operation that needed the bytes (it aborts today natively when the system has no entropy), and its `signer` and `verify` with `secp256k1::keypair` and `verify_schnorr`, its build already naming `/third_party//secp256k1` since version 0.1. Its direct use of OpenSSL MUST go, natively OpenSSL staying a transitive dependency through libdatachannel's DTLS and Beast's TLS, and every test of trystero MUST pass before each commit on its four lanes.
 
 #### Scenario: Entropy runs out natively
 - **WHEN** the system has no entropy during a trystero join
