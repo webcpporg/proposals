@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-14
+webcpp:
+  library: hash
+  title: "hash: hashing and key derivation over Boost.Hash2 and C backends"
+  kind: wrapper
+  port_of: null
+  status: accepted
+  release: null
+  implementation: null
+  decided: 2026-11-14
