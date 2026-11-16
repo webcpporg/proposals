@@ -4,7 +4,8 @@ webcpp::hash is a header-only C++20 library that gives a program one entry point
 key derivation on native, wasip2, wasip3 and Emscripten: Boost.Hash2's algorithms and HMAC by
 alias, Keccak-256 and BLAKE3 in Hash2's HashAlgorithm form over XKCP and BLAKE3's C
 implementation, HKDF and PBKDF2 over backends (webcpp's own over Hash2's hmac, libsodium,
-BearSSL, OpenSSL) with a measured default, and Argon2id and scrypt from libsodium. These
+BearSSL, OpenSSL) with `backends::hash2` as the default on every target, and Argon2id and scrypt
+from libsodium. These
 requirements are the structured form of `reference/spec.md` and of the build, tests and tools of
 `reference/plan.md`; increment 1 is built in the library's repository, not yet published.
 
@@ -18,7 +19,7 @@ The library SHALL be header-only C++20 in namespace `webcpp::hash` (with `webcpp
 - **THEN** it builds and runs on native, wasip2, wasip3 and Emscripten with no library of `/third_party` named or built
 
 ### Requirement: Library: configuration and exceptions
-`<webcpp/hash/config.hpp>` SHALL define `WEBCPP_HASH_NO_EXCEPTIONS` exactly when `WEBCPP_HAS_EXCEPTIONS` is not defined, keep it when a developer defines it, define `WEBCPP_HASH_WEBASSEMBLY` on wasip2, wasip3 and Emscripten, declare the backend tags `backends::hash2`, `sodium`, `bearssl` and `openssl` and the public KDF tags `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand`, `kdfs::pbkdf2`, `kdfs::argon2id` and `kdfs::scrypt`, one per operation, and refuse with `#error` OpenSSL on Emscripten (`/webcpp/hash//openssl` or `WEBCPP_HASH_PROFILE_BACKEND_OPENSSL`) and more than one profile define of one level. The overrides' refusals MUST NOT be in `config.hpp`: they are in `detail/overrides.hpp`, which `kdf.hpp` includes. No function of the library SHALL throw, with exceptions on or off.
+`<webcpp/hash/config.hpp>` SHALL define `WEBCPP_HASH_NO_EXCEPTIONS` exactly when `WEBCPP_HAS_EXCEPTIONS` is not defined, keep it when a developer defines it, define `WEBCPP_HASH_WEBASSEMBLY` on wasip2, wasip3 and Emscripten, declare the backend tags `backends::hash2`, `sodium`, `bearssl` and `openssl` and the public KDF tags `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand`, `kdfs::pbkdf2`, `kdfs::argon2id` and `kdfs::scrypt`, one per operation, and refuse with `#error` OpenSSL on Emscripten (`/webcpp/hash//openssl`). It MUST read no profile and no override define (design D33). No function of the library SHALL throw, with exceptions on or off.
 
 #### Scenario: The configuration test three ways
 - **WHEN** `test/config_test.cpp` is built as the build asks, with `WEBCPP_NO_EXCEPTIONS`, and with `WEBCPP_HASH_NO_EXCEPTIONS` on the command line
@@ -103,8 +104,8 @@ The documentation SHALL state that a public `keccak_256` contributed to Boost.Ha
 - **THEN** each returns A.1's 42-byte OKM
 
 #### Scenario: A step never defaults to a backend that lacks it
-- **WHEN** a wasip2 program that names `/third_party//bearssl` and `/third_party//sodium` and gives no profile calls `hkdf_extract<hmac_sha2_512>` and `hkdf<hmac_sha2_512>`
-- **THEN** `hkdf` runs on `backends::bearssl`, the first of the size order, and `hkdf_extract` on the first backend of its own order that has the step, never `backends::bearssl`, and both compile
+- **WHEN** a wasip2 program that names `/third_party//bearssl` and `/third_party//sodium` calls `hkdf_extract<hmac_sha2_512>` and `hkdf<hmac_sha2_512>`
+- **THEN** both compile and run on `backends::hash2`, and `backend_has_v<backends::bearssl, kdfs::hkdf_extract, hmac_sha2_512>` is false
 
 ### Requirement: Key derivation: a backend's narrower lengths are its limits
 A backend whose C interface holds a length in a type narrower than `std::size_t` SHALL declare its limits in `detail::backend_limits<Backend>` (`detail/engines.hpp`), one member per input and output of each operation, the primary template having no limit beyond the spec's. The public functions MUST read it after the spec's own guards and before any call of the backend, refusing a longer output with `invalid_output_size` and a longer input with `input_too_long`, the output untouched. `backends::openssl` MUST limit HKDF's salt and PRK and PBKDF2's password, salt and output to `INT_MAX` bytes, the lengths OpenSSL 3.5.9 holds in an `int` (a PBKDF2 output of 2^31 bytes crashed it), and its documentation MUST state them; `backends::hash2` accepts these lengths.
@@ -153,58 +154,68 @@ A call of a KDF on a backend that lacks it, or over an hmac the backend lacks, S
 - **WHEN** RFC 6070's six SHA-1 cases and RFC 7914 section 11's two SHA-256 cases run through `pbkdf2` on `backends::hash2` and `backends::openssl`
 - **THEN** every derived key matches, the 16,777,216-iteration case included, in its own program
 
-### Requirement: The default backend: one profile, per-algorithm overrides
-`config.hpp` SHALL read webcpp's umbrella profile (`WEBCPP_PROFILE_FASTEST`, `_SMALLEST`, `_PORTABLE`) and SHALL take at most one library profile define: none (`auto`: natively the fastest, on WebAssembly the smallest), `WEBCPP_HASH_PROFILE_FASTEST`, `WEBCPP_HASH_PROFILE_SMALLEST`, `WEBCPP_HASH_PROFILE_PORTABLE` (the first that has the algorithm of hash2, xkcp, blake3, sodium, bearssl) or `WEBCPP_HASH_PROFILE_BACKEND_<NAME>`, and per-algorithm overrides `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>`; `default_backend<Algorithm, Hmac>` (and `default_kdf_backend<Hmac, Kdf = kdfs::hkdf>`, the same) MUST be the override's backend, else the profile's choice among the linked backends that have the algorithm, by the build (target, `HAS` macros) and the measured orders of `detail/ranking.hpp`, chosen per operation: the first backend of the order that the program links and that has that operation over that hmac. The precedence MUST be: per-algorithm override, library profile, umbrella profile, the build's measured default. Two profiles of one level (each `#error` naming both defines), two overrides of one algorithm, or OpenSSL selected on Emscripten MUST be an `#error`; on MSVC the profile and each override MUST carry `#pragma detect_mismatch`. The overrides, their refusals and their `detect_mismatch` (`webcpp_hash_default_backend_<algorithm>`) MUST be in `detail/overrides.hpp`, generated by `tools/hash/measure.py --overrides` from `doc/capabilities.json` and included by `kdf.hpp`, the one reader of the overrides; an override of HKDF applies to `hkdf_extract`, `hkdf_expand` and `hkdf`.
+### Requirement: The default backend is backends::hash2 for every key derivation
+`default_kdf_backend<Hmac, Kdf = kdfs::hkdf>` and `default_backend<Algorithm, Hmac = void>` SHALL keep their names and signatures, and for `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand` and `kdfs::pbkdf2` over every hmac they MUST be `backends::hash2`, on native, wasip2, wasip3 and Emscripten, whatever libraries the program links; their answer MUST NOT depend on the hmac, the link set or the target. For `kdfs::argon2id` and `kdfs::scrypt`, which `backends::hash2` does not offer, `default_backend` MUST be `backends::sodium`, their only backend. No measurement SHALL decide a default (design D33).
 
-#### Scenario: Natively with OpenSSL, auto
-- **WHEN** a native program that names `/webcpp/hash//openssl` and gives no profile reads `default_kdf_backend<hmac_ripemd_128>`
-- **THEN** it is `backends::hash2`, since OpenSSL lacks RIPEMD-128; and `default_kdf_backend<hmac_sha2_256>` is the faster of OpenSSL and hash2 in the committed native throughput order (hash2 in the provisional order of increment 1)
+#### Scenario: HKDF's expand step with libsodium linked
+- **WHEN** a native program that names `/third_party//sodium` calls `hkdf_expand<hmac_sha2_256>` with RFC 5869 A.1's PRK and info
+- **THEN** `default_kdf_backend<hmac_sha2_256, kdfs::hkdf_expand>` is `backends::hash2` and the call returns A.1's OKM computed by `backends::hash2`
 
-#### Scenario: On wasip2 with libsodium, for PBKDF2
-- **WHEN** a wasip2 program that names `/third_party//sodium` reads `default_kdf_backend<hmac_sha2_256, kdfs::pbkdf2>`
-- **THEN** it is a backend that has PBKDF2 (`backends::hash2`), never `backends::sodium`
+#### Scenario: PBKDF2 with OpenSSL linked
+- **WHEN** a native program that names `/webcpp/hash//openssl` calls `pbkdf2<hmac_sha2_256>`
+- **THEN** it runs on `backends::hash2`, and `default_kdf_backend<hmac_sha2_256, kdfs::pbkdf2>` is `backends::hash2`
 
-#### Scenario: One switch for the whole program
-- **WHEN** a native program that links libsodium and OpenSSL is built with `WEBCPP_HASH_PROFILE_PORTABLE`
-- **THEN** every default is a backend present on all four targets (HKDF over SHA-256 is `hash2` or `sodium` by the portable order, never `openssl`)
+#### Scenario: Every library linked, every target
+- **WHEN** `default_backend_test` is built on native, wasip2, wasip3 and Emscripten with every library the target has, and reads `default_kdf_backend<Hmac, Kdf>` for each hmac and each of `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand` and `kdfs::pbkdf2`
+- **THEN** every answer is `backends::hash2`, and `default_backend<kdfs::argon2id>` and `default_backend<kdfs::scrypt>` are `backends::sodium`
 
-#### Scenario: The umbrella and the precedence
-- **WHEN** a native program that links libsodium and OpenSSL is built with `WEBCPP_PROFILE_SMALLEST`, `WEBCPP_HASH_PROFILE_PORTABLE` and `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_OPENSSL`
-- **THEN** `hkdf<hmac_sha2_256>` runs on OpenSSL (the override), `pbkdf2<hmac_sha2_256>` on `backends::hash2` (the library's portable profile over the umbrella's smallest), and with only `WEBCPP_PROFILE_SMALLEST` both follow the measured size order
+#### Scenario: Argon2id without libsodium
+- **WHEN** a program calls `argon2id` (or `scrypt`) with the default backend and does not name `/third_party//sodium`, as the messages `argon2id_default_not_linked` and `scrypt_default_not_linked` do
+- **THEN** compilation fails at the primary template of the engine in `detail/engines.hpp` with "webcpp::hash: backends::sodium, argon2id and scrypt need libsodium. Add /third_party//sodium to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//sodium ;"
 
-#### Scenario: Two profiles at once
+### Requirement: BearSSL, OpenSSL and libsodium's HKDF only when named in the type
+`backends::bearssl`, `backends::openssl` and the HKDF of `backends::sodium` SHALL stay, with their vectors, agreement tests, limits and refusals as before, and SHALL be reached only by naming the backend in the call's type, as `hkdf<hmac_sha2_256, backends::openssl>`; none of them MUST ever be a default, on any target or link set.
+
+#### Scenario: OpenSSL named in the type
+- **WHEN** a native program that names `/webcpp/hash//openssl` calls `hkdf<hmac_sha2_256, backends::openssl>` and `hkdf<hmac_sha2_256>` with RFC 5869 A.1's inputs
+- **THEN** the first runs on `backends::openssl`, the second on `backends::hash2`, and both return A.1's OKM
+
+#### Scenario: BearSSL named in the type
+- **WHEN** a wasip2 program that names `/third_party//bearssl` calls `hkdf<hmac_sha2_256, backends::bearssl>` and `hkdf<hmac_sha2_256>`
+- **THEN** the first runs on `backends::bearssl` and the second on `backends::hash2`
+
+### Requirement: No define changes a default
+webcpp::hash SHALL have no profile and no per-algorithm override: it MUST NOT read `WEBCPP_HASH_PROFILE_FASTEST`, `WEBCPP_HASH_PROFILE_SMALLEST`, `WEBCPP_HASH_PROFILE_PORTABLE`, `WEBCPP_HASH_PROFILE_BACKEND_<NAME>`, webcpp's umbrella `WEBCPP_PROFILE_FASTEST`, `_SMALLEST` and `_PORTABLE`, or `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>`, and a former profile or override define MUST have no effect. The library MUST hold no `detail/ranking.hpp`, no `detail/overrides.hpp` and no `#pragma detect_mismatch` of a profile or of an override.
+
+#### Scenario: A former profile define
+- **WHEN** a native program that names `/webcpp/hash//openssl` is built with `WEBCPP_HASH_PROFILE_FASTEST` (or `WEBCPP_PROFILE_SMALLEST`, or `WEBCPP_HASH_PROFILE_BACKEND_OPENSSL`) and calls `pbkdf2<hmac_sha2_256>`
+- **THEN** it compiles with no diagnostic from webcpp::hash and runs on `backends::hash2`, as without the define
+
+#### Scenario: Former override defines
+- **WHEN** `default_backend_former_defines`, `default_backend_test` built with `WEBCPP_HASH_PROFILE_FASTEST`, `WEBCPP_HASH_PROFILE_SMALLEST`, `WEBCPP_HASH_PROFILE_BACKEND_BEARSSL`, `WEBCPP_PROFILE_FASTEST`, `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_SODIUM` and `WEBCPP_HASH_DEFAULT_BACKEND_PBKDF2_BEARSSL` and every library linked, runs on native, wasip2, wasip3 and Emscripten
+- **THEN** every default stays `backends::hash2` for the key derivations and `backends::sodium` for `argon2id` and `scrypt`
+
+#### Scenario: Two former profiles at once
 - **WHEN** a program defines `WEBCPP_HASH_PROFILE_FASTEST` and `WEBCPP_HASH_PROFILE_SMALLEST`
-- **THEN** compilation fails with "webcpp::hash: WEBCPP_HASH_PROFILE_FASTEST and WEBCPP_HASH_PROFILE_SMALLEST are both defined. Keep one."
+- **THEN** it compiles, and every default is `backends::hash2`
 
-#### Scenario: An override that cannot serve
-- **WHEN** a program defines `WEBCPP_HASH_DEFAULT_BACKEND_PBKDF2_SODIUM` and calls `pbkdf2<hmac_sha2_512>`
-- **THEN** compilation fails with spec 3.3's text for PBKDF2 on `backends::sodium`
+### Requirement: The measured table is dated reference documentation
+`doc/measurements.json` SHALL be kept as a reference measured on 2026-11-16, labelled so, which decides no default and orders no backend, and `doc/measurements.adoc` SHALL be rendered from it by `tools/hash/doc_tables.py` with that label, without the orders and without a default per key derivation; the guide's comparison tables MAY read them. `tools/hash/doc_tables.py --check`, run at every documentation build, MUST fail when `measurements.json`'s digest does not match its content. No lane SHALL re-measure or compare them: the own lane `measure`, `tools/hash/measure.py` (every mode) and its test, the CI matrix entry "Own lane (hash, measure)" and `libs/hash/test/measure` MUST NOT exist.
 
-#### Scenario: Two overrides of one algorithm
-- **WHEN** a program defines `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_HASH2` and `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_SODIUM` and includes `<webcpp/hash/hkdf.hpp>`
-- **THEN** compilation fails at `detail/overrides.hpp` with "webcpp::hash: WEBCPP_HASH_DEFAULT_BACKEND_HKDF_HASH2 and WEBCPP_HASH_DEFAULT_BACKEND_HKDF_SODIUM are both defined. Keep one.", and a translation unit that includes only `<webcpp/hash/algorithms.hpp>` compiles
+#### Scenario: The reference is labelled
+- **WHEN** a reader opens `doc/measurements.adoc`
+- **THEN** it says that the table was measured on 2026-11-16, that it is a reference, and that it decides no default
 
-#### Scenario: HKDF's override on BearSSL and the two steps
-- **WHEN** a program that links BearSSL defines `WEBCPP_HASH_DEFAULT_BACKEND_HKDF_BEARSSL` and calls `hkdf<hmac_sha2_256>` and `hkdf_extract<hmac_sha2_256>`
-- **THEN** `hkdf` runs on `backends::bearssl` and `hkdf_extract` fails to compile with spec 3.3's text for the two steps on `backends::bearssl`
+#### Scenario: A hand edit of the reference
+- **WHEN** a number of `doc/measurements.json` is changed by hand and the documentation is built
+- **THEN** `tools/hash/doc_tables.py --check` fails, since the digest no longer matches the content
 
-### Requirement: The defaults come from webcpp's own measurements, regenerated at every pin move
-For every target, every algorithm of the capability table and every backend that has it there, a program under `libs/hash/test/measure/` SHALL be built and its size measured (`variant=release optimization=space`), and natively, and on WebAssembly where it runs within the lane's bound, its throughput (`optimization=speed`, median of five runs); `tools/hash/measure.py` MUST write `doc/measurements.json`, `doc/measurements.adoc` and `include/webcpp/hash/detail/ranking.hpp` (an order by size and an order by throughput per target and operation, `hkdf_extract` and `hkdf_expand` each with its own); the own lane `measure` MUST fail when a regenerated size order differs from the committed one, naming `python3 tools/hash/measure.py --write`. A first measurement MUST order by the median of the invocations' medians alone, with no clause of its own, and a committed throughput order changes only past a 10 percent difference in the median. The data MUST record the machine, whether it was loaded, and the native toolchain's identity (compiler, operating system, processor, strip); a lane whose native toolchain differs MUST build and check every program and skip the native order comparison with one printed line, and WebAssembly orders are always compared. Increment 1's native throughput orders are provisional: measured on one loaded macOS arm64 machine, the native HKDF order rests on medians under 1 percent apart, and they MUST be re-measured on an idle machine before a release.
-
-#### Scenario: A pin move without regeneration
-- **WHEN** a pin of libsodium, BearSSL, OpenSSL, XKCP or BLAKE3 moves and a size order changes while `ranking.hpp` is unchanged
-- **THEN** the `measure` lane fails and names the command that regenerates the files
-
-#### Scenario: Another native toolchain
-- **WHEN** the `measure` lane runs natively with a compiler, operating system or processor other than `doc/measurements.json`'s `native_toolchain`
-- **THEN** it builds and checks every program, prints one line saying the native order comparison is skipped, and still compares the WebAssembly orders
-
-#### Scenario: A release after a loaded measurement
-- **WHEN** a release of webcpp::hash is prepared while `doc/measurements.json` records `loaded: true`
-- **THEN** the throughput is re-measured on an idle machine and the orders regenerated before the release
+#### Scenario: A pin move
+- **WHEN** a pin of libsodium, BearSSL, OpenSSL, XKCP or BLAKE3 moves
+- **THEN** no lane re-measures sizes or throughput, no default changes, and the measured table keeps its date
 
 ### Requirement: The throughput of PBKDF2-HMAC-SHA-512
-`libs/hash/bench/pbkdf2_sha512.cpp` SHALL measure PBKDF2-HMAC-SHA-512 at 1,000,000 iterations and 64 bytes of output, the median of three runs, for `backends::hash2`, `backends::openssl` (native, wasip2, wasip3) and libsodium's HMAC-SHA-512 in RFC 8018's loop (libsodium has no PBKDF2), and `doc/performance.adoc` MUST record the results with the machine, compiler, target and date.
+`libs/hash/bench/pbkdf2_sha512.cpp` SHALL measure PBKDF2-HMAC-SHA-512 at 1,000,000 iterations and 64 bytes of output, the median of three runs, for `backends::hash2`, `backends::openssl` (native, wasip2, wasip3) and libsodium's HMAC-SHA-512 in RFC 8018's loop (libsodium has no PBKDF2), and `doc/performance.adoc` MUST record the results with the machine, compiler, target and date, measured by hand with `bench/collect.py`; the benchmark's correctness program `pbkdf2_sha512_key`, which checks the derived keys and never the time, MUST run in every lane of `libs/hash/test`.
 
 #### Scenario: The table is filled
 - **WHEN** the throughput task is done
@@ -301,7 +312,7 @@ Every test program SHALL be declared through the test Jamfile's rule `hash-run`,
 - **THEN** every test and its `_no_exceptions` twin passes
 
 ### Requirement: Documentation
-The library's page SHALL open the chapter of each namespace (digests, MACs, key derivations, password hashing, the non-cryptographic hashes) with two comparison tables generated by `tools/hash/doc_tables.py` from `doc/capabilities.json` and the measurements, "What each of X is" and "How to choose among X", each led by the name and each of fewer than eight columns, so that no comparison is a matrix that scrolls in its box; it SHALL give one short section per algorithm (what it is, an example that is a program of `libs/hash/example/` built on every target, its pitfalls), in the manner of noble's README without its text; per backend its Jamfile line, its column of the capability table rendered from `doc/capabilities.json`, what it allocates and every message with its fix; the profile, the overrides and the measured table; the departures with their conditions; and teaching chapters by use case (peer-to-peer networks, cryptocurrencies, privacy), framed as raising security, with webcpp's own code as examples. Text adapted from libsodium's documentation (ISC, `jedisct1/libsodium-doc` at `6d1ea27`) MUST say so and `NOTICE.md` MUST keep its copyright notice and licence; Wikipedia MUST only be cited, never copied.
+The library's page SHALL open the chapter of each namespace (digests, MACs, key derivations, password hashing, the non-cryptographic hashes) with two comparison tables generated by `tools/hash/doc_tables.py` from `doc/capabilities.json` and the measurements, "What each of X is" and "How to choose among X", each led by the name and each of fewer than eight columns, so that no comparison is a matrix that scrolls in its box; it SHALL give one short section per algorithm (what it is, an example that is a program of `libs/hash/example/` built on every target, its pitfalls), in the manner of noble's README without its text; per backend its Jamfile line, its column of the capability table rendered from `doc/capabilities.json`, what it allocates and every message with its fix; the default backend, `backends::hash2` (`backends::sodium` for Argon2id and scrypt), and how to name another backend in the type, in the chapter `choosing_backend.adoc`, and the measured table as a reference dated 2026-11-16 that decides nothing; the departures with their conditions; and teaching chapters by use case (peer-to-peer networks, cryptocurrencies, privacy), framed as raising security, with webcpp's own code as examples. Text adapted from libsodium's documentation (ISC, `jedisct1/libsodium-doc` at `6d1ea27`) MUST say so and `NOTICE.md` MUST keep its copyright notice and licence; Wikipedia MUST only be cited, never copied.
 
 #### Scenario: An agent writes the Jamfile
 - **WHEN** an agent reads the page's backend table to derive PBKDF2-HMAC-SHA-512 in a program for Emscripten
@@ -312,11 +323,11 @@ The library's page SHALL open the chapter of each namespace (digests, MACs, key 
 - **THEN** each chapter has two tables led by `Name`, each of fewer than eight columns, the second with the measured columns only when there are measurements
 
 ### Requirement: Increments by value, and a capability table
-The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next: 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the profile, the measured table), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, after webcpp::crypto provisions Botan), 7 (the browser backend). `doc/capabilities.json` MUST hold spec 3.5's table, a test MUST compare it with `backend_has_v` for every cell, and each increment's first task MUST check its column against the library at its pin.
+The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next: 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the default backend, the measured table as dated reference), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, after webcpp::crypto provisions Botan), 7 (the browser backend). `doc/capabilities.json` MUST hold spec 3.5's table and, for each function row, its `"default"` backend (`hash2`, `sodium`, or `null` for a type), and a test MUST compare it with `backend_has_v` for every cell and with `default_backend` for every default, and each increment's first task MUST check its column against the library at its pin.
 
 #### Scenario: The table and the code agree
 - **WHEN** `capabilities_test` reads `doc/capabilities.json` and evaluates `backend_has_v` for every function and backend
-- **THEN** every cell agrees, and a cell changed in one place alone fails the test
+- **THEN** every cell and every default agrees, and a cell changed in one place alone fails the test
 
 ### Requirement: Families for every backend's hashes, MACs and KDFs
 From increment 2 on, `digest<Digest, Backend>`, `hasher<Digest, Backend>` (`make`, `update`, `finish`, move-only, wiped, `invalid_state` after the finalisation), `mac<Mac, Backend>` and `argon2<Variant, Backend>` with `argon2_parameters` (passes, memory in KiB, lanes, secret, associated data) SHALL reach every backend's implementation over the tags of `digests`, `macs` and `kdfs`, with `digest_options` and `mac_options` per tag, the guards in one place and engines per backend; a parameter a backend does not take MUST return `error::unsupported_by_backend`. The Hash2-form types stay Hash2's own, `keccak_256` and `blake3`.
