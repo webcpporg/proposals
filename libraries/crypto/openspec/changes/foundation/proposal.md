@@ -4,9 +4,8 @@ Version 0.1 of webcpp::crypto gives a program AES-GCM, the AES block cipher, a `
 a constant-time `equal` and secp256k1, on four C libraries. That is what webcpp::trystero
 needed, and it is far from what the programs above webcpp need. The research of 2026-11-14 read
 the noble and scure stacks (the cryptography most JavaScript applications of the decentralised
-web run on) and a TypeScript wallet and identity stack built on them, and found most of their
-needs missing: Ed25519 and X25519 for every identity, certificate and signed request; raw ECDH,
-public key recovery, tweaks and uncompressed keys on secp256k1 for Nostr, Ethereum and stealth
+web run on), and found most of their needs missing: Ed25519 and X25519 for every identity,
+certificate and signed request; raw ECDH, public key recovery, tweaks and uncompressed keys on secp256k1 for Nostr, Ethereum and stealth
 addresses; P-256 for passkeys and WebCrypto; ChaCha20-Poly1305 and XChaCha20-Poly1305 for
 modern protocols; AES Key Wrap; BLS12-381 for Ethereum's consensus; ML-KEM and X-Wing for the
 move to post-quantum keys.

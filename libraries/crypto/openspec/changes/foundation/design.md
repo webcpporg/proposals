@@ -11,10 +11,9 @@ D24). Its headers are `config.hpp`, `error.hpp` (values 1 to 12, 13 and
 `secp256k1.hpp` (renamed into groups before 0.1 closes, D29) and `backends/{bearssl,openssl,ctaes,secp256k1}.hpp`, over the traits
 `detail::{block,gcm}_{state,engine}`.
 
-The same day two studies were read: one of the noble and scure stacks (@noble/curves, hashes
-and ciphers 2.4.0, @scure/bip32, bip39 and base 2.4.0), one of a TypeScript wallet and identity
-stack built on them. They list what programs above webcpp need and where each primitive is best
-taken from (`research-roadmap.md`, `research-noble.md` and the second study, in the
+The same day a study of the noble and scure libraries (@noble/curves, hashes and ciphers 2.4.0,
+@scure/bip32, bip39 and base 2.4.0) was read. It lists what programs above webcpp need and
+where each primitive is best taken from (`research-roadmap.md` and `research-noble.md`, in the
 superproject's work tree). The owner then decided, the same day, the scope of this change:
 
 - libsodium is webcpp::crypto's next backend;
@@ -102,7 +101,7 @@ functions go to webcpp::hash's backend of the same library, and what the non-goa
 not exposed. Reduced-round Salsa20 is exposed because libsodium ships it as a public interface;
 its page says it is not for new designs.
 
-- **Alternatives:** exposing only what the studies asked for (refused by the owner: "every
+- **Alternatives:** exposing only what the study asked for (refused by the owner: "every
   backend exposes everything its library offers"); a second library for the long tail.
 
 ### D3. One interface shape for every family
@@ -333,7 +332,7 @@ All modules are already compiled (chapter 10's `secp256k1` row); increment 2 wra
   recovery id), for Ethereum;
 - `ecdh_x` (the 32-byte x coordinate) and `ecdh_point` (the 65-byte uncompressed point), through
   `secp256k1_ecdh` with a hash function of webcpp's that copies, for Nostr's NIP-04 and NIP-44
-  and the wallet stack;
+  and Bitcoin and Ethereum wallets;
 - `seckey_tweak_add`, `seckey_tweak_mul`, `seckey_negate`, `pubkey_tweak_add`,
   `pubkey_tweak_mul`, `pubkey_negate`, `pubkey_combine` (on `secret<32>` and on public keys);
 - `parse_public_key` and `serialize_public_key` in compressed and uncompressed forms;
@@ -653,7 +652,7 @@ capability table's `heavy` column; the 10 % band of D6 keeps a flag from flippin
 Operations whose cost the caller's data size sets (AEADs, boxes, secretstream, stream ciphers,
 MACs) are never heavy: a program that seals a gigabyte chunks it, or posts it itself, and a
 per-call thread hop would tax every small message. Everything else stays synchronous only.
-From the measurements of the studies and upstream's own benchmarks the expected heavy set is:
+From the measurements of the study and upstream's own benchmarks the expected heavy set is:
 RSA key generation (every size) and RSA private operations at 3072 bits and above; SLH-DSA key
 generation, signing and verification; BLS12-381 verification, aggregate verification and fast
 aggregate verification (pairings), and aggregation over many signatures; ML-DSA key generation
