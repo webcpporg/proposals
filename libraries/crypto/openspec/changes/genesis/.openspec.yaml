@@ -5,7 +5,7 @@ webcpp:
   title: "crypto: authenticated encryption, randomness and secp256k1 over C backends"
   kind: wrapper
   port_of: null
-  status: accepted
+  status: implementing
   release: null
-  implementation: null
+  implementation: https://github.com/webcpporg/crypto
   decided: 2026-10-11

@@ -3,7 +3,7 @@ title: "webcpp::crypto, increments 1 to 5: Implementation Plan"
 tags: [webcpp, crypto, bearssl, openssl, secp256k1, ctaes, botan, b2, wasm, emscripten, plan]
 status: draft
 created: 2026-10-11
-revised: 2026-11-14
+revised: 2026-11-17
 ---
 
 # webcpp::crypto, increments 1 to 5: Implementation Plan
@@ -17,6 +17,56 @@ OpenSSL, libsecp256k1, ctaes), every one built from its own sources by b2, on na
 wasip3 and Emscripten (OpenSSL on native, wasip2 and wasip3); and trystero's build moved onto
 the libsecp256k1 this library brings. Increments 3 to 5 (trystero's code moved onto the
 library, ChaCha20-Poly1305, Botan) and the deferred parts of increment 1 come after 0.1.
+
+## The revision of 2026-11-17: increments 3 to 5 without trystero, in one order with the foundation
+
+This section rules over everything below it, the revision of 2026-11-14 included. Version 0.1
+is merged (`webcpporg/crypto` `main` at `d242be8`, recorded by the superproject's `main`). The
+owner decided on 2026-11-17 that increments 3 to 5 are built without trystero's migration,
+ChaCha20-Poly1305 and Botan included, beside the foundation change's twelve increments, in one
+order: the foundation's `reference/roadmap.md` (in
+`libraries/crypto/openspec/changes/foundation/`) is that order, and `../design.md` D23 records
+the decision. Measured tables come only from release builds.
+
+**Where each remaining task goes:**
+
+| Task | Now |
+| --- | --- |
+| 15, 16 | stream M, as written, re-read against the source-built provider as their notes say |
+| 20 | the foundation's Task 14, whole (its tasks 1.14a and 1.14) |
+| 22 | the foundation's Task 11' (task 1.11): the own lane `sizes` through `webcpp.size-table`, which requires `<variant>release`; throughput measured by hand by a collect script that refuses a program or data not built at `variant=release`; no `runners.yml`, no ranking; nothing decides a default |
+| 23 | the foundation's increment 4 (task 4.4), Chrome's throughput from release builds |
+| 25b, 9's NIST half | stream N, behind gates O2 and O3 |
+| 31, 32 | **dropped**; kept as the reference of a future change of trystero's own |
+| 33 | stream M, **moved into crypto's own tests** (below) |
+| 34 | stream M's close (below) |
+| 35 | the foundation's Task 8b (task 1.8b), re-cut onto `ciphers::aead<Family, Backend>` |
+| 36 | the foundation's Task 16 (task 1.16) |
+| 37 | **superseded** by the foundation's D15 (Botan a pinned submodule built by b2); not built |
+| 38 | the foundation's increment 7, step 3 (task 7.3a) |
+| 39 | the foundation's increment 7, step 4 (task 7.4) |
+
+**Task 33, moved.** Its files are created in the library, not in `libs/trystero`:
+`libs/crypto/test/openssl_memory/neighbours_test.cpp` and `handshake_test.cpp`, declared in
+`test/openssl_memory/Jamfile` natively, over Task 16's `support.hpp` in the same directory (the
+`#include "../../../crypto/test/openssl_memory/support.hpp"` of the original becomes
+`#include "support.hpp"`). `neighbours_test` links `/webcpp/asio//openssl` for
+`<boost/asio/ssl.hpp>` and `/third_party//libdatachannel` for `<rtc/rtc.hpp>` (which the
+superproject builds against the same OpenSSL archives, so that one libcrypto is in the
+program) as test-only dependencies, never in `/webcpp/crypto//crypto`'s usage requirements;
+`handshake_test` uses libssl through `/webcpp/crypto//openssl`. The steps are Task 33's.
+
+**Task 34, stream M's close.** The definition of green is crypto's (Task 25's list with the
+memory option's tests), the lint and the tools' tests touched; the review covers Tasks 15, 16
+and 33 against spec 3.7 and 8.5 and the Review Focus; the pull requests are the library's and
+the superproject's (the fixtures of Task 16), which the owner merges. Trystero's lanes are not
+part of it.
+
+**Stream M beside the foundation.** Stream M runs from `origin/main` beside the foundation's
+streams A and B (`crypto/openssl-memory`). It shares `backends/openssl.hpp` and `error.hpp`
+with stream A: whichever merges second rebases; Task 35's case in
+`test/openssl_memory/everything_test.cpp` (ChaCha20-Poly1305 under the option) is written by
+whichever of the foundation's Task 8b and Task 16 lands second.
 
 ## The revision of 2026-11-14: version 0.1
 
@@ -5490,6 +5540,8 @@ using aes256_gcm = gcm<aes256<>>;
 
 ## Task 15: OpenSSL's memory functions, an option of the config: the adapter and the install
 
+Stream M (the revision of 2026-11-17).
+
 Deferred after v0.1 (revision 2026-11-14). This task is kept as written for the memory
 option's own change; before it runs, re-read it against the source-built provider
 (CODING-GUIDELINES.md chapter 5 rule 7): OpenSSL is static, built by
@@ -5901,6 +5953,8 @@ inline boost::system::result<void> openssl_memory_guard() noexcept {
   the adapter, the install, and make's guard"`.
 
 ## Task 16: The memory option, process by process
+
+Stream M (the revision of 2026-11-17).
 
 Deferred after v0.1 (revision 2026-11-14). This task is kept as written for the memory
 option's own change; before it runs, re-read it against the source-built provider
@@ -7090,6 +7144,8 @@ crypto-run windows_h_after : windows_h_after_test.cpp
 
 ## Task 20: Constant time
 
+Built as the foundation's Task 14, whole (the revision of 2026-11-17).
+
 Deferred after v0.1 (revision 2026-11-14). Kept as written for its own change; before it runs,
 re-read it against the tree of that day: OpenSSL is source-built (`/webcpp/crypto//openssl`,
 static, compiled `no-asm` on MSVC and WASI), there is no `webcpp-own`, and the CI has no levels
@@ -7896,6 +7952,8 @@ webcpp.same-program unused_openssl : app.cpp : /webcpp/crypto//openssl
 
 ## Task 22: Sizes and throughput
 
+Re-cut as the foundation's Task 11' (the revision of 2026-11-17): release builds only, references that decide nothing, no `runners.yml`.
+
 Deferred after v0.1 (revision 2026-11-14). Kept as written for its own change; before it runs,
 re-read it against the tree of that day: OpenSSL is source-built and static
 (`/webcpp/crypto//openssl`), so `test/sizes/native_static/` and a shared OpenSSL's rows go;
@@ -8294,6 +8352,8 @@ jobs:
   `"tools: webcpp.target-of for a library's own actions"`.
 
 ## Task 23: The browser: WebCrypto as an outside oracle, the audio worklet, throughput in Chrome
+
+Built in the foundation's increment 4 (the revision of 2026-11-17).
 
 Deferred after v0.1 (revision 2026-11-14). Kept as written for its own change; before it runs,
 re-read it against the tree of that day: OpenSSL is source-built (`/webcpp/crypto//openssl`)
@@ -10566,6 +10626,8 @@ Before Task 31 starts:
 
 ## Task 31: trystero seals with `aes256_gcm` directly, and draws from `random_device`
 
+**Dropped** by the owner's decision of 2026-11-17 (the revision of that day); kept as the reference of a future change of trystero's own.
+
 **Files (in `libs/trystero`):**
 - Create: `include/webcpp/trystero/detail/sealer.hpp`, `test/sealer_test.cpp`.
 - Delete: `include/webcpp/trystero/native/sealer.hpp`, `test/native_sealer_test.cpp`,
@@ -10814,6 +10876,8 @@ private:
 
 ## Task 32: trystero signs with `secp256k1::keypair`, and libsecp256k1 comes from `third_party`
 
+**Dropped** by the owner's decision of 2026-11-17 (the revision of that day); its build half is Task 30a, merged in version 0.1.
+
 **Files (in `libs/trystero`):**
 - Modify: `include/webcpp/trystero/protocol/nostr.hpp` (`signer`, `verify`),
   `include/webcpp/trystero/detail/nostr_strategy.hpp` (`make_signer`), `build.jam`,
@@ -10909,6 +10973,8 @@ inline bool verify(std::span<const std::uint8_t, 64> sig, std::span<const std::u
 
 ## Task 33: The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake
 
+Stream M, **moved into `libs/crypto/test/openssl_memory/`** by the revision of 2026-11-17, which gives its files.
+
 **Files (in `libs/trystero`):**
 - Create: `test/openssl_memory/Jamfile`, `test/openssl_memory/neighbours_test.cpp`,
   `test/openssl_memory/handshake_test.cpp`.
@@ -10950,6 +11016,8 @@ inline bool verify(std::span<const std::uint8_t, 64> sig, std::span<const std::u
 
 ## Task 34: Increment 3 whole: green, review, the gates
 
+Stream M's close, as the revision of 2026-11-17 gives it; trystero's lanes are not part of it.
+
 - [ ] **Step 1: Run the definition of green**: crypto's lanes and own lanes (Task 25's list),
   trystero's lanes and own lanes, the lint, the doc (`$B2 -a --build-dir=bin/b-doc doc`), the
   tools' tests touched.
@@ -10969,6 +11037,8 @@ source-built provider (3.5.9, also on wasip2 and wasip3), NIST is gate O3's, and
 option's and sizes' parts wait for Tasks 15, 16 and 22.
 
 ## Task 35: ChaCha20-Poly1305 on BearSSL and OpenSSL
+
+Built as the foundation's Task 8b over `ciphers::aead` (the revision of 2026-11-17); this task's engines, checks and vectors are its reference.
 
 **Files:**
 - Create: `include/webcpp/crypto/chacha20_poly1305.hpp`, `test/support/chacha_checks.hpp`,
@@ -11593,6 +11663,8 @@ struct chacha_state<Backend> {
 
 ## Task 36: Increment 4 whole: green, review, push
 
+Joins the foundation's Task 16 (the revision of 2026-11-17).
+
 - [ ] **Step 1:** The definition of green, as Task 25's Step 2.
 - [ ] **Step 2:** Review of increment 4 (spec 2.5, 8.1's ChaCha part, 8.2, 8.5's ChaCha part),
   with the Review Focus; fixes, each with a failing test first.
@@ -11608,6 +11680,8 @@ re-read it against the tree of that day: `webcpp-own`, `webcpp.external-root` an
 needs; the tools job has no macOS or Windows leg.
 
 ## Task 37: Botan found, or the build stops
+
+**Superseded** by the foundation's D15 (the revision of 2026-11-17): Botan is a pinned submodule built by b2; not built.
 
 **Files (superproject):**
 - Create: `tools/ci/actions/botan/action.yml`, `tools/ci/actions/botan/install.sh`.
@@ -11758,6 +11832,8 @@ explicit botan ;
   user meets them"`.
 
 ## Task 38: The Botan backend, with exceptions only
+
+Built in the foundation's increment 7, step 3, over the submodule (the revision of 2026-11-17).
 
 **Files:**
 - Create: `include/webcpp/crypto/backends/botan.hpp`, `test/botan/Jamfile`,
@@ -12137,6 +12213,8 @@ struct chacha_engine<backends::botan> {
   its boundary, its additional data set on every message"`.
 
 ## Task 39: Botan in every native lane, its page, and the last green
+
+Built in the foundation's increment 7, step 4 (the revision of 2026-11-17).
 
 **Files:**
 - Create: `test/constant_time/ctgrind_botan_test.cpp`, `ctgrind_botan_planted_test.cpp`,

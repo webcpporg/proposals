@@ -42,7 +42,9 @@ Constraints every decision below works within, from the superproject's rulebook 
 - Proof by official vectors (GCM specification, Wycheproof, NIST CAVP, RFC 8439, BIP340), the
   C libraries' own suites, cross-backend agreement, WebCrypto as an outside oracle, constant-time
   checks, counting allocation tests and a test for every message.
-- trystero moved onto it, with its own sealer, entropy and signer gone.
+- No longer a goal: trystero moved onto it, dropped by the owner on 2026-11-17 (D23); trystero
+  links this library's libsecp256k1 build since version 0.1 and keeps its own sealer, entropy
+  and signer.
 
 **Non-Goals:**
 
@@ -326,6 +328,41 @@ superproject's `main` of that day (`reference/plan.md`, "The revision of 2026-11
   default on MSVC because of `no-asm` (rejected by the owner: the spec's rule holds and the page
   explains the choice).
 
+### D23. Increments 3 to 5 without trystero's migration, in one order with the foundation
+
+The owner's decision of 2026-11-17, with version 0.1 merged (`webcpporg/crypto` `main` at
+`d242be8`) and the foundation change accepted: build increments 3 to 5 without trystero's
+migration, ChaCha20-Poly1305 and Botan included, and the foundation's twelve increments, in one
+order. The order and its parallel streams are the foundation's `reference/roadmap.md`; the
+foundation's design D32 to D35 hold the decisions shared with it.
+
+- **Increment 3** is reduced to OpenSSL's memory option: Tasks 15 and 16, Task 33 moved from
+  trystero's repository into crypto's own `test/openssl_memory/` (the option beside Boost.Asio's
+  SSL, libdatachannel and a TLS handshake, which webcpp::beast's and webcpp::webrtc's programs
+  are too), and Task 34 as its close: stream M of the roadmap, beside the foundation's
+  increments 1 and 2. Tasks 31 and 32 (trystero's sealer, `random` and signer) are dropped;
+  trystero keeps its code until a change of trystero's own adopts crypto.
+- **Increment 4** (Task 35) is built in the foundation's increment 1 as its Task 8b, over the
+  foundation's `ciphers::aead<Family, Backend>`, whose `aead_state` and `aead_engine` replace
+  this design's `chacha_state` and `chacha_engine` (D3); its tests are Task 35's, with
+  libsodium as a third backend in the agreement. Task 36 joins the foundation's Task 16.
+- **Increment 5** is the foundation's increment 7: Botan a pinned submodule built by b2 (the
+  foundation's D15 supersedes D15 here for Botan, and Task 37 is not built), natively and on
+  Emscripten, with D19's exceptions rule; Tasks 38 and 39's cells and tests come first in it.
+- **The deferred parts of increment 1:** Task 20 (constant time) and Task 22 (sizes and
+  throughput, from release builds only, deciding nothing) are built in the foundation's
+  increment 1, Task 23 (the browser lane) in its increment 4; Task 25b and NIST CAVP stay
+  behind gates O2 and O3, in a stream of their own.
+- **The default backend (D9)** is re-examined by the foundation's D32, after webcpp::hash's
+  decision of 2026-11-16: one default per family and target by a stated reason, no measured
+  default, no profile; AES-GCM keeps D9's choice per target, natively OpenSSL whatever is
+  linked, and version 0.1's two defines stop the build with an `#error` naming the type to
+  write (the owner's answers Q2 and Q3 of the roadmap).
+- **Alternatives:** Task 35 before the foundation's increment 1 (it would write the traits the
+  foundation's Task 8 deletes); Task 33 dropped with trystero (it proves the option in every
+  process that holds Beast's TLS or libdatachannel, not only trystero's); Botan found on the
+  machine as written (refused by the foundation's D15 and chapter 5).
+
 ## Risks / Trade-offs
 
 - [The Windows branch of the memory option is unmeasured] -> recognising OpenSSL's defaults
@@ -366,29 +403,25 @@ superproject's `main` of that day (`reference/plan.md`, "The revision of 2026-11
 
 ## Migration Plan
 
-There is nothing to migrate in webcpp until increment 3: no program depends on this library.
-Increment 3 changes webcpp::trystero in its own repository, on a branch `crypto`, after its
-shared-connection change has integrated:
+Nothing to migrate: version 0.1 moved trystero's build onto `/third_party//secp256k1` (Task
+30a, its code unchanged), and the owner dropped the rest of trystero's migration on 2026-11-17
+(D23). A later change of trystero's own may adopt `aes256_gcm`, `random_device` and
+`curves::secp256k1::keypair`; the plan's Tasks 31 and 32 stay as its reference.
 
-1. `native/sealer.hpp` and its browser twin are replaced by `aes256_gcm` with trystero's 16-byte
-   IVs, the asynchronous `sealer` interface by a direct call.
-2. Its `random` becomes `random_device::fill`; where it aborts today when the system has no
-   entropy, it reports `entropy_unavailable` as a failure of the operation that needed the bytes.
-3. Its `signer` and `verify` move to `secp256k1::keypair` and `verify_schnorr`, and its Jamfiles name `/third_party//secp256k1` in place of its external
-   libsecp256k1, in the same change (one copy per program).
-4. Its direct use of OpenSSL goes; natively OpenSSL stays a transitive dependency through
-   libdatachannel's DTLS and Beast's TLS.
-
-To start the implementation (details in `reference/STATUS.md`): the base is the superproject's
-`origin/main`; follow the plan from Task 0, after the owner has created `webcpporg/crypto` (G1). Rollback: the
+To resume (details in `reference/STATUS.md`): the order is the foundation's
+`reference/roadmap.md`; this change's remaining stream is the memory option (stream M). Rollback: the
 change is a proposal; withdrawing it deletes `openspec/changes/genesis/`.
 
 ## Open Questions
 
-- Gate G1 and G2: the owner creates `webcpporg/crypto` and adds it as the submodule `libs/crypto`.
+- Gates G1 and G2 are passed: `webcpporg/crypto` exists and is the submodule `libs/crypto`.
 - After version 0.1: owner gate O2 (the heavy own lanes at the CI's nightly level, Task 25b),
-  O3 (NIST CAVP's archives pinned by URL and SHA-256, or a mirror), O5 (the departures C16 and
-  C17, and `brew install botan` on the development machine).
+  O3 (NIST CAVP's archives pinned by URL and SHA-256, or a mirror), O5 (the departure C17; C16
+  falls away with the foundation's D32, and `brew install botan` with its D15).
+- The roadmap's owner questions of 2026-11-17 are answered (the foundation's
+  `reference/roadmap.md`): Q2 and Q3 as above, Q6 Task 33 kept in crypto's tests, Q7 this
+  change `implementing`, then `implemented` once version 0.1 and stream M are merged with the
+  CI green on both `main`s.
 - Whether `webcpp::webrtc` and `webcpp::beast` use this library, and how.
 - A later increment: an incremental `open` with the plaintext withheld until the tag verifies,
   an incremental ChaCha20-Poly1305, and a Botan WebAssembly build.

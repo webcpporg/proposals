@@ -2,7 +2,7 @@ schema: spec-driven
 created: 2026-11-14
 webcpp:
   library: crypto
-  title: "crypto: the cryptographic foundation, every backend in full, profiles and a browser backend"
+  title: "crypto: the cryptographic foundation, every backend in full, one default per family and a browser backend"
   kind: wrapper
   port_of: null
   status: accepted

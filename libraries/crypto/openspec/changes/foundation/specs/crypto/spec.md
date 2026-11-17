@@ -12,10 +12,10 @@ Each backend SHALL expose every primitive of its library that belongs to cryptog
 - **THEN** the verification is constant time and a changed tag returns `authentication_failed`
 
 ### Requirement: Capability table: one committed source
-The library SHALL hold `meta/capabilities.json`, listing for every algorithm, by family and name, each backend's targets (native, wasip2, wasip3, emscripten), whether its availability is decided at run time, whether it is constant time on each target, whether it is the family's portable choice, whether it is heavy (generated from `meta/measurements.json`), and the increment that adds it. `tools/crypto/capabilities.py` MUST generate from it `include/webcpp/crypto/detail/capabilities.hpp`, `include/webcpp/crypto/supports.hpp`'s specialisations, `doc/capabilities.adoc` and `test/capabilities_test.cpp`, and its `--check` mode MUST fail when a generated file differs from what the table gives.
+The library SHALL hold its capability table in version 0.1's `doc/tables/crypto.json`, listing for every algorithm, by family and name, each backend's targets (native, wasip2, wasip3, emscripten), whether its availability is decided at run time, whether it is constant time on each target, the family's default backend per target with its reason, and the increment that adds it. Version 0.1's generator `doc/tables/generate.py` MUST generate from it, beside version 0.1's pages, `include/webcpp/crypto/detail/capabilities.hpp`, `include/webcpp/crypto/supports.hpp`'s table and `test/capabilities_test.cpp`; a cell MUST be backed by a test that runs on its targets, and `--check` MUST fail when a generated file differs from what the table gives. No `meta/capabilities.json` and no superproject tool of crypto's MAY hold a second copy of these facts.
 
 #### Scenario: A hand edit of the generated header
-- **WHEN** a line of `detail/capabilities.hpp` is changed by hand and `python3 tools/crypto/capabilities.py --check` runs
+- **WHEN** a line of `detail/capabilities.hpp` is changed by hand and `python3 libs/crypto/doc/tables/generate.py --check` runs
 - **THEN** it fails, naming the file
 
 #### Scenario: A cell without its specialisation
@@ -36,53 +36,38 @@ The primary engine of every (algorithm, backend) pair that the table marks absen
 - **WHEN** `ciphers::aes256_gcm_sodium::make(key)` runs where `crypto_aead_aes256gcm_is_available()` returns 0
 - **THEN** it returns `not_supported`, and `supports_v<aes256_gcm_sodium, backends::sodium>` is `true` natively and `false` on WebAssembly
 
-### Requirement: Profiles: one define chooses every default backend
-Every profile and override SHALL be a macro tested with `#ifdef`. `config.hpp` MUST read at most one of crypto's profiles, `WEBCPP_CRYPTO_PROFILE_FASTEST`, `WEBCPP_CRYPTO_PROFILE_SMALLEST`, `WEBCPP_CRYPTO_PROFILE_PORTABLE` and `WEBCPP_CRYPTO_PROFILE_BACKEND_<NAME>` (`SODIUM`, `BEARSSL`, `OPENSSL`, `BOTAN`, `BLST`, `SECP256K1`, `CTAES`), and at most one of the webcpp-wide profiles `WEBCPP_PROFILE_FASTEST`, `WEBCPP_PROFILE_SMALLEST` and `WEBCPP_PROFILE_PORTABLE`, which webcpp::hash reads alike. Every algorithm's default backend, `default_backend_t<Family>`, MUST follow them: `FASTEST` and `SMALLEST` take the measured ranking of the target (and natively of the architecture); `PORTABLE` takes the table's portable backend, refusing an algorithm that no backend has on all four targets; a named backend takes that backend for every algorithm it has and the next level for the others; with none defined, the build's measured default is `FASTEST` natively and `SMALLEST` on WebAssembly. `webcpp::crypto::profile_name` MUST give the resolved profile's name.
+### Requirement: Default backend: one per family and target, by a stated reason
+Each family SHALL have one default backend per target, `default_backend_t<Family>`, written with its reason in the family's row of `doc/tables/crypto.json` and never changed by the backends a program links: AES-GCM OpenSSL natively and BearSSL on wasip2, wasip3 and Emscripten; the AES block cipher none; the ChaCha20-Poly1305 AEADs, Ed25519, X25519, the boxes, secretbox, secretstream and the rest of libsodium's families libsodium; secp256k1 libsecp256k1; the P-curves and RSA BearSSL; AES-CTR, CBC, CCM and EAX BearSSL until OpenSSL has them, then AES-GCM's rule; the families only OpenSSL and Botan have OpenSSL on native, wasip2 and wasip3 and Botan on Emscripten; BLS12-381, KZG, BN254 and Shamir their only backend (`design.md` D32). A program that uses a default it has not linked MUST stop at compile time with a message that names the Jamfile line linking it and the type that names another backend, from a test of its own. The documentation MUST give each default with its reason.
 
-#### Scenario: The owner's rule
-- **WHEN** a program links libsodium, BearSSL and OpenSSL natively on Linux x86-64 and uses `ciphers::chacha20_poly1305` without a define
-- **THEN** its backend is the one `meta/measurements.json` ranks fastest there among the three, and on Emscripten, where OpenSSL is not built, the one ranked smallest among the other two
+#### Scenario: Ed25519 without libsodium
+- **WHEN** a program links only BearSSL and uses `curves::ed25519::keypair`
+- **THEN** compilation stops naming `/third_party//sodium` and `curves::ed25519::basic_keypair<Backend>` with the backends that have Ed25519
 
-#### Scenario: The webcpp-wide umbrella
-- **WHEN** a program defines only `WEBCPP_PROFILE_SMALLEST` natively and uses `ciphers::chacha20_poly1305` and webcpp::hash's HKDF
-- **THEN** both libraries take their smallest linked backend, and `crypto::profile_name` is `smallest`
+#### Scenario: A native program links both AES-GCM backends
+- **WHEN** a native program links OpenSSL and BearSSL and uses `ciphers::aes256_gcm`
+- **THEN** its backend is OpenSSL, and `ciphers::gcm<ciphers::aes256<backends::bearssl>>` is BearSSL
 
-#### Scenario: Two profiles at once
-- **WHEN** a program defines `WEBCPP_CRYPTO_PROFILE_FASTEST` and `WEBCPP_CRYPTO_PROFILE_PORTABLE`
-- **THEN** compilation stops with an `#error` naming both macros, and so it does for `WEBCPP_PROFILE_FASTEST` with `WEBCPP_PROFILE_SMALLEST`
+### Requirement: Default backend: no profile, no override, no measured default
+No macro SHALL change a default: the library MUST NOT read `WEBCPP_CRYPTO_PROFILE_*`, `WEBCPP_PROFILE_*` or a per-family `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`, and MUST NOT declare `profile`, `profiles` or `profile_name`. Version 0.1's `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` MUST stop compilation with an `#error` naming the type to write in their place. A measurement MUST NOT decide a default, a backend's order or whether an operation has an asynchronous variant. Every backend other than the default MUST stay reachable by naming it in the type.
 
-### Requirement: Profiles: the selection takes only what can work
-`default_backend_t<Family>` SHALL take, in the profile's order, the first backend that is linked (its `WEBCPP_CRYPTO_HAS_<NAME>` define), has the algorithm on the current target, and is not decided at run time. When none is linked it MUST be `detail::none_linked<Family>`, whose use stops compilation with the Jamfile lines that would give one, generated from the table.
+#### Scenario: A version 0.1 define
+- **WHEN** a program defines `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL`
+- **THEN** compilation stops with a message that says to write `ciphers::gcm<ciphers::aes256<backends::bearssl>>` where the program wants BearSSL
 
-#### Scenario: Nothing linked for X25519
-- **WHEN** a program that links no backend having X25519 calls `curves::x25519::agree`
-- **THEN** compilation stops naming `/third_party//sodium` and the other backends' lines for that target
+#### Scenario: A former profile define
+- **WHEN** a program defines `WEBCPP_PROFILE_SMALLEST` and uses `ciphers::chacha20_poly1305`
+- **THEN** its backend is libsodium, as without the define
 
-#### Scenario: A run-time backend is never a default
-- **WHEN** libsodium is the only linked backend having AES-256-GCM natively
-- **THEN** `ciphers::aes256_gcm` still names a backend without a run-time check, or stops compilation with the lines that would give one
+### Requirement: Measurements: references from release builds that decide nothing
+The own lane `sizes` SHALL build the baseline program and one program per (family, backend) through the superproject's `webcpp.size-table`, which requires `<variant>release`, on native, wasip2, wasip3 and Emscripten, and the documentation's size matrix MUST be generated from its table. Throughput MUST be measured only from programs built at `variant=release`, by a collect script that refuses any other program or data, and published as a dated page that names the machines. No size or throughput MAY decide a default, an order of backends or an API.
 
-### Requirement: Profiles: per-family overrides, the genesis's defines and the precedence
-`WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`, with the families of the capability table and the backends that have each, SHALL override one family's default; two overrides of one family MUST stop compilation with an `#error` naming both. `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_OPENSSL` MUST keep their genesis meaning, as spellings of `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL` and `_GCM_OPENSSL`. The precedence MUST be: a per-family override, then crypto's profile, then the webcpp-wide profile, then the build's measured default; crypto's profile beside a webcpp-wide one is allowed and wins. On MSVC, `config.hpp` MUST carry `#pragma detect_mismatch("webcpp_crypto_profile", "<resolved profile>")` and one key per family's resolved override, so that two translation units that choose differently fail to link with LNK2038.
+#### Scenario: A debug build is offered to the throughput page
+- **WHEN** the collect script is given a program built at `variant=debug`
+- **THEN** it refuses it, saying that tables are built only from release builds, and writes nothing
 
-#### Scenario: One family overridden
-- **WHEN** a program defines `WEBCPP_CRYPTO_PROFILE_BACKEND_SODIUM` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_ED25519_OPENSSL`
-- **THEN** `curves::ed25519::keypair::backend_type` is `backends::openssl` and `curves::x25519::algorithm<>::backend_type` is `backends::sodium`
-
-#### Scenario: The precedence across levels
-- **WHEN** a program defines `WEBCPP_PROFILE_PORTABLE`, `WEBCPP_CRYPTO_PROFILE_FASTEST` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL`, with BearSSL, OpenSSL and libsodium linked natively
-- **THEN** `ciphers::aes256_gcm` is on BearSSL (the override), `ciphers::chacha20_poly1305` on the backend ranked fastest (crypto's profile over the umbrella), and webcpp::hash's defaults follow `WEBCPP_PROFILE_PORTABLE`
-
-### Requirement: Measurements: webcpp's own, committed and regenerated
-The library SHALL hold `meta/measurements.json`: per (algorithm, backend), the bytes added over the baseline program on each target (native at `<optimization>space`, wasip2, wasip3 and Emscripten at `-Os`, stripped, raw and `gzip -9n`) and the throughput of the family's fixed operation natively on Linux x86-64, Linux arm64 and macOS arm64 and under wasmtime and node, each the median of five runs. `tools/crypto/measure.py` MUST write it and generate `detail/rankings.hpp` and `doc/measurements.adoc`. A pin move MUST regenerate it in the same change. The own lane `sizes` MUST rebuild the WebAssembly size programs on every push and fail when a size or the size ranking differs from the committed file; two backends whose throughput medians differ by less than 10 % MUST keep their committed order.
-
-#### Scenario: A pin moves without regenerating
-- **WHEN** libsodium's pin moves and `meta/measurements.json` is not regenerated
-- **THEN** the lane `sizes` fails, naming the entries that changed
-
-#### Scenario: Noise does not flip a default
-- **WHEN** a new throughput run puts two backends within 10 % of each other in the reverse order
-- **THEN** the committed order and the default stay
+#### Scenario: A pin moves
+- **WHEN** libsodium's pin moves
+- **THEN** the size matrix is regenerated from the lane's new table, and no default changes
 
 ### Requirement: Interface: every family keeps the genesis's shape
 Every algorithm type SHALL state its sizes as `static constexpr` members, take its backend as its last template parameter with `default_backend_t<Family>` as default, and every keyed object MUST be made by `static make(...)` returning `boost::system::result<T>`, be move-only, wipe its secrets on destruction and on move, and answer `invalid_state` from every function when empty. A keyed object that can be drawn at random MUST also offer `static generate()`, which draws its seed from `random_device` and returns `entropy_unavailable` when the source fails. A backend's header MUST specialise only the family's `detail::<family>_state` and `detail::<family>_engine` traits; the guards MUST be written once, in the family's type.
@@ -242,8 +227,19 @@ Increment 2 SHALL add ElligatorSwift (`ellswift_encode`, `ellswift_create`, `ell
 - **WHEN** every sending and receiving case of BIP352's test vectors runs
 - **THEN** the outputs and the found outputs are the vectors'
 
+### Requirement: ChaCha20-Poly1305: on libsodium, BearSSL and OpenSSL in version 0.2
+Increment 1 SHALL add `ciphers::chacha20_poly1305` (RFC 8439, a 32-byte key, a 12-byte nonce, a 16-byte tag) over `ciphers::aead<Family, Backend>` on libsodium (every target), BearSSL (every target) and OpenSSL (native, wasip2, wasip3), which is the genesis's increment 4 built on the foundation's AEAD template. Its tests MUST be the genesis's: RFC 8439's vectors, Wycheproof's ChaCha20-Poly1305 file on each backend, the cross-backend agreement of the three, the counting allocation tests, OpenSSL's error queue left as found, ctaes's refusal from a message test of its own, the constant-time cases, and, once the memory option has merged, its part of the memory option's tests.
+
+#### Scenario: Three backends agree
+- **WHEN** `agree_aead<chacha20_poly1305>` runs natively on libsodium, BearSSL and OpenSSL from one seed
+- **THEN** every ciphertext and tag is identical and each backend opens the others'
+
+#### Scenario: ctaes has no ChaCha
+- **WHEN** a program names `ciphers::aead<families::chacha20_poly1305, backends::ctaes>`
+- **THEN** compilation stops naming the backends that have ChaCha20-Poly1305
+
 ### Requirement: Backend BearSSL: the remaining parts
-Increment 3 SHALL add on BearSSL, on every target: `curves::p256::ecdsa`, `curves::p384::ecdsa` and `curves::p521::ecdsa` (RFC 6979 nonces, raw and DER signatures, over a digest the caller gives), `curves::p256::ecdh`, `curves::p384::ecdh` and `curves::p521::ecdh`, `curves::x25519`, `ciphers::chacha20_poly1305`, `ciphers::ctr<ciphers::aesN>`, `ciphers::cbc<ciphers::aesN>` with PKCS #7 padding (`invalid_padding` for every cause), `ciphers::ccm<ciphers::aesN, TagSize>`, `ciphers::eax<ciphers::aesN>`, and RSA (`rsa::pkcs1<Hash>` and `rsa::pss<Hash>` signatures, `rsa::oaep<Hash>` encryption, key generation from `random_device`). BearSSL's DRBGs MUST NOT be exposed.
+Increment 3 SHALL add on BearSSL (whose ChaCha20-Poly1305 comes in increment 1), on every target: `curves::p256::ecdsa`, `curves::p384::ecdsa` and `curves::p521::ecdsa` (RFC 6979 nonces, raw and DER signatures, over a digest the caller gives), `curves::p256::ecdh`, `curves::p384::ecdh` and `curves::p521::ecdh`, `curves::x25519`, `ciphers::ctr<ciphers::aesN>`, `ciphers::cbc<ciphers::aesN>` with PKCS #7 padding (`invalid_padding` for every cause), `ciphers::ccm<ciphers::aesN, TagSize>`, `ciphers::eax<ciphers::aesN>`, and RSA (`rsa::pkcs1<Hash>` and `rsa::pss<Hash>` signatures, `rsa::oaep<Hash>` encryption, key generation from `random_device`). BearSSL's DRBGs MUST NOT be exposed.
 
 #### Scenario: A passkey's ES256 signature
 - **WHEN** `verify` of `curves::p256::ecdsa<backends::bearssl>` is given a WebAuthn assertion's DER signature, the digest and the credential's public key
@@ -287,7 +283,7 @@ Increment 3 SHALL add, as primitives on BearSSL for P-256, P-384 and P-521 by th
 - **THEN** it does not compile, and `ciphers::xchacha20_poly1305::seal` does
 
 ### Requirement: Heavy operations run on another thread, only in a build with threads
-`config.hpp` SHALL define `WEBCPP_CRYPTO_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined and on Emscripten when `__EMSCRIPTEN_PTHREADS__` is defined, never on wasip2 or wasip3, unless `WEBCPP_CRYPTO_NO_THREADS` is defined, as webcpp::hash's `WEBCPP_HASH_HAS_THREADS` does. An operation is heavy when the capability table's generated `heavy` column marks it: the median of its fixed operation in `meta/measurements.json` exceeds 1 ms natively on the reference runner (ubuntu-24.04, x86-64) or under node on that runner, an order kept unless a new median crosses 1 ms by more than 10 %. Operations whose cost the caller's data size sets (AEADs, boxes, secretstream, stream ciphers, MACs) MUST NOT be marked heavy. With threads, every heavy operation MUST have an `async_` variant that takes an executor first (natively a `webcpp::asio::thread_pool`'s, on Emscripten a pool whose threads are Web Workers), runs the work there, and completes on the handler's associated executor; without threads, calling it MUST fail to compile with "webcpp::crypto: <name> runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call <synchronous name>.", except on `backends::browser`, which needs no thread. Cheap operations MUST stay synchronous only, unless the browser offers them.
+`config.hpp` SHALL define `WEBCPP_CRYPTO_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined and on Emscripten when `__EMSCRIPTEN_PTHREADS__` is defined, never on wasip2 or wasip3, unless `WEBCPP_CRYPTO_NO_THREADS` is defined, as webcpp::hash's `WEBCPP_HASH_HAS_THREADS` does. The heavy operations SHALL be the ones `design.md` D32 lists, never a set generated from measurements: RSA key generation at every size and RSA private operations at 3072 bits and above; SLH-DSA key generation, signing and verification; ML-DSA key generation and signing; BLS12-381 verification, aggregate verification, fast aggregate verification and aggregation; KZG's commitments and proofs over a blob and their batch verification; BN254's `pairing_check`. Operations whose cost the caller's data size sets (AEADs, boxes, secretstream, stream ciphers, MACs) MUST NOT be heavy. With threads, every heavy operation MUST have an `async_` variant that takes an executor first (natively a `webcpp::asio::thread_pool`'s, on Emscripten a pool whose threads are Web Workers), runs the work there, and completes on the handler's associated executor; without threads, calling it MUST fail to compile with "webcpp::crypto: <name> runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call <synchronous name>.", except on `backends::browser`, which needs no thread. Cheap operations MUST stay synchronous only, unless the browser offers them.
 
 #### Scenario: RSA key generation off the caller's thread
 - **WHEN** a native test built with `threading=multi` calls `async_generate` for `rsa::pss<sha2_256>` at 3072 bits on BearSSL with a `thread_pool`'s executor and a callback bound to its own `io_context`, and runs a 10 ms timer on that `io_context`
@@ -327,7 +323,7 @@ Increment 7 SHALL make Botan the submodule `third_party/libs/botan` at 3.14.1 (`
 - **THEN** it receives `detail::botan_random`, and no `Botan::System_RNG` or `AutoSeeded_RNG` is constructed anywhere in the library
 
 ### Requirement: Backend OpenSSL: the remaining algorithms
-Increment 8 SHALL add on OpenSSL, through `/webcpp/crypto//openssl` on native, wasip2 and wasip3: the P-curves' ECDSA and ECDH, Ed25519, Ed448, X25519, X448, ML-KEM, ML-DSA, SLH-DSA, RSA, AES-CTR, CBC, CCM, OCB, KW, KWP, SIV, GCM-SIV, CMAC and ChaCha20-Poly1305. A keyed object MUST hold its `EVP_PKEY` and a context initialised in `make`, and the documentation MUST record, per algorithm, what OpenSSL allocates per operation as the counting tests measure it.
+Increment 8 SHALL add on OpenSSL, through `/webcpp/crypto//openssl` on native, wasip2 and wasip3: the P-curves' ECDSA and ECDH, Ed25519, Ed448, X25519, X448, ML-KEM, ML-DSA, SLH-DSA, RSA, AES-CTR, CBC, CCM, OCB, KW, KWP, SIV, GCM-SIV and CMAC (its ChaCha20-Poly1305 comes in increment 1). A keyed object MUST hold its `EVP_PKEY` and a context initialised in `make`, and the documentation MUST record, per algorithm, what OpenSSL allocates per operation as the counting tests measure it.
 
 #### Scenario: ML-DSA's ACVP vectors
 - **WHEN** NIST ACVP's ML-DSA-65 signature generation and verification cases run on OpenSSL
@@ -348,7 +344,7 @@ Every algorithm SHALL be tested on every backend that has it, on every target th
 - **THEN** every valid case gives its shared secret, and every case a backend refuses is one the test lists as that backend's expected refusal
 
 ### Requirement: Tests: constant time for the new code
-The genesis's constant-time harness (memcheck's client requests, MemorySanitizer, dudect natively and under wasmtime, the planted leak that must fail) SHALL be built in increment 1 over libsodium's signing, agreement, AEAD and box code and webcpp's guards, and each later increment MUST extend it to its backend's secret-dependent paths before its last green.
+The genesis's constant-time harness (memcheck's client requests, MemorySanitizer, dudect natively and under wasmtime, the planted leak that must fail) SHALL be built in increment 1 (the genesis's Task 20, whole) over version 0.1's backends (BearSSL's AES-GCM, OpenSSL's AES-GCM where it is built with assembly, ctaes, and libsecp256k1's own `ctime_tests.c`), over libsodium's signing, agreement, AEAD and box code, BearSSL's and OpenSSL's ChaCha20-Poly1305, and webcpp's guards, and each later increment MUST extend it to its backend's secret-dependent paths before its last green.
 
 #### Scenario: Ed25519 signing under memcheck
 - **WHEN** the seed and the message are marked undefined and `curves::ed25519::keypair::sign` runs under memcheck
@@ -366,21 +362,21 @@ The documentation SHALL let a developer who knows little cryptography and an LLM
 - **THEN** it ends with the attribution to libsodium's documentation and its ISC licence
 
 ### Requirement: Documentation: a chapter per namespace, opening with a comparison table
-Each group of the library (`ciphers`, `curves`, `post_quantum`, `rsa`, `hybrid`, `commitments`, `secret_sharing`, the root utilities) SHALL have a chapter that opens with a comparison table of everything inside it, generated from `meta/capabilities.json` and `meta/measurements.json`: for `ciphers` whether each is an AEAD, key and nonce sizes, nonce-misuse resistance, speed with and without hardware support, constant time per backend, standards, where it is used in the world, WebCrypto availability and "choose it when"; for `curves` what each does, its security level, key and signature sizes, speed, standards, the ecosystems that require it, and "choose it for compatibility with"; the other groups with the columns their algorithms need. Every statement of where an algorithm is used MUST cite a source, and the generator MUST refuse one without.
+Each group of the library (`ciphers`, `curves`, `post_quantum`, `rsa`, `hybrid`, `commitments`, `secret_sharing`, the root utilities) SHALL have a chapter that opens with a comparison table of everything inside it, generated from `doc/tables/crypto.json` and the lanes' tables from release builds: for `ciphers` whether each is an AEAD, key and nonce sizes, nonce-misuse resistance, speed with and without hardware support, constant time per backend, standards, where it is used in the world, WebCrypto availability and "choose it when"; for `curves` what each does, its security level, key and signature sizes, speed, standards, the ecosystems that require it, and "choose it for compatibility with"; the other groups with the columns their algorithms need. Every statement of where an algorithm is used MUST cite a source, and the generator MUST refuse one without.
 
 #### Scenario: The curves table
 - **WHEN** the curves chapter is built
 - **THEN** its table lists secp256k1 with Bitcoin, Ethereum and Nostr, P-256 with passkeys and WebCrypto, and Ed25519 with SSH and Signal, each with its cited source
 
 ### Requirement: Documentation: generated backend lists and matrices
-Every API page SHALL list the backends that implement it, with the default per target and profile, generated from the capability table and the rankings. A backends chapter MUST hold generated matrices: operations by backends by targets, binary size per target per operation, throughput natively and under node per operation, and constant time per backend and target. No table that states support, size, speed or a property MAY be written by hand: `tools/crypto/docs.py` generates them, and its `--check` MUST fail on a stale page.
+Every API page SHALL list the backends that implement it, with the default per target and its reason, generated from the capability table. A backends chapter MUST hold generated matrices: operations by backends by targets, binary size per target per operation, throughput natively and under node per operation, and constant time per backend and target. No table that states support, size, speed or a property MAY be written by hand: `doc/tables/generate.py` generates them, and its `--check` MUST fail on a stale page.
 
 #### Scenario: A pin move
-- **WHEN** a pin moves and `meta/measurements.json` is regenerated without rerunning `docs.py`
-- **THEN** `docs.py --check` fails, naming the stale pages
+- **WHEN** a pin moves and the `sizes` lane's table changes without rerunning `generate.py`
+- **THEN** `generate.py --check` fails, naming the stale pages
 
 ### Requirement: Documentation: choosing by use case, and an index for LLMs
-The documentation SHALL hold a "choose by use case" chapter, a decision table generated from `meta/use_cases.json` whose rows read "I need to ..." and give a namespace, an algorithm, a backend and a profile with a link to the example, and an `llms.txt` at its root listing each namespace, each function, its use cases and its backends, generated with the tables.
+The documentation SHALL hold a "choose by use case" chapter, a decision table generated from `crypto.json`'s `use_cases` whose rows read "I need to ..." and give a namespace, an algorithm, a backend with a link to the example, and an `llms.txt` at its root listing each namespace, each function, its use cases and its backends, generated with the tables.
 
 #### Scenario: An LLM picks a cipher
 - **WHEN** the row "encrypt messages in a chat app, on the web and natively" is read
@@ -437,11 +433,11 @@ Increment 12 SHALL add `hybrid::hpke<Kem, Kdf, Aead, Backend>` (RFC 9180: the ba
 - **THEN** both give every ciphertext and exported secret, and each opens the other's
 
 ### Requirement: Increments: the foundation's twelve, and its parallel streams
-The foundation SHALL proceed in twelve increments ordered by value: (1) libsodium's core, the profiles, the capability table, the measurements, the constant-time lane and the documentation's form; (2) libsecp256k1's remaining modules; (3) BearSSL's remaining parts; (4) the browser backend and the asynchronous family; (5) libsodium completed; (6) blst; (7) Botan as a submodule; (8) OpenSSL's remaining algorithms; (9) KZG over c-kzg-4844; (10) BN254 over mcl; (11) Shamir secret sharing over sss; (12) HPKE. Increments 1 and 2 MUST be able to run beside each other and form version 0.2; after increment 1 merges, increments 3 to 8, 10 and 11 MUST be able to run as parallel streams; 9 starts when 6 merges, and 12 when 8 merges, its WebAssembly cells joining when 7 merges. The shared generated files are regenerated after each rebase and never merged by hand. Each increment ends with the definition of green, a review, and pull requests the owner merges.
+The foundation SHALL proceed in twelve increments ordered by value, in the order of `reference/roadmap.md`: (1) libsodium's core, the capability table, the defaults by reason, ChaCha20-Poly1305 on libsodium, BearSSL and OpenSSL (the genesis's increment 4), the constant-time lane over version 0.1's backends and the new code, the sizes lane and the throughput page from release builds, and the documentation's form; (2) libsecp256k1's remaining modules; (3) BearSSL's remaining parts; (4) the browser backend and the asynchronous family; (5) libsodium completed; (6) blst; (7) Botan as a submodule, which is the genesis's increment 5; (8) OpenSSL's remaining algorithms; (9) KZG over c-kzg-4844; (10) BN254 over mcl; (11) Shamir secret sharing over sss; (12) HPKE. Increments 1 and 2 MUST be able to run beside each other and beside the genesis's memory option (stream M), and form version 0.2; after increment 1 merges, increments 3 to 8, 10 and 11 MUST be able to run as parallel streams; 9 starts when 6 merges, and 12 when 8 merges, its WebAssembly cells joining when 7 merges. A stream merges when green and reviewed, two ready at once in the value order; after each merge the others rebase, merge `doc/tables/crypto.json` by rows and regenerate, never merging a generated file by hand. Each increment ends with the definition of green, a review, and pull requests the owner merges.
 
 #### Scenario: Two streams touch the capability table
-- **WHEN** increments 3 and 6 both add rows to `meta/capabilities.json` and 3 merges first
-- **THEN** 6 rebases, merges the JSON rows, regenerates the derived files with `capabilities.py`, and `--check` passes
+- **WHEN** increments 3 and 6 both add rows to `doc/tables/crypto.json` and 3 merges first
+- **THEN** 6 rebases, merges the JSON rows, regenerates with `generate.py`, and `--check` passes
 
 #### Scenario: KZG waits for blst
 - **WHEN** increment 9 is about to start and increment 6 has not merged
@@ -450,7 +446,7 @@ The foundation SHALL proceed in twelve increments ordered by value: (1) libsodiu
 ## MODIFIED Requirements
 
 ### Requirement: Library: header-only target and namespace
-The library SHALL be header-only C++20, in namespace `webcpp::crypto`, organised in groups whose headers mirror them as `<webcpp/crypto/<group>/<name>.hpp>`: `ciphers` (block ciphers and their modes, AEADs, stream ciphers, MACs, `secretbox`, `secretstream`, `ipcrypt`), `curves` (one namespace per curve: `secp256k1` with its modules, `ed25519`, `x25519`, `ed448`, `x448`, `p256`, `p384`, `p521`, `brainpool`, `ristretto255`, `edwards25519`, `bls12_381`, `bn254`), `post_quantum` (`ml_kem`, `ml_dsa`, `slh_dsa`, `x_wing`), `rsa`, `hybrid` (`box`, `sealed_box`, `hpke`), `commitments::kzg` and `secret_sharing::shamir`; the root holds `error`, `random_device`, `equal`, the memory utilities, `secret<N>`, the configuration and profiles (`profiles`, `families`, `tags`, `default_backend_t`, `supports_v`) and the asynchronous family; `webcpp::crypto::backends` holds one tag per backend, outside the groups, with `<webcpp/crypto/backends/<name>.hpp>`. Internals MUST be in `webcpp::crypto::detail` alone (no group has a `detail` of its own), macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). Version 0.1's names are renamed to this layout before it closes, and no alias of the old names exists. A program MUST reach the library through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, `/webcpp/hash//hash`, and on Windows `bcrypt`.
+The library SHALL be header-only C++20, in namespace `webcpp::crypto`, organised in groups whose headers mirror them as `<webcpp/crypto/<group>/<name>.hpp>`: `ciphers` (block ciphers and their modes, AEADs, stream ciphers, MACs, `secretbox`, `secretstream`, `ipcrypt`), `curves` (one namespace per curve: `secp256k1` with its modules, `ed25519`, `x25519`, `ed448`, `x448`, `p256`, `p384`, `p521`, `brainpool`, `ristretto255`, `edwards25519`, `bls12_381`, `bn254`), `post_quantum` (`ml_kem`, `ml_dsa`, `slh_dsa`, `x_wing`), `rsa`, `hybrid` (`box`, `sealed_box`, `hpke`), `commitments::kzg` and `secret_sharing::shamir`; the root holds `error`, `random_device`, `equal`, the memory utilities, `secret<N>`, the configuration and the defaults (`families`, `tags`, `default_backend_t`, `supports_v`) and the asynchronous family; `webcpp::crypto::backends` holds one tag per backend, outside the groups, with `<webcpp/crypto/backends/<name>.hpp>`. Internals MUST be in `webcpp::crypto::detail` alone (no group has a `detail` of its own), macros prefixed `WEBCPP_CRYPTO_` and include guards `WEBCPP_CRYPTO_<PATH>_HPP` (`WEBCPP_CRYPTO_DETAIL_CANARY_H` for the C header). Version 0.1's names are renamed to this layout before it closes, and no alias of the old names exists. A program MUST reach the library through the b2 target `/webcpp/crypto//crypto`, an alias that gives `libs/crypto/include`, Boost's headers, `/webcpp/hash//hash`, and on Windows `bcrypt`.
 
 #### Scenario: A program that only draws random bytes links no backend
 - **WHEN** a Jamfile reads `exe app : app.cpp /webcpp/crypto//crypto ;` and `app.cpp` includes `<webcpp/crypto/random_device.hpp>` and `<webcpp/crypto/equal.hpp>`
@@ -497,22 +493,22 @@ Every operation of the synchronous API SHALL return before it yields, and the sy
 - **THEN** it does so through `async_seal`, and the synchronous `seal` on that backend does not compile
 
 ### Requirement: Backends: the five and what each exports
-The backends SHALL be `backends::bearssl`, `backends::openssl`, `backends::ctaes`, `backends::secp256k1`, `backends::botan`, `backends::sodium`, `backends::blst` and `backends::browser`, each a tag type with `static constexpr std::string_view name`, exporting what `meta/capabilities.json` lists for it, on the targets it lists: BearSSL, ctaes, libsecp256k1, libsodium and blst on all four targets; OpenSSL on native, wasip2 and wasip3; Botan natively, on Emscripten, and on wasip2 and wasip3 as increment 7's spike finds; the browser on Emscripten, asynchronously. The documentation MUST give the generated table and, per backend, its Jamfile line, its headers and functions and every message with its fix, and each backend's own C API MUST stay reachable (`<bearssl.h>`, `<openssl/*.h>`, `<ctaes.h>`, `<secp256k1*.h>`, `<botan/*.h>`, `<sodium.h>`, `<blst.h>`).
+The backends SHALL be `backends::bearssl`, `backends::openssl`, `backends::ctaes`, `backends::secp256k1`, `backends::botan`, `backends::sodium`, `backends::blst` and `backends::browser`, each a tag type with `static constexpr std::string_view name`, exporting what `doc/tables/crypto.json` lists for it, on the targets it lists: BearSSL, ctaes, libsecp256k1, libsodium and blst on all four targets; OpenSSL on native, wasip2 and wasip3; Botan natively, on Emscripten, and on wasip2 and wasip3 as increment 7's spike finds; the browser on Emscripten, asynchronously. The documentation MUST give the generated table and, per backend, its Jamfile line, its headers and functions and every message with its fix, and each backend's own C API MUST stay reachable (`<bearssl.h>`, `<openssl/*.h>`, `<ctaes.h>`, `<secp256k1*.h>`, `<botan/*.h>`, `<sodium.h>`, `<blst.h>`).
 
 #### Scenario: The backend names
 - **WHEN** an example prints `ciphers::aes256_gcm::backend_type::name`
-- **THEN** it prints `bearssl` on WebAssembly and `openssl` natively when OpenSSL is linked, as long as the measurement table ranks them so
+- **THEN** it prints `bearssl` on WebAssembly and `openssl` natively, the defaults' stated reasons
 
 ### Requirement: Default backend: per target
-`config.hpp` SHALL define every family's default, `default_backend_t<Family>`, from `WEBCPP_TARGET_*`, the native architecture where the measurement table differs by it, the `HAS` defines, the profile and the overrides, as the profile requirements say; `default_backend`, the genesis's name, MUST stay the default of the AES block cipher and AES-GCM family. Under `automatic`, with the genesis's measurements, AES-GCM's default MUST remain BearSSL on Emscripten, wasip2 and wasip3, and natively OpenSSL when linked, else BearSSL, MSVC included. A program names a backend at any use with the template argument.
+`config.hpp` and the generated defaults SHALL define every family's default, `default_backend_t<Family>`, from `WEBCPP_TARGET_*` alone, as "Default backend: one per family and target, by a stated reason" gives them; `default_backend`, the genesis's name, MUST stay the default of the AES-GCM family: OpenSSL natively, MSVC included, and BearSSL on Emscripten, wasip2 and wasip3, whatever the program links. A program names another backend at any use with the template argument. The documentation MUST say that the source-built OpenSSL is compiled `no-asm` on MSVC, wasip2 and wasip3, and that BearSSL is 30 to 62 times slower than OpenSSL on ARM.
 
-#### Scenario: Both linked, BearSSL chosen
-- **WHEN** a Jamfile links OpenSSL and BearSSL with `<define>WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL`
-- **THEN** `ciphers::aes256_gcm::backend_type` is `backends::bearssl`
+#### Scenario: BearSSL natively
+- **WHEN** a native program wants AES-GCM on BearSSL
+- **THEN** it names `ciphers::gcm<ciphers::aes256<backends::bearssl>>`, and its Jamfile links `/third_party//bearssl`
 
-#### Scenario: Measured speed behind the rule
-- **WHEN** the throughput of AES-GCM is compared on the CI's runners
-- **THEN** OpenSSL is about 1.4 times BearSSL's AES-NI on x86-64, about 30 times on Linux aarch64 and about 62 times on macOS-15, and `meta/measurements.json` records the run that shows it
+#### Scenario: OpenSSL not linked natively
+- **WHEN** a native program links only BearSSL and uses `ciphers::aes256_gcm`
+- **THEN** compilation stops naming `/webcpp/crypto//openssl` and `ciphers::gcm<ciphers::aes256<backends::bearssl>>`
 
 ### Requirement: secp256k1: ECDH and the secret
 `ecdh` SHALL take the secret out of the key pair (`secp256k1_keypair_sec`) into a local array and wipe it with the library's key wipe before returning on every path, return the 32-byte result as `secret<32>`, and return `backend_failure` if `secp256k1_ecdh` returns 0 on a parsed key, which a valid key pair and libsecp256k1's own hash function never cause. `ecdh_x` and `ecdh_point` follow the same rules with their own hash functions.
@@ -566,18 +562,22 @@ Every backend SHALL be compared against every other that has the same algorithm,
 - **THEN** both give the same shared secrets for the same keys
 
 ### Requirement: Tests: sizes and throughput
-The own lane `sizes` SHALL build, through b2 on every target, the baseline program and one program per (algorithm, backend) of the capability table at `<variant>release`, stripped, and compare each size with `meta/measurements.json`, byte for byte on WebAssembly (pinned toolchains) and reported natively; the throughput of each family's fixed operation per backend MUST be measured natively on ubuntu-24.04, ubuntu-24.04-arm and macos-15 (the library's `runners.yml`), under wasmtime and under node, five runs each, at every pin move and on demand, and written by `tools/crypto/measure.py`.
+The own lane `sizes` SHALL build, through `webcpp.size-table` at `<variant>release` on every target, the baseline program and one program per (algorithm, backend) of the capability table, stripped, and its table MUST feed the documentation's size matrix; throughput MUST be measured by hand from release builds alone, by a collect script that refuses a program or data not built at `variant=release`, and published as a dated page. Neither MAY decide a default; no `runners.yml` and no ranking exist.
 
 #### Scenario: BearSSL's code size on WebAssembly
-- **WHEN** the sizes lane builds the AES-GCM program at -Os stripped
-- **THEN** its size is the one `meta/measurements.json` records for BearSSL on that target
+- **WHEN** the sizes lane builds the AES-GCM program on wasip2
+- **THEN** it builds it at `variant=release`, and the documentation's matrix shows the size the lane's table records
 
 ### Requirement: Increments: five, in order
-The genesis's work SHALL proceed as version 0.1 (its increment 1 without its deferred parts, and its increment 2), then its deferred parts of increment 1 (the memory option, NIST's vectors, the nightly level) and its increment 3 (trystero's migration). Its increment 4 (ChaCha20-Poly1305 on BearSSL and OpenSSL) and 5 (Botan) MUST NOT be built as the genesis wrote them: ChaCha20-Poly1305 comes with the foundation's increments 1 (libsodium), 3 (BearSSL), 7 (Botan) and 8 (OpenSSL), and Botan with the foundation's increment 7, as a submodule. The genesis's Tasks 20 (constant time), 22 (sizes and throughput) and 23 (the browser lane) are absorbed by the foundation's increments 1 and 4.
+The genesis's work SHALL proceed as version 0.1 (its increment 1 without its deferred parts, and its increment 2, merged), then, by the owner's decision of 2026-11-17, without trystero's migration: its increment 3 reduced to the memory option (its Tasks 15 and 16, Task 33 moved into crypto's own tests, and Task 34), which runs beside the foundation's increments 1 and 2; its increment 4 (ChaCha20-Poly1305 on BearSSL and OpenSSL) built in the foundation's increment 1 over `ciphers::aead`; and its increment 5 (Botan) built as the foundation's increment 7, Botan a submodule. Its Tasks 31 and 32 (trystero's sealer, entropy and signer) MUST NOT be built by this library's work, and its Task 37 (Botan found on the machine) MUST NOT be built. Its Tasks 20 (constant time) and 22 (sizes and throughput, re-cut to release builds that decide nothing) are built in the foundation's increment 1, Task 23 (the browser lane) in its increment 4, and Task 25b and NIST's vectors stay behind the owner's gates O2 and O3.
 
-#### Scenario: ChaCha20-Poly1305 before BearSSL's engine
+#### Scenario: ChaCha20-Poly1305 in version 0.2
 - **WHEN** the foundation's increment 1 lands
-- **THEN** `ciphers::chacha20_poly1305` exists on libsodium, and BearSSL's engine joins it in the foundation's increment 3
+- **THEN** `ciphers::chacha20_poly1305` exists on libsodium, BearSSL and OpenSSL, and the three agree
+
+#### Scenario: trystero keeps its own sealer
+- **WHEN** the foundation's increments and the memory option have merged
+- **THEN** webcpp::trystero's code is unchanged by them, its build still naming `/third_party//secp256k1` since version 0.1
 
 ## REMOVED Requirements
 
