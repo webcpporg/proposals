@@ -917,7 +917,9 @@ encoding (no protocol layout, D24):
 - **Tests:** round trips on every backend; malformed inputs (wrong OID, trailing bytes, long-form
   lengths that need not be, a version 2 PKCS#8, a bad PEM label or line) refused with
   `invalid_encoding`; OpenSSL (natively, through its C API in the tests even before increment 8)
-  and WebCrypto's `importKey` and `exportKey` with `spki` and `pkcs8` (node, on Emscripten) as
+  and WebCrypto's `importKey` and `exportKey` with `spki` and `pkcs8` (node, on Emscripten; for
+  secp256k1, which WebCrypto lacks, node's `crypto` module's `createPrivateKey`,
+  `createPublicKey` and `export`) as
   outside oracles.
 - **JWK stays out:** it is JSON, which belongs to a layer above crypto.
 - **Alternatives:** a DER library of webcpp's (an ASN.1 parser is a security boundary webcpp

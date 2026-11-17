@@ -2104,8 +2104,10 @@ Amended by the revision of 2026-11-17: `generate.py --check`, the fixed defaults
 
 # Increment 2: libsecp256k1's remaining modules (version 0.2; stream B)
 
-Written in full on 2026-11-17, before any code, as `roadmap.md` requires of an outlined stream.
-It replaces the outline of the same name; tasks.md group 2 points here (Tasks 2.1 to 2.7).
+Written in full on 2026-11-17, before any code, as `roadmap.md` requires of an outlined stream,
+and reviewed locally before stream B's code starts; by the controller's ruling of 2026-11-17
+(the owner's rule "no CI until a stream is complete"), its proposals pull request opens with
+stream B's code pull requests (Task 2.7, Step 7). It replaces the outline of the same name; tasks.md group 2 points here (Tasks 2.1 to 2.7).
 The design is `../design.md` D9, D11, D24, D29, D30 and D32; the requirements are
 `../specs/crypto/spec.md`'s "secp256k1: recovery, raw ECDH, tweaks and key forms",
 "secp256k1: ElligatorSwift, MuSig2 and silent payments", "secp256k1: ECDH and the secret",
@@ -2160,12 +2162,22 @@ merges; increment 2 merges after A (`roadmap.md`, "Merging"). Tasks 2.1 to 2.6 r
   `noexcept` (but `make`, as version 0.1's, which may throw from the resource). No engine trait
   is added: libsecp256k1 is the family's only backend (D32), and a second backend of a
   secp256k1 family would bring its engine in its own increment. A backend other than
-  libsecp256k1 is refused with version 0.1's `WEBCPP_CRYPTO_DETAIL_SECP256K1_ONLY`, whatever
-  header it is named in.
+  libsecp256k1 is refused, in every header, with version 0.1's
+  `WEBCPP_CRYPTO_DETAIL_SECP256K1_ONLY` until the rebase onto A's Task 4'; Task 2.7, Step 1
+  replaces it by Task 4''s generated refusal (the controller's ruling of 2026-11-17: one source
+  of refusal text, design D33). Likewise the default `class Backend = backends::secp256k1` of
+  Tasks 2.1 to 2.6 becomes `class Backend = default_backend_t<families::<family>>` there, as
+  Task 7b's formats write it.
 - **libsecp256k1's illegal callback is never reached.** Every precondition libsecp256k1 checks
   with `ARG_CHECK` (a count of zero, a static context where a signing one is needed, a nonce
-  made for another key, a used nonce) is checked first by webcpp and refused with a value of
-  `error`; each such refusal has a case in the task's test, since the callback's default
+  made for another key, a used nonce, an object whose magic is not set, a null pointer inside
+  an array, a non-null array of zero elements) is checked first by webcpp and refused with a
+  value of `error`; every opaque type that wraps a libsecp256k1 struct whose magic
+  libsecp256k1 checks (`public_key`, `musig::aggregate_key`, `public_nonce`,
+  `aggregate_nonce`, `session`, `partial_signature`, `silent_payments::prevouts_summary`) has
+  a private default constructor and `friend struct webcpp::crypto::detail::secp256k1_access`,
+  so that only the functions that return one make one, and its test asserts
+  `!std::is_default_constructible_v<T>`; an array of zero elements is passed as `nullptr`; each such refusal has a case in the task's test, since the callback's default
   aborts the program.
 - **Contexts.** A function that multiplies the generator (`ecmult_gen`: signing, key creation,
   `ellswift_create`, `musig_nonce_gen`, silent payments' sender and labels) takes a key pair
@@ -2174,15 +2186,23 @@ merges; increment 2 merges after A (`roadmap.md`, "Merging"). Tasks 2.1 to 2.6 r
 - **Nothing is allocated** (spec "Allocation": libsecp256k1 allocates nothing but the key
   pair's context). A function over many keys, nonces or outputs, for which libsecp256k1 takes
   arrays of pointers, takes a `workspace` (Task 2.3) the caller lends and a size function that
-  says how many bytes it needs; the workspace is wiped before the function returns.
+  says how many bytes it needs; the workspace is wiped before the function returns (the
+  controller's ruling of 2026-11-17 keeps this span over a `std::pmr` resource, which would
+  still allocate). The carver `detail::secp256k1_workspace` hands out its arrays in the order
+  each function's size function lists them, each aligned to `alignof(std::max_align_t)`, so a
+  size function is the sum of its arrays' bytes plus one `alignof(std::max_align_t)` of padding
+  per array; an array of zero elements takes no bytes and is handed out as `nullptr`.
 - **Errors.** A key that does not parse is `invalid_public_key`; a secret that is zero or not
   below the group order is `invalid_secret_key`; a tweak not below the group order, or one
   that gives no valid key (a zero secret, the point at infinity), is `invalid_secret_key`, as
-  version 0.1's `tweak_xonly` reports it; an encoded nonce or label that is not a point is
+  version 0.1's `tweak_xonly` reports it (not D10's `invalid_scalar`: libsecp256k1 returns the
+  same 0 for a tweak out of range and for a result that is no key, and version 0.1 already
+  answers both with `invalid_secret_key`; one header keeps one word); an encoded nonce or label that is not a point is
   `invalid_point` (16); a partial signature not below the group order, or one that does not
   verify, is `invalid_signature`; a span of the wrong length, or a workspace too short, is
-  `invalid_input_size`; a moved-from or consumed object is `invalid_state`; an SPKI, PKCS#8 or
-  PEM that is not exactly the form webcpp writes is `invalid_encoding` (19); a libsecp256k1
+  `invalid_input_size`; a moved-from or consumed object, or a null key pair pointer, is
+  `invalid_state`; an SPKI, PKCS#8 or PEM that is not exactly the form webcpp writes, its
+  point or its secret included, is `invalid_encoding` (19, the spec's "Key formats"); a libsecp256k1
   failure that a valid input cannot cause is `backend_failure`.
 - **Secret outputs are `secret<N>`** (design D9): the ECDH outputs, a tweaked or negated
   secret key, ElligatorSwift's shared secret, and a silent payment's spending tweak.
@@ -2194,9 +2214,19 @@ merges; increment 2 merges after A (`roadmap.md`, "Merging"). Tasks 2.1 to 2.6 r
 - **Tests** are `crypto-run` programs (exceptions on and off), written first and seen
   failing, on the lanes native, wasip2, wasip3, emscripten and gcc-15 (the genesis plan's
   "The lanes"; `$B2` is the Global Constraints' command), MSVC and Apple clang in the CI.
+  **Run the lanes** means, from the worktree's root:
+  `$B2 -a --build-dir=bin/lane-native libs/crypto/test libs/crypto/example`;
+  `$B2 -a --build-dir=bin/lane-wasip2 toolset=clang-wasip2 testing.launcher=tools/boost/asio-wasip2/run.sh libs/crypto/test libs/crypto/example`;
+  the same with `clang-wasip3`, `tools/boost/asio-wasip3/run.sh` and `bin/lane-wasip3`;
+  `$B2 -a --build-dir=bin/lane-emscripten toolset=emscripten libs/crypto/test libs/crypto/example`;
+  `$B2 -a --build-dir=bin/lane-gcc toolset=gcc-15 libs/crypto/test libs/crypto/example`;
+  and `python3 libs/crypto/doc/tables/generate.py --check`. Expected: each b2 run ends with
+  its `...updated N targets...` line and prints no `...failed` line and no warning, and
+  `generate.py --check` prints nothing and exits 0.
   Each task's header joins the libsecp256k1 `webcpp.headers-alone` line of `test/Jamfile`,
   the convenience header `include/webcpp/crypto.hpp` under `WEBCPP_CRYPTO_HAS_SECP256K1`,
-  `test/windows_h_before_test.cpp` and `test/windows_h_after_test.cpp`, and its functions join
+  `test/windows_h_before_test.cpp`, `test/windows_h_after_test.cpp` and
+  `test/crypto_secp256k1_test.cpp` (crypto.hpp's libsecp256k1 branch), and its functions join
   `test/secp256k1_allocation_test.cpp` (nothing allocated) and, where they take a key pair,
   `test/support/secp256k1_checks.hpp`'s `expect_empty_keypair` (`invalid_state` moved from).
 - **Capability rows.** Each task adds its operations to `doc/tables/crypto.json` in version
@@ -2227,6 +2257,9 @@ merges; increment 2 merges after A (`roadmap.md`, "Merging"). Tasks 2.1 to 2.6 r
 | `include/webcpp/crypto/curves/secp256k1/silent_payments.hpp` | 2.6 |
 | `test/secp256k1_ecdh_test.cpp`, `test/secp256k1_recovery_test.cpp`, `test/secp256k1_keys_test.cpp`, `test/secp256k1_tweak_test.cpp`, `test/secp256k1_formats_test.cpp`, `test/secp256k1_ellswift_test.cpp`, `test/secp256k1_musig_test.cpp`, `test/secp256k1_silent_payments_test.cpp` | 2.1 to 2.6 |
 | `test/messages/musig_nonce_copied/`, `test/msvc/musig_nonce_copied/` | 2.5 |
+| `test/secp256k1_musig_entropy_test.cpp` | 2.5 |
+| `test/support/bip352_vectors.c`, `test/support/bip352_vectors.h` | 2.6 |
+| `test/messages/secp256k1_other_backend/` (rewritten), `test/messages/ellswift_other_backend/`, `test/messages/musig_other_backend/`, `test/messages/silent_payments_other_backend/` and their `test/msvc/` cases | 2.7 |
 | `example/ecdh_x_coordinate.cpp`, `example/recover_signer.cpp`, `example/key_tweak.cpp`, `example/key_formats.cpp`, `example/ellswift_handshake.cpp`, `example/musig_wallet.cpp`, `example/silent_payment.cpp`, each with its `.expected` | 2.1 to 2.6 |
 | `doc/secp256k1.adoc`, `doc/wallets.adoc`, `doc/p2p.adoc`, `doc/changelog.adoc`, `doc/tables/crypto.json` | every task |
 | superproject `third_party/Jamfile` (the `bips` target's files), `tools/test/third_party_test.py` | 2.4, 2.5, 2.6 |
@@ -2347,8 +2380,10 @@ public:
   `crypto-run secp256k1_ecdh : secp256k1_ecdh_test.cpp : <library>/third_party//secp256k1
   <library>/third_party//wycheproof <library>/webcpp//boost_json ;`):
   - agreement: 32 key pairs from a seeded `std::mt19937_64` (secrets refused by `make` drawn
-    again), `a.ecdh_x(B) == b.ecdh_x(A)`, `a.ecdh_point(B) == b.ecdh_point(A)`, and
-    `ecdh_point`'s bytes 1 to 32 are `ecdh_x`'s; the point parses with
+    again), `a.ecdh_x(B)` and `b.ecdh_x(A)` hold the same bytes, and so do `a.ecdh_point(B)` and
+    `b.ecdh_point(A)` (secrets are compared as `std::ranges::equal(left->bytes(),
+    right->bytes())`, since `secret<N>` has no `operator==`), and `ecdh_point`'s bytes 1 to 32
+    are `ecdh_x`'s; the point parses with
     `secp256k1_ec_pubkey_parse` and is on the curve;
   - a known answer: the secrets `0x11` repeated 32 times and `0x22` repeated 32 times give the
     x coordinate `77e0510d5042e2f5e9e59c977b81eeed590cf7d20c1c51da451a8eaa9fdc45ff`, and the
@@ -2417,8 +2452,7 @@ conversation key (what a NIP-44 library derives): 2cbdf074f601178c24da3f829b5045
   opening list says the hashed form is one of three. `changelog.adoc`:
   `* Changed curves::secp256k1::keypair::ecdh to return secret<32>, which wipes itself (BREAKING: a caller that kept std::array<std::uint8_t, 32> reads .bytes()).`
   and `* Added keypair::ecdh_x and ecdh_point: the shared point's x coordinate and the point itself, as secrets.`
-- [ ] **Step 5: Run** the five lanes on `libs/crypto/test libs/crypto/example`, and
-  `python3 libs/crypto/doc/tables/generate.py --check`. Expected: all passed. Commit
+- [ ] **Step 5: Run the lanes** (the Rules' commands and expected output). Commit
   `crypto: secp256k1's ECDH returns secret<32>, and gives the raw x coordinate and the shared point`.
 
 ## Task 2.2: Recovery, hedged ECDSA, and the parsed public key in both forms
@@ -2428,7 +2462,8 @@ conversation key (what a NIP-44 library derives): 2cbdf074f601178c24da3f829b5045
   (`#include <secp256k1_recovery.h>`), `test/secp256k1_c_api_test.cpp` (its comment: the C
   API stays reachable beside the wrappers; it keeps calling the C functions, and now also
   compares with the wrappers), `test/secp256k1_allocation_test.cpp`,
-  `test/support/secp256k1_checks.hpp`, `test/Jamfile`, `example/Jamfile`,
+  `test/support/secp256k1_checks.hpp`, `test/Jamfile` (the new programs, and the comment on
+  `secp256k1_c_api`, which no longer says "which webcpp does not wrap"), `example/Jamfile`,
   `doc/secp256k1.adoc`, `doc/tables/crypto.json`, `doc/changelog.adoc`.
 - Create: `test/secp256k1_recovery_test.cpp`, `test/secp256k1_keys_test.cpp`,
   `example/recover_signer.cpp`, `example/recover_signer.expected`.
@@ -2574,20 +2609,25 @@ struct secp256k1_access {
   calls `secp256k1_ecdsa_sign_recoverable` with the key pair's context and the secret taken out
   as `sign_ecdsa` takes it; the hedged `sign_ecdsa` copies `extra_entropy` into a
   `detail::secp256k1_secret` and passes it as `ndata` with `nullptr` (RFC 6979) as the nonce
-  function.
+  function. `detail::secp256k1_access` is declared before `public_key`, which names it as a
+  friend. Inside `basic_keypair` the member function `public_key()` hides the class of the same
+  name, so a member signature that names the type writes `secp256k1::public_key`.
 
 - [ ] **Step 1: The failing tests.** `test/secp256k1_keys_test.cpp` (`crypto-run secp256k1_keys
   : secp256k1_keys_test.cpp : <library>/third_party//secp256k1 ;`): the generator and its
-  multiples parse and serialise, `1·G` =
-  `0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798`, `2·G` =
-  `02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5`, `3·G` =
+  multiples parse and serialise, 1G =
+  `0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798`, 2G =
+  `02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5`, 3G =
   `02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9` (from the key pairs of
   the secrets 1, 2 and 3), and each compressed form re-parsed and serialised uncompressed then
   compressed gives its bytes back; a key pair's `public_key_uncompressed()` parses to the same
   `public_key` as its `public_key()`; refusals with `invalid_public_key`: lengths 0, 32, 34,
   64, 66, prefixes 00, 01, 05, 06, 07 (06 and 07 with a valid point, which libsecp256k1 alone
-  would take), x not below the field's prime, x with no y; `<=>` orders 1·G, 2·G, 3·G as their
-  compressed bytes order them, and `==` holds between a key and its re-parsed copy.
+  would take), x not below the field's prime, x with no y; `<=>` orders 1G, 2G, 3G as their
+  compressed bytes order them, and `==` holds between a key and its re-parsed copy;
+  `static_assert(!std::is_default_constructible_v<secp256k1::public_key>)`.
+  `test/secp256k1_c_api_test.cpp` gains, failing first, the comparison of the key its C calls
+  recover with `recover`'s and of its ElligatorSwift decoding with `parse_public_key`'s.
   `test/secp256k1_recovery_test.cpp` (`crypto-run secp256k1_recovery :
   secp256k1_recovery_test.cpp : <library>/third_party//secp256k1 ;`):
   - 64 seeded key pairs and hashes: `recover(sign_recoverable(h), h)` is the key pair's key;
@@ -2610,9 +2650,8 @@ struct secp256k1_access {
 
   Run `$B2 -a --build-dir=bin/lane-native libs/crypto/test//secp256k1_keys
   libs/crypto/test//secp256k1_recovery`: expected compile errors.
-- [ ] **Step 2: Implement** the interfaces; `test/secp256k1_c_api_test.cpp` gains the
-  comparison of its recovered key with `recover`'s; the allocation test and
-  `expect_empty_keypair` gain the new members.
+- [ ] **Step 2: Implement** the interfaces; the allocation test and `expect_empty_keypair`
+  gain the new members.
 - [ ] **Step 3: The example** `example/recover_signer.cpp` (`webcpp.example recover_signer.cpp
   : <library>/third_party//secp256k1 ;`): a wallet signs the hash of a message (Boost.Hash2's
   SHA-256 of `"pay 10 to bob"`, the comment saying that Ethereum's own message hash is
@@ -2642,7 +2681,8 @@ a changed message names another signer
   "crypto-secp256k1-recovery", ...}`; the `curves` row's compatibility text loses "Ethereum's
   recoverable signatures and its addresses from the uncompressed key" from "Not in this
   version" and gains "Ethereum's recoverable signatures and uncompressed keys ({ethereum}),
-  the address hashing being a domain library's". New `sources`: `sec1` (SEC 1 version 2,
+  the address hashing being a domain library's"; its "Key sizes" cell gains "public 65 bytes
+  uncompressed" and its "Signature sizes" cell "65 bytes recoverable". New `sources`: `sec1` (SEC 1 version 2,
   section 2.3.3 and 2.3.4, `https://www.secg.org/sec1-v2.pdf`). `doc/secp256k1.adoc` gains
   `[#crypto-secp256k1-keys]` "Public keys and their two forms" (what a public key is and why a
   program parses it once: a key off the curve is how invalid-curve attacks start; the two
@@ -2655,7 +2695,7 @@ a changed message names another signer
   `* Added curves::secp256k1::public_key with parse_public_key and serialize_public_key in both forms, and keypair::public_key_uncompressed.`,
   `* Added keypair::sign_recoverable and recover, Ethereum's recoverable ECDSA signatures.` and
   `* Added the hedged keypair::sign_ecdsa, RFC 6979 with the caller's extra entropy.`
-- [ ] **Step 5: Run** the five lanes and `generate.py --check`. Commit
+- [ ] **Step 5: Run the lanes** (the Rules' commands and expected output). Commit
   `crypto: secp256k1's recoverable signatures, hedged ECDSA and the parsed public key in both forms`.
 
 ## Task 2.3: Tweaks, negation, combination; SPKI, PKCS#8 and PEM for secp256k1
@@ -2701,11 +2741,11 @@ template <class Backend = backends::secp256k1>
 template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<secret<32>> seckey_negate(
     std::span<std::uint8_t const, 32> secret_key) noexcept;
-/** P + t·G (`secp256k1_ec_pubkey_tweak_add`). */
+/** P + t times G (`secp256k1_ec_pubkey_tweak_add`). */
 template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<public_key> pubkey_tweak_add(
     public_key const& parsed_key, std::span<std::uint8_t const, 32> tweak_bytes) noexcept;
-/** t·P (`secp256k1_ec_pubkey_tweak_mul`). */
+/** t times P (`secp256k1_ec_pubkey_tweak_mul`). */
 template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<public_key> pubkey_tweak_mul(
     public_key const& parsed_key, std::span<std::uint8_t const, 32> tweak_bytes) noexcept;
@@ -2775,7 +2815,8 @@ template <class Backend = backends::secp256k1>
     public_key const& parsed_key, std::span<std::uint8_t> output_bytes,
     point_form encoded_form = point_form::compressed) noexcept;
 /** The public key of an SPKI in exactly one of the two forms `encode_spki` writes;
- * `invalid_encoding` for anything else, `invalid_public_key` for a point off the curve. */
+ * `invalid_encoding` for anything else, a point off the curve included (the spec's "Key
+ * formats": every refusal of a decoder is `invalid_encoding`). */
 template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<public_key> decode_spki(
     std::span<std::uint8_t const> spki_bytes) noexcept;
@@ -2786,7 +2827,9 @@ template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<std::size_t> encode_pkcs8(
     basic_keypair<Backend> const& key_pair, std::span<std::uint8_t> output_bytes) noexcept;
 /** The key pair of a PKCS#8 that is exactly what `encode_pkcs8` writes for its secret, the
- * public key included; made as `basic_keypair::make` makes it. */
+ * public key included; made as `basic_keypair::make` makes it. `invalid_encoding` for any
+ * other bytes, a secret that is zero or not below the order included; `entropy_unavailable`
+ * and `backend_failure` as `make` reports them. */
 template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<basic_keypair<Backend>> decode_pkcs8(
     std::span<std::uint8_t const> pkcs8_bytes,
@@ -2804,16 +2847,18 @@ template <class Backend = backends::secp256k1>
   with the labels `PUBLIC KEY` and `PRIVATE KEY`: a program that writes PEM links
   `/third_party//sodium` beside `/third_party//secp256k1`, which the page says. WebCrypto has
   no secp256k1 (the `curves` row says so, citing {webcrypto}), so the outside oracles are
-  OpenSSL natively and on WASI and node's own `crypto` module under Emscripten.
+  OpenSSL natively and on WASI and node's own `crypto` module under Emscripten, as spec.md's
+  "Key formats" and design D30 now say.
 
 - [ ] **Step 1: The failing tests.** `test/secp256k1_tweak_test.cpp` (`crypto-run
   secp256k1_tweak : secp256k1_tweak_test.cpp : <library>/third_party//secp256k1 ;`), over 64
   seeded secrets d and tweaks t: `pubkey_tweak_add(P(d), t) == P(seckey_tweak_add(d, t))`,
   `pubkey_tweak_mul(P(d), t) == P(seckey_tweak_mul(d, t))`, `P(seckey_negate(d)) ==
-  pubkey_negate(P(d))`, `seckey_negate(seckey_negate(d)) == d`,
+  pubkey_negate(P(d))`, `seckey_negate(seckey_negate(d))` holds d's bytes (`std::ranges::equal`
+  on `bytes()`),
   `pubkey_combine({P(d), P(t)}) == P(seckey_tweak_add(d, t))`, and each against the C API
   called directly; the known answer `seckey_tweak_add(1, 1)` gives a key whose public key is
-  2·G above; the refusals: a tweak equal to the order
+  2G above; the refusals: a tweak equal to the order
   (`fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141`) is
   `invalid_secret_key`, so are `seckey_tweak_add(d, n - d)`, `seckey_tweak_mul(d, 0)`, a zero
   and an order-sized secret, `pubkey_combine({P, -P})` is `invalid_public_key`, no keys and a
@@ -2829,22 +2874,23 @@ template <class Backend = backends::secp256k1>
   - Wycheproof's `ecdh_secp256k1_test.json`, all 752 `public` fields through `decode_spki`:
     the 496 that version 0.1's test takes decode exactly where version 0.1's
     `detail::secp256k1_parse_public_key` (which refuses the hybrid prefixes) parses their
-    point (`invalid_public_key` otherwise), and the other 256 are refused
-    (`invalid_encoding`, or `invalid_public_key` for one of the two exact prefixes with a
-    point off the curve), the counts printed and asserted;
+    point (`invalid_encoding` otherwise), and the other 256 are refused with
+    `invalid_encoding`, the counts printed and asserted;
   - malformed inputs, each `invalid_encoding` with the output untouched: P-256's OID
     (`06 08 2a 86 48 ce 3d 03 01 07`) in place of secp256k1's, a trailing byte, a length in
     long form (`30 81 56 ...`), a compressed point under the uncompressed prefix, the hybrid
     prefix 06, a PKCS#8 without the public key (OpenSSL's `-nopubkey` form), one with `[0]`
     parameters inside the ECPrivateKey, one of version 1 (OneAsymmetricKey v2), one whose
     public key is another key's, a PEM label other than the expected, a line of 63
-    characters, a carriage return;
+    characters, a carriage return, a PKCS#8 whose secret is zero or the group order;
   - with `WEBCPP_TEST_OPENSSL_ORACLE`: 64 keys made by OpenSSL
-    (`EVP_PKEY_Q_keygen(nullptr, nullptr, "EC", "secp256k1")`), their SPKI from
-    `i2d_PUBKEY` (uncompressed, then compressed after
-    `EVP_PKEY_set_utf8_string_param(key, OSSL_PKEY_PARAM_EC_POINT_CONVERSION_FORMAT, "compressed")`)
-    and their PKCS#8 from `OSSL_ENCODER_CTX_new_for_pkey(key, EVP_PKEY_KEYPAIR, "DER",
-    "PrivateKeyInfo", nullptr)`: webcpp decodes each and encodes the same bytes; webcpp's
+    (`EVP_PKEY_Q_keygen(nullptr, nullptr, "EC", "secp256k1")`); for each, first its PKCS#8
+    from `OSSL_ENCODER_CTX_new_for_pkey(key, EVP_PKEY_KEYPAIR, "DER", "PrivateKeyInfo",
+    nullptr)` and its uncompressed SPKI from `i2d_PUBKEY`, both while the key keeps OpenSSL's
+    default uncompressed form (OpenSSL writes the key's current form into ECPrivateKey's
+    `[1]`, and a compressed one there is a 103-byte PKCS#8 webcpp rightly refuses), then the
+    compressed SPKI after
+    `EVP_PKEY_set_utf8_string_param(key, OSSL_PKEY_PARAM_EC_POINT_CONVERSION_FORMAT, "compressed")`: webcpp decodes each and encodes the same bytes; webcpp's
     encodings decode in OpenSSL (`d2i_PUBKEY`, `d2i_AutoPrivateKey`) to the same key; and
     `PEM_write_bio_PUBKEY`'s text equals `pem::armour("PUBLIC KEY", ...)`'s; OpenSSL's error
     queue is left empty;
@@ -2906,7 +2952,7 @@ read back: same key
   a lenient parser is a risk ({rfc5915}); PEM needs libsodium's target). `changelog.adoc`:
   `* Added curves::secp256k1's tweaks, negation and combination of secret and public keys (curves/secp256k1/tweak.hpp).` and
   `* Added curves::secp256k1's SPKI and PKCS#8, strict, in both point forms (curves/secp256k1/formats.hpp).`
-- [ ] **Step 5: Run** the five lanes and `generate.py --check`. Commit
+- [ ] **Step 5: Run the lanes** (the Rules' commands and expected output). Commit
   `crypto: secp256k1's tweaks, negation and combination, and its SPKI, PKCS#8 and PEM`.
 
 ## Task 2.4: ElligatorSwift, with BIP 324's vectors
@@ -2922,7 +2968,8 @@ read back: same key
   `third_party/Jamfile` (the `bips` target's `.bips-files` gain
   `libs/bips/bip-0324/ellswift_decode_test_vectors.csv` and
   `libs/bips/bip-0324/packet_encoding_test_vectors.csv`, and its comment names them),
-  `tools/test/third_party_test.py` (the case that lists the target's files).
+  `tools/test/third_party_test.py` (a new case, `test_bips_target_files`, in its `CASES`
+  list).
 
 **Interfaces** (`curves/secp256k1/ellswift.hpp`, namespace `curves::secp256k1`):
 
@@ -2995,23 +3042,31 @@ template <class Backend>
     libsecp256k1, and `c-suites` runs libsecp256k1's own ElligatorSwift tests;
   - a moved-from key pair: `invalid_state` from `ellswift_create` and `ellswift_xdh`.
 
+  The superproject's case `test_bips_target_files` (added to `CASES` in
+  `tools/test/third_party_test.py`, which has only `test_bips_is_pinned` for this target
+  today) reads `third_party/Jamfile`, takes the `.bips-files` glob's arguments and asserts
+  they are exactly `libs/bips/bip-0340/test-vectors.csv`,
+  `libs/bips/bip-0341/wallet-test-vectors.json` and the two BIP 324 CSV files (Tasks 2.5 and
+  2.6 extend the expected list).
+
   Run `$B2 -a --build-dir=bin/lane-native libs/crypto/test//secp256k1_ellswift`: expected a
-  compile error.
+  compile error; `python3 tools/test/third_party_test.py test_bips_target_files`: expected
+  that case to fail, naming the two missing files.
 - [ ] **Step 2: Implement**; the superproject's `bips` target names the two CSV files.
 - [ ] **Step 3: The example** `example/ellswift_handshake.cpp` (`<library>/third_party//secp256k1`):
-  two peers each send `ellswift_create`'s 64 bytes over a channel an observer records; each
-  derives the shared secret with `ellswift_xdh`, and the program checks the two agree and that
-  the observed bytes carry no recognisable prefix (the first byte of a compressed key is 02 or
-  03; an encoding's is any value). `.expected`:
+  two peers, from the fixed secrets `0x11` and `0x22` repeated 32 times and the fixed
+  randomness `0x33` and `0x44` repeated 32 times (the comment says a real program draws all
+  four from `random_device`), each send `ellswift_create`'s 64 bytes; each message decodes to
+  its sender's public key, and the two `ellswift_xdh` agree. `.expected`:
 
 ```
+each 64-byte message decodes to its sender's key
 initiator and responder agree
-what crossed the wire is 128 bytes with no key prefix
 ```
 
-  (the second line is printed after checking the two encodings decode to the two public keys,
-  which the observer could do too: the comment says that ElligatorSwift hides that a key
-  exchange happens, not who takes part).
+  (nothing random is printed or asserted; that an encoding carries no recognisable prefix,
+  unlike a compressed key's 02 or 03, is said in the prose, citing {bip324}, and that
+  ElligatorSwift hides that a key exchange happens, not who takes part).
 - [ ] **Step 4: The rows and the documentation.** `crypto.json` operation `ellswift`
   (`ellswift_encode`, `ellswift_decode`, `ellswift_create`, `ellswift_xdh`; header
   `<webcpp/crypto/curves/secp256k1/ellswift.hpp>`; tests `secp256k1_ellswift`; section
@@ -3028,8 +3083,9 @@ what crossed the wire is 128 bytes with no key prefix
   linkable; the hash binds both encodings, so each side passes them in the same order; the
   shared secret is input to the protocol's key schedule, never a key by itself).
   `changelog.adoc`: `* Added curves::secp256k1's ElligatorSwift: ellswift_encode, ellswift_decode, ellswift_create and ellswift_xdh with BIP 324's hash.`
-- [ ] **Step 5: Run** the five lanes, the superproject's `python3 tools/test/third_party_test.py`
-  and `generate.py --check`. Commit (library)
+- [ ] **Step 5: Run the lanes** (the Rules' commands and expected output) and the superproject's
+  `python3 tools/test/third_party_test.py` (expected: every case passed, the run's exit status
+  0). Commit (library)
   `crypto: ElligatorSwift on libsecp256k1, against BIP 324's vectors`; (superproject)
   `third_party: BIP 324's ElligatorSwift and packet vectors among the bips target's files`.
 
@@ -3037,7 +3093,7 @@ what crossed the wire is 128 bytes with no key prefix
 
 **Files:**
 - Create: `include/webcpp/crypto/curves/secp256k1/musig.hpp`, `test/secp256k1_musig_test.cpp`,
-  `test/messages/musig_nonce_copied/Jamfile`, `test/messages/musig_nonce_copied/musig_nonce_copied.cpp`,
+  `test/secp256k1_musig_entropy_test.cpp`, `test/messages/musig_nonce_copied/Jamfile`, `test/messages/musig_nonce_copied/musig_nonce_copied.cpp`,
   `test/msvc/musig_nonce_copied/Jamfile`, `test/msvc/musig_nonce_copied/app.cpp`,
   `example/musig_wallet.cpp`, `example/musig_wallet.expected`.
 - Modify: `include/webcpp/crypto/backends/secp256k1.hpp` (`#include <secp256k1_musig.h>`),
@@ -3047,7 +3103,8 @@ what crossed the wire is 128 bytes with no key prefix
   `example/Jamfile`, `doc/secp256k1.adoc`, `doc/tables/crypto.json` (the operation, the
   message's `fixes` entry), `doc/changelog.adoc`; superproject `third_party/Jamfile` (the
   `bips` target's files gain `libs/bips/bip-0327/vectors/*.json`),
-  `tools/test/third_party_test.py`.
+  `tools/test/third_party_test.py` (`test_bips_target_files`'s expected list gains the eight
+  JSON files, failing first).
 
 **Interfaces** (`curves/secp256k1/musig.hpp`, namespace `curves::secp256k1::musig`):
 
@@ -3058,24 +3115,30 @@ inline constexpr std::size_t aggregate_nonce_size = 66;
 inline constexpr std::size_t partial_signature_size = 32;
 
 /** The signers' aggregate key and what signing needs of it (libsecp256k1's keyagg cache,
- * public data, copyable), with the tweaks a protocol applies to it. */
+ * public data, copyable), with the tweaks a protocol applies to it; made only by
+ * `key_aggregate`, since a zeroed cache has no magic and libsecp256k1's `ARG_CHECK` on it
+ * aborts. */
 class aggregate_key {
 public:
     /** The BIP 340 x-only key the final signature verifies under. */
     [[nodiscard]] std::array<std::uint8_t, 32> xonly_public_key() const noexcept;
     /** The aggregate as a full point (`secp256k1_musig_pubkey_get`), which a plain tweak acts on. */
     [[nodiscard]] public_key full_public_key() const noexcept;
-    /** Adds t·G as a plain tweak (BIP 327's ApplyTweak, is_xonly false): `invalid_secret_key`
+    /** Adds t times G as a plain tweak (BIP 327's ApplyTweak, is_xonly false): `invalid_secret_key`
      * for a tweak not below the order or a result at infinity, after which the key is unchanged. */
     [[nodiscard]] boost::system::result<void> tweak_add(std::span<std::uint8_t const, 32> tweak_bytes) noexcept;
-    /** Adds t·G as an x-only tweak (is_xonly true), as `tweak_add` reports. */
+    /** Adds t times G as an x-only tweak (is_xonly true), as `tweak_add` reports. */
     [[nodiscard]] boost::system::result<void> tweak_xonly_add(std::span<std::uint8_t const, 32> tweak_bytes) noexcept;
 private:
+    friend struct webcpp::crypto::detail::secp256k1_access;
+    aggregate_key() noexcept = default;
     secp256k1_musig_keyagg_cache cache_value_{};
 };
 
 /** A signer's public nonce, an aggregate nonce, a session, a partial signature: parsed,
- * public, copyable; each made only by the functions below. */
+ * public, copyable; each made only by the functions below, with a private default
+ * constructor and `detail::secp256k1_access` as its friend, as `aggregate_key`, since
+ * libsecp256k1 checks each one's magic with `ARG_CHECK`. */
 class public_nonce;     // secp256k1_musig_pubnonce
 class aggregate_nonce;  // secp256k1_musig_aggnonce
 class session;          // secp256k1_musig_session
@@ -3108,7 +3171,10 @@ struct nonce_pair {
 };
 
 /** The workspace `key_aggregate`, `nonce_aggregate` and `partial_signature_aggregate` need for `count` items. */
-[[nodiscard]] constexpr std::size_t workspace_size(std::size_t count) noexcept;
+[[nodiscard]] constexpr std::size_t workspace_size(std::size_t count) noexcept {
+    // One array: `count` pointers to the parsed keys, nonces or partial signatures.
+    return (count * sizeof(void const*)) + alignof(std::max_align_t);
+}
 
 /** Aggregates the signers' keys in the order given (`secp256k1_musig_pubkey_agg`); sort them
  * first (`std::ranges::sort`, `public_key`'s order is BIP 327's KeySort) where the protocol does. */
@@ -3199,7 +3265,9 @@ template <class Backend = backends::secp256k1>
   - `sign_verify_vectors.json`: the 4 valid cases whose message is 32 bytes verify their
     `expected` partial signature with `partial_signature_verify` under `pnonces[0]` and the
     signer's key (the 2 cases with the empty and the 38-byte message are counted as skipped:
-    libsecp256k1 signs 32-byte messages); the 3 `verify_fail` cases are `invalid_signature`
+    libsecp256k1 signs 32-byte messages); the 3 `verify_fail` cases, which carry no
+    `aggnonce_index`, first aggregate their `pnonces` with `nonce_aggregate` into the session's
+    nonce, and are `invalid_signature`
     (the third from `parse_partial_signature`); the 2 `verify_error` cases are `invalid_point`
     and `invalid_public_key`; the `sign_error` cases that need no secret nonce of the
     vector's (an invalid key, three invalid aggregate nonces) are refused at parsing;
@@ -3228,20 +3296,34 @@ template <class Backend = backends::secp256k1>
     `invalid_state` from `nonce_gen` and `partial_sign`; a 31-byte message hash or extra input
     is `invalid_input_size`; empty spans of keys, nonces and partial signatures, and a short
     workspace, are `invalid_input_size`;
-  - `nonce_gen` under the failing entropy seam of version 0.1's `random_device_failing_test`
-    is `entropy_unavailable`.
+  - `static_assert(!std::is_default_constructible_v<T>)` for `aggregate_key`, `public_nonce`,
+    `aggregate_nonce`, `session`, `partial_signature` and `secret_nonce`;
+  - BIP 327's KeySort ties the vectors to `public_key`'s `<=>` (above).
+
+  `test/secp256k1_musig_entropy_test.cpp`, a program of its own because version 0.1's seam is
+  a whole-program define (`crypto-run secp256k1_musig_entropy : secp256k1_musig_entropy_test.cpp
+  : <library>/third_party//secp256k1 <define>WEBCPP_CRYPTO_DETAIL_TEST_ENTROPY ;`, as
+  `test/Jamfile` builds `random_device_failing`): its `webcpp_test_entropy` script answers
+  the key pairs' context seeds (`keypair::make` draws from the same source) and fails the
+  next call; `nonce_gen` then returns `entropy_unavailable`, and the session randomness's
+  buffer is zero afterwards.
 
   The message test `test/messages/musig_nonce_copied/` (`webcpp.compile-diagnostic
   musig_nonce_copied : musig_nonce_copied.cpp : <library>/third_party//secp256k1 : native
   wasip2 ;`) passes a `secret_nonce` lvalue to `partial_sign` and expects the deleted copy
-  constructor's diagnostic (`expected-error@*:* {{call to deleted constructor of
-  'webcpp::crypto::curves::secp256k1::musig::secret_nonce'}}`, clang's text, which
-  `webcpp.compile-diagnostic` checks); `test/msvc/musig_nonce_copied/` is its MSVC case
+  constructor's diagnostic as two substrings, `{{call to deleted constructor of}}` and
+  `{{secret_nonce}}` (clang qualifies the type as the source names it, so the test does not
+  depend on that), which `webcpp.compile-diagnostic` checks (spec.md's scenario "A MuSig2
+  nonce passed without a move", amended in this change: C++ cannot reject a second
+  `std::move` of one object at compile time, so the second use is spec.md's run-time
+  scenario "A MuSig2 nonce used twice", the `invalid_state` case above); `test/msvc/musig_nonce_copied/` is its MSVC case
   (`webcpp.compile-fail`). `wipe_objects_test.cpp` gains `WEBCPP_TEST_WIPE_SECP256K1`'s second
   object: a `secret_nonce`'s `nonce_value_` is zero after destruction and after a move.
 
-  Run `$B2 -a --build-dir=bin/lane-native libs/crypto/test//secp256k1_musig`: expected a
-  compile error.
+  Run `$B2 -a --build-dir=bin/lane-native libs/crypto/test//secp256k1_musig
+  libs/crypto/test//secp256k1_musig_entropy`: expected compile errors;
+  `python3 tools/test/third_party_test.py test_bips_target_files`: expected to fail, naming
+  the eight JSON files.
 - [ ] **Step 2: Implement**; the superproject's `bips` target names the eight JSON files.
 - [ ] **Step 3: The example** `example/musig_wallet.cpp` (`<library>/third_party//secp256k1`):
   a two-device wallet (a phone and a laptop) whose coins need both: the two public keys are
@@ -3272,9 +3354,11 @@ the aggregate signature verifies as one BIP 340 signature
   MuSig2 but not in a naive sum (Task 2.3's `pubkey_combine`); the tweaks belong to a
   protocol (Taproot's tagged hash is a domain library's, design D24)). `changelog.adoc`:
   `* Added curves::secp256k1::musig, BIP 327's MuSig2, with a secret nonce consumed by its partial signature.`
-- [ ] **Step 5: Run** the five lanes, the message test on native and wasip2, the own lane
-  `c-suites` on its four targets (`libs/crypto/test/c_suites//c-suites`), the superproject's
-  `tools/test/third_party_test.py` and `generate.py --check`. Commit (library)
+- [ ] **Step 5: Run the lanes** (the Rules' commands and expected output; the message test
+  runs in them on native and wasip2), the own lane `c-suites` on its four targets (each
+  target's lane command with `libs/crypto/test/c_suites//c-suites` in place of the two
+  directories; expected: `secp256k1_tests` passes), and the superproject's
+  `python3 tools/test/third_party_test.py` (every case passed, exit status 0). Commit (library)
   `crypto: MuSig2 on libsecp256k1, against BIP 327's vectors, with a nonce its signature consumes`;
   (superproject) `third_party: BIP 327's vectors among the bips target's files`.
 
@@ -3282,7 +3366,8 @@ the aggregate signature verifies as one BIP 340 signature
 
 **Files:**
 - Create: `include/webcpp/crypto/curves/secp256k1/silent_payments.hpp`,
-  `test/secp256k1_silent_payments_test.cpp`, `example/silent_payment.cpp`,
+  `test/secp256k1_silent_payments_test.cpp`, `test/support/bip352_vectors.c`,
+  `test/support/bip352_vectors.h`, `example/silent_payment.cpp`,
   `example/silent_payment.expected`.
 - Modify: `include/webcpp/crypto/backends/secp256k1.hpp` (`#include <secp256k1_silentpayments.h>`),
   `include/webcpp/crypto.hpp`, `test/Jamfile`, `test/secp256k1_allocation_test.cpp`,
@@ -3290,7 +3375,8 @@ the aggregate signature verifies as one BIP 340 signature
   `doc/secp256k1.adoc`, `doc/tables/crypto.json`, `doc/changelog.adoc`; superproject
   `third_party/Jamfile` (the `bips` target's files gain
   `libs/bips/bip-0352/send_and_receive_test_vectors.json`), `tools/test/third_party_test.py`
-  (and its new case: that file and libsecp256k1's
+  (`test_bips_target_files`'s list gains that file, and a new case in `CASES`,
+  `test_bip352_vectors_match_libsecp256k1`, asserts that it and libsecp256k1's
   `src/modules/silentpayments/bip352_send_and_receive_test_vectors.json` are the same bytes,
   which they are at the two pins).
 
@@ -3334,14 +3420,33 @@ class prevouts_summary;
     std::size_t plain_input_count) noexcept;
 [[nodiscard]] constexpr std::size_t scan_workspace_size(std::size_t output_count) noexcept;
 
+// Their bodies, each array in the order the carver hands them out (the Rules: one
+// alignof(std::max_align_t) of padding per array; an array of zero elements takes none and is
+// passed to libsecp256k1 as nullptr):
+//   send: r recipients' secp256k1_silentpayments_recipient, their r pointers, r
+//         secp256k1_xonly_pubkey outputs, their r pointers, t Taproot key pair pointers, p
+//         plain secrets of 32 bytes, their p pointers:
+//         r * (sizeof(secp256k1_silentpayments_recipient) + sizeof(void*)
+//              + sizeof(secp256k1_xonly_pubkey) + sizeof(void*))
+//         + t * sizeof(void*) + p * (32 + sizeof(void*)) + 7 * alignof(std::max_align_t)
+//   summary: t parsed secp256k1_xonly_pubkey, their t pointers, p pointers to the public
+//         keys' points: t * (sizeof(secp256k1_xonly_pubkey) + sizeof(void*))
+//         + p * sizeof(void*) + 3 * alignof(std::max_align_t)
+//   scan: n parsed secp256k1_xonly_pubkey outputs, their n pointers, n
+//         secp256k1_silentpayments_found_output, their n pointers:
+//         n * (sizeof(secp256k1_xonly_pubkey) + sizeof(void*)
+//              + sizeof(secp256k1_silentpayments_found_output) + sizeof(void*))
+//         + 4 * alignof(std::max_align_t)
+
 /** The sender's outputs (`secp256k1_silentpayments_sender_create_outputs`): one x-only key
  * per recipient, in the recipients' order, from the secret keys of the transaction's eligible
  * inputs, Taproot inputs (their keys negated for an odd y, as BIP 352 says) apart from the
  * others, and the smallest outpoint, which the caller determines.
- * @return Nothing; `invalid_input_size` (no recipient, no input, outputs not one per
+ * The context is the first Taproot input's key pair's, else the first plain input's.
+ * @return Nothing; `invalid_input_size` (no recipient, no input at all, outputs not one per
  * recipient, a short workspace, more than `group_limit` recipients sharing a scan key, which
  * webcpp counts only when there are more recipients than that); `invalid_state` (a moved-from
- * key pair); `invalid_secret_key` when libsecp256k1 refuses: the inputs' keys sum to zero, or
+ * key pair, or a null pointer among the inputs); `invalid_secret_key` when libsecp256k1 refuses: the inputs' keys sum to zero, or
  * a recipient's spend key gives no output, which only a key chosen against the sender can. */
 template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<void> create_outputs(
@@ -3363,7 +3468,9 @@ template <class Backend = backends::secp256k1>
     public_key const& spend_key, label const& address_label) noexcept;
 
 /** The prevouts' summary (`..._recipient_prevouts_summary_create`) from the eligible inputs'
- * public keys: `invalid_public_key` when they sum to infinity (not a silent payment). */
+ * public keys: `invalid_input_size` for no input key at all or a short workspace (an
+ * `ARG_CHECK` in libsecp256k1); `invalid_public_key` when they sum to infinity or a Taproot
+ * key does not parse (not a silent payment). */
 template <class Backend = backends::secp256k1>
 [[nodiscard]] boost::system::result<prevouts_summary> make_prevouts_summary(
     std::span<std::uint8_t const, outpoint_size> smallest_outpoint,
@@ -3374,8 +3481,9 @@ template <class Backend = backends::secp256k1>
  * and the unlabelled spend key; `label_lookup` is called with a candidate label's 33 bytes
  * and returns its tweak or `std::nullopt`, noexcept (no labels: the default).
  * @return The number of outputs found, written to the front of `found` (at least as many
- * entries as outputs); `invalid_input_size`; `invalid_state`; `invalid_public_key` (an output
- * that is not an x-only key). */
+ * entries as outputs); `invalid_input_size` (no output key, `found` shorter than the outputs,
+ * a short workspace); `invalid_state`; `invalid_public_key` (an output that is not an x-only
+ * key). */
 template <class Backend, label_lookup LabelLookup = no_labels>
 [[nodiscard]] boost::system::result<std::size_t> scan_outputs(
     basic_keypair<Backend> const& scan_key, public_key const& spend_key,
@@ -3396,15 +3504,24 @@ template <class Backend, label_lookup LabelLookup = no_labels>
   their key pairs into the workspace,
   which is wiped before `create_outputs` returns on every path; the recipients' C structs get
   their `index` from their position. The scan key's secret is taken out into a
-  `detail::secp256k1_secret`.
+  `detail::secp256k1_secret`. Each side's input array (Taproot, plain) is passed as `nullptr`
+  when its count is zero, as libsecp256k1 requires (an empty `std::span` may hold a non-null
+  pointer, and the carver hands out `nullptr` for zero elements); every pointer in the input
+  spans is checked non-null before any is used.
 
 - [ ] **Step 1: The failing test** `test/secp256k1_silent_payments_test.cpp`
-  (`crypto-run secp256k1_silent_payments : secp256k1_silent_payments_test.cpp :
-  <library>/third_party//secp256k1 <library>/third_party//secp256k1-test-config ;`). It reads
-  BIP 352's vectors as libsecp256k1's own test does, from
-  `src/modules/silentpayments/vectors.h` (`#include "modules/silentpayments/vectors.h"`, on the
-  include path `secp256k1-test-config` gives), which libsecp256k1's
-  `tools/tests_silentpayments_generate.py` derives from the JSON file that is byte for byte
+  (`crypto-run secp256k1_silent_payments : secp256k1_silent_payments_test.cpp
+  support/bip352_vectors.c : <library>/third_party//secp256k1
+  <library>/third_party//secp256k1-test-config ;`). It reads BIP 352's vectors as
+  libsecp256k1's own test does, from `src/modules/silentpayments/vectors.h`, compiled in C,
+  not C++: `test/support/bip352_vectors.c` includes it (on the include path
+  `secp256k1-test-config` gives; a 4747-line header of large static arrays initialised from
+  string literals, which C++ and MSVC's warnings would reject) and exposes
+  `struct bip352_test_vector const* webcpp_test_bip352_vector(size_t index)` and
+  `size_t webcpp_test_bip352_vector_count(void)`, declared in `test/support/bip352_vectors.h`
+  (`extern "C"` under C++); the `.c` file is compiled with `<warnings>off`, as `c_suites`
+  compiles libsecp256k1's sources. libsecp256k1's
+  `tools/tests_silentpayments_generate.py` derives the header from the JSON file that is byte for byte
   BIP 352's `send_and_receive_test_vectors.json` (the superproject's test checks the two are
   equal). That data holds each case's input keys, smallest outpoint and recipients' keys
   already taken out of its transactions and addresses, the protocol's part (design D24),
@@ -3412,25 +3529,36 @@ template <class Backend, label_lookup LabelLookup = no_labels>
   - Sending, the 28 cases of `bip352_test_vectors`: `create_outputs` with key pairs of the
     plain and Taproot secret keys and the recipients' keys repeated `count` times; the outputs
     match one of the case's `num_output_sets` permutations; a case with no expected output is
-    refused (`invalid_input_size` for no input, which libsecp256k1 would take as an
-    `ARG_CHECK`; `invalid_secret_key` for keys that sum to zero), as libsecp256k1's test
-    expects its function to fail there.
+    refused, as libsecp256k1's test expects its function to fail there: the three such cases
+    of the JSON are "No valid inputs" (`invalid_input_size`, which libsecp256k1 would take as
+    an `ARG_CHECK`), "Input keys sum up to zero" (`invalid_secret_key`) and "Maximum
+    per-group recipient limit K_max is exceeded", 2324 recipients on one scan key
+    (`invalid_input_size`, webcpp's own count).
   - Receiving, the 29 subtests: `make_prevouts_summary` (refused where the case expects no
-    found output), labels from `label_integers` with `create_label`, `scan_outputs` with a
+    found output: `invalid_input_size` with no input key, `invalid_public_key` for keys that
+    sum to infinity), labels from `label_integers` with `create_label`, `scan_outputs` with a
     lookup over those labels; where `full_check` is set, every found output's key and spend
     tweak are among the case's, and the BIP 340 signature by
     `keypair::make(seckey_tweak_add(spend_seckey, spend_tweak))` of SHA-256(`"message"`) with
     the auxiliary randomness SHA-256(`"random auxiliary data"`) (Boost.Hash2) equals the
     case's; the found count equals the case's; an output found with a label has a label the
     lookup knows, one found without has none.
-  - Refusals: no recipient, no input, a short workspace, `found` shorter than the outputs,
-    an output key that does not parse, a moved-from key pair; a lookup that is not noexcept
+  - Refusals: no recipient, no input, no output key to scan, no input key for the summary, a
+    short workspace, `found` shorter than the outputs, an output key that does not parse, a
+    moved-from key pair, a null pointer among the inputs; only Taproot inputs and only plain
+    inputs, each from a `std::vector` emptied after `reserve` (a non-null `data()` with size
+    zero), run without abort; `static_assert(!std::is_default_constructible_v<prevouts_summary>)`;
+    a lookup that is not noexcept
     does not satisfy `label_lookup`, which the test checks with a `requires` expression.
 
+  The superproject's `test_bips_target_files` expects the BIP 352 file too, and
+  `test_bip352_vectors_match_libsecp256k1` compares the two JSON files byte for byte.
+
   Run `$B2 -a --build-dir=bin/lane-native libs/crypto/test//secp256k1_silent_payments`:
-  expected a compile error.
-- [ ] **Step 2: Implement**; the superproject's `bips` target names the JSON file and
-  `third_party_test.py` compares it with libsecp256k1's copy.
+  expected a compile error; `python3 tools/test/third_party_test.py test_bips_target_files
+  test_bip352_vectors_match_libsecp256k1`: expected the first to fail (the file is not listed)
+  and the second, new, to pass.
+- [ ] **Step 2: Implement**; the superproject's `bips` target names the JSON file.
 - [ ] **Step 3: The example** `example/silent_payment.cpp` (`<library>/third_party//secp256k1`):
   a donation page publishes one reusable pair of keys (scan, spend); a donor's wallet with one
   input pays it; the recipient scans the transaction's outputs, finds the payment, and makes
@@ -3457,8 +3585,8 @@ two payments to one address share no output key
   generated output must be in the transaction; scanning costs one ECDH per transaction, which
   a light client must plan for; labels beyond change hurt light clients; the workspace sizes).
   `changelog.adoc`: `* Added curves::secp256k1::silent_payments, BIP 352's sender outputs, labels and the recipient's scan.`
-- [ ] **Step 5: Run** the five lanes, the superproject's `tools/test/third_party_test.py` and
-  `generate.py --check`. Commit (library)
+- [ ] **Step 5: Run the lanes** (the Rules' commands and expected output) and the superproject's
+  `python3 tools/test/third_party_test.py` (every case passed, exit status 0). Commit (library)
   `crypto: silent payments on libsecp256k1, against BIP 352's vectors`; (superproject)
   `third_party: BIP 352's vectors among the bips target's files, the same as libsecp256k1's copy`.
 
@@ -3468,12 +3596,18 @@ Runs once stream B is rebased onto stream A's branch with Tasks 4', 5', 7b, 11',
 committed (or onto `main` after A merges).
 
 **Files:**
-- Modify: `doc/tables/crypto.json` (the families), `test/constant_time/ctgrind_test.cpp`,
+- Modify: `include/webcpp/crypto/curves/secp256k1.hpp` and the five module headers (the
+  refusal and the default), `test/messages/secp256k1_other_backend/` and
+  `test/msvc/secp256k1_other_backend/` (the generated text), `test/messages/Jamfile`,
+  `test/msvc/Jamfile`, `test/default_backend_test.cpp` (the four families' defaults),
+  `doc/tables/crypto.json` (the families, the `fixes` entries), `test/constant_time/ctgrind_test.cpp`,
   `test/constant_time/msan_test.cpp`, `test/constant_time/dudect_test.cpp`,
   `test/sizes/Jamfile`, `doc/wallets.adoc`, `doc/p2p.adoc`, `doc/curves.adoc` (its text
   around the generated table), `doc/secp256k1.adoc` (its opening), `doc/changelog.adoc`;
   superproject `CODING-GUIDELINES.md` chapter 17 (crypto's entry: increment 2's state).
-- Create: `test/sizes/secp256k1_ecdh_x.cpp`, `test/sizes/secp256k1_recover.cpp`,
+- Create: `test/messages/ellswift_other_backend/`, `test/messages/musig_other_backend/`,
+  `test/messages/silent_payments_other_backend/` and their `test/msvc/` cases,
+  `test/sizes/secp256k1_ecdh_x.cpp`, `test/sizes/secp256k1_recover.cpp`,
   `test/sizes/secp256k1_ellswift_xdh.cpp`, `test/sizes/secp256k1_musig_sign.cpp`,
   `test/sizes/secp256k1_silent_payments_send.cpp`.
 
@@ -3484,13 +3618,34 @@ committed (or onto `main` after A merges).
   "curves", "since": "0.2"}` and `{"name": "secp256k1_silent_payments", "title": "Silent
   payments", "group": "curves", "since": "0.2"}`, each with `default` libsecp256k1 on all four
   targets, `why` "the only backend" (design D32; roadmap's default table), the backend
-  `secp256k1` with `targets` all four, `runtime` false, `constant_time` "by design" citing
-  `libsecp256k1` and the Step 2 lane, and the operation's tests; the operations rows of Tasks
-  2.1 to 2.6 move under them as Task 4' moved version 0.1's. `generate.py` regenerates
-  `detail/capabilities.hpp`, `supports.hpp`'s table, `detail/defaults.hpp` and
-  `test/capabilities_test.cpp` (`supports_v` true on the four targets, false for every other
-  backend); `secp256k1_other_backend` stays the message of a backend other than libsecp256k1
-  in every secp256k1 header (Rules, above).
+  `secp256k1` with `targets` all four, `runtime` false, `constant_time` per target in Task
+  4''s form (`{"native": ..., "wasip2": ..., "wasip3": ..., "emscripten": ...}`, each "by
+  design", citing `libsecp256k1` and naming the Step 2 lane where it measures that target),
+  and the operation's tests; the operations rows of Tasks 2.1 to 2.6 move under them as Task
+  4' moved version 0.1's. `generate.py` then generates, in `detail/capabilities.hpp`, the
+  family and name tags of the three rows (`families::secp256k1_ellswift`,
+  `families::secp256k1_musig`, `families::secp256k1_silent_payments` and the `tags::` of the
+  same names, beside those Task 4' generates for version 0.1's `secp256k1` row, called
+  `families::secp256k1` here), `WEBCPP_CRYPTO_DETAIL_HAVE_<NAME>` and
+  `WEBCPP_CRYPTO_DETAIL_TITLE_<NAME>` for each, `supports.hpp`'s table, a
+  `default_backend_of<families::...>` with `backends::secp256k1` per family in
+  `detail/defaults.hpp`, and `test/capabilities_test.cpp` (`supports_v` true on the four
+  targets, false for every other backend). Each secp256k1 function's default becomes
+  `class Backend = default_backend_t<families::<its family>>` (as Task 7b's formats write
+  it), and `test/default_backend_test.cpp` asserts each of the four is `backends::secp256k1`
+  on every target. The controller's ruling Q3 (one source of refusal text, D33): the
+  assertion in `curves/secp256k1.hpp` and the module headers becomes
+  `static_assert(webcpp::crypto::detail::secp256k1_backend<Backend>,
+  WEBCPP_CRYPTO_DETAIL_REFUSAL("this backend", <NAME>))` with `<NAME>` the function's family
+  (`SECP256K1`, `SECP256K1_ELLSWIFT`, `SECP256K1_MUSIG`, `SECP256K1_SILENT_PAYMENTS`), or the
+  form Task 4' lands if it differs; `WEBCPP_CRYPTO_DETAIL_SECP256K1_ONLY` is deleted;
+  `test/messages/secp256k1_other_backend/` and its MSVC case expect the generated text (the
+  test written first, failing on the old text); one new message case per other family
+  (`ellswift_other_backend`, `musig_other_backend`, `silent_payments_other_backend`, each in a
+  directory of its own, with its MSVC case); `tweak.hpp` and `formats.hpp` belong to the
+  `secp256k1` family and use its macro, which `secp256k1_other_backend` already tests, so they
+  get no case of their own; the `fixes` entries name the type to write
+  (`curves::secp256k1::musig::...` with the backend left out).
 - [ ] **Step 2: Constant time** (spec "Tests: constant time for the new code"). Task 14's
   harness already runs libsecp256k1's `src/ctime_tests.c`, which covers the library's side of
   every module compiled (ECDH, recovery, the seckey tweaks, the key pair, Schnorr, MuSig2's
@@ -3508,10 +3663,12 @@ committed (or onto `main` after A merges).
   `ecdh_x` natively and under wasmtime, classes differing only in the secret. Run the lane
   `constant-time` on Linux x86-64; expected: no report but the planted leak's.
 - [ ] **Step 3: Sizes** (Task 11''s lane): one program per new cell, each calling its
-  family's fixed operation once (`ecdh_x`; `recover`; `ellswift_xdh`; a 2-of-2 MuSig2
-  signature; `create_outputs` for one recipient), declared in `test/sizes/Jamfile` through
-  `webcpp.size-table` (release builds only); `generate.py` reads the lane's table into the
-  size matrix. Run the lane `sizes` on its four targets.
+  family's fixed operation once (`ellswift_xdh`; a 2-of-2 MuSig2 signature; `create_outputs`
+  for one recipient), and two per new operation of the existing `secp256k1` family (`ecdh_x`,
+  `recover`), declared in `test/sizes/Jamfile` through `webcpp.size-table` (release builds
+  only); `generate.py` reads the lane's table into the size matrix, whose rows are per
+  operation (the spec's "binary size per target per operation"), so the two `secp256k1`
+  programs are rows of their own under the family's cell. Run the lane `sizes` on its four targets.
 - [ ] **Step 4: The teaching chapters** (design D19). `doc/wallets.adoc` gains, after
   "A tweaked key: Taproot": `[#crypto-wallets-recovery]` "Who signed this? Recoverable
   signatures" (the problem: a wallet that receives a signed request and no key; the idea;
@@ -3525,9 +3682,11 @@ committed (or onto `main` after A merges).
   code; NIP-44's conversation key as what webcpp::nostr derives ({nip44}); mistakes: hashing
   the x coordinate differently on the two sides, reusing the conversation key as a message
   key) and `[#crypto-p2p-v2]` "A handshake an observer cannot recognise" (`ellswift_handshake`'s
-  code; BIP 324 as the protocol that uses it ({bip324})). Each section names and links the public
-  application built on noble or scure whose practice its example follows (the spec's
-  teaching-chapter rule), chosen as Task 15 chooses increment 1's, and never copies its code. `doc/curves.adoc` and
+  code; BIP 324 as the protocol that uses it ({bip324})). By the controller's ruling Q2, a section
+  names an application only where that application's public source shows it uses noble or
+  scure for the primitive shown, citing that source in `crypto.json`'s `sources`; where none
+  is verifiable, the section names none and says so in one sentence; it never copies an
+  application's code. `doc/curves.adoc` and
   `doc/secp256k1.adoc`'s opening list every function of the namespace by module, the
   `curves` namespace row's "What it does" becomes "BIP 340 Schnorr and ECDSA signatures,
   recoverable signatures, ECDH in three forms, tweaks, ElligatorSwift, MuSig2, silent
@@ -3546,12 +3705,17 @@ committed (or onto `main` after A merges).
   function); every key pair taken by a module function answers `invalid_state` when moved
   from; nothing of D24's protocol list entered (`grep -rn -i "taptweak\|taproot_output_key\|from_lax_der\|bech32\|bip32" include/`
   prints nothing); each message has a test of its own; the documentation's facts cite their
-  sources. Fixes come with a failing test first, on the same branches. Then
+  sources, and every application a teaching section names has a cited public source showing
+  its use of noble or scure (ruling Q2); no secp256k1 header still holds
+  `WEBCPP_CRYPTO_DETAIL_SECP256K1_ONLY` (ruling Q3). Fixes come with a failing test first, on
+  the same branches. Then
   `git log -1 --format=%B | git interpret-trailers --parse` prints nothing for each commit.
 - [ ] **Step 7: The pull requests** (the controller opens them; the owner merges): the
-  library's into `webcpporg/crypto`, then the superproject's (`third_party/Jamfile`,
+  proposals branch `crypto/foundation-increment-2` (these tasks, reviewed locally before the
+  code), the library's into `webcpporg/crypto`, then the superproject's (`third_party/Jamfile`,
   `tools/test/third_party_test.py`, the rulebook, the library's pin), rebased onto
-  `origin/main`. Commit (library) `crypto: increment 2's families, constant-time cases, sizes and teaching sections`;
+  `origin/main`, all opened together when stream B's code is complete (the controller's
+  ruling of 2026-11-17). Commit (library) `crypto: increment 2's families, constant-time cases, sizes and teaching sections`;
   (superproject) `guidelines: crypto's increment 2 in chapter 17`.
 
 ---

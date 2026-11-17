@@ -163,7 +163,7 @@ The library SHALL offer `hybrid::box` (X25519, XSalsa20-Poly1305) and `hybrid::b
 - **THEN** it opens, and a sealed box changed in one byte returns `authentication_failed` with `data` zeroed
 
 ### Requirement: Key formats: SPKI, PKCS#8 and PEM, strict
-Each curve's increment SHALL add, in its namespace, `encode_spki`, `decode_spki`, `encode_pkcs8` and `decode_pkcs8` (into the caller's buffer, with `max_spki_size` and `max_pkcs8_size`, nothing written on refusal), and the root `pem::armour` and `pem::unarmour` (labels `PUBLIC KEY` and `PRIVATE KEY`, lines of 64 characters, LF): Ed25519 and X25519 per RFC 8410 in increment 1 (on libsodium, RFC 8410's fixed DER prefix and the 32 key bytes, a recorded constant), secp256k1 per RFC 5480 with its OID in increment 2, P-256, P-384 and P-521 per RFC 5480 and RFC 5915 in increment 3 (PKCS#8 and PEM on BearSSL, SPKI on OpenSSL and Botan), RSA with PKCS #1 inside SPKI and PKCS#8 with RSA, and on OpenSSL and Botan for every key type they have. Decoding MUST accept an encoding only when re-encoding what was decoded gives the same bytes, on every backend, and refuse anything else with `invalid_encoding`. JWK MUST NOT be offered. Tests MUST run round trips, malformed-input refusals, and OpenSSL natively and WebCrypto's `importKey` and `exportKey` (`spki`, `pkcs8`) under node as outside oracles.
+Each curve's increment SHALL add, in its namespace, `encode_spki`, `decode_spki`, `encode_pkcs8` and `decode_pkcs8` (into the caller's buffer, with `max_spki_size` and `max_pkcs8_size`, nothing written on refusal), and the root `pem::armour` and `pem::unarmour` (labels `PUBLIC KEY` and `PRIVATE KEY`, lines of 64 characters, LF): Ed25519 and X25519 per RFC 8410 in increment 1 (on libsodium, RFC 8410's fixed DER prefix and the 32 key bytes, a recorded constant), secp256k1 per RFC 5480 with its OID in increment 2, P-256, P-384 and P-521 per RFC 5480 and RFC 5915 in increment 3 (PKCS#8 and PEM on BearSSL, SPKI on OpenSSL and Botan), RSA with PKCS #1 inside SPKI and PKCS#8 with RSA, and on OpenSSL and Botan for every key type they have. Decoding MUST accept an encoding only when re-encoding what was decoded gives the same bytes, on every backend, and refuse anything else with `invalid_encoding`. JWK MUST NOT be offered. Tests MUST run round trips, malformed-input refusals, and OpenSSL natively and WebCrypto's `importKey` and `exportKey` (`spki`, `pkcs8`) under node as outside oracles; for secp256k1, which WebCrypto lacks, node's `crypto` module (`createPrivateKey`, `createPublicKey`, `export`) is the oracle under node.
 
 #### Scenario: An Ed25519 key from WebCrypto
 - **WHEN** node's WebCrypto exports an Ed25519 key pair as `pkcs8` and `spki` and the library decodes both on libsodium
@@ -219,9 +219,13 @@ Increment 2 SHALL add, as thin wrappers over libsecp256k1 v0.8.0: `sign_recovera
 ### Requirement: secp256k1: ElligatorSwift, MuSig2 and silent payments
 Increment 2 SHALL add ElligatorSwift (`ellswift_encode`, `ellswift_create`, `ellswift_xdh` with BIP324's hash function), MuSig2 per BIP327 (key aggregation with its tweaks, `musig::secret_nonce`, a move-only object consumed by `partial_sign` so that a nonce is never used twice, partial signature verification and aggregation) and silent payments per BIP352 (the sender's outputs and the recipient's scan with labels), checked against the BIP vectors in the `bips` submodule.
 
+#### Scenario: A MuSig2 nonce passed without a move
+- **WHEN** a program passes a `secret_nonce` lvalue to `partial_sign`
+- **THEN** it does not compile, because `partial_sign` takes the nonce by value and the nonce cannot be copied
+
 #### Scenario: A MuSig2 nonce used twice
-- **WHEN** a program calls `partial_sign` twice with the same `secret_nonce`
-- **THEN** the second call does not compile, because the first consumed the nonce by move
+- **WHEN** a program passes to `partial_sign` a `secret_nonce` already moved into an earlier call
+- **THEN** `partial_sign` returns `invalid_state` without calling libsecp256k1, since C++ cannot reject a second `std::move` of one object at compile time
 
 #### Scenario: BIP352's vectors
 - **WHEN** every sending and receiving case of BIP352's test vectors runs
