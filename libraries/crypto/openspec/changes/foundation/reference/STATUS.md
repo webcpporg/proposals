@@ -45,9 +45,9 @@ Nothing: no work was done.
 
 1. Read `roadmap.md`: the overlaps resolved, the defaults, the waves and their streams.
 2. Wave 1: stream A follows `plan.md` from Task 1 through its revision of 2026-11-17, in the
-   task groups A1 to A4, with superpowers:subagent-driven-development; stream B writes
-   increment 2's tasks in full first (a proposals pull request), then branches from A's branch
-   once A's Task 3 (`secret<N>`) is committed and runs beside it; stream M follows the genesis's plan, Tasks 15,
+   task groups A1 to A4, with superpowers:subagent-driven-development; stream B's tasks
+   are written in full (`plan.md` Tasks 2.1 to 2.7, a proposals pull request of their own); it
+   branches from A's branch once A's Task 3 (`secret<N>`) is committed and runs beside it; stream M follows the genesis's plan, Tasks 15,
    16, 33 (in crypto's own tests) and 34, as `../../genesis/reference/plan.md`'s revision of
    2026-11-17 says.
 3. Wave 2, after stream A merges: each of increments 3 to 8, 10 and 11 writes its tasks in full

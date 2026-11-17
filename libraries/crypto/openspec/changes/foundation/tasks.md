@@ -2,9 +2,9 @@
 
 Each task of increment 1 points to its section in `reference/plan.md`, which holds its files,
 interfaces, steps, code and expected output, read through the plan's revision of 2026-11-17;
-tasks marked from the genesis point to `../genesis/reference/plan.md`. Increments 2 to 12 are
-outlined there and written in full, task by task, when each starts; each one's documentation
-step follows design D19. **The order and the parallel streams are `reference/roadmap.md`**
+tasks marked from the genesis point to `../genesis/reference/plan.md`. Increment 2 is written
+there in full (Tasks 2.1 to 2.7); increments 3 to 12 are outlined there and written in full,
+task by task, when each starts; each one's documentation step follows design D19. **The order and the parallel streams are `reference/roadmap.md`**
 (design D35): wave 1 runs groups 1 (stream A) and 2 (stream B) beside the genesis's memory
 option (stream M, `../genesis/tasks.md` group 4); wave 2 runs groups 3 to 8, 10 and 11 after
 group 1 merges; wave 3 runs 9 after 6 and 12 after 8. Nothing is built; the base is ready
@@ -49,13 +49,13 @@ Group A4:
 It branches from stream A's branch once 1.3 (`secret<N>`) is committed, adds its capability
 rows after 1.4, rebases onto `main` when group 1 merges, and merges after it.
 
-- [ ] 2.1 `ecdh` returns `secret<32>`; `ecdh_x` and `ecdh_point` (plan: Increment 2, step 1)
-- [ ] 2.2 Recovery and hedged ECDSA, with libsecp256k1's own recovery tests (plan: Increment 2, step 2)
-- [ ] 2.3 Tweaks, negation, combination, uncompressed keys; SPKI, PKCS#8 and PEM for secp256k1 (plan: Increment 2, step 3)
-- [ ] 2.4 ElligatorSwift with BIP324's vectors (plan: Increment 2, step 4)
-- [ ] 2.5 MuSig2 with BIP327's vectors, the consumed nonce (plan: Increment 2, step 5)
-- [ ] 2.6 Silent payments with BIP352's vectors (plan: Increment 2, step 6)
-- [ ] 2.7 The cryptocurrencies chapter's first sections; increment 2 whole (plan: Increment 2, step 7)
+- [ ] 2.1 `ecdh` returns `secret<32>` (BREAKING); `ecdh_x` and `ecdh_point`, against Wycheproof's ECDH files (plan: Task 2.1)
+- [ ] 2.2 Recovery and hedged ECDSA, with libsecp256k1's own recovery cases; `public_key`, `parse_public_key` and `serialize_public_key` in both forms (plan: Task 2.2)
+- [ ] 2.3 Tweaks, negation and combination, the caller's workspace; SPKI, PKCS#8 and PEM for secp256k1, with OpenSSL and node as oracles (plan: Task 2.3)
+- [ ] 2.4 ElligatorSwift with BIP 324's vectors (plan: Task 2.4)
+- [ ] 2.5 MuSig2 with BIP 327's vectors, the consumed nonce (plan: Task 2.5)
+- [ ] 2.6 Silent payments with BIP 352's vectors (plan: Task 2.6)
+- [ ] 2.7 The families in the capability table, the constant-time cases, the size cells, the teaching chapters' secp256k1 sections; increment 2 whole (plan: Task 2.7)
 
 ## 3. Increment 3: BearSSL's remaining parts (wave 2, stream 3)
 
