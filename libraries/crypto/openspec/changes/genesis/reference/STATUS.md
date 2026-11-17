@@ -2,30 +2,35 @@
 
 Written 2026-10-13, when this proposal was made from the owner-approved specification and the
 plan; revised 2026-11-14, when the owner set version 0.1's scope and the plan was patched to the
-superproject's `main` of that day. `spec.md` is the specification (approved by the owner on
-2026-10-11); `plan.md` is the implementation plan, whose section "The revision of 2026-11-14"
-rules over the rest of it; `../tasks.md` is the checklist; `../design.md` D22 records the
-revision. **The reference code is the code written in the plan's tasks.** There is no `source/`
-directory: nothing is implemented.
+superproject's `main` of that day; revised 2026-11-17, with version 0.1 merged and the owner's
+decision on increments 3 to 5. `spec.md` is the specification (approved by the owner on
+2026-10-11); `plan.md` is the implementation plan, whose sections "The revision of 2026-11-17"
+and "The revision of 2026-11-14" rule over the rest of it, the first over the second;
+`../tasks.md` is the checklist; `../design.md` D22 and D23 record the revisions. **The reference code is the code written in the plan's tasks**, and version 0.1's
+code on `webcpporg/crypto`'s `main`.
 
-## Where it stands
+## Where it stands (2026-11-17)
 
-- **The library's repository has no commit,** and `libs/crypto` does not exist anywhere.
-  `webcpporg/crypto` has not been created (gate G1) and the submodule has not been added (G2).
-- **No task is done.**
-- **Version 0.1 is increment 1 lean and increment 2** (Tasks 0 to 14, 17 to 19, 21, 24 to 30a).
-  Deferred: OpenSSL's memory option, constant time, sizes and throughput, the browser lane, the
-  nightly level, NIST CAVP, and increments 3 to 5.
-- **The base exists:** the superproject's `main` (`f085d79` on 2026-11-14) holds `third_party/`,
-  asio with `webcpp::test::exit_status`, the source-built OpenSSL 3.5.9 and trystero's shared
-  connection. The gates the plan once waited on (the rewrite of `main`'s history, Task 0a,
-  asio's Task 2) are past.
-- **The upstream pins were re-read on 2026-11-14 and hold:** BearSSL's mirror at `7bea48e`,
-  libsecp256k1 v0.8.0 (still the latest release), ctaes in Bitcoin Core v31.1 (unchanged in
-  v31.2 and v32.1), Wycheproof `12fd3aaf`, BIP340's vectors at `927b6de9`.
-- **Specification status:** accepted by the owner on 2026-10-11. The source-built OpenSSL
-  (provider amendment of 2026-11-03) and the revision's decisions amend it; `design.md` D22
-  lists them.
+- **Version 0.1 is merged.** `webcpporg/crypto` `main` is at `d242be8` and the superproject's
+  `main` (`3fa7ca5`) records it: increment 1 lean and increment 2 (Tasks 0 to 14, 17 to 19, 21,
+  24 to 30a), with the renames into `ciphers::` and `curves::secp256k1::`, the x-only tweak and
+  the tables of `doc/tables/crypto.json`. Gates G1 and G2 are passed. It is recorded as built
+  (task 7.3) once the CI is green on both `main`s: on 2026-11-17 the library's last run on
+  `main` was cancelled and the superproject's was queued.
+- **The owner's decision of 2026-11-17** (`../design.md` D23): increments 3 to 5 without
+  trystero's migration, in one order with the foundation change, whose
+  `reference/roadmap.md` is the order of all the remaining work. Tasks 31 and 32 are dropped;
+  Task 33 moves into crypto's own tests; Tasks 35, 38 and 39 are built by the foundation (its
+  tasks 1.8b, 7.3a and 7.4) and Task 37 is superseded by its Botan submodule; Tasks 20, 22 and
+  23 are built by the foundation (its tasks 1.14a, 1.14, 1.11 and 4.4), Task 22 re-cut to
+  release builds that decide nothing.
+- **What this change still builds itself:** stream M, the memory option (Tasks 15, 16, 33 and
+  34); and, behind the owner's gates O2 and O3, Task 25b and NIST CAVP (stream N).
+- **The upstream pins** of 2026-11-14 hold for the memory option: OpenSSL 3.5.9 at `45e844f`,
+  the superproject's source-built provider.
+- **Specification status:** accepted by the owner on 2026-10-11, amended by the provider
+  amendment of 2026-11-03, D22 (2026-11-14) and D23 (2026-11-17); the foundation's MODIFIED and
+  REMOVED requirements amend it further.
 
 ## What was measured, and when
 
@@ -61,15 +66,15 @@ Prerequisites are the superproject's (AGENTS.md chapter 1, "Prerequisites"): Boo
 5.5.3, a C++20 compiler, wasi-sdk 34, wasmtime 50.0.1, Emscripten 6.0.11 with node 26.7.0,
 Python 3.9 or newer, and a `.local/user-config.jam`.
 
-1. **Gate G1:** the owner creates `webcpporg/crypto`.
-2. **Task 0:** a worktree of the superproject from `origin/main`, the ledger, the baseline.
-3. **Tasks 1 to 14, 17 to 19, 21, 24, 25** (increment 1), each: the failing test first and seen
-   failing, the implementation, the lanes, the lint, the commit (the contributor's own identity,
-   no trailer, staged by path).
-4. **Tasks 26 to 30, then 30a** (increment 2, then trystero's build).
-5. **Pull requests** in the plan's order ("The base and the order of the work", point 4): the
-   library's, one superproject pull request with the submodule `libs/crypto` (G2), trystero's,
-   then this repository's, which records version 0.1.
+1. Read the foundation's `reference/roadmap.md`, then `plan.md`'s revision of 2026-11-17.
+2. **Stream M** (branch `crypto/openssl-memory` of the library and of the superproject, from
+   `origin/main`): Tasks 15, 16, 33 (in `libs/crypto/test/openssl_memory/`) and 34, each re-read
+   against the source-built provider as their notes say, each test written first and seen
+   failing, the lanes, the lint, the commit (the contributor's own identity, no trailer, staged
+   by path). It runs beside the foundation's streams A and B.
+3. **Stream R:** once the CI is green on both `main`s at commits that hold version 0.1, a
+   proposals pull request checks task 7.3 and records the release and the implementation
+   commit in `.openspec.yaml` as CONTRIBUTING.md says.
 
 ### The commands
 
@@ -92,13 +97,14 @@ Only a build from scratch (`-a`) counts as evidence. MSVC and Apple clang run in
 
 ## What to verify first
 
-1. `tools/node-test/include/webcpp/test/exit_status.hpp`, `third_party/Jamfile` and
-   `tools/webcpp-openssl.jam` exist on the base.
-2. After Task 1: `python3 tools/test/jamroot_test.py` passes with its case for both third-party
-   ids, and `libs/crypto/test//config` builds with and without exceptions.
-3. After Task 7: the 18 cases of the GCM specification pass on BearSSL on native and wasip2.
-4. After Task 11: the fixture that names `/webcpp/asio//openssl` and `/webcpp/crypto//openssl`
-   links each OpenSSL archive once.
+1. Stream M's base: `libs/crypto/include/webcpp/crypto/backends/openssl.hpp` on the
+   superproject's `origin/main`, with the error values 13 and 14 reserved and undeclared in
+   `error.hpp`, and `/webcpp/third_party//openssl` and `/third_party//libdatachannel` building
+   natively.
+2. After Task 15: the adapter's tests pass on native clang and gcc-15, with and without
+   exceptions.
+3. After Task 33: the TLS handshake under the option passes natively with no foreign block
+   freed through the adapter.
 
 ## Known issues
 
@@ -118,7 +124,9 @@ Only a build from scratch (`-a`) counts as evidence. MSVC and Apple clang run in
 
 ## Decisions pending
 
-- G1 and G2: the repository `webcpporg/crypto` and its submodule.
-- After version 0.1: O2 (nightly level), O3 (NIST's archives), O5 (C16, C17, Botan on the
-  development machine).
-- Whether `webcpp::webrtc` and `webcpp::beast` adopt the library.
+- After version 0.1: O2 (nightly level), O3 (NIST's archives), O5 (C17; C16 falls away with the
+  foundation's D32).
+- The roadmap's owner questions of 2026-11-17 that touch this change: Q2 and Q3 (D9's default
+  and version 0.1's two defines), Q6 (Task 33 kept in crypto's tests), Q7 (this change's status).
+- Whether `webcpp::webrtc` and `webcpp::beast` adopt the library, and whether a change of
+  trystero's own adopts it.

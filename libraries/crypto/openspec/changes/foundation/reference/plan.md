@@ -3,6 +3,7 @@ title: "webcpp::crypto, the foundation (version 0.2 onward): Implementation Plan
 tags: [webcpp, crypto, libsodium, secp256k1, bearssl, openssl, botan, blst, webcrypto, plan]
 status: accepted
 created: 2026-11-14
+revised: 2026-11-17
 ---
 
 # webcpp::crypto, the foundation: Implementation Plan
@@ -11,11 +12,13 @@ created: 2026-11-14
 
 **Goal of increment 1 (version 0.2 with increment 2):** libsodium as webcpp::crypto's backend
 `backends::sodium` (Ed25519, Ed25519ph, X25519, the Ed25519 to X25519 conversion, the three
-ChaCha20-Poly1305 AEADs, `hybrid::box`, sealed boxes, `ciphers::secretbox` in both forms, `kx`), the capability
-table and its generated refusals, the profiles and per-family overrides, the measurement table
-behind the defaults, the threads detection of the heavy variants, the constant-time lane for
-the new code, and the documentation's new form. The design is `../design.md` (D1 to D23); the
-requirements are `../specs/crypto/spec.md`.
+ChaCha20-Poly1305 AEADs, `hybrid::box`, sealed boxes, `ciphers::secretbox` in both forms, `kx`),
+ChaCha20-Poly1305 on BearSSL and OpenSSL (the genesis's increment 4), the capability table and
+its generated refusals, one default per family by a stated reason, the threads detection of the
+heavy variants, the constant-time lane over version 0.1's backends and the new code, sizes and
+throughput from release builds, and the documentation's new form (the revision of 2026-11-17
+below). The design is `../design.md` (D1 to D35); the requirements are
+`../specs/crypto/spec.md`; the order is `roadmap.md`.
 
 **Architecture:** every family is a type that does its guards once and calls
 `detail::<family>_engine<Algorithm, Backend>`, which a backend's header specialises (the
@@ -31,12 +34,152 @@ lightweight_test, JSON in tests), wasi-sdk 34 with wasmtime 50.0.1, Emscripten 6
 webcpp::hash's `/third_party//sodium` builds it. Test data: Wycheproof at `12fd3aaf`, the RFCs'
 vectors written into the tests, libsodium's own `test/default`.
 
+## The revision of 2026-11-17: one order, the genesis's increments 3 to 5, and defaults by reason
+
+This section rules over everything below it. The owner decided on 2026-11-17 that the
+genesis's increments 3 to 5 are built without trystero's migration and beside this plan's
+twelve increments in one order, that measured tables come only from release builds, and that
+crypto's defaults follow webcpp::hash's rule of 2026-11-16 (hash's design D33). `../design.md`
+D32 to D35 record the decisions and `roadmap.md` (this directory) the order, the waves, the
+streams and the owner's questions Q1 to Q7. The tasks below keep their text; where this section
+re-cuts one, its heading carries a note, and a task named with a prime (Task 4', 5', 11') is
+the re-cut one.
+
+**What the tree holds now.** Version 0.1 is merged (`webcpporg/crypto` `main` at `d242be8`),
+with `ciphers::` and `curves::secp256k1::` in place, the generator `doc/tables/generate.py` and
+its data `doc/tables/crypto.json` (the operations, the tests that back each backend, the
+defaults with their reasons, the use cases, the fixtures and the fixes of every message), and
+the default tests `default_backend`, `default_bearssl`, `default_both`, `default_both_wasm`,
+`default_openssl_wasm`, `default_selected` and `default_selection`. The superproject's `main`
+holds `/third_party//sodium` (libsodium 1.0.22) and `webcpp.size-table`, which requires
+`<variant>release`. Task 1's check of the base passes on that tree.
+
+**Task 4' (replaces Task 4's files; its interfaces and tests stand).** The table is
+`libs/crypto/doc/tables/crypto.json`, grown, and the generator `libs/crypto/doc/tables/generate.py`
+with its test `generate_test.py`, both version 0.1's. `crypto.json` gains a `families` list,
+each with `name`, `title`, `group`, `since`, `default` (per target, with `why` and its cited
+sources, D32) and per backend its `targets`, `runtime`, `constant_time` per target and the
+tests that back it; the existing `operations`, `defaults` and `use_cases` move under it or
+point to it, and a cell is claimed only where a named test runs on its targets (version 0.1's
+rule). `generate.py` gains the outputs Task 4 gives `capabilities.py`:
+`include/webcpp/crypto/detail/capabilities.hpp` (the refusal text per absent pair, the same
+text as Task 4's Step 2), `supports.hpp`'s table, `include/webcpp/crypto/detail/defaults.hpp`
+(Task 5'), and `test/capabilities_test.cpp`, each opening with version 0.1's generated-file
+notice; `--check` covers them, and the documentation's build runs it as today. Not created:
+`meta/capabilities.json`, `tools/crypto/capabilities.py`, `tools/test/crypto_capabilities_test.py`,
+`doc/capabilities.adoc` (the table is one of `doc/generated/`), and no `portable` field.
+
+**Task 5' (replaces Task 5).** One default per family and target, by a stated reason (D32).
+
+- Files: generated `include/webcpp/crypto/detail/defaults.hpp`; modify `config.hpp`,
+  `ciphers/aes256_gcm.hpp` and every family header that names a default, `test/Jamfile`,
+  version 0.1's default tests, `test/messages/` (below), `doc/tables/crypto.json`.
+- Interface: `template <class Family> struct default_backend_of;` with `using type`, and
+  `template <class Family> using default_backend_t = typename default_backend_of<Family>::type;`
+  in `detail/defaults.hpp`, one specialisation per family that has a default, chosen by
+  `WEBCPP_TARGET_*` alone; `default_backend` stays `default_backend_t<families::gcm>`. A
+  backend's tag is declared without its library (as version 0.1's `backends::*` tags are), and
+  a family's primary engine template refuses, where the family is called, with the default's
+  "needs" text: the Jamfile line that links it and the type that names another backend, as
+  hash's `detail/engines.hpp` does for `argon2id`.
+- Version 0.1 changes: `config.hpp` no longer reads the `HAS` defines to choose AES-GCM's
+  default; natively it is OpenSSL whatever is linked (owner question Q2; if the owner keeps
+  version 0.1's rule for AES-GCM, `default_backend_of<families::gcm>` keeps version 0.1's
+  `#if` instead, and the rest stands). `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `_OPENSSL`
+  stop compilation with `webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_<NAME> no longer chooses
+  a default. Write the backend in the type where the program wants it, as in
+  ciphers::gcm<ciphers::aes256<backends::<name>>>.` (owner question Q3). Version 0.1's
+  `default_openssl_wasm` and `default_selected` become message tests of that text;
+  `default_bearssl` natively becomes the message test `gcm_default_openssl_not_linked`;
+  `default_both`, `default_both_wasm` and `default_selection` assert the fixed defaults.
+- Tests, each first and seen failing: `default_backend_test` asserts every family's
+  `default_backend_t` per target, built with every backend linked and with each linked alone;
+  `default_backend_former_defines` builds it with `WEBCPP_CRYPTO_PROFILE_FASTEST`,
+  `WEBCPP_PROFILE_SMALLEST` and `WEBCPP_CRYPTO_DEFAULT_BACKEND_GCM_BEARSSL` and asserts that
+  nothing changed; one message test per family whose default may be unlinked
+  (`ed25519_default_not_linked`, `chacha_default_not_linked`, `gcm_default_openssl_not_linked`),
+  with its Emscripten fixture and MSVC case as version 0.1's messages have.
+- Not created: `detail/select.hpp`, `detail/rankings.hpp`, `detail/profile_checks.hpp`,
+  `profiles`, `profile`, `profile_name`, `none_linked`, the profile messages and their
+  `detect_mismatch` keys.
+- Commit `crypto: one default per family and target, by a stated reason (design D32)`.
+
+**Task 8b (new, after Task 8): ChaCha20-Poly1305 on BearSSL and OpenSSL** (the genesis's
+increment 4, its Task 35 re-cut onto `ciphers::aead`).
+
+- Files: modify `backends/bearssl.hpp` and `backends/openssl.hpp` (the
+  `aead_state<families::chacha20_poly1305, B>` and `aead_engine<...>` specialisations, the
+  engine contract of Task 8), `backends/ctaes.hpp` (nothing: the generated refusal covers it),
+  `test/Jamfile`, `test/support/agreement.hpp` (three-way), `test/allocation_bearssl_test.cpp`,
+  `test/allocation_openssl_test.cpp`, `test/openssl_error_queue_test.cpp`,
+  `doc/tables/crypto.json`; create `test/chacha_bearssl_test.cpp`,
+  `test/chacha_openssl_test.cpp`, `test/chacha_wycheproof_bearssl_test.cpp`,
+  `test/chacha_wycheproof_openssl_test.cpp`, `test/agreement_chacha_test.cpp`,
+  `test/messages/chacha_on_ctaes/` and its MSVC fixture.
+- The engines are the genesis plan's Task 35 Step 3 (BearSSL's `br_chacha20_ct_run` and
+  `br_poly1305_ctmul_run` with the tag compared by `equal`; OpenSSL's `EVP_chacha20_poly1305`
+  with the error queue left as found), written against `aead_state` and `aead_engine` in place
+  of `chacha_state` and `chacha_engine`; the checks are Task 8's `aead_checks.hpp` with the
+  genesis's RFC 8439 cases (section 2.8.2 and appendix A.5, M4) and Wycheproof's 325 cases per
+  backend; the agreement runs libsodium, BearSSL and OpenSSL from one seed natively, and
+  libsodium against BearSSL (and OpenSSL on WASI) on each WebAssembly target.
+- Its constant-time cases join Task 14, its size programs Task 11', its part of the memory
+  option's `everything_test.cpp` whichever of stream A and stream M merges second, and its
+  documentation Task 15 (the genesis's Task 35 Step 6 text, in D19's form).
+- Commit `crypto: ChaCha20-Poly1305 on BearSSL and OpenSSL over ciphers::aead, against RFC
+  8439, Wycheproof and libsodium`.
+
+**Task 11' (replaces Task 11): sizes from release builds, throughput by hand, nothing ranked.**
+
+- The own lane `sizes`: `libs/crypto/test/sizes/Jamfile` declares the baseline and one program
+  per (family, backend) cell, each calling the family's fixed operation once, through the
+  superproject's `webcpp.size-table` (which requires `<variant>release`) on native, wasip2,
+  wasip3 and Emscripten; `tools/ci/matrix.py` gains the own lane; `generate.py` reads the lane's
+  table into the size matrix, writing "not measured yet" for a cell the lane has not built.
+  Version 0.1's operations (AES-GCM on BearSSL and OpenSSL, the block cipher on OpenSSL and
+  ctaes, secp256k1's signing, with Task 29's signing program) come first; each later task adds
+  its cells.
+- The throughput page: `libs/crypto/bench/throughput.cpp` (each family's fixed operation per
+  backend, five runs, the median) and `bench/collect.py` after webcpp::hash's, refusing a
+  program or data not built at `variant=release`, with its test in the superproject beside
+  `tools/test/hash_collect_test.py`; measured by hand on the machines the page names (the
+  developer's, and the CI's runners when the owner runs them), written to `doc/performance.adoc`
+  as a dated reference. libsodium's X25519 and Ed25519 with `HAVE_AMD64_ASM` in a scratch build
+  are recorded there too (D7).
+- Not created: `meta/measurements.json`, `tools/crypto/measure.py`, its test,
+  `detail/rankings.hpp`, `runners.yml`, the `heavy` column (D32 states the heavy list).
+- Commit (superproject) `tools: crypto's size lane and its collect script, from release builds`;
+  (library) `crypto: sizes and throughput from release builds, as references`.
+
+**Task 14, whole.** Its Step 1 builds the genesis's Task 20 entire first: the harnesses, the
+planted leak, and version 0.1's paths (BearSSL's AES-GCM seal and open, OpenSSL's where it is
+built with assembly, with its open left out as the genesis says, ctaes's block, libsecp256k1's
+own `ctime_tests.c` from Task 26), then Steps 2 and 3 over libsodium's paths and the ChaCha
+engines of Task 8b. `runners.yml` is not built; the arm64 run is by hand.
+
+**Task 15.** `generate.py` writes what `docs.py` was to write; no `doc/profiles.adoc` (the
+chapter is `doc/choosing_backend.adoc`, each family's default with its reason, as hash's); the
+use cases' field is `backend`, never `profile`; the matrices read the size lane's table and
+`doc/performance.adoc`'s data.
+
+**Task 16.** Green adds `generate.py --check` in place of `capabilities.py --check`, and the
+review checks each family's fixed default on every lane in place of the profile's; the
+genesis's Task 36 review items (spec 2.5, 8.1's ChaCha part, 8.2) join it.
+
+**The outlines below:** increment 3 has no ChaCha20-Poly1305 (Task 8b); increment 4 carries the
+genesis's Task 23 (the audio worklet's `not_supported`, Chrome's throughput page from release
+builds); increment 7 opens, after its spike and its submodule, with the genesis's Task 38 cells
+and ends with its Task 39 agreement and constant-time cases; increment 8 has no
+ChaCha20-Poly1305 and moves the AES modes' native default to OpenSSL (D32). Every outlined
+increment's "measured", "ranked" or "heavy column" wording is read through D32.
+
 ## The base and the order of the work
 
 1. **The base** is the superproject's `origin/main` once (a) crypto's version 0.1 has merged
    (genesis Tasks 25 and 30) and (b) webcpp::hash's Task 8 (`/third_party//sodium`) and its
    Tasks 1 to 3 (`/webcpp/hash//hash`) have merged. Task 1 checks both and stops if either is
    missing.
+   Both have merged (2026-11-17); `roadmap.md` gives the order of every stream.
 2. **Increment 2 runs beside increment 1** on its own branch `crypto/secp256k1-modules`; its
    capability rows join after Task 4 merges, by a rebase.
 3. **After increment 1 merges, increments 3 to 8 are six parallel streams**, each on its own
@@ -400,6 +543,8 @@ private:
 
 ## Task 4: The capability table, its generator, `supports_v` and the refusals
 
+Re-cut by the revision of 2026-11-17 as Task 4': the table and generator are version 0.1's `doc/tables/crypto.json` and `generate.py`.
+
 **Files:**
 - Create: `libs/crypto/meta/capabilities.json`, superproject `tools/crypto/capabilities.py`,
   `tools/test/crypto_capabilities_test.py`, generated
@@ -636,6 +781,8 @@ inline constexpr bool supports_v =
   `crypto: the capability table, supports_v and the generated refusals`.
 
 ## Task 5: The profiles, the overrides and `default_backend_t`
+
+Superseded by the revision of 2026-11-17, Task 5' (design D32): no profile, no override, no ranking. Kept as the record of what D32 replaces.
 
 **Files:**
 - Create: `include/webcpp/crypto/detail/select.hpp`, `include/webcpp/crypto/detail/rankings.hpp`
@@ -1738,6 +1885,8 @@ public:
 
 ## Task 11: The measurement table, `measure.py`, the lanes `sizes` and `throughput`
 
+Superseded by the revision of 2026-11-17, Task 11' (design D32): sizes and throughput from release builds, as references; nothing ranked.
+
 **Files:**
 - Create: `libs/crypto/meta/measurements.json`, superproject `tools/crypto/measure.py`,
   `tools/test/crypto_measure_test.py`, `libs/crypto/test/sizes/<family>_<backend>.cpp` (one
@@ -1863,6 +2012,8 @@ task adds crypto's families to the same lane), `test/oracle/webcrypto_25519.mjs`
 
 ## Task 14: The constant-time lane over the new code
 
+Extended by the revision of 2026-11-17: it builds the genesis's Task 20 whole, version 0.1's backends first, and the ChaCha engines of Task 8b.
+
 **Files:** the genesis's Task 20 files (`test/constant_time/ctgrind_test.cpp`,
 `msan_test.cpp`, `dudect_test.cpp`, `detail/declassify.hpp` already empty in version 0.1), now
 built, with libsodium's paths: Ed25519 signing (the seed secret), X25519 agreement (the secret
@@ -1879,6 +2030,8 @@ webcpp's `equal`, `is_all_zero` and `secret<N>`'s wipe.
   `crypto: the constant-time lane, over libsodium's code and the new guards`.
 
 ## Task 15: The documentation's form, and its generator
+
+Amended by the revision of 2026-11-17: `generate.py` in place of `docs.py`, no profile page, the default per target with its reason.
 
 The owner's requirements (design D19) bind this task and every later increment's
 documentation step.
@@ -1934,6 +2087,8 @@ ISC), `doc/changelog.adoc`.
   `crypto: the documentation of increment 1, its tables generated from the data`.
 
 ## Task 16: Increment 1 whole
+
+Amended by the revision of 2026-11-17: `generate.py --check`, the fixed defaults reviewed, the genesis's Task 36 items.
 
 - [ ] **Step 1:** the rulebook: CODING-GUIDELINES.md chapter 17's crypto entry records the
   foundation's acceptance and increment 1's state; chapter 10's `sodium` row names crypto's

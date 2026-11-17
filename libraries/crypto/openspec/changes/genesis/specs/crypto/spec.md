@@ -6,7 +6,8 @@ ChaCha20-Poly1305), the AES block cipher, a `random_device`, a constant-time `eq
 secp256k1 (BIP340 Schnorr, ECDSA, ECDH). The algorithms are not webcpp's: each runs on a
 backend, a C or C++ library (BearSSL, OpenSSL, ctaes, libsecp256k1, Botan) behind an interface
 shaped as Boost.Hash2's. These requirements are the structured form of `reference/spec.md` and
-of the build, tests and tools of `reference/plan.md`; the library is not built yet.
+of the build, tests and tools of `reference/plan.md`; version 0.1 is merged, and the rest
+follows the foundation change's `reference/roadmap.md`.
 
 ## ADDED Requirements
 
@@ -696,10 +697,10 @@ Each test of the OpenSSL memory option SHALL be a program of its own that define
 - **THEN** OpenSSL's cleanup frees every block through the adapter, the resource writes its line, and the test passes only with that line
 
 ### Requirement: Tests: the memory option beside its neighbours
-With increment 3 one program SHALL link Boost.Asio's SSL headers and libdatachannel, install first and expect success so that neither uses OpenSSL during static initialisation, and another MUST run a TLS handshake through libssl over a loopback socket under the option, with the counting resource refusing a foreign free and checking the exit.
+With the memory option, crypto's own tests (`test/openssl_memory/`, natively) SHALL hold one program that links Boost.Asio's SSL headers and libdatachannel, installs first and expects success so that neither uses OpenSSL during static initialisation, and another that runs a TLS handshake through libssl over a pair of memory BIOs under the option, with the counting resource refusing a foreign free and checking the exit. These tests MUST live in crypto, since any webcpp program with Beast's TLS or webcpp::webrtc's DTLS shares its process with crypto's OpenSSL, and MUST NOT need webcpp::trystero.
 
 #### Scenario: A TLS handshake under the option
-- **WHEN** a loopback TLS handshake runs with the memory functions installed
+- **WHEN** a TLS handshake runs with the memory functions installed
 - **THEN** it completes and every allocation of libssl is in the counting resource
 
 ### Requirement: Tests: every message from a test of its own
@@ -753,15 +754,12 @@ The interface of `curves::secp256k1` SHALL offer `to_der` (a compact signature a
 - **THEN** `verify_ecdsa` refuses it and `normalize_ecdsa` returns the original, which verifies
 
 ### Requirement: Increments: five, in order
-The work SHALL proceed in five increments: (1) the foundation and AES-GCM on BearSSL and OpenSSL (config, errors, `equal`, `random_device`, `aes128/192/256`, `gcm` one shot and incremental, both backends, the submodule `bearssl`, the canary, `detect_mismatch`, crypto's alias over the source-built OpenSSL, the tests, the unused-library rule, the documentation; then, after version 0.1, the memory option, constant time, sizes, throughput, the browser lane and NIST's vectors); (2) libsecp256k1 and ctaes (submodules, `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, ECDH, `aes128/192/256<ctaes>`, the diagnostic of `gcm<aes256<ctaes>>`, the tables feature, and trystero's build onto `/third_party//secp256k1`); version 0.1 is (1) without its deferred parts and (2); (3) trystero's migration; (4) ChaCha20-Poly1305 on BearSSL and OpenSSL with its part of the memory option's tests; (5) Botan, found, native only, with exceptions only, in every native cross-backend lane. Each increment ends with the definition of green, a review against the plan's Review Focus, and pull requests the owner merges.
+The work SHALL proceed in five increments: (1) the foundation and AES-GCM on BearSSL and OpenSSL (config, errors, `equal`, `random_device`, `aes128/192/256`, `gcm` one shot and incremental, both backends, the submodule `bearssl`, the canary, `detect_mismatch`, crypto's alias over the source-built OpenSSL, the tests, the unused-library rule, the documentation; then, after version 0.1, the memory option, constant time, sizes, throughput, the browser lane and NIST's vectors); (2) libsecp256k1 and ctaes (submodules, `secp256k1::keypair`, `verify_schnorr`, `verify_ecdsa`, ECDH, `aes128/192/256<ctaes>`, the diagnostic of `gcm<aes256<ctaes>>`, the tables feature, and trystero's build onto `/third_party//secp256k1`); version 0.1 is (1) without its deferred parts and (2), merged; (3), by the owner's decision of 2026-11-17 without trystero's migration, the memory option: its adapter and install, its process-by-process tests and its tests beside Boost.Asio's SSL and libdatachannel, in crypto's own tests; (4) ChaCha20-Poly1305 on BearSSL and OpenSSL, built in the foundation's increment 1 over its AEAD template, agreeing with libsodium; (5) Botan, with exceptions only, built in the foundation's increment 7 as a submodule, natively and on Emscripten. trystero's sealer, entropy and signer MUST NOT be changed by this library's work. Each increment ends with the definition of green, a review against the plan's Review Focus, and pull requests the owner merges; the order is the foundation's `reference/roadmap.md`.
 
-#### Scenario: Increment 4 without Botan
-- **WHEN** ChaCha20-Poly1305 lands in increment 4
-- **THEN** its agreement lane compares BearSSL and OpenSSL, and Botan joins it in increment 5
+#### Scenario: Increment 4 in version 0.2
+- **WHEN** ChaCha20-Poly1305 lands on BearSSL and OpenSSL
+- **THEN** its agreement lane compares libsodium, BearSSL and OpenSSL, and Botan joins it in the foundation's increment 7
 
-### Requirement: Migration: trystero moves onto the library
-In increment 3 webcpp::trystero (in its own repository, on a branch `crypto`, after its shared-connection track has integrated and with a re-read of the table of call sites) SHALL replace `native/sealer.hpp` and its browser twin with `aes256_gcm` using trystero's 16-byte IVs, its asynchronous `sealer` interface with a direct call, its `random` with `random_device::fill` reporting `entropy_unavailable` as a failure of the operation that needed the bytes (it aborts today natively when the system has no entropy), and its `signer` and `verify` with `secp256k1::keypair` and `verify_schnorr`, its build already naming `/third_party//secp256k1` since version 0.1. Its direct use of OpenSSL MUST go, natively OpenSSL staying a transitive dependency through libdatachannel's DTLS and Beast's TLS, and every test of trystero MUST pass before each commit on its four lanes.
-
-#### Scenario: Entropy runs out natively
-- **WHEN** the system has no entropy during a trystero join
-- **THEN** the join fails with `entropy_unavailable` instead of aborting
+#### Scenario: trystero is not migrated
+- **WHEN** increments 3 to 5 have merged
+- **THEN** webcpp::trystero's code is unchanged by them

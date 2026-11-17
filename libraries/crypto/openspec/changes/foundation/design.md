@@ -27,6 +27,18 @@ superproject's work tree). The owner then decided, the same day, the scope of th
 - documentation in noble's and libsodium's manner, teaching by use case;
 - crypto version 0.1 finishes as planned, and this is version 0.2 onward.
 
+Two later decisions reshape it (D32 to D35, and `reference/roadmap.md`). On 2026-11-16 the owner
+retired webcpp::hash's profiles and measured defaults (hash's design D33): every key derivation
+defaults to one backend for a stated reason, and the other backends are named in the type. On
+2026-11-17, with crypto's version 0.1 merged (`webcpporg/crypto` `main` at `d242be8`, recorded
+by the superproject's `main`), the owner decided that the genesis's increments 3 to 5 are built
+without trystero's migration, ChaCha20-Poly1305 and Botan included, beside this change's twelve
+increments, in one order; that measured tables come only from release builds; and that the same
+simple rule of defaults be proposed for crypto. Version 0.1 as built also differs from what this
+change first assumed: its capability and documentation tables come from
+`doc/tables/crypto.json` and `doc/tables/generate.py` in the library, and its defaults already
+carry a stated reason per target.
+
 The constraints of the genesis stand (its design's Context): header-only C++20, namespace
 `webcpp::crypto`, errors as values, exceptions optional, no global mutable state in a header,
 allocation through the program's allocator, every C library a pinned submodule built by b2
@@ -125,7 +137,7 @@ Every type lives in its group's namespace and header, as D29 lays out:
 | `webcpp::crypto::hybrid`, `<webcpp/crypto/hybrid/*.hpp>` | `hybrid::box`, `hybrid::box_xchacha20poly1305`, `hybrid::sealed_box`, `hybrid::hpke<Kem, Kdf, Aead>` |
 | `webcpp::crypto::commitments::kzg`, `<webcpp/crypto/commitments/kzg.hpp>` | `settings`, the commitment, proof and cell functions |
 | `webcpp::crypto::secret_sharing::shamir`, `<webcpp/crypto/secret_sharing/shamir.hpp>` | `split_key`, `combine_key`, `split`, `combine` |
-| `webcpp::crypto`, `<webcpp/crypto/*.hpp>` (the root) | `error`, `random_device`, `equal`, `secret<N>`, `supports_v`, `default_backend_t`, `profile`, `families`, `tags`; `random_uniform`, `random_bytes_deterministic` (`random.hpp`); `memory.hpp`'s `wipe`, `is_zero`, `compare`, `increment`, `add`, `sub`, `lock`, `unlock`; `pad`, `unpad` (`padding.hpp`); `hex`, `base64` (`encoding.hpp`); `guarded_memory_resource` (`guarded_memory.hpp`); the asynchronous family (`async.hpp`) |
+| `webcpp::crypto`, `<webcpp/crypto/*.hpp>` (the root) | `error`, `random_device`, `equal`, `secret<N>`, `supports_v`, `default_backend_t`, `families`, `tags`; `random_uniform`, `random_bytes_deterministic` (`random.hpp`); `memory.hpp`'s `wipe`, `is_zero`, `compare`, `increment`, `add`, `sub`, `lock`, `unlock`; `pad`, `unpad` (`padding.hpp`); `hex`, `base64` (`encoding.hpp`); `guarded_memory_resource` (`guarded_memory.hpp`); the asynchronous family (`async.hpp`) |
 | `webcpp::crypto::backends`, `<webcpp/crypto/backends/*.hpp>`, outside the groups | `bearssl`, `openssl`, `sodium`, `ctaes`, `secp256k1`, `botan`, `blst`, `ckzg`, `mcl`, `sss`, `browser` |
 
 Each family's guards are written once, in its type; a backend's header specialises
@@ -139,6 +151,12 @@ every one-shot AEAD, with a family tag carrying the sizes and the message limit.
   `std::array` for secret outputs (D9).
 
 ### D4. The capability table is the single source of what exists where
+
+> **Amended on 2026-11-17 by D33 and D32.** The table is version 0.1's `doc/tables/crypto.json`
+> and its generator `doc/tables/generate.py`, both in the library, not `meta/capabilities.json`
+> and `tools/crypto/capabilities.py`; a family's row names its default and the reason (D32), and
+> has no `portable` field and no generated `heavy` column. The rest of this decision holds with
+> those names.
 
 `libs/crypto/meta/capabilities.json` lists every algorithm (by family and name), and for each
 backend the targets where it has it, whether its availability is decided at run time (libsodium's
@@ -168,6 +186,10 @@ the machine lacks it.
   backends, which does not scale to eight); a table in the documentation only.
 
 ### D5. One define chooses every default; a webcpp-wide umbrella; per-family overrides
+
+> **Superseded on 2026-11-17 by D32.** No profile, no umbrella, no per-family override and no
+> measured default: each family has one default per target, chosen by a stated reason, and every
+> other backend is named in the type. What follows is kept as the record of what D32 replaces.
 
 Every setting is a macro tested with `#ifdef`, never a macro with a value (the coordinator's
 ruling of 2026-11-14, which webcpp::hash applies alike):
@@ -228,6 +250,11 @@ choose differently.
   owner asked for a measured one).
 
 ### D6. The measurement table: webcpp's own, regenerated at every pin move
+
+> **Superseded on 2026-11-17 by D32.** Sizes and throughput are measured from release builds
+> only, published as dated references, and decide nothing: no ranking, no `rankings.hpp`, no
+> `measure.py`, no `runners.yml`, no hysteresis band. The genesis's Task 22 is re-cut
+> accordingly (foundation Task 11').
 
 `libs/crypto/meta/measurements.json` holds, for each (algorithm, backend): the bytes it adds to
 a program over the baseline program on each target (native at `<optimization>space` stripped,
@@ -351,6 +378,9 @@ tweak nor `from_lax_der`, which version 0.1 moves out.
 
 ### D12. BearSSL's remaining parts (increment 3), and no DRBG anywhere
 
+> **Amended on 2026-11-17 by D34.** BearSSL's ChaCha20-Poly1305 moves to increment 1 (Task 8b,
+> the genesis's Task 35); the rest of this decision holds.
+
 BearSSL brings P-256, P-384 and P-521 through `br_ec_all_m31` (`br_ec_p256_m62` natively where
 64-bit multiplication is constant time, chosen as the genesis chose its AES code), ECDSA with
 RFC 6979 nonces, raw and ASN.1, ECDH, X25519 (`br_ec_c25519_m62`/`m31`), ChaCha20-Poly1305
@@ -449,6 +479,11 @@ C API for webcpp::ethereum.
 
 ### D15. Botan as a pinned submodule built by b2 (increment 7)
 
+> **Amended on 2026-11-17 by D34.** Increment 7 is also the genesis's increment 5: its first
+> cells are the genesis's (the AES block cipher, AES-GCM and ChaCha20-Poly1305 on Botan, with
+> the genesis's Task 38 and 39 tests: the exception mapping, the additional data in one piece,
+> the three-way agreement and the constant-time checks), then the rest of D2's row.
+
 Botan becomes `third_party/libs/botan` at 3.14.1, which supersedes the genesis's D15 for Botan
 (found on the machine) and its Task 37. Botan's module selection is upstream's `configure.py`,
 run once per target and configuration into the b2 variant directory with
@@ -475,6 +510,10 @@ the increment.
   sources written by hand (it would drift from upstream's modules at every pin move).
 
 ### D16. OpenSSL's remaining algorithms (increment 8)
+
+> **Amended on 2026-11-17 by D34.** OpenSSL's ChaCha20-Poly1305 moves to increment 1 (Task 8b);
+> the memory option this decision cites is stream M of `reference/roadmap.md` (the genesis's
+> Tasks 15, 16, 33 and 34).
 
 Through the existing provider (`/webcpp/crypto//openssl`), on native, wasip2 and wasip3. A
 keyed object holds its `EVP_PKEY` and a context initialised once in `make`; operations reuse it
@@ -524,6 +563,12 @@ mature C hash-to-curve, so it has none.
   generated table test of D4.
 
 ### D19. Documentation: two readers, generated tables, chapters per group
+
+> **Amended on 2026-11-17 by D32 and D33.** Every page lists the default per target, never per
+> profile; the decision table's rows name a backend, never a profile; the single source is
+> `doc/tables/crypto.json` (with its `use_cases`, and `meta/ed25519_cases.json` beside it) and
+> the lanes' data from release builds, and the generator is `doc/tables/generate.py`, which
+> grows to write what `tools/crypto/docs.py` was to write.
 
 The owner's documentation requirements of 2026-11-15 (`doc-requirements.md` in the
 superproject's work tree), binding on crypto version 0.1's Task 24, on webcpp::hash's
@@ -587,6 +632,11 @@ Every code block is a compiled example included by tag, with its expected output
 
 ### D20. Increments and versions
 
+> **Amended on 2026-11-17 by D34 and D35.** Version 0.2 also carries the genesis's increment 4
+> (ChaCha20-Poly1305 on BearSSL and OpenSSL, Task 8b); increment 7 carries the genesis's
+> increment 5; the genesis's increment 3 is reduced to the memory option (stream M); the
+> genesis's Tasks 20 and 22 are built in increment 1, re-cut by D32.
+
 1. libsodium core, profiles, capability table, measurements, constant-time lane, documentation
    form: **version 0.2** with increment 2.
 2. libsecp256k1's remaining modules: version 0.2.
@@ -608,6 +658,9 @@ increment 3 (trystero's migration) keep their own schedule; its Tasks 20, 22, 23
 
 ### D21. Parallel streams
 
+> **Amended on 2026-11-17 by D35**, which adds stream M and the task groups inside increment 1,
+> and replaces the shared generated files by `crypto.json` and what `generate.py` writes.
+
 - **Increments 1 and 2 run beside each other** from the start: 2 touches only `curves/secp256k1.hpp`,
   its tests and its documentation; its rows join the capability table once 1's table lands, by a
   rebase.
@@ -625,6 +678,10 @@ increment 3 (trystero's migration) keep their own schedule; its Tasks 20, 22, 23
 
 ### D22. What changes in the genesis's requirements
 
+> **Amended on 2026-11-17.** The MODIFIED "Default backend: per target", "Tests: sizes and
+> throughput" and "Increments: five, in order" now carry D32 and D34, and "Backends: the five
+> and what each exports" no longer ties a default to a measurement.
+
 MODIFIED (whole text in `specs/crypto/spec.md`): the target and namespaces, the public headers,
 the convenience header, nothing of hashing, every call synchronous, the backends, the default
 backend per target, the trystero-era Botan requirement, the increments, ECDH's return type.
@@ -632,6 +689,10 @@ REMOVED: Botan found on the machine and its build stop, replaced by D15. Everyth
 the genesis stands.
 
 ### D23. Heavy operations on another thread, only in a build with threads
+
+> **Amended on 2026-11-17 by D32.** Which operations are heavy is stated in D32, not generated
+> from measurements; the rest of this decision (threads detection, the executor, the refusal
+> without threads) holds.
 
 The owner's decision of 2026-11-14, the same rule as webcpp::hash's D23. `config.hpp` defines
 `WEBCPP_CRYPTO_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined (b2's
@@ -803,7 +864,7 @@ whose headers are `<webcpp/crypto/<group>/<name>.hpp>`, as D3's table lists: `ci
 `edwards25519`, `bls12_381`, `bn254`), `post_quantum` (`ml_kem`, `ml_dsa`, `slh_dsa`,
 `post_quantum::x_wing`), `rsa`, `hybrid` (`hybrid::box`, `hybrid::sealed_box`, `hpke`), `commitments::kzg` and
 `secret_sharing::shamir`. The root keeps what every group uses: `error`, `random_device`,
-`equal` and the memory utilities, `secret<N>`, the configuration, the profiles, `supports_v`,
+`equal` and the memory utilities, `secret<N>`, the configuration, the defaults, `supports_v`,
 `default_backend_t` and the asynchronous family. `backends` stays outside the groups, one
 header per backend. `families` and `tags`, the capability table's names, stay at the root.
 
@@ -889,18 +950,138 @@ refuses, so a network mixing them must agree on a rule.
 `curves::ed25519::zip215` is not declared: it waits for a mature C or C++ implementation of
 ZIP-215 (open question O1).
 
+### D32. One default per family and target, by a stated reason; no profile, no measured default
+
+The owner retired webcpp::hash's profiles and measured defaults on 2026-11-16 (hash's design
+D33) and asked on 2026-11-17 that crypto follow the same simple rule unless its specification
+has a strong reason otherwise. It has one difference only, which the rule absorbs: no backend
+of crypto covers every family on every target (OpenSSL is not built for Emscripten, and
+BearSSL's AES is 30 to 62 times slower than OpenSSL's on ARM), so a family's default may differ
+by target. It never differs by what the program links.
+
+- **The default.** Each family has one default backend per target, written in its row of
+  `doc/tables/crypto.json` with the reason, and declared as `default_backend_t<Family>` (the
+  genesis's `default_backend` stays the AES-GCM family's). The table, owner question Q4 of
+  `reference/roadmap.md`:
+
+  | Family | Default | Reason |
+  | --- | --- | --- |
+  | AES-GCM | native: OpenSSL; wasip2, wasip3, Emscripten: BearSSL | version 0.1's: OpenSSL's assembly uses the CPU's AES and carry-less multiplication on x86-64 and ARMv8, BearSSL has them on x86 only; on WebAssembly BearSSL is constant time by design where OpenSSL is built `no-asm`, and OpenSSL is not built for Emscripten |
+  | AES block cipher | none | as version 0.1: a raw block cipher is chosen deliberately |
+  | ChaCha20-Poly1305 IETF and original, XChaCha20-Poly1305 | libsodium | the one backend with all three on all four targets, constant time by design, and the cipher under the boxes and secretstream |
+  | Ed25519, Ed25519ph, X25519, `kx`, boxes, secretbox, secretstream, AEGIS, MACs, stream ciphers, ristretto255, edwards25519, ML-KEM-768, X-Wing, the root's utilities | libsodium | the only backend of most; for Ed25519 the strict policy (D31) is libsodium's rules |
+  | secp256k1 and its modules | libsecp256k1 | the only backend |
+  | P-256, P-384, P-521, their key formats, RSA | BearSSL | the one backend on all four targets, constant time by design, allocating nothing |
+  | AES-CTR, CBC, CCM, EAX | BearSSL until increment 8, then AES-GCM's rule | the same reasons as AES-GCM, once OpenSSL has the cells |
+  | AES-OCB, KW, KWP, SIV, GCM-SIV, CMAC, Ed448, X448, brainpool, ML-KEM-512 and 1024, ML-DSA, SLH-DSA, HPKE | native, wasip2, wasip3: OpenSSL; Emscripten: Botan | OpenSSL is the source-built provider there; Botan is the backend that builds for Emscripten |
+  | BLS12-381, KZG, BN254, Shamir | blst, c-kzg-4844, mcl, sss | the only backend |
+
+- **Not linked.** A program that uses a family's default without linking it stops at compile
+  time with the backend's message: the Jamfile line that links it, and the type that names
+  another backend (`gcm<aes256<backends::bearssl>>`), each message from a test of its own.
+  Owner question Q2 asks whether AES-GCM keeps version 0.1's native rule (OpenSSL when linked,
+  else BearSSL) instead.
+- **The other backends are explicit.** Every backend stays, tested as before (its vectors, the
+  agreement tests, its refusals); a program reaches one that is not the default by naming it in
+  the type.
+- **No define changes a default.** No `WEBCPP_CRYPTO_PROFILE_*`, no `WEBCPP_PROFILE_*` (hash no
+  longer reads it either), no `WEBCPP_CRYPTO_DEFAULT_BACKEND_<FAMILY>_<NAME>`, no `profile`,
+  `profiles` or `profile_name`, no `detail/select.hpp` walking a ranking, no `none_linked`, and
+  no `detect_mismatch` on a profile, since a fixed default cannot differ between two
+  translation units. Version 0.1's `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `_OPENSSL` stop
+  compilation with an `#error` that names the type to write (owner question Q3: alternatively
+  no effect, as hash's former defines).
+- **Measurements are references.** The own lane `sizes` builds every (family, backend) program
+  through the superproject's `webcpp.size-table`, which requires `<variant>release`, and the
+  generated size matrix reads its table; throughput is measured by hand with a collect script
+  that refuses a program or data not built at `variant=release` (hash's `bench/collect.py` is
+  the model), on the machines the page names, and published as a dated page. Neither decides a
+  default, a ranking or an API.
+- **Heavy operations are stated** (D23's mechanism, owner question Q5): RSA key generation at
+  every size and RSA private operations at 3072 bits and above; SLH-DSA key generation,
+  signing and verification; ML-DSA key generation and signing; BLS12-381 verification,
+  aggregate verification, fast aggregate verification and aggregation; KZG's commitments and
+  proofs over a blob and their batch verification; BN254's `pairing_check`. Everything else is
+  cheap and synchronous only. The measured page shows their cost; a change to the list is a
+  change of this design.
+- **Why:** a default a reader can name from the call and the target, which no pin move, machine
+  load or link line changes; and the measurements of hash's increment 1 showed that a measured
+  rule chose between backends differing by nanoseconds natively and a few KB on WebAssembly.
+- **Alternatives:** the profiles of D5 (retired with hash's); version 0.1's link-dependent
+  native rule for every family (a default that changes with the link line); a measured heavy
+  column (an API that a pin move could add or remove).
+
+### D33. The capability table is version 0.1's, grown
+
+Version 0.1 built its tables from `doc/tables/crypto.json` and `doc/tables/generate.py`, in the
+library: a cell is supported on the targets of the tests that `crypto.json` names for it and
+refused where a message test stops it, and `generate.py --check` runs in the documentation's
+build. The foundation grows that file and that generator instead of starting a second source:
+
+- `crypto.json` gains, per family and backend, the targets, whether availability is decided at
+  run time, constant time per target, the default with its reason (D32), and the documentation
+  fields of D19; its `use_cases` serve as `meta/use_cases.json` was to;
+- `generate.py` gains the outputs of D4 (`include/webcpp/crypto/detail/capabilities.hpp` with
+  the refusals that name the backends that have an algorithm, `supports.hpp`'s table, the
+  default per family, and `test/capabilities_test.cpp`) and of D19 (the comparison tables, the
+  backends' matrices, the decision table and `llms.txt`), keeping version 0.1's rule that a
+  claimed cell is backed by a test that runs and its `--check`;
+- `meta/capabilities.json`, `meta/measurements.json`, `meta/use_cases.json`,
+  `tools/crypto/capabilities.py`, `tools/crypto/measure.py`, `tools/crypto/docs.py`,
+  `detail/rankings.hpp` and `detail/select.hpp` are not created. `meta/ed25519_cases.json`
+  (D31) is test data and stays.
+
+- **Why:** one fact written once; version 0.1's generator already ties the page to the tests.
+- **Alternatives:** the plan's superproject tools beside version 0.1's (two sources that drift).
+
+### D34. The genesis's increments 3 to 5, placed
+
+The owner's decision of 2026-11-17, without trystero's migration:
+
+- **Increment 3** keeps the memory option: the genesis's Tasks 15 and 16, Task 33 moved from
+  trystero's repository into crypto's own `test/openssl_memory/` (the option beside Boost.Asio's
+  SSL, libdatachannel and a TLS handshake in one process, which webcpp::beast and webcpp::webrtc
+  programs are; owner question Q6), and Task 34 as the stream's close. Tasks 31 and 32 are
+  dropped; trystero keeps its own sealer, entropy and signer until a change of trystero's own
+  adopts crypto. This is stream M of `reference/roadmap.md`, outside this change's increments.
+- **Increment 4** is built in this change's increment 1, as Task 8b: `ciphers::chacha20_poly1305`
+  on BearSSL and OpenSSL over `ciphers::aead<Family, Backend>`, with the genesis's Task 35 tests
+  (RFC 8439's vectors, Wycheproof's 325 cases, the cross-backend agreement against libsodium,
+  the allocation and error-queue cases, its message for ctaes, its constant-time cases) and its
+  part of the memory option's tests when stream M has merged. BearSSL's and OpenSSL's ChaCha
+  cells leave increments 3 and 8.
+- **Increment 5** is this change's increment 7 (D15): Botan as a submodule, natively and on
+  Emscripten; its first cells are the genesis's Tasks 38 and 39, its Task 37 is superseded.
+- **The genesis's deferred tasks:** 20 and 22 in increment 1 (Tasks 14 and 11', D32), 23 in
+  increment 4, 25b and NIST CAVP in the owner-gated stream N.
+
+### D35. One order, and the streams a controller runs
+
+`reference/roadmap.md` is the order. Wave 1, now: stream A (increment 1 with Task 8b, Tasks 14
+and 11' whole), stream B (increment 2, branched from A's branch once `secret<N>` is committed),
+stream M (the memory option). Inside A the tasks run in four groups (A1 in order: Tasks 1 to 4'
+and 5'; A2 in parallel: 6 with 6b, 7, 8 with 8b, 12, 11', 14 over version 0.1's backends; A3 in
+parallel: 7b, 9, 10, 13, 14 over the new code; A4: 15, then 16). Wave 2, after A merges:
+increments 3, 4, 5, 6, 7, 8, 10 and 11 as eight streams. Wave 3: 9 after 6, 12 after 8 (its
+WebAssembly cells after 7). Streams N (owner gates O2 and O3) and R (the proposals' records)
+are independent. A stream merges when green and reviewed; two ready at once follow the value
+order; after every merge the others rebase, merge `crypto.json` by rows and regenerate. Version
+0.2 is A and B, with M if merged by then.
+
 ## Risks / Trade-offs
 
 - [The capability table grows to hundreds of cells] -> it is generated into the code and the
   documentation and checked by a generated test; a cell cannot be claimed without a
   specialisation that compiles and a vector that passes.
-- [A profile changes a program's backends when a pin moves] -> rankings change only through a
-  committed regeneration in the pin move's change, with the 10 % hysteresis for throughput;
-  `portable` and named-backend profiles never move.
-- [A misspelt profile or override macro is silently ignored] -> the profile page lists every
-  macro, and `crypto::profile_name` shows the resolved profile (D5).
-- [Two translation units with different profiles] -> MSVC's `detect_mismatch` per profile and
-  override; elsewhere the documentation says to set the profile in the project's requirements.
+- [A fixed default is not the fastest backend on some machine] -> the reason is stated per
+  family and target (D32) and the measured pages from release builds show the cost; a program
+  that wants another backend names it in the type.
+- [A native program of version 0.1 that links only BearSSL and uses `aes256_gcm`] -> it stops
+  with the fix if the owner answers Q2 as recommended; the changelog says so.
+- [A version 0.1 default define in a program's Jamfile] -> an `#error` names the type to write
+  (D32, Q3).
+- [Wave 2 runs eight streams at once] -> each owns its backend's header, target and tests;
+  `crypto.json` is merged by rows and its outputs regenerated after every rebase (D35).
 - [Ed25519 verification differs between libsodium, OpenSSL, Botan and browsers on adversarial
   inputs] -> recorded per backend from Wycheproof's EdDSA file, documented; the agreement test
   states the expected differences.
@@ -940,16 +1121,23 @@ ZIP-215 (open question O1).
 
 ## Migration Plan
 
-Nothing to migrate until increment 2: version 0.1's API is unchanged by increment 1 apart from
-additions (`default_backend` remains the AES-GCM family's default). Increment 2 changes
-`curves::secp256k1::basic_keypair::ecdh` to return `secret<32>`: callers that copied the array read it
-through the span it converts to, and the changelog says so. Programs that defined
-`WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` or `_OPENSSL` keep their meaning.
+Version 0.1's API gains additions in increment 1 (`default_backend` remains the AES-GCM
+family's default), and two changes the changelog states (D32, owner questions Q2 and Q3): a
+native program that links only BearSSL and uses `aes256_gcm` names `backends::bearssl` in the
+type or links OpenSSL, and `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` or `_OPENSSL` is replaced by
+the backend named in the type. Increment 2 changes
+`curves::secp256k1::basic_keypair::ecdh` to return `secret<32>`: callers that copied the array
+read it through the span it converts to, and the changelog says so.
 
-To start: `reference/STATUS.md`, "How to resume". Rollback: the change is a proposal;
+To start: `reference/roadmap.md` for the order, then `reference/STATUS.md`, "How to resume". Rollback: the change is a proposal;
 withdrawing it deletes `openspec/changes/foundation/`.
 
 ## Open Questions
+
+- **The owner questions of 2026-11-17** (`reference/roadmap.md`, "Owner questions"): Q1 the
+  rule of D32; Q2 AES-GCM's native default and the link set; Q3 version 0.1's two defines; Q4
+  the default table; Q5 the stated heavy list; Q6 the genesis's Task 33 kept in crypto's tests;
+  Q7 the genesis's status.
 
 - **O1. A ZIP-215 verifier in C or C++** (research, not a task): `curves::ed25519::zip215` is
   declared only once a mature C or C++ implementation is identified and pinned. Its acceptance
@@ -957,7 +1145,7 @@ withdrawing it deletes `openspec/changes/foundation/`.
   `ed25519-zebra` reference on ZIP-215's vectors and on "Taming the many EdDSAs"' twelve
   cases. Until then a program that must accept ZIP-215 signatures has no API here.
 
-Otherwise none. The owner decided the scope, the backends, the profiles, the browser's family, the
+Otherwise none. The owner decided the scope, the backends, the browser's family, the
 documentation and the order on 2026-11-14; the upstream facts this change waits on (Botan's WASI build,
 libsodium's next release for hash-to-curve, c-kzg's tests on webcpp's blst, sss on MSVC) have
 decided rules for either outcome (D15, D17, D25, D27).

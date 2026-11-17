@@ -1,14 +1,24 @@
 # Status of the foundation change
 
-**Date:** 2026-11-14 (accepted by the owner the same day).
+**Date:** 2026-11-17 (accepted by the owner on 2026-11-14; revised on 2026-11-17).
 
 ## Where things stand
 
 - Nothing of this change is built. Every task of `../tasks.md` is open.
-- Its base is not ready yet: crypto's version 0.1 (the genesis's groups 1 and 2) is being
-  built in the superproject's work tree and has not merged, and webcpp::hash's genesis
-  (`libraries/hash/openspec/changes/genesis/`), which builds `/third_party//sodium`, is
-  proposed beside this change and not built.
+- **Its base is ready.** crypto's version 0.1 (the genesis's groups 1 and 2) is merged:
+  `webcpporg/crypto` `main` at `d242be8`, recorded by the superproject's `main` (`3fa7ca5` on
+  2026-11-17). webcpp::hash's genesis is merged with `/third_party//sodium` (libsodium 1.0.22 at
+  `77e1ce5`) and `backends::hash2` as every key derivation's default (hash's D33). The
+  superproject's `webcpp.size-table` requires release builds (`69bf8ab`).
+- **The revision of 2026-11-17** (`../design.md` D32 to D35, `plan.md`'s section of that day,
+  `roadmap.md`): the genesis's increments 3 to 5 are placed here without trystero's migration
+  (ChaCha20-Poly1305 on BearSSL and OpenSSL in increment 1, Botan's genesis cells in increment
+  7, the memory option as stream M of the genesis); defaults are one per family and target by
+  a stated reason, with no profile and no measured default; the capability table is version
+  0.1's `doc/tables/crypto.json` grown; sizes and throughput come from release builds only and
+  decide nothing. The owner's questions Q1 to Q7 are in `roadmap.md`. Wave 1 can start now:
+  only Task 5' needs the answers to Q1 to Q4, and if they have not come when Task 4' is done,
+  group A2 starts and Task 5' follows, A2's tests naming their backend in the type until then.
 - Pins checked with `gh api` on 2026-11-14: libsodium 1.0.22 is the latest stable release
   (`77e1ce5d6dee871c49ef211222ba18ef0c486bda`, 2026-04-09), the pin webcpp::hash uses; blst's
   latest release is v0.3.17 (`54e6e55674722fc2797ebb4bbb71b26d881eb4b8`, 2026-07-24); Botan's
@@ -34,15 +44,16 @@ Nothing: no work was done.
 
 ## How to resume
 
-1. Check the base: `crypto` version 0.1 merged on the superproject's `main` (the genesis's
-   Tasks 25 and 30 done), and webcpp::hash's Tasks 1 to 3 and 8 merged
-   (`/webcpp/hash//hash`, `/third_party//sodium`). If either is missing, increment 2 may
-   still start (it needs only version 0.1); increment 1 waits.
-2. Follow `plan.md` from Task 1 of increment 1, with superpowers:subagent-driven-development.
-   Start increment 2 on its own branch beside it once version 0.1 has merged; write its tasks
-   in full first, from the outline at the end of `plan.md`.
-3. After increment 1 merges, write each of increments 3 to 8 in full task form and run them
-   as parallel streams (design D21), regenerating the generated files after every rebase.
+1. Read `roadmap.md`: the overlaps resolved, the defaults, the waves and their streams.
+2. Wave 1: stream A follows `plan.md` from Task 1 through its revision of 2026-11-17, in the
+   task groups A1 to A4, with superpowers:subagent-driven-development; stream B writes
+   increment 2's tasks in full first (a proposals pull request), then branches from A's branch
+   once A's Task 3 (`secret<N>`) is committed and runs beside it; stream M follows the genesis's plan, Tasks 15,
+   16, 33 (in crypto's own tests) and 34, as `../../genesis/reference/plan.md`'s revision of
+   2026-11-17 says.
+3. Wave 2, after stream A merges: each of increments 3 to 8, 10 and 11 writes its tasks in full
+   first, then runs as its own stream (design D35), rebasing and regenerating with
+   `generate.py` after every merge. Wave 3: 9 after 6, 12 after 8.
 4. Record progress in the untracked ledger
    `.superpowers/sdd/WEBCPP_CRYPTO_FOUNDATION/progress.md` of the worktree, and check a box of
    `../tasks.md` only for work done and committed.
