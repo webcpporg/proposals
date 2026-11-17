@@ -5548,7 +5548,9 @@ option's own change; before it runs, re-read it against the source-built provide
 `/webcpp/third_party//openssl` and named through `/webcpp/crypto//openssl` (Task 11), version
 3.5.9, on native, wasip2 and wasip3; the feature `webcpp-crypto-openssl-link`, `OPENSSL_ROOT`
 and the shared link it names are gone; the error values 13 and 14 are reserved and undeclared;
-and the measured counts are 3.6.4's.
+and the measured counts are 3.6.4's. The option itself is native only and is refused on every
+WebAssembly target, WASI included (wasip2, wasip3 and Emscripten), by the owner's decision of
+2026-11-17; only `/webcpp/crypto//openssl` is refused on Emscripten alone.
 
 **Files:**
 - Modify: `include/webcpp/crypto/backends/openssl.hpp`.
@@ -5962,7 +5964,9 @@ option's own change; before it runs, re-read it against the source-built provide
 `/webcpp/third_party//openssl` and named through `/webcpp/crypto//openssl` (Task 11), version
 3.5.9, on native, wasip2 and wasip3; the feature `webcpp-crypto-openssl-link`, `OPENSSL_ROOT`
 and the shared link it names are gone; the error values 13 and 14 are reserved and undeclared;
-and the measured counts are 3.6.4's.
+and the measured counts are 3.6.4's. The option itself is native only and is refused on every
+WebAssembly target, WASI included (wasip2, wasip3 and Emscripten), by the owner's decision of
+2026-11-17; only `/webcpp/crypto//openssl` is refused on Emscripten alone.
 
 **Files:**
 - Create, in `test/openssl_memory/`: `support.hpp` (the counting resource that is never
@@ -10973,7 +10977,8 @@ inline bool verify(std::span<const std::uint8_t, 64> sig, std::span<const std::u
 
 ## Task 33: The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake
 
-Stream M, **moved into `libs/crypto/test/openssl_memory/`** by the revision of 2026-11-17, which gives its files.
+Stream M, **moved into `libs/crypto/test/openssl_memory/`** by the revision of 2026-11-17, which gives its files. The option is native only, refused on every WebAssembly target, WASI
+included (the owner's decision of 2026-11-17), so this task's tests build natively alone.
 
 **Files (in `libs/trystero`):**
 - Create: `test/openssl_memory/Jamfile`, `test/openssl_memory/neighbours_test.cpp`,

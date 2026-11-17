@@ -47,8 +47,8 @@ foundation change's `reference/roadmap.md`.** `reference/STATUS.md` says how to 
 Tasks 3.1 and 3.2 are stream M with group 4. Tasks 3.3 to 3.5 are built by the foundation
 change (its tasks 1.14a and 1.14, 1.11, and 4.4); they are checked here when those are.
 
-- [ ] 3.1 OpenSSL's memory functions, an option of the config: the adapter and the install (plan: Task 15; stream M)
-- [ ] 3.2 The memory option, process by process (plan: Task 16; stream M)
+- [ ] 3.1 OpenSSL's memory functions, an option of the config: the adapter and the install (plan: Task 15; stream M; native only, refused on every WebAssembly target, WASI included)
+- [ ] 3.2 The memory option, process by process (plan: Task 16; stream M; native only, refused on every WebAssembly target, WASI included)
 - [ ] 3.3 Constant time: Valgrind, MemorySanitizer and dudect, over version 0.1's backends (plan: Task 20; built as the foundation's tasks 1.14a and 1.14)
 - [ ] 3.4 Sizes from release builds through `webcpp.size-table`, throughput measured by hand from release builds, deciding nothing; no `runners.yml` (plan: Task 22, re-cut; built as the foundation's task 1.11)
 - [ ] 3.5 The browser: WebCrypto as an outside oracle, the audio worklet, throughput in Chrome from release builds (plan: Task 23; built as the foundation's task 4.4)
@@ -61,7 +61,7 @@ Tasks 31 and 32 (trystero's sealer, `random` and signer) are dropped by the owne
 2026-11-17 (`design.md` D23); they stay in the plan as the reference of a future change of
 trystero's own.
 
-- [ ] 4.3 The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake, in crypto's own `test/openssl_memory/` (plan: Task 33, moved by the revision of 2026-11-17; the owner's answer Q6)
+- [ ] 4.3 The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake, in crypto's own `test/openssl_memory/` (plan: Task 33, moved by the revision of 2026-11-17; the owner's answer Q6; native only, refused on every WebAssembly target, WASI included)
 - [ ] 4.4 Increment 3 whole: green, review, the pull requests (plan: Task 34)
 
 ## 5. After version 0.1: increment 4, ChaCha20-Poly1305 (built by the foundation, version 0.2)

@@ -59,7 +59,7 @@ No macro SHALL change a default: the library MUST NOT read `WEBCPP_CRYPTO_PROFIL
 - **THEN** its backend is libsodium, as without the define
 
 ### Requirement: Measurements: references from release builds that decide nothing
-The own lane `sizes` SHALL build the baseline program and one program per (family, backend) through the superproject's `webcpp.size-table`, which requires `<variant>release`, on native, wasip2, wasip3 and Emscripten, and the documentation's size matrix MUST be generated from its table. Throughput MUST be measured only from programs built at `variant=release`, by a collect script that refuses any other program or data, and published as a dated page that names the machines. No size or throughput MAY decide a default, an order of backends or an API.
+The own lane `sizes` SHALL build the baseline program and one program per (family, backend) through the superproject's `webcpp.size-table`, which requires `<variant>release` and, by the owner's decision of 2026-11-17 (C36), reaches plain linked programs on every target and not only Emscripten page programs (foundation Task 11'), on native, wasip2, wasip3 and Emscripten, and the documentation's size matrix MUST be generated from its table. Throughput MUST be measured only from programs built at `variant=release`, by a collect script that refuses any other program or data, and published as a dated page that names the machines. No size or throughput MAY decide a default, an order of backends or an API.
 
 #### Scenario: A debug build is offered to the throughput page
 - **WHEN** the collect script is given a program built at `variant=debug`

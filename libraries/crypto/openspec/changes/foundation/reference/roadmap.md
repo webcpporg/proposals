@@ -39,7 +39,7 @@ decision is cited, `D<n>` is the foundation's `design.md` and `genesis D<n>` the
   at `77e1ce5` and `/third_party//sodium` (webcpp::hash), and webcpp::hash with
   `backends::hash2` as every key derivation's default.
 - **The release-build rule exists in the superproject** (`69bf8ab`): `webcpp.size-table`
-  requires `<variant>release`, and hash's `bench/collect.py` refuses a program or data not built
+  requires `<variant>release` (and, by C36 of 2026-11-17, serves plain linked programs on every target through foundation Task 11', not only Emscripten page programs), and hash's `bench/collect.py` refuses a program or data not built
   at `variant=release`. crypto's size and throughput tables use the same tools.
 
 ## Every overlap, resolved
@@ -210,6 +210,13 @@ is the recommendation, and `../design.md` D32 to D34 and the genesis's design re
   `implemented` once version 0.1 and stream M are merged with the CI green on both `main`s; the
   nightly level and NIST's archives (O2, O3) go with it if decided by then, or move to a change
   of their own.
+- **Q8. The memory option is native only (2026-11-17).** OpenSSL's memory option (genesis Tasks
+  15, 16, 33 and 34) is refused on every WebAssembly target, WASI included (wasip2, wasip3 and
+  Emscripten). `/webcpp/crypto//openssl` is a separate matter: OpenSSL builds on WASI, so the
+  alias is refused on Emscripten alone.
+- **Q9. Size tooling reaches every target (2026-11-17, C36).** The superproject's release-only
+  `webcpp.size-table` extends from Emscripten page programs to plain linked programs on every
+  target; crypto's own lane `sizes` (foundation Task 11') builds on that.
 - Still open from before: O1 (a ZIP-215 verifier), O2 (the nightly level), O3 (NIST's
   archives), and the genesis's O5 departure C17 (C16, a throughput workflow, falls away with
   D32).

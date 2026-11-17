@@ -54,7 +54,8 @@ Constraints every decision below works within, from the superproject's rulebook 
 - An incremental `open` (a later increment may add it only with the plaintext withheld until the
   tag verifies), an incremental ChaCha20-Poly1305, tags shorter than 16 bytes.
 - A Botan build for WebAssembly, which is a later increment's if a user needs it.
-- OpenSSL on WebAssembly, or the memory option anywhere but native.
+- OpenSSL on Emscripten, or the memory option anywhere but native (never on a WebAssembly target,
+  WASI included).
 - The CI's three levels as a whole: this plan builds only the nightly level of the own lanes.
 - Routing Botan's allocations through the user's allocator: Botan 3.13.0 offers no hook.
 
@@ -220,6 +221,9 @@ adapter functions that store each block's size in a header. The resource is neve
 because OpenSSL frees through it after `main`, and on Windows with a shared libcrypto after every
 static destructor. Every `make` of the backend checks that the functions are webcpp's and
 otherwise returns `memory_functions_not_installed`; a missing definition is a link error.
+The option is native only and `config.hpp` refuses it on every WebAssembly target, WASI included
+(wasip2, wasip3 and Emscripten), by the owner's decision of 2026-11-17; OpenSSL itself still builds
+on WASI, and `/webcpp/crypto//openssl` is refused on Emscripten alone.
 
 - **Why a function the program defines:** OpenSSL's hook carries no user data, so any other form
   would keep the resource in a global variable of webcpp's, which the rulebook forbids; Boost
