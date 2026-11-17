@@ -17,7 +17,8 @@ decision is cited, `D<n>` is the foundation's `design.md` and `genesis D<n>` the
    the noble and scure libraries the foundation's research already cites.
 4. webcpp::hash's decision of 2026-11-16 (hash's design D33: one default per algorithm, no
    measured default, no profile) is re-applied to crypto: this roadmap proposes the same rule
-   (D32) and lists what the owner must confirm (below, "Owner questions").
+   (D32); the owner answered the questions it raised the same day (below, "The owner's
+   answers").
 
 ## Where the code stands (2026-11-17)
 
@@ -47,7 +48,7 @@ decision is cited, `D<n>` is the foundation's `design.md` and `genesis D<n>` the
 | --- | --- | --- |
 | Genesis Task 31 (trystero's sealer and `random`) | dropped | the owner's decision; trystero keeps its own sealer until a change of trystero's own adopts crypto |
 | Genesis Task 32 (trystero's signer) | dropped | the same; its build half (Task 30a) is in version 0.1 |
-| Genesis Task 33 (the memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake) | stream M, task M3, **moved into crypto's own `test/openssl_memory/`** | it proves the option in any webcpp process that also holds Beast's TLS or libdatachannel's DTLS (webcpp::beast, webcpp::webrtc), not only trystero's; owner question Q6 |
+| Genesis Task 33 (the memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake) | stream M, task M3, **moved into crypto's own `test/openssl_memory/`** | it proves the option in any webcpp process that also holds Beast's TLS or libdatachannel's DTLS (webcpp::beast, webcpp::webrtc), not only trystero's; the owner's answer Q6 |
 | Genesis Task 34 (increment 3 whole) | stream M, task M4 | what is left of increment 3 is the memory option |
 | Genesis Tasks 15 and 16 (the memory option) | stream M, tasks M1 and M2 | Task 33 needs them, and D16 routes OpenSSL's per-call allocations through them |
 | Genesis Task 35 (ChaCha20-Poly1305 on BearSSL and OpenSSL) | stream A, foundation **Task 8b**, re-cut onto `ciphers::aead<Family, Backend>` | the foundation's Task 8 replaces the genesis's `chacha_state` and `chacha_engine` by `aead_state` and `aead_engine`; building Task 35 first would write traits Task 8 deletes. Version 0.2 then has ChaCha20-Poly1305 on libsodium, BearSSL and OpenSSL, agreeing |
@@ -65,7 +66,7 @@ decision is cited, `D<n>` is the foundation's `design.md` and `genesis D<n>` the
 | Foundation Task 5 (profiles, overrides, rankings) | **replaced** by Task 5' (one default per family and target, by a stated reason) | D32 |
 | Foundation Task 11 (`measure.py`, `measurements.json`, `rankings.hpp`) | replaced as above | D32 |
 | Foundation Task 15 (`tools/crypto/docs.py`) | `doc/tables/generate.py` grows | D33 |
-| The heavy column measured above 1 ms (D23) | a stated list (D32) | D32; owner question Q5 |
+| The heavy column measured above 1 ms (D23) | a stated list (D32) | D32; the owner's answer Q5 |
 | The webcpp-wide umbrella `WEBCPP_PROFILE_*` | removed | hash no longer reads it (hash's D33); nothing would |
 
 ## The defaults (D32), one per family and target
@@ -77,7 +78,7 @@ is reached by naming it in the type.
 
 | Family | Default | Reason |
 | --- | --- | --- |
-| AES-GCM (`gcm`, `aes128_gcm`, `aes256_gcm`) | native: OpenSSL; wasip2, wasip3, Emscripten: BearSSL | v0.1's reasons: OpenSSL's assembly uses the CPU's AES and carry-less multiplication on x86-64 and ARMv8, where BearSSL has them on x86 only; on WebAssembly BearSSL is constant time by design where OpenSSL is built `no-asm`, and OpenSSL is not built for Emscripten. Owner question Q2 on the native link set |
+| AES-GCM (`gcm`, `aes128_gcm`, `aes256_gcm`) | native: OpenSSL; wasip2, wasip3, Emscripten: BearSSL | v0.1's reasons: OpenSSL's assembly uses the CPU's AES and carry-less multiplication on x86-64 and ARMv8, where BearSSL has them on x86 only; on WebAssembly BearSSL is constant time by design where OpenSSL is built `no-asm`, and OpenSSL is not built for Emscripten. Natively OpenSSL whatever is linked (the owner's answer Q2) |
 | AES block cipher | none (as v0.1) | a raw block cipher is chosen deliberately |
 | ChaCha20-Poly1305 (IETF), its original form, XChaCha20-Poly1305 | libsodium on every target | the one backend that has all three on all four targets, constant time by design, and the cipher under `hybrid::box`, `secretbox` and `secretstream` |
 | Ed25519, Ed25519ph, X25519, `kx`, boxes, sealed boxes, secretbox, secretstream, AEGIS, MACs, stream ciphers, ristretto255, edwards25519, ML-KEM-768, X-Wing, the root's utilities | libsodium on every target | the only backend of most of them; for Ed25519 and X25519, the strict verification policy (D31) is libsodium's rules and it builds on all four targets |
@@ -91,7 +92,7 @@ is reached by naming it in the type.
 | Shamir | sss | the only backend |
 | The asynchronous family | on Emscripten, the browser for what WebCrypto serves; elsewhere the family's default, posted | D13, as hash's `default_async_backend` |
 
-Owner question Q4 asks the owner to approve this table.
+The owner approved this table as proposed (Q4).
 
 ## The order, as streams a controller can run in parallel
 
@@ -113,9 +114,8 @@ before it is committed, and the tasks of a group run in parallel (each a subagen
 committing only its own files, the controller merging the shared ones):
 
 1. A1, in order: Task 1 (baseline), Task 2 (`backends::sodium`), Task 3 (`secret<N>`, errors),
-   Task 4' (the capability table on `crypto.json`), Task 5' (the defaults). Task 5' alone needs
-   the owner's answers to Q1 to Q4; if they have not come when Task 4' is done, A2 starts and
-   Task 5' follows, A2's tests naming their backend in the type until it lands.
+   Task 4' (the capability table on `crypto.json`), Task 5' (the defaults, by the owner's
+   answers Q1 to Q4).
 2. A2, in parallel: Task 6 with 6b (Ed25519); Task 7 (X25519); Task 8 then 8b (the AEAD
    template, libsodium's ChaCha AEADs, then BearSSL's and OpenSSL's ChaCha20-Poly1305);
    Task 12 (threads); Task 11' (the sizes lane and the throughput page, starting with v0.1's
@@ -182,33 +182,34 @@ minor version, the owner naming each release.
   `crypto.json` and the lanes' data, with the default per target (never per profile).
 - Commits under the contributor's own identity, no trailer, English, no em dash, staged by path.
 
-## Owner questions
+## The owner's answers (2026-11-17)
 
-- **Q1. The rule.** crypto adopts hash's D33 rule (D32): no profile, no umbrella, no per-family
-  override, no measured default; one default per family and target, chosen by a stated reason;
-  every other backend named in the type. Recommended.
-- **Q2. The native AES-GCM default and the link set.** v0.1 picks OpenSSL natively when it is
-  linked and BearSSL otherwise. Recommended: OpenSSL natively whatever is linked, so that a
-  reader of `aes256_gcm` knows its backend from the target alone; a native program that links
-  only BearSSL then stops with the fix (link `/webcpp/crypto//openssl`, or write
-  `gcm<aes256<backends::bearssl>>`). Alternative: keep v0.1's rule for AES-GCM alone.
-- **Q3. v0.1's two defines.** Recommended: `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and
-  `_OPENSSL` stop compilation with an `#error` naming the type to write, since they are on
-  v0.1's page and a silently ignored define would change which code a program runs.
-  Alternative: no effect, as hash's former defines.
-- **Q4. The default table above.** In particular libsodium for the ChaCha AEADs on every target
-  (alternative: OpenSSL natively, for its assembly), and BearSSL for the P-curves and RSA on
-  every target (alternative: OpenSSL natively once increment 8 lands).
-- **Q5. Heavy operations.** Recommended: the stated list of D32 decides which operations get an
-  `async_` variant on a thread, instead of a column generated from measurements, so that a pin
-  move never adds or removes an API. Alternative: D23's measured 1 ms rule, from release builds.
-- **Q6. Genesis Task 33.** Recommended: kept, moved into crypto's own tests, since Beast's TLS
-  and webcpp::webrtc's DTLS share a process with crypto as trystero's did. Alternative: dropped
-  as trystero's.
-- **Q7. The genesis's status.** Version 0.1 is merged; recommended: the genesis's status becomes
-  `implementing` now (this pull request sets it), and `implemented` once version 0.1 and stream
-  M are merged with the CI green on both `main`s; the nightly level and NIST's archives (O2, O3)
-  go with it if decided by then, or move to a change of their own.
+The owner answered every question this roadmap raised on the day it was written; each answer
+is the recommendation, and `../design.md` D32 to D34 and the genesis's design record them.
+
+- **Q1. The rule: adopted.** crypto takes webcpp::hash's D33 rule (D32): no profile, no
+  umbrella, no shared define, no per-family override and no measured default; one default per
+  family and target, chosen for a stated reason; every other backend named in the type.
+- **Q2. AES-GCM's native default: OpenSSL whatever is linked.** A reader of `aes256_gcm` knows
+  its backend from the target alone. A native program that links only BearSSL stops at compile
+  time with the fix: link `/webcpp/crypto//openssl`, or write
+  `gcm<aes256<backends::bearssl>>`.
+- **Q3. Version 0.1's two defines stop the build.** `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and
+  `_OPENSSL` stop compilation with an `#error` that names the type to write, since a silently
+  ignored define would change which code a program runs.
+- **Q4. The default table: approved as proposed.** libsodium for the ChaCha AEADs on every
+  target; BearSSL for the P-curves and RSA on every target; the AES modes on BearSSL until
+  increment 8, then AES-GCM's rule; OpenSSL on native and WASI, and Botan on Emscripten, for the
+  families only those two have.
+- **Q5. Heavy operations: a written list.** The stated list of D32 decides which operations get
+  an `async_` variant on a thread; the measured "over 1 ms" column is not built, so that a pin
+  move never adds or removes an API.
+- **Q6. Genesis Task 33: kept,** in crypto's own tests (`test/openssl_memory/`), since Beast's
+  TLS and webcpp::webrtc's DTLS share a process with crypto as trystero's did.
+- **Q7. The genesis's status:** `implementing` now (this pull request sets it), and
+  `implemented` once version 0.1 and stream M are merged with the CI green on both `main`s; the
+  nightly level and NIST's archives (O2, O3) go with it if decided by then, or move to a change
+  of their own.
 - Still open from before: O1 (a ZIP-215 verifier), O2 (the nightly level), O3 (NIST's
-  archives), and the genesis's O5 departures C16 and C17, of which C16 (a throughput workflow)
-  falls away with D32.
+  archives), and the genesis's O5 departure C17 (C16, a throughput workflow, falls away with
+  D32).

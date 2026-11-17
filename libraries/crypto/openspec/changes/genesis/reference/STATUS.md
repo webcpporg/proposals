@@ -126,7 +126,9 @@ Only a build from scratch (`-a`) counts as evidence. MSVC and Apple clang run in
 
 - After version 0.1: O2 (nightly level), O3 (NIST's archives), O5 (C17; C16 falls away with the
   foundation's D32).
-- The roadmap's owner questions of 2026-11-17 that touch this change: Q2 and Q3 (D9's default
-  and version 0.1's two defines), Q6 (Task 33 kept in crypto's tests), Q7 (this change's status).
+- None from the roadmap: the owner answered its questions on 2026-11-17 (Q2 OpenSSL natively
+  for AES-GCM whatever is linked, Q3 version 0.1's two defines stop the build, Q6 Task 33 kept
+  in crypto's tests, Q7 this change implemented once version 0.1 and stream M are merged with
+  the CI green on both `main`s).
 - Whether `webcpp::webrtc` and `webcpp::beast` adopt the library, and whether a change of
   trystero's own adopts it.

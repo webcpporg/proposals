@@ -355,9 +355,9 @@ foundation's design D32 to D35 hold the decisions shared with it.
   behind gates O2 and O3, in a stream of their own.
 - **The default backend (D9)** is re-examined by the foundation's D32, after webcpp::hash's
   decision of 2026-11-16: one default per family and target by a stated reason, no measured
-  default, no profile; AES-GCM keeps D9's choice per target, and the owner decides whether
-  natively it still depends on what is linked and whether version 0.1's two defines are
-  refused (the roadmap's questions Q2 and Q3).
+  default, no profile; AES-GCM keeps D9's choice per target, natively OpenSSL whatever is
+  linked, and version 0.1's two defines stop the build with an `#error` naming the type to
+  write (the owner's answers Q2 and Q3 of the roadmap).
 - **Alternatives:** Task 35 before the foundation's increment 1 (it would write the traits the
   foundation's Task 8 deletes); Task 33 dropped with trystero (it proves the option in every
   process that holds Beast's TLS or libdatachannel, not only trystero's); Botan found on the
@@ -418,9 +418,10 @@ change is a proposal; withdrawing it deletes `openspec/changes/genesis/`.
 - After version 0.1: owner gate O2 (the heavy own lanes at the CI's nightly level, Task 25b),
   O3 (NIST CAVP's archives pinned by URL and SHA-256, or a mirror), O5 (the departure C17; C16
   falls away with the foundation's D32, and `brew install botan` with its D15).
-- The roadmap's owner questions of 2026-11-17 (the foundation's `reference/roadmap.md`): Q2
-  and Q3 on D9's default and version 0.1's two defines, Q6 on Task 33 kept in crypto's tests,
-  Q7 on this change's status.
+- The roadmap's owner questions of 2026-11-17 are answered (the foundation's
+  `reference/roadmap.md`): Q2 and Q3 as above, Q6 Task 33 kept in crypto's tests, Q7 this
+  change `implementing`, then `implemented` once version 0.1 and stream M are merged with the
+  CI green on both `main`s.
 - Whether `webcpp::webrtc` and `webcpp::beast` use this library, and how.
 - A later increment: an incremental `open` with the plaintext withheld until the tag verifies,
   an incremental ChaCha20-Poly1305, and a Botan WebAssembly build.

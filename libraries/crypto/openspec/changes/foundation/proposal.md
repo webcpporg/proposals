@@ -24,7 +24,8 @@ genesis's increments 3 to 5 are built without trystero's migration, ChaCha20-Pol
 included, beside this change in one order (`reference/roadmap.md`), that measured tables come
 only from release builds, and that crypto's defaults follow hash's simple rule: one default per
 algorithm chosen by a stated reason, every other backend named in the type, no profile
-(`design.md` D32 to D35; the owner confirms the details, roadmap questions Q1 to Q7).
+(`design.md` D32 to D35; the owner confirmed the details the same day, the roadmap's answers
+Q1 to Q7).
 
 ## What Changes
 

@@ -61,7 +61,7 @@ Tasks 31 and 32 (trystero's sealer, `random` and signer) are dropped by the owne
 2026-11-17 (`design.md` D23); they stay in the plan as the reference of a future change of
 trystero's own.
 
-- [ ] 4.3 The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake, in crypto's own `test/openssl_memory/` (plan: Task 33, moved by the revision of 2026-11-17; owner question Q6)
+- [ ] 4.3 The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake, in crypto's own `test/openssl_memory/` (plan: Task 33, moved by the revision of 2026-11-17; the owner's answer Q6)
 - [ ] 4.4 Increment 3 whole: green, review, the pull requests (plan: Task 34)
 
 ## 5. After version 0.1: increment 4, ChaCha20-Poly1305 (built by the foundation, version 0.2)

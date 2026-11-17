@@ -16,9 +16,8 @@
   7, the memory option as stream M of the genesis); defaults are one per family and target by
   a stated reason, with no profile and no measured default; the capability table is version
   0.1's `doc/tables/crypto.json` grown; sizes and throughput come from release builds only and
-  decide nothing. The owner's questions Q1 to Q7 are in `roadmap.md`. Wave 1 can start now:
-  only Task 5' needs the answers to Q1 to Q4, and if they have not come when Task 4' is done,
-  group A2 starts and Task 5' follows, A2's tests naming their backend in the type until then.
+  decide nothing. The owner answered Q1 to Q7 the same day, each as recommended (`roadmap.md`,
+  "The owner's answers"); wave 1 (streams A, B and M) starts.
 - Pins checked with `gh api` on 2026-11-14: libsodium 1.0.22 is the latest stable release
   (`77e1ce5d6dee871c49ef211222ba18ef0c486bda`, 2026-04-09), the pin webcpp::hash uses; blst's
   latest release is v0.3.17 (`54e6e55674722fc2797ebb4bbb71b26d881eb4b8`, 2026-07-24); Botan's

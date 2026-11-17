@@ -41,7 +41,7 @@ genesis's increments 3 to 5 are built without trystero's migration and beside th
 twelve increments in one order, that measured tables come only from release builds, and that
 crypto's defaults follow webcpp::hash's rule of 2026-11-16 (hash's design D33). `../design.md`
 D32 to D35 record the decisions and `roadmap.md` (this directory) the order, the waves, the
-streams and the owner's questions Q1 to Q7. The tasks below keep their text; where this section
+streams and the owner's answers Q1 to Q7. The tasks below keep their text; where this section
 re-cuts one, its heading carries a note, and a task named with a prime (Task 4', 5', 11') is
 the re-cut one.
 
@@ -83,12 +83,10 @@ notice; `--check` covers them, and the documentation's build runs it as today. N
   "needs" text: the Jamfile line that links it and the type that names another backend, as
   hash's `detail/engines.hpp` does for `argon2id`.
 - Version 0.1 changes: `config.hpp` no longer reads the `HAS` defines to choose AES-GCM's
-  default; natively it is OpenSSL whatever is linked (owner question Q2; if the owner keeps
-  version 0.1's rule for AES-GCM, `default_backend_of<families::gcm>` keeps version 0.1's
-  `#if` instead, and the rest stands). `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `_OPENSSL`
+  default; natively it is OpenSSL whatever is linked (the owner's answer Q2). `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `_OPENSSL`
   stop compilation with `webcpp::crypto: WEBCPP_CRYPTO_DEFAULT_BACKEND_<NAME> no longer chooses
   a default. Write the backend in the type where the program wants it, as in
-  ciphers::gcm<ciphers::aes256<backends::<name>>>.` (owner question Q3). Version 0.1's
+  ciphers::gcm<ciphers::aes256<backends::<name>>>.` (the owner's answer Q3). Version 0.1's
   `default_openssl_wasm` and `default_selected` become message tests of that text;
   `default_bearssl` natively becomes the message test `gcm_default_openssl_not_linked`;
   `default_both`, `default_both_wasm` and `default_selection` assert the fixed defaults.

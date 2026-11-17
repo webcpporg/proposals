@@ -961,8 +961,8 @@ by target. It never differs by what the program links.
 
 - **The default.** Each family has one default backend per target, written in its row of
   `doc/tables/crypto.json` with the reason, and declared as `default_backend_t<Family>` (the
-  genesis's `default_backend` stays the AES-GCM family's). The table, owner question Q4 of
-  `reference/roadmap.md`:
+  genesis's `default_backend` stays the AES-GCM family's). The table, approved by the owner on 2026-11-17
+  (Q4 of `reference/roadmap.md`):
 
   | Family | Default | Reason |
   | --- | --- | --- |
@@ -979,8 +979,9 @@ by target. It never differs by what the program links.
 - **Not linked.** A program that uses a family's default without linking it stops at compile
   time with the backend's message: the Jamfile line that links it, and the type that names
   another backend (`gcm<aes256<backends::bearssl>>`), each message from a test of its own.
-  Owner question Q2 asks whether AES-GCM keeps version 0.1's native rule (OpenSSL when linked,
-  else BearSSL) instead.
+  AES-GCM's native default is OpenSSL whatever is linked, so a native program that links only
+  BearSSL and uses `aes256_gcm` stops with that fix (the owner's answer Q2, which retires
+  version 0.1's "OpenSSL when linked, else BearSSL").
 - **The other backends are explicit.** Every backend stays, tested as before (its vectors, the
   agreement tests, its refusals); a program reaches one that is not the default by naming it in
   the type.
@@ -989,15 +990,15 @@ by target. It never differs by what the program links.
   `profiles` or `profile_name`, no `detail/select.hpp` walking a ranking, no `none_linked`, and
   no `detect_mismatch` on a profile, since a fixed default cannot differ between two
   translation units. Version 0.1's `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` and `_OPENSSL` stop
-  compilation with an `#error` that names the type to write (owner question Q3: alternatively
-  no effect, as hash's former defines).
+  compilation with an `#error` that names the type to write (the owner's answer Q3), since a
+  silently ignored define would change which code a program runs.
 - **Measurements are references.** The own lane `sizes` builds every (family, backend) program
   through the superproject's `webcpp.size-table`, which requires `<variant>release`, and the
   generated size matrix reads its table; throughput is measured by hand with a collect script
   that refuses a program or data not built at `variant=release` (hash's `bench/collect.py` is
   the model), on the machines the page names, and published as a dated page. Neither decides a
   default, a ranking or an API.
-- **Heavy operations are stated** (D23's mechanism, owner question Q5): RSA key generation at
+- **Heavy operations are stated** (D23's mechanism, the owner's answer Q5): RSA key generation at
   every size and RSA private operations at 3072 bits and above; SLH-DSA key generation,
   signing and verification; ML-DSA key generation and signing; BLS12-381 verification,
   aggregate verification, fast aggregate verification and aggregation; KZG's commitments and
@@ -1041,7 +1042,7 @@ The owner's decision of 2026-11-17, without trystero's migration:
 - **Increment 3** keeps the memory option: the genesis's Tasks 15 and 16, Task 33 moved from
   trystero's repository into crypto's own `test/openssl_memory/` (the option beside Boost.Asio's
   SSL, libdatachannel and a TLS handshake in one process, which webcpp::beast and webcpp::webrtc
-  programs are; owner question Q6), and Task 34 as the stream's close. Tasks 31 and 32 are
+  programs are; the owner's answer Q6), and Task 34 as the stream's close. Tasks 31 and 32 are
   dropped; trystero keeps its own sealer, entropy and signer until a change of trystero's own
   adopts crypto. This is stream M of `reference/roadmap.md`, outside this change's increments.
 - **Increment 4** is built in this change's increment 1, as Task 8b: `ciphers::chacha20_poly1305`
@@ -1077,7 +1078,7 @@ order; after every merge the others rebase, merge `crypto.json` by rows and rege
   family and target (D32) and the measured pages from release builds show the cost; a program
   that wants another backend names it in the type.
 - [A native program of version 0.1 that links only BearSSL and uses `aes256_gcm`] -> it stops
-  with the fix if the owner answers Q2 as recommended; the changelog says so.
+  with the fix (the owner's answer Q2); the changelog says so.
 - [A version 0.1 default define in a program's Jamfile] -> an `#error` names the type to write
   (D32, Q3).
 - [Wave 2 runs eight streams at once] -> each owns its backend's header, target and tests;
@@ -1112,17 +1113,16 @@ order; after every merge the others rebase, merge `crypto.json` by rows and rege
 - [mcl is not constant time everywhere] -> nothing secret is exposed on it (D26).
 - [Six streams at once] -> the generated files are regenerated, never merged by hand; each
   stream rebases when another merges.
-- [A heavy flag changes with a pin move, adding or removing an `async_` variant] -> the flag
-  moves only past the 10 % band, in the pin move's own change, whose changelog names it; a
-  program that used the variant keeps compiling only if the operation stays heavy, which the
-  changelog says.
+- [A stated heavy list misses an operation that is slow on some machine] -> the measured page
+  from release builds shows every operation's cost; adding one to the list is a change of D32,
+  and a pin move never adds or removes an `async_` variant (the owner's answer Q5).
 - [The new code's constant time] -> the harness runs on every increment's secret paths, with
   the planted leak that must fail.
 
 ## Migration Plan
 
 Version 0.1's API gains additions in increment 1 (`default_backend` remains the AES-GCM
-family's default), and two changes the changelog states (D32, owner questions Q2 and Q3): a
+family's default), and two changes the changelog states (D32, the owner's answers Q2 and Q3): a
 native program that links only BearSSL and uses `aes256_gcm` names `backends::bearssl` in the
 type or links OpenSSL, and `WEBCPP_CRYPTO_DEFAULT_BACKEND_BEARSSL` or `_OPENSSL` is replaced by
 the backend named in the type. Increment 2 changes
@@ -1134,10 +1134,11 @@ withdrawing it deletes `openspec/changes/foundation/`.
 
 ## Open Questions
 
-- **The owner questions of 2026-11-17** (`reference/roadmap.md`, "Owner questions"): Q1 the
-  rule of D32; Q2 AES-GCM's native default and the link set; Q3 version 0.1's two defines; Q4
-  the default table; Q5 the stated heavy list; Q6 the genesis's Task 33 kept in crypto's tests;
-  Q7 the genesis's status.
+- The owner questions of 2026-11-17 are answered (`reference/roadmap.md`, "The owner's
+  answers"): Q1 D32's rule adopted; Q2 OpenSSL natively for AES-GCM whatever is linked; Q3
+  version 0.1's two defines stop the build; Q4 the default table approved; Q5 the stated heavy
+  list; Q6 the genesis's Task 33 kept in crypto's tests; Q7 the genesis implementing, then
+  implemented with stream M.
 
 - **O1. A ZIP-215 verifier in C or C++** (research, not a task): `curves::ed25519::zip215` is
   declared only once a mature C or C++ implementation is identified and pinned. Its acceptance
