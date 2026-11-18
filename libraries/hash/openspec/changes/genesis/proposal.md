@@ -20,7 +20,12 @@ the library's own repository and green on every local lane; it is not yet publis
 records what building it decided. Its measurements showed differences of nanoseconds natively and
 a few KB on WebAssembly between the backends of HKDF, so on 2026-11-16 the owner replaced the
 measured default, the profiles and the overrides by one default: `backends::hash2` for every key
-derivation on every target (design D33).
+derivation on every target (design D33). On 2026-11-17, before increment 2, he gave the families
+the same kind of rule (the first of hash2, XKCP, BLAKE3 and libsodium that offers an algorithm,
+design D34), made the asynchronous family's default the synchronous one (D35), and asked for
+measured tables from release builds only (D36). Increments 2 to 5 and 7 are built on local
+integration branches, and the spec records what building them decided (D37 to D41); increment 6
+waits for Botan (D42).
 
 ## What Changes
 
@@ -53,7 +58,11 @@ derivation on every target (design D33).
   BearSSL, OpenSSL and libsodium's HKDF stay, tested as before, reached only by naming them in the
   type (`hkdf<hmac_sha2_256, backends::openssl>`). No measurement and no define decides a default:
   the measured default of increment 1, its profiles, its overrides, `detail/ranking.hpp` and the
-  lane `measure` are retired.
+  lane `measure` are retired. The families' tags (the owner's decision of 2026-11-17, design D34)
+  default to the first of `backends::hash2`, `backends::xkcp`, `backends::blake3` and
+  `backends::sodium` that offers the tag (SHAKE on hash2, Keccak and the SP 800-185 functions on
+  XKCP, BLAKE3 on BLAKE3, BLAKE2b with its options and Argon2i on libsodium), else none, and the
+  call names its backend; BearSSL, OpenSSL, Botan and WebCrypto are never defaults.
 - **`argon2id` and `scrypt`** from libsodium (`crypto_pwhash_argon2id`,
   `crypto_pwhash_scryptsalsa208sha256_ll`), with libsodium's allocation of their memory recorded
   as a departure; the Argon2 reference implementation's allocation callbacks stay the
@@ -77,7 +86,8 @@ derivation on every target (design D33).
   wasip3, emscripten, gcc-15; MSVC and Apple clang in the CI at the end), exceptions on and off.
 - **Measurements:** the measured table (program size per target, throughput natively), kept as
   a reference dated 2026-11-16 that decides nothing, and PBKDF2-HMAC-SHA-512 at 1,000,000
-  iterations for hash2, OpenSSL and libsodium.
+  iterations for hash2, OpenSSL and libsodium; every measured table, the allocation counts
+  included, built only from release builds (the owner's decision of 2026-11-17, design D36).
 - **Seven increments, the highest value first** (spec 1.5): 1, the above; 2, libsodium's whole
   hashing surface (BLAKE2b with key, salt, personalisation and length; SipHash-2-4 and -2-4x;
   `crypto_kdf` subkeys; Argon2i; SHAKE and TurboSHAKE; its SHA-2, SHA-3 and HMACs); 3, XKCP's
@@ -85,10 +95,12 @@ derivation on every target (design D33).
   TurboSHAKE); 4, OpenSSL's (every EVP digest including KECCAK-256, KMAC, BLAKE2 MACs, scrypt,
   Argon2d/i/id with every RFC 9106 parameter, KBKDF, SSKDF, X9.63); 5, BearSSL's hashes and HMAC;
   6, Botan 3's (PBKDF2, Argon2, bcrypt, BLAKE2b, Keccak, cSHAKE, KMAC, Skein, SM3, Streebog,
-  Whirlpool), after webcpp::crypto provisions Botan; 7, the browser backend. A capability table
+  Whirlpool), after webcpp::crypto provisions Botan, not built (design D42); 7, the browser
+  backend. A capability table
   says which backend provides each function, and every refusal names the backends that have it.
-  From increment 2, `digest`, `hasher`, `mac` and the KDF functions reach every backend; Hash2's
-  form stays for Hash2's types, `keccak_256` and `blake3`.
+  From increment 2, `digest_of`, `hasher`, `mac`, `argon2` and the KDF functions (`blake2b_subkey`,
+  `kbkdf`, `sskdf`, `x963kdf`) reach every backend; Hash2's form stays for Hash2's types,
+  `keccak_256` and `blake3`.
 - **No profile and no override** (retired on 2026-11-16, design D33): increment 1 built one
   profile per program (`WEBCPP_HASH_PROFILE_*` and webcpp's umbrella `WEBCPP_PROFILE_*`) and
   per-algorithm overrides `WEBCPP_HASH_DEFAULT_BACKEND_<ALGORITHM>_<NAME>`; with the backend named
@@ -97,10 +109,12 @@ derivation on every target (design D33).
   no effect.
 - **The browser backend through a parallel asynchronous API** (the owner's answer to O1):
   `async_digest`, `async_hmac`, `async_hkdf` and `async_pbkdf2` take a webcpp::asio completion
-  token (callback, coroutine in Asio or Cobalt, future); on Emscripten they default to
-  `backends::webcrypto`; elsewhere they run the synchronous backend and complete through a post;
-  the synchronous functions never use WebCrypto. WebCrypto remains the outside oracle of every
-  algorithm it has.
+  token (callback, coroutine in Asio or Cobalt, future); their default is the synchronous
+  function's on every target (the owner's decision of 2026-11-17, design D35), the cheap ones
+  completing through a post and the heavy ones (`async_argon2id`, `async_argon2`, `async_scrypt`,
+  `async_pbkdf2`) on a thread pool where the build has threads; `backends::webcrypto` is reached on
+  Emscripten by naming it; the synchronous functions never use WebCrypto. WebCrypto remains the
+  outside oracle of every algorithm it has.
 - **Documentation** in the manner of noble's README (one section per algorithm: what it is, an
   example, its pitfalls) and libsodium's documentation (ISC, adapted with attribution in
   `NOTICE.md`), with teaching chapters by use case: peer-to-peer networks, cryptocurrencies and
@@ -131,7 +145,10 @@ None.
 - **Implementation:** increment 1 (the plan's Tasks 0 to 24) is built: the library's repository
   (branch `main`, not yet on GitHub) and the superproject's integration branch hold it, green on
   native, wasip2, wasip3, Emscripten and gcc-15 locally; MSVC and Apple clang wait for the CI after
-  the owner's gates. Increments 2 to 7 are not started. **The reference code is the code written in
+  the owner's gates. Increments 2, 3, 4, 5 and 7 (Tasks 25 to 40 and 44 to 47) are built, each task
+  reviewed, on the library's branch `increments-2-7` and the superproject's `hash/increments-2-7`
+  (local), increment 4 merging into them when this was written; increment 6 (Tasks 41 to 43) is not
+  started, blocked by Botan's provisioning (design D42). **The reference code is the code written in
   the tasks of `reference/plan.md`:** Task 1 (`build.jam`, `config.hpp`, the test Jamfile's
   `hash-run`), Task 2 (`error.hpp`), Task 3 (`algorithms.hpp`, `hmac.hpp`), Task 4 (the XKCP target,
   `xkcp_adapter.c`, `canary.h`, `canary_xkcp.c`), Task 5 (`keccak.hpp`), Tasks 6 and 7 (the BLAKE3
@@ -141,25 +158,29 @@ None.
   Task 16 (`scrypt.hpp`) and Task 21 (`tools/hash/measure.py`, deleted by design D33), and the tasks
   of increments 2 to 7 (Tasks 25 to 47), with the tests and Jamfiles the other tasks give. What
   Tasks 14 and 21 built for the profiles, the overrides, the ranking and the lane `measure` is
-  retired by design D33 (task 1.26).
-  `reference/spec.md` is the full specification and `reference/STATUS.md` says where things
-  stand and how to start.
-- **Dependencies:** Boost 1.92 (Hash2, System, Core's `lightweight_test`, JSON in tests);
-  libsodium 1.0.22 at `77e1ce5d6dee871c49ef211222ba18ef0c486bda` (ISC); XKCP at
+  retired by design D33 (task 1.26). `reference/spec.md` is the full specification and
+  `reference/STATUS.md` says where things stand and how to start.
+- **Dependencies:** Boost 1.92 (Hash2, System, Core's `lightweight_test`, JSON in tests); libsodium
+  1.0.22 at `77e1ce5d6dee871c49ef211222ba18ef0c486bda` (ISC); XKCP at
   `d20c8fcaecc543f816a0721d0dfc13b4cf27c14d` (CC0); BLAKE3 1.8.7 at
-  `f3149ec5bb5449af877ba20377a11008ff499fa2` (CC0-1.0 or Apache-2.0); BearSSL at `7bea48e` and
-  OpenSSL 3.5.9 at `45e844f`, as the superproject builds them; for tests, wasmtime, node's
-  WebCrypto, and the RFCs' vectors. The superproject's `tools/webcpp.jam`, `third_party/Jamfile`,
-  `webcpp.same-program` and asio's test support (`webcpp::test::exit_status`).
-- **Status:** accepted on 2026-11-14 (the owner decided the shape and approved it); increment 1
-  built locally, not published, no release. It becomes `implementing` at the owner's gates.
+  `f3149ec5bb5449af877ba20377a11008ff499fa2` (CC0-1.0 or Apache-2.0); BLAKE2's reference repository
+  at `ed1974ea83433eba7b2d95c5dcd9ac33cb847913` (CC0-1.0), for its test vectors (increment 2);
+  BearSSL at `7bea48e` and OpenSSL 3.5.9 at `45e844f`, as the superproject builds them; for tests,
+  wasmtime, node's WebCrypto, the RFCs' and NIST's vectors, and the C libraries' own test files read
+  at run time (OpenSSL's EVP test data, libsodium's `.exp` files, XKCP's test vectors). From
+  increment 7, webcpp::asio (`async.hpp` alone). The superproject's `tools/webcpp.jam`,
+  `third_party/Jamfile`, `webcpp.same-program` and asio's test support
+  (`webcpp::test::exit_status`).
+- **Status:** accepted on 2026-11-14 (the owner decided the shape and approved it); increments 1
+  to 5 and 7 built locally, not published, no release; increment 6 waits for Botan. It becomes `implementing` at the owner's gates.
 - **Other proposals:** `libraries/crypto` is changed later: it depends on webcpp::hash for HKDF
   (replacing its spec 1.2's "written on Hash2's hmac when needed"), its libsodium backend
   (version 0.2) uses `/third_party//sodium` as built here, and `/third_party//bearssl`, which its
   plan adds, gains webcpp::hash's canary here (the BearSSL task waits for that target on `main`).
   webcpp::hash reads no profile, webcpp's umbrella `WEBCPP_PROFILE_*` included (design D33);
   whether webcpp::crypto takes a profile for its own defaults is that library's own later change.
-  webcpp::crypto's Botan provisioning (its increment 5) is what increment 6 waits for.
+  webcpp::crypto's Botan provisioning (its increment 5, built by its foundation change's increment
+  7) is what increment 6 waits for; hash's Botan modules are to be in that one list (design D42).
   `libraries/asio` supplies the completion-token model and `browser::async_await` the
   asynchronous family uses. `organization` carries the rulebook this plan extends (chapter 10's
   rows, chapter 17's entry).

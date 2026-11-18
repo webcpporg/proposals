@@ -5,21 +5,23 @@ key derivation on native, wasip2, wasip3 and Emscripten: Boost.Hash2's algorithm
 alias, Keccak-256 and BLAKE3 in Hash2's HashAlgorithm form over XKCP and BLAKE3's C
 implementation, HKDF and PBKDF2 over backends (webcpp's own over Hash2's hmac, libsodium,
 BearSSL, OpenSSL) with `backends::hash2` as the default on every target, and Argon2id and scrypt
-from libsodium. These
+from libsodium; from increment 2, the families `digest_of`, `hasher`, `mac` and `argon2` over every
+backend's hashes, MACs and KDFs, and the asynchronous family with the browser's WebCrypto. These
 requirements are the structured form of `reference/spec.md` and of the build, tests and tools of
-`reference/plan.md`; increment 1 is built in the library's repository, not yet published.
+`reference/plan.md`; increments 1 to 5 and 7 are built in the library's repository, not yet
+published, and increment 6 waits for Botan.
 
 ## ADDED Requirements
 
 ### Requirement: Library: header-only target, names and headers
-The library SHALL be header-only C++20 in namespace `webcpp::hash` (with `webcpp::hash::backends`, `webcpp::hash::kdfs` and `webcpp::hash::detail`), with public headers under `<webcpp/hash/...>`, macros prefixed `WEBCPP_HASH_`, include guards `WEBCPP_HASH_<PATH>_HPP` and the error category `webcpp.hash`. A program MUST reach it through the b2 target `/webcpp/hash//hash`, an alias that gives `libs/hash/include`, Boost's headers and `/webcpp/config//config`. Every public header MUST include `<webcpp/hash/config.hpp>` first, which includes `<webcpp/config.hpp>` first.
+The library SHALL be header-only C++20 in namespace `webcpp::hash` (with `webcpp::hash::backends`, `webcpp::hash::kdfs`, `webcpp::hash::digests`, `webcpp::hash::macs` and `webcpp::hash::detail`), with public headers under `<webcpp/hash/...>`, macros prefixed `WEBCPP_HASH_`, include guards `WEBCPP_HASH_<PATH>_HPP` and the error category `webcpp.hash`. A program MUST reach it through the b2 target `/webcpp/hash//hash`, an alias that gives `libs/hash/include`, Boost's headers and `/webcpp/config//config`. Every public header MUST include `<webcpp/hash/config.hpp>` first, which includes `<webcpp/config.hpp>` first.
 
 #### Scenario: A program that only hashes links no C library
 - **WHEN** a Jamfile reads `exe app : app.cpp /webcpp/hash//hash ;` and `app.cpp` computes `webcpp::hash::sha2_256` of "abc" and an HKDF on `backends::hash2`
 - **THEN** it builds and runs on native, wasip2, wasip3 and Emscripten with no library of `/third_party` named or built
 
 ### Requirement: Library: configuration and exceptions
-`<webcpp/hash/config.hpp>` SHALL define `WEBCPP_HASH_NO_EXCEPTIONS` exactly when `WEBCPP_HAS_EXCEPTIONS` is not defined, keep it when a developer defines it, define `WEBCPP_HASH_WEBASSEMBLY` on wasip2, wasip3 and Emscripten, declare the backend tags `backends::hash2`, `sodium`, `bearssl` and `openssl` and the public KDF tags `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand`, `kdfs::pbkdf2`, `kdfs::argon2id` and `kdfs::scrypt`, one per operation, and refuse with `#error` OpenSSL on Emscripten (`/webcpp/hash//openssl`). It MUST read no profile and no override define (design D33). No function of the library SHALL throw, with exceptions on or off.
+`<webcpp/hash/config.hpp>` SHALL define `WEBCPP_HASH_NO_EXCEPTIONS` exactly when `WEBCPP_HAS_EXCEPTIONS` is not defined, keep it when a developer defines it, define `WEBCPP_HASH_WEBASSEMBLY` on wasip2, wasip3 and Emscripten, declare the backend tags `backends::hash2`, `sodium`, `bearssl`, `openssl`, `xkcp`, `blake3` and `webcrypto` (on every target), the public KDF tags `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand`, `kdfs::pbkdf2`, `kdfs::argon2id` and `kdfs::scrypt`, one per operation, and the families' tags of `digests`, `macs` and `kdfs` (spec 2.15), define `WEBCPP_HASH_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined and on Emscripten with `__EMSCRIPTEN_PTHREADS__`, never on WASI and never with `WEBCPP_HASH_NO_THREADS`, and refuse with `#error` OpenSSL on Emscripten (`/webcpp/hash//openssl`). It MUST read no profile and no override define (design D33). No function of the library SHALL throw, with exceptions on or off.
 
 #### Scenario: The configuration test three ways
 - **WHEN** `test/config_test.cpp` is built as the build asks, with `WEBCPP_NO_EXCEPTIONS`, and with `WEBCPP_HASH_NO_EXCEPTIONS` on the command line
@@ -44,7 +46,7 @@ Every function of the library's `include/` that returns `boost::system::result` 
 - **THEN** the compiler warns that a `[[nodiscard]]` result is discarded
 
 ### Requirement: Library: inputs and outputs are spans, and nothing is allocated by webcpp's code
-Every input SHALL be a `std::span<std::uint8_t const>` and every output a `std::span<std::uint8_t>`, sizes `std::size_t`, and a limit wider than `size_t` on wasm32 MUST be compared through `detail::exceeds(std::uint64_t, std::uint64_t)`. No function of webcpp::hash SHALL allocate; the C libraries that allocate inside a function (libsodium's Argon2id and scrypt, OpenSSL's KDFs) are the recorded departures of spec 6.2.
+Every input SHALL be a `std::span<std::uint8_t const>` and every output a `std::span<std::uint8_t>`, sizes `std::size_t`, and a limit wider than `size_t` on wasm32 MUST be compared through `detail::exceeds(std::uint64_t, std::uint64_t)`. No function of webcpp::hash SHALL allocate, but the asynchronous family, whose operation state and completion come from the handler's associated allocator and are given back before the handler runs (spec 6.1); the C libraries that allocate inside a function (libsodium's and OpenSSL's Argon2id and scrypt, OpenSSL's KDFs, digest and MAC contexts) are the recorded departures of spec 6.2.
 
 #### Scenario: A counting operator new sees nothing
 - **WHEN** `allocation_test` replaces every form of `operator new` with a counter and calls every hash type and every KDF on `backends::hash2`, `sodium` and `bearssl`
@@ -155,7 +157,7 @@ A call of a KDF on a backend that lacks it, or over an hmac the backend lacks, S
 - **THEN** every derived key matches, the 16,777,216-iteration case included, in its own program
 
 ### Requirement: The default backend is backends::hash2 for every key derivation
-`default_kdf_backend<Hmac, Kdf = kdfs::hkdf>` and `default_backend<Algorithm, Hmac = void>` SHALL keep their names and signatures, and for `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand` and `kdfs::pbkdf2` over every hmac they MUST be `backends::hash2`, on native, wasip2, wasip3 and Emscripten, whatever libraries the program links; their answer MUST NOT depend on the hmac, the link set or the target. For `kdfs::argon2id` and `kdfs::scrypt`, which `backends::hash2` does not offer, `default_backend` MUST be `backends::sodium`, their only backend. No measurement SHALL decide a default (design D33).
+`default_kdf_backend<Hmac, Kdf = kdfs::hkdf>` and `default_backend<Algorithm, Hmac = void>` SHALL keep their names and signatures, and for `kdfs::hkdf`, `kdfs::hkdf_extract`, `kdfs::hkdf_expand` and `kdfs::pbkdf2` over every hmac they MUST be `backends::hash2`, on native, wasip2, wasip3 and Emscripten, whatever libraries the program links; their answer MUST NOT depend on the hmac, the link set or the target. For `kdfs::argon2id`, `kdfs::scrypt` and `kdfs::blake2b_subkey`, which `backends::hash2` does not offer, `default_backend` MUST be `backends::sodium` (OpenSSL's Argon2id and scrypt, from increment 4, are reached only by naming them). No measurement SHALL decide a default (design D33).
 
 #### Scenario: HKDF's expand step with libsodium linked
 - **WHEN** a native program that names `/third_party//sodium` calls `hkdf_expand<hmac_sha2_256>` with RFC 5869 A.1's PRK and info
@@ -171,10 +173,10 @@ A call of a KDF on a backend that lacks it, or over an hmac the backend lacks, S
 
 #### Scenario: Argon2id without libsodium
 - **WHEN** a program calls `argon2id` (or `scrypt`) with the default backend and does not name `/third_party//sodium`, as the messages `argon2id_default_not_linked` and `scrypt_default_not_linked` do
-- **THEN** compilation fails at the primary template of the engine in `detail/engines.hpp` with "webcpp::hash: backends::sodium, argon2id and scrypt need libsodium. Add /third_party//sodium to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//sodium ;"
+- **THEN** compilation fails at the primary template of the engine in `detail/engines.hpp` with "webcpp::hash: backends::sodium, argon2id, scrypt and blake2b_subkey need libsodium. Add /third_party//sodium to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//sodium ;"
 
 ### Requirement: BearSSL, OpenSSL and libsodium's HKDF only when named in the type
-`backends::bearssl`, `backends::openssl` and the HKDF of `backends::sodium` SHALL stay, with their vectors, agreement tests, limits and refusals as before, and SHALL be reached only by naming the backend in the call's type, as `hkdf<hmac_sha2_256, backends::openssl>`; none of them MUST ever be a default, on any target or link set.
+`backends::bearssl`, `backends::openssl` and the HKDF of `backends::sodium` SHALL stay, with their vectors, agreement tests, limits and refusals as before, and SHALL be reached only by naming the backend in the call's type, as `hkdf<hmac_sha2_256, backends::openssl>`; neither `backends::bearssl` nor `backends::openssl` MUST ever be a default, on any target or link set, for any function or tag (design D34).
 
 #### Scenario: OpenSSL named in the type
 - **WHEN** a native program that names `/webcpp/hash//openssl` calls `hkdf<hmac_sha2_256, backends::openssl>` and `hkdf<hmac_sha2_256>` with RFC 5869 A.1's inputs
@@ -222,7 +224,7 @@ webcpp::hash SHALL have no profile and no per-algorithm override: it MUST NOT re
 - **THEN** `doc/performance.adoc` holds a time for each of the three on native, and for each that exists on wasip2, wasip3 and Emscripten
 
 ### Requirement: Argon2id from libsodium
-`argon2id<Backend = backends::sodium>(output, password, salt, argon2id_parameters)` SHALL compute Argon2id version 0x13 with one lane, no secret and no associated data through `crypto_pwhash_argon2id`, refusing in order an output shorter than 16 or longer than 4,294,967,295 bytes (`invalid_output_size`), a salt of another size than 16 (`invalid_salt_size`), a password longer than 4,294,967,295 bytes (`input_too_long`), and passes outside 1 to 4,294,967,295 or memory below 8,192, not a multiple of 1,024 or above libsodium's maximum (`invalid_parameters`). `argon2id_interactive`, `argon2id_moderate` and `argon2id_sensitive` MUST equal libsodium's presets, checked by `static_assert`.
+`argon2id<Backend = default_backend<kdfs::argon2id>>(output, password, salt, argon2id_parameters)`, whose default is `backends::sodium`, SHALL compute Argon2id version 0x13 with one lane, no secret and no associated data through `crypto_pwhash_argon2id` (or OpenSSL's "ARGON2ID" with `backends::openssl` named, from increment 4), refusing in order an output shorter than 16 or longer than 4,294,967,295 bytes (`invalid_output_size`), a salt of another size than 16 (`invalid_salt_size`), a password longer than 4,294,967,295 bytes (`input_too_long`), and passes outside 1 to 4,294,967,295 or memory below 8,192, not a multiple of 1,024 or above the engine's maximum (`invalid_parameters`), then the backend's `detail::backend_limits`. `argon2id_interactive`, `argon2id_moderate` and `argon2id_sensitive` MUST equal libsodium's presets, checked by `static_assert`.
 
 #### Scenario: RFC 9106 through libsodium's core
 - **WHEN** a test that includes libsodium's private `argon2.h` runs RFC 9106 section 5.3's Argon2id case (t 3, m 32 KiB, p 4, with secret and associated data) through `argon2_ctx`
@@ -233,21 +235,21 @@ webcpp::hash SHALL have no profile and no per-algorithm override: it MUST NOT re
 - **THEN** it returns `invalid_salt_size` and `output` is untouched
 
 ### Requirement: scrypt from libsodium
-`scrypt<Backend = backends::sodium>(output, password, salt, scrypt_parameters{n, r, p})` SHALL compute RFC 7914's scrypt through `crypto_pwhash_scryptsalsa208sha256_ll`, refusing an empty output or one past (2^32 - 1) times 32 bytes (`invalid_output_size`) and N not a power of two greater than 1, N not below 2^(16 r), r or p of 0, r times p not below 2^30, or 128 r (N + p) bytes that do not fit `size_t` (`invalid_parameters`); libsodium's ENOMEM MUST be `errc::not_enough_memory`.
+`scrypt<Backend = default_backend<kdfs::scrypt>>(output, password, salt, scrypt_parameters{n, r, p})`, whose default is `backends::sodium`, SHALL compute RFC 7914's scrypt through `crypto_pwhash_scryptsalsa208sha256_ll` (or OpenSSL's "SCRYPT" with `backends::openssl` named, from increment 4, refusing an r p of 2^24 or more), refusing an empty output or one past (2^32 - 1) times 32 bytes (`invalid_output_size`) and N not a power of two greater than 1, N not below 2^(16 r), r or p of 0, r times p not below 2^30, or 128 r (N + p) bytes that do not fit `size_t` (`invalid_parameters`); libsodium's ENOMEM MUST be `errc::not_enough_memory`.
 
 #### Scenario: RFC 7914's vectors
 - **WHEN** RFC 7914 section 12's four cases run through `scrypt`
 - **THEN** each derived key matches, the 1 GiB case in a program of its own on native and on the WebAssembly targets where the plan measured it runs
 
 ### Requirement: Memory-hard functions allocate inside libsodium, a recorded departure
-The documentation SHALL state that libsodium allocates Argon2id's and scrypt's memory (`mmap` or `malloc`) outside any allocator of the program's, that this departure from CODING-GUIDELINES.md chapter 4 is the owner's, and that the Argon2 reference implementation's allocation callbacks would route Argon2id's memory through a `std::pmr::memory_resource` as a later `backends::argon2`, not built.
+The documentation SHALL state that libsodium allocates Argon2id's and scrypt's memory (`mmap` or `malloc`) outside any allocator of the program's, as OpenSSL does for its own (increment 4), that this departure from CODING-GUIDELINES.md chapter 4 is the owner's, and that the Argon2 reference implementation's allocation callbacks would route Argon2id's memory through a `std::pmr::memory_resource` as a later `backends::argon2`, not built.
 
 #### Scenario: The departure is on the page
 - **WHEN** a reader opens the library's "Allocation" section
 - **THEN** it names libsodium's allocation in `argon2id` and `scrypt`, OpenSSL's in its KDFs, and the alternative
 
 ### Requirement: Build: the C libraries file by file, with webcpp::hash's canaries
-`third_party/Jamfile` SHALL build `/third_party//xkcp` (XKCP at `d20c8fc`, `KeccakP-1600-opt64.c`, webcpp's adapter and `config.h`), `/third_party//blake3` (BLAKE3 1.8.7 at `f3149ec`) and `/third_party//sodium` (libsodium 1.0.22 at `77e1ce5`, every `.c` of `src/libsodium/`, with upstream's `builds/msvc/version.h` copied into the build directory and the defines libsodium's own `configure` finds for each target, `DEV_MODE` off, without assembly) as static libraries from submodules under `third_party/libs/`, never edited, each with webcpp::hash's canary `src/canary_<name>.c`, `-ffunction-sections -fdata-sections`, `<warnings>off`, and usage requirements giving `WEBCPP_HASH_HAS_<NAME>=1` and the removal of unused sections; `/third_party//sodium`'s usage requirements MUST also give `-sALLOW_MEMORY_GROWTH=1` to an Emscripten link, since Argon2id and scrypt allocate the memory their costs name past Emscripten's fixed 16 MiB. `/third_party//bearssl` MUST gain webcpp::hash's canary and `WEBCPP_HASH_HAS_BEARSSL=1`.
+`third_party/Jamfile` SHALL build `/third_party//xkcp` (XKCP at `d20c8fc`, `KeccakP-1600-opt64.c` and, from increment 3, `KeccakSponge.c`, `KeccakHash.c`, `SP800-185.c`, `TurboSHAKE.c` and `KangarooTwelve.c`, webcpp's adapter and `config.h` with the `XKCP_has_*` of those components), `/third_party//blake3` (BLAKE3 1.8.7 at `f3149ec`) and `/third_party//sodium` (libsodium 1.0.22 at `77e1ce5`, every `.c` of `src/libsodium/`, with upstream's `builds/msvc/version.h` copied into the build directory and the defines libsodium's own `configure` finds for each target, `DEV_MODE` off, without assembly) as static libraries from submodules under `third_party/libs/`, never edited, each with webcpp::hash's canary `src/canary_<name>.c`, `-ffunction-sections -fdata-sections`, `<warnings>off`, and usage requirements giving `WEBCPP_HASH_HAS_<NAME>=1` and the removal of unused sections; `/third_party//sodium`'s usage requirements MUST also give `-sALLOW_MEMORY_GROWTH=1` to an Emscripten link, since Argon2id and scrypt allocate the memory their costs name past Emscripten's fixed 16 MiB. `/third_party//bearssl` MUST gain webcpp::hash's canary and `WEBCPP_HASH_HAS_BEARSSL=1`.
 
 #### Scenario: libsodium's archive
 - **WHEN** `/third_party//sodium` is built natively with `-a -d+2`
@@ -323,17 +325,17 @@ The library's page SHALL open the chapter of each namespace (digests, MACs, key 
 - **THEN** each chapter has two tables led by `Name`, each of fewer than eight columns, the second with the measured columns only when there are measurements
 
 ### Requirement: Increments by value, and a capability table
-The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next: 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the default backend, the measured table as dated reference), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, after webcpp::crypto provisions Botan), 7 (the browser backend). `doc/capabilities.json` MUST hold spec 3.5's table and, for each function row, its `"default"` backend (`hash2`, `sodium`, or `null` for a type), and a test MUST compare it with `backend_has_v` for every cell and with `default_backend` for every default, and each increment's first task MUST check its column against the library at its pin.
+The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next (increment 6 waits for Botan's provisioning and is not built, design D42): 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the default backend, the measured table as dated reference), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, after webcpp::crypto provisions Botan), 7 (the browser backend). `doc/capabilities.json` (layout version 5) MUST hold spec 3.5's table and, for each function row, its `"default"` backend (`hash2`, `xkcp`, `blake3`, `sodium`, or `null` for a type and for a tag with no default), and a test MUST compare it with `backend_has_v` for every cell and with `default_backend` for every default, and each increment's first task MUST check its column against the library at its pin.
 
 #### Scenario: The table and the code agree
 - **WHEN** `capabilities_test` reads `doc/capabilities.json` and evaluates `backend_has_v` for every function and backend
 - **THEN** every cell and every default agrees, and a cell changed in one place alone fails the test
 
 ### Requirement: Families for every backend's hashes, MACs and KDFs
-From increment 2 on, `digest<Digest, Backend>`, `hasher<Digest, Backend>` (`make`, `update`, `finish`, move-only, wiped, `invalid_state` after the finalisation), `mac<Mac, Backend>` and `argon2<Variant, Backend>` with `argon2_parameters` (passes, memory in KiB, lanes, secret, associated data) SHALL reach every backend's implementation over the tags of `digests`, `macs` and `kdfs`, with `digest_options` and `mac_options` per tag, the guards in one place and engines per backend; a parameter a backend does not take MUST return `error::unsupported_by_backend`. The Hash2-form types stay Hash2's own, `keccak_256` and `blake3`.
+From increment 2 on, `digest_of<Digest, Backend>` (named so beside Boost.Hash2's `digest<N>`), `hasher<Digest, Backend>` (`make`, `update`, `finish`, move-only, wiped, `invalid_state` after the finalisation), `mac<Mac, Backend>` and `argon2<Variant, Backend>` with `argon2_parameters` (passes, memory in KiB, lanes, secret, associated data) SHALL reach every backend's implementation over the tags of `digests`, `macs` and `kdfs`, with `digest_options` and `mac_options` per tag, the guards in one place and engines per backend; a parameter a backend does not take MUST return `error::unsupported_by_backend`. The Hash2-form types stay Hash2's own, `keccak_256` and `blake3`.
 
 #### Scenario: Keccak-256 three ways
-- **WHEN** a native program computes Keccak-256 of "abc" with `keccak_256`, `digest<digests::keccak_256, backends::xkcp>` and `digest<digests::keccak_256, backends::openssl>`
+- **WHEN** a native program computes Keccak-256 of "abc" with `keccak_256`, `digest_of<digests::keccak_256, backends::xkcp>` and `digest_of<digests::keccak_256, backends::openssl>`
 - **THEN** the three digests are `4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45`
 
 #### Scenario: Argon2 lanes on libsodium
@@ -341,10 +343,10 @@ From increment 2 on, `digest<Digest, Backend>`, `hasher<Digest, Backend>` (`make
 - **THEN** it returns `unsupported_by_backend`, and the same call on `backends::openssl` returns RFC 9106 section 5.3's tag when given its inputs
 
 ### Requirement: libsodium's hashing surface (increment 2)
-`backends::sodium` SHALL provide BLAKE2b through `crypto_generichash_blake2b_salt_personal` (key 0 or 16 to 64 bytes, salt and personalisation of 16 bytes, output 16 to 64 bytes), SipHash-2-4 and SipHash-2-4x (`crypto_shorthash_siphash24`, `_siphashx24`), BLAKE2b subkeys (`crypto_kdf_blake2b_derive_from_key`), Argon2i (`crypto_pwhash_argon2i`), SHAKE128/256 and TurboSHAKE128/256 (`crypto_xof_*`), SHA-256, SHA-512, SHA3-256, SHA3-512 and HMAC-SHA-256/512/512-256 as digests and MACs, each checked against its official vectors and libsodium's own tests, and against every other backend that has it.
+`backends::sodium` SHALL provide BLAKE2b through `crypto_generichash_blake2b_salt_personal` with RFC 7693's guards (key 0 to 64 bytes, salt and personalisation empty or of 16 bytes, output 1 to 64 bytes, the output's size an option), SipHash-2-4 and SipHash-2-4x (`crypto_shorthash_siphash24`, `_siphashx24`), BLAKE2b subkeys (`crypto_kdf_blake2b_derive_from_key`), Argon2i (`crypto_pwhash_argon2i`), SHAKE128/256 and TurboSHAKE128/256 (`crypto_xof_*`), SHA-256, SHA-512, SHA3-256, SHA3-512 and HMAC-SHA-256/512 as digests and MACs (no HMAC-SHA-512/256, which libsodium computes as HMAC-SHA-512 cut to 32 bytes), each checked against its official vectors and libsodium's own tests, and against every other backend that has it.
 
 #### Scenario: BLAKE2b with personalisation
-- **WHEN** `digest<digests::blake2b, backends::sodium>` runs the BLAKE2 reference's keyed vectors (`blake2b-kat.txt`)
+- **WHEN** `digest_of<digests::blake2b, backends::sodium>` runs the BLAKE2 reference's keyed vectors (`blake2b-kat.txt`)
 - **THEN** every output matches
 
 ### Requirement: XKCP's Keccak family (increment 3)
@@ -362,11 +364,15 @@ From increment 2 on, `digest<Digest, Backend>`, `hasher<Digest, Backend>` (`make
 - **THEN** the tag is the RFC's on native, wasip2 and wasip3
 
 ### Requirement: The browser backend through a parallel asynchronous family (increment 7)
-`<webcpp/hash/async.hpp>` SHALL declare `async_digest`, `async_hmac`, `async_hkdf` and `async_pbkdf2`, each an Asio asynchronous operation in webcpp::asio's model (initiated through `async_initiate`, completion `void(boost::system::error_code)`, any completion token: callback, `use_awaitable`, Cobalt's, `use_future`), whose `default_async_backend` is `backends::webcrypto` on Emscripten for SHA-1/256/384/512, HMAC, HKDF and PBKDF2 over them, awaiting WebCrypto's promise through `webcpp::asio::browser::async_await`; off Emscripten, or with a synchronous backend named, the operation MUST run that backend and complete through `asio::post`, never inside the initiating call. The synchronous functions MUST never use `backends::webcrypto`; naming it in one MUST fail to compile with spec 11.2's text.
+`<webcpp/hash/async.hpp>` SHALL declare `async_digest`, `async_hmac`, `async_hkdf` and `async_pbkdf2`, each an Asio asynchronous operation in webcpp::asio's model (initiated through `async_initiate`, completion `void(boost::system::error_code)`, any completion token: callback, `use_awaitable`, Cobalt's, `use_future`), whose `default_async_backend<X>` is `default_backend<X>` on every target (design D35): on a synchronous backend the cheap functions MUST run it and complete through `asio::post`, never inside the initiating call. `backends::webcrypto`, named in the type on Emscripten, serves SHA-1/256/384/512, HMAC, HKDF and PBKDF2 over them, awaiting WebCrypto's promise through `webcpp::asio::browser::async_await`, with an executor whose context is an `io_context` (`invalid_parameters` otherwise) and WebCrypto's limits (spec 11.2); off Emscripten naming it MUST fail to compile. The synchronous functions MUST never use `backends::webcrypto`; naming it in one MUST fail to compile with spec 11.2's text, on every target.
 
 #### Scenario: The same call, three tokens
-- **WHEN** an Emscripten test under node calls `async_hkdf<hmac_sha2_256>` with RFC 5869 A.1's inputs once with a callback, once with `use_awaitable` and once with `use_future`
+- **WHEN** an Emscripten test under node calls `async_hkdf<hmac_sha2_256, backends::webcrypto>` with an `io_context`'s executor and RFC 5869 A.1's inputs once with a callback, once with `use_awaitable` and once with `use_future`
 - **THEN** each completes with no error and A.1's OKM, through WebCrypto
+
+#### Scenario: The default is the synchronous one
+- **WHEN** `capabilities_test` compares `default_async_backend<X>` with `default_backend<X>` for every tag, on Emscripten too
+- **THEN** they are the same type, and `async_hkdf<hmac_sha2_256>` runs on `backends::hash2`, completing through a post
 
 #### Scenario: Cheap functions only where the browser serves them
 - **WHEN** a program looks for an `async_` variant of a cheap function WebCrypto lacks, as `async_digest<digests::blake2b>`
@@ -377,17 +383,39 @@ From increment 2 on, `digest<Digest, Backend>`, `hasher<Digest, Backend>` (`make
 - **THEN** the callback runs after the initiating call returned, from the executor, with RFC-correct output
 
 ### Requirement: Heavy functions run on another thread, only in a build with threads
-`config.hpp` SHALL define `WEBCPP_HASH_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined and on Emscripten when `__EMSCRIPTEN_PTHREADS__` is defined, never on WASI, unless `WEBCPP_HASH_NO_THREADS` is defined. With it, `async_argon2id`, `async_argon2`, `async_scrypt` and `async_pbkdf2` (with a synchronous backend), and every later deliberately slow function's `async_` variant, MUST run the work on the executor the caller gives (natively a `webcpp::asio::thread_pool`'s; on Emscripten a pool of Web Workers) and complete through the completion token on the handler's associated executor. Without it, a call of any of them MUST fail to compile with "webcpp::hash: <name> runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call <synchronous name>.", except `async_pbkdf2` on `backends::webcrypto`, which needs no thread.
+`config.hpp` SHALL define `WEBCPP_HASH_HAS_THREADS` natively when `BOOST_HAS_THREADS` is defined (every native build, b2's `threading=single` included) and on Emscripten when `__EMSCRIPTEN_PTHREADS__` is defined, never on WASI, unless `WEBCPP_HASH_NO_THREADS` is defined. With it, `async_argon2id`, `async_argon2`, `async_scrypt` and `async_pbkdf2` (with a synchronous backend), and every later deliberately slow function's `async_` variant, MUST run the work on the executor the caller gives (natively a `webcpp::asio::thread_pool`'s; on Emscripten a pool of Web Workers) and complete through the completion token on the handler's associated executor. Without it, a call of any of them MUST fail to compile with "webcpp::hash: <name> runs on another thread and needs a build with threads (natively, remove WEBCPP_HASH_NO_THREADS; on Emscripten, link with -pthread). Without threads, call <synchronous name>.", except `async_pbkdf2` on `backends::webcrypto`, which needs no thread. The operation's state MUST come from the handler's associated allocator and be given back before the handler runs; a cancellation before the work starts MUST complete at once with `operation_aborted`.
 
 #### Scenario: Argon2id off the caller's thread
 - **WHEN** a native test built with `threading=multi` calls `async_argon2id` with a `thread_pool`'s executor, the interactive costs and a callback bound to its own `io_context`, and runs a 10 ms timer on that `io_context`
 - **THEN** the work runs on a pool thread, the timer fires before the derivation completes, and the result equals `argon2id`'s
 
 #### Scenario: Without threads
-- **WHEN** a program built with b2's default `threading=single` calls `async_scrypt`
-- **THEN** compilation fails with "webcpp::hash: async_scrypt runs on another thread and needs a build with threads (natively b2 threading=multi; on Emscripten -pthread). Without threads, call scrypt."
+- **WHEN** a native program built with `WEBCPP_HASH_NO_THREADS`, or a wasip2 program, calls `async_scrypt`
+- **THEN** compilation fails with "webcpp::hash: async_scrypt runs on another thread and needs a build with threads (natively, remove WEBCPP_HASH_NO_THREADS; on Emscripten, link with -pthread). Without threads, call scrypt."
 
 #### Scenario: A page that never blocks
 - **WHEN** an Emscripten program built with `-pthread` calls `async_argon2id` with a pool of Web Workers under node
 - **THEN** the derivation runs on a worker, the main thread's timer keeps firing, and the completion reaches the main thread
+
+### Requirement: A family's default is the first of hash2, xkcp, blake3 and sodium that offers the tag
+The default backend of a tag of `digests`, `macs` or `kdfs` that Boost.Hash2 does not have whole SHALL be the first of `backends::hash2`, `backends::xkcp`, `backends::blake3` and `backends::sodium`, in that order, whose engine serves the family's whole contract for the tag (every option and output size the family's guards accept); if none does, the first of them with a partial cell; if none has a cell, `detail::no_default`, whose engines MUST refuse at compile time with "webcpp::hash: <qualified tag> has no default backend. Name one of: <the backends of its row>." (design D34, the owner's decision of 2026-11-17). `backends::bearssl`, `backends::openssl`, `backends::botan` and `backends::webcrypto` MUST never be a default. The defaults are written once and MUST NOT change between increments; no measurement SHALL decide them.
+
+#### Scenario: SHAKE defaults to Boost.Hash2
+- **WHEN** a program calls `digest_of<digests::shake_256>` with an output of 200 bytes and every library linked
+- **THEN** it runs on `backends::hash2`, whose SHAKE is a whole extendable output (design D37), and the output is the first 200 bytes of SHAKE256's stream, as every other backend that has SHAKE gives them
+
+#### Scenario: A tag only OpenSSL has
+- **WHEN** a native program that links OpenSSL calls `argon2<kdfs::argon2d>` without naming a backend
+- **THEN** compilation fails with "webcpp::hash: kdfs::argon2d has no default backend. Name one of: backends::openssl.", and `argon2<kdfs::argon2d, backends::openssl>` compiles
+
+#### Scenario: The order is checked
+- **WHEN** `capabilities_test` reads each family row's `"default"` in `doc/capabilities.json`
+- **THEN** each is `null` or one of hash2, xkcp, blake3 and sodium, equals `default_backend`, and no backend before it in that order has the tag whole
+
+### Requirement: Measured tables come from release builds only
+Every measured table SHALL be built only from release builds (design D36, the owner's decision of 2026-11-17): `doc/performance.adoc`'s times through `bench/collect.py`, and the allocation counts of `doc/measurements.allocation.json` and `doc/allocation.adoc` through `bench/allocation_collect.py` from `bench/Jamfile`'s `allocation_release` and `allocation_openssl_release` at `variant=release`. Each collector MUST read the variant from b2's build directory, record it, and refuse data that is not from a release build, its `--check` included; the lanes' allocation tests MUST keep their variant and never be collected.
+
+#### Scenario: A debug build offered to the collector
+- **WHEN** `bench/allocation_collect.py` is given the output of `allocation_test` from a lane's debug build directory
+- **THEN** it exits with an error naming that output, whose build is not `variant=release` or does not say, and writes nothing
 

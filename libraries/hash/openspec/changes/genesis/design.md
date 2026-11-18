@@ -12,7 +12,9 @@ BLAKE2 and HMAC, and none of these. The specification is `reference/spec.md`, th
 repository and green on every local lane, not yet published (the owner's gates); D25 to D32
 record what building it decided, and the spec and the plan are amended to match. D33 records the
 owner's decision of 2026-11-16 that every key derivation defaults to `backends::hash2`, which
-retires the measured defaults, the profiles and the overrides of D8, D20, D28 and D32.
+retires the measured defaults, the profiles and the overrides of D8, D20, D28 and D32. D34 to D36
+record the owner's decisions of 2026-11-17 before increment 2 (O3 answered), and D37 to D42 what
+building increments 2 to 5 and 7 decided, on local integration branches, and why increment 6 waits.
 
 Constraints every decision works within, from the superproject's `CODING-GUIDELINES.md`:
 
@@ -399,6 +401,10 @@ code, and an application built on noble is named only when it is public.
 
 ### D23. WebCrypto through a parallel asynchronous family (the owner's answer to O1)
 
+> **Amended on 2026-11-17 by D35.** `default_async_backend` is `default_backend` on every target:
+> WebCrypto serves the family on Emscripten only when the type names it. D39 records how
+> `backends::webcrypto` was built.
+
 `backends::webcrypto` (Emscripten) serves `async_digest`, `async_hmac`, `async_hkdf` and
 `async_pbkdf2` in `<webcpp/hash/async.hpp>`, Asio asynchronous operations initiated through
 `async_initiate`, so that a callback, `use_awaitable`, Cobalt's tokens and `use_future` all work;
@@ -423,6 +429,10 @@ synchronous backend named, it runs that backend at once and completes through `a
   uniformity; any other cheap function would gain only a post.
 
 ### D24. The heavy functions run on another thread, only in a build with threads
+
+> **Amended by D40.** `BOOST_HAS_THREADS` is defined in every native build, b2's `threading=single`
+> included, so natively the heavy functions always exist unless `WEBCPP_HASH_NO_THREADS`; their
+> refusal names that define in place of "natively b2 threading=multi".
 
 The owner decided on 2026-11-14 that Argon2, scrypt, PBKDF2 with a synchronous backend and every
 later deliberately slow function get `async_` variants that truly run on another thread: natively
@@ -611,6 +621,11 @@ orders are always compared.
 
 ### D33. Every key derivation defaults to `backends::hash2`; no measurement decides a default
 
+> **Extended on 2026-11-17 by D34 and D35.** D34 gives the families' tags their defaults by the
+> same reasoning; D35 replaces the last bullet's `default_async_backend` (WebCrypto on Emscripten)
+> by `default_backend` on every target. Increment 4 gave `argon2id` and `scrypt` OpenSSL's engines,
+> reached by naming them: `backends::sodium` stays their default.
+
 The owner decided on 2026-11-16 to replace the measured default (D8, D20, D25's orders, D32) by a
 fixed one. Increment 1 had built the rule as specified: a profile per program, an override per
 algorithm, and orders of backends by size and throughput generated into `detail/ranking.hpp` from
@@ -693,6 +708,215 @@ or the set of libraries a program happened to link.
   OpenSSL's across a program, unseen at the call, and would choose nothing for argon2id and
   scrypt).
 
+### D34. A family's default: the first of hash2, xkcp, blake3 and sodium that offers the tag
+
+The owner decided on 2026-11-17, answering O3 as it proposed, that the default backend of an
+algorithm of the families (spec 2.15) that Boost.Hash2 lacks is fixed by one stated rule, in D33's
+spirit, and never measured.
+
+- **The rule.** The default of a tag is the first of `backends::hash2`, `backends::xkcp`,
+  `backends::blake3` and `backends::sodium`, in that order, that offers it; `backends::bearssl`,
+  `backends::openssl`, `backends::botan` and `backends::webcrypto` are never defaults, only named
+  in the type. A backend offers a tag when its engine serves the family's whole contract for it:
+  every option and every output size the family's guards accept. If none of the four offers it
+  whole, the default is the first of them with a partial cell (`kdfs::argon2i` and
+  `kdfs::argon2id` on libsodium, one lane; ParallelHash on XKCP, a block size that is a power of
+  two of at least 8 bytes); if none of the four has a cell, the tag has no default (the
+  controller's ruling R2).
+- **No default is a type.** `detail::no_default`, whose engines refuse at compile time with
+  "webcpp::hash: <qualified tag> has no default backend. Name one of: <the backends of its row>."
+  (one message test per family), and `"default": null` in `doc/capabilities.json`. `kbkdf`,
+  `sskdf`, `x963kdf`, Argon2d, SM3 and HMAC over Keccak have OpenSSL's cell alone, and MD5-SHA1
+  BearSSL's and OpenSSL's: none has a default, and a call names its backend.
+- **Written once.** The families' task (plan Task 25) wrote every default from the table as it
+  stands once increments 2, 3, 4, 5 and 7 have landed, and no default changes between increments:
+  a default whose backend's engine lands in a later stream refuses at compile time until it lands,
+  first with the library's "needs" text and then with the backends that have the tag (ruling
+  R84). The table is spec 4.1's.
+- **One default whose engine is not built.** `macs::blake2b_mac` defaults to `backends::sodium`
+  (libsodium's keyed BLAKE2b), but no increment built that engine; until one does, a call that
+  names no backend refuses at compile time and names `backends::openssl`, its one cell.
+- **Why:** D33's reasons hold for the families. One rule that a reader of the call can apply
+  without knowing the build; hash2 first, header-only and on every target, so that every algorithm
+  Boost.Hash2 has keeps it; XKCP and BLAKE3 next, the reference code of the Keccak team and of
+  BLAKE3's authors, small and on every target; libsodium last of the four, already linked by a
+  program that hashes passwords. BearSSL, OpenSSL, Botan and WebCrypto are reached for a reason
+  the call states (a smaller program, OpenSSL's speed or its standards' KDFs, Botan's long tail,
+  the browser), never by default.
+- **Alternatives:** a measured order per family (D33's reasons against it); no default for a tag
+  Boost.Hash2 lacks (every call of Keccak-256 or BLAKE2b with a salt would name its backend).
+
+### D35. The asynchronous family's default is the synchronous one
+
+The owner decided on 2026-11-17 (O2 of that day) that `default_async_backend<X>` is
+`default_backend<X>` on every target, which replaces D23's "On Emscripten `default_async_backend` is
+the browser for every algorithm it serves" and the sentence of D33's last bullet that kept it.
+
+- **What runs.** The cheap functions (`async_digest`, `async_hmac`, `async_hkdf`) run the
+  synchronous default backend at once and complete through `post` (spec 11.2); the heavy ones run
+  it on the thread pool where the build has threads (spec 11.5), `async_pbkdf2` among them, so that
+  on Emscripten without pthreads `async_pbkdf2<Hmac>` refuses at compile time and a program names
+  `backends::webcrypto` for the browser.
+- **WebCrypto by name.** `backends::webcrypto` is used on Emscripten only when the type names it,
+  as `async_pbkdf2<hmac_sha2_256, backends::webcrypto>`; it stays the outside oracle of every
+  algorithm it has (spec 7.4).
+- **Checked.** `doc/capabilities.json` holds no separate asynchronous default, and
+  `capabilities_test` checks that `default_async_backend<X>` is `default_backend<X>` (ruling R76).
+- **Why:** one default per function, the same everywhere (D33): an asynchronous call computes on
+  the backend its synchronous function would, so a program's bytes and its code do not change
+  with the target.
+- **Alternatives:** WebCrypto as the asynchronous default on Emscripten (D23's first form: the
+  same call would run another backend on one target alone).
+
+### D36. Measured tables are built from release builds only
+
+The owner decided on 2026-11-17 (decision 3) that any measured table is built only from release
+builds. The throughput was already so (`bench/collect.py`, `variant=release optimization=speed`);
+the allocation counts, `doc/measurements.allocation.json` and `doc/allocation.adoc`, now come from
+`bench/Jamfile`'s `allocation_release` and `allocation_openssl_release`, the sources of
+`test/allocation_test.cpp` and `test/allocation_openssl_test.cpp` at `variant=release`, collected
+by `bench/allocation_collect.py`, which reads the variant from b2's build directory
+(`bench/<name>.test/<toolset>/<variant>/`), records `"build": "variant=release"` and refuses any
+other output before it writes, its `--check` and `--render-only` included; the lanes' allocation
+tests keep their variant and are never collected. Regenerated on 2026-11-17 on native, wasip2,
+wasip3 and Emscripten, every count was identical to the earlier one. The dated measurements of
+D33 stay as they are.
+
+- **Why:** a debug build's counts and times measure the build, not the library.
+
+### D37. Boost.Hash2's SHAKE is a whole extendable output, and SHAKE's default
+
+Boost.Hash2 1.92's `shake_128::result()` and `shake_256::result()` permute and return the next
+rate block on every call (`keccak_base::result` in `sha3.hpp`), so that repeated results continue
+SHAKE's stream: Hash2's SHAKE is a whole extendable output, not one result of 32 or 64 bytes, as
+the pre-flight ruling R14 had read it. The BearSSL task found it (Task 39, agreeing with BearSSL to
+700 bytes), and the controller's ruling R89 overturned R14: `backends::hash2`'s SHAKE cells are
+whole (any output length, the stream continued block after block), and by D34 the default of
+`digests::shake_128` and `shake_256` is `backends::hash2`, not `backends::xkcp`. It is tested
+against FIPS 202's examples (OpenSSL's `evpmd_sha.txt`, read at run time) and by agreement past one
+block.
+
+### D38. The families as built
+
+What building the families (spec 2.15) decided, beside the plan:
+
+- **`digest_of`.** The one-shot hash is `digest_of<Digest, Backend>(output, input, options)`, since
+  `digest<N>` is Boost.Hash2's result type, which `algorithms.hpp` re-exports (ruling R10).
+- **The guards in one place.** `detail::digest_traits` and `detail::mac_traits` hold each tag's
+  guards; the output's size comes first (`invalid_output_size`), then the options', then the
+  engine's narrower limits and options (`unsupported_by_backend`, ruling R41), so that a guard's
+  error is the same on every backend. An engine's `min_output` exists because BLAKE2b's and
+  BLAKE2s's output size is a parameter of the hash, which a partial cell cannot cut; a partial
+  cell refuses every option it cannot serve, so that none is silently ignored (ruling R86).
+- **BLAKE2b's output size is an option** (`output_size`, 64 by default): a `hasher` must know it at
+  `make` (ruling R88); its key, salt and personalisation take RFC 7693's sizes (ruling R21).
+- **SP 800-185's L at `finish`.** The fixed-length forms of cSHAKE, KMAC, TupleHash and
+  ParallelHash encode the output's length after the input; XKCP takes it at `_Initialize`, so the
+  adapter's `_final_length` writes it at `finish`, and there is no output-size option (ruling
+  R91). KangarooTwelve's customisation is read at `finish` from the span `make` took (ruling R33).
+- **Floors from the standards.** An HMAC tag is 10 bytes or more, the digest cut (RFC 2104 section
+  5, ruling R23); a KMAC tag 4 bytes or more (SP 800-185 section 8.4.2, ruling R91); TurboSHAKE's
+  domain byte 0x01 to 0x7F, which neither libsodium nor XKCP checks (RFC 9861, ruling R25).
+- **The errors.** Value 9, `invalid_state`, is a hasher used after its `finish`, once moved from,
+  or after a backend failure spent it; the messages of values 1, 2 and 5 are reworded for what
+  the families widened ("the output is not of a size the function produces", "the key is not of a
+  size the function accepts", "a parameter is outside the function's limits"), the values unchanged
+  (ruling R8).
+- **HMAC over a tag.** `macs::hmac<Digest>` is over a tag of `digests`, and
+  `detail::digest_tag_of<Hmac>` maps each Boost.Hash2 hmac alias to it (ruling R15).
+- **Argon2's units.** `argon2_parameters::memory_kib` counts KiB as RFC 9106's m does;
+  `argon2id_parameters::memory` keeps bytes; each Doc Comment names its unit (ruling R16).
+
+### D39. `backends::webcrypto`: declared everywhere, asynchronous only, its executor and limits
+
+- **Declared by increment 7, on every target.** `struct webcrypto;` is in `config.hpp` on every
+  target, declared by the asynchronous family's task, not the families' (ruling R83), so that a
+  synchronous function that names it refuses natively too and its message test runs natively; an
+  asynchronous function that names it off Emscripten refuses with "webcpp::hash:
+  backends::webcrypto exists only on Emscripten: name a synchronous backend, or leave the
+  default." (ruling R77).
+- **Its executor (ruling R73).** WebCrypto's promise settles on the JavaScript event loop, so the
+  executor must belong to an `io_context` run on the calling thread: a concrete executor of
+  another context fails to compile, a type-erased one is checked at run time (strands unwrapped;
+  `invalid_parameters` otherwise), and the calling thread, which cannot be checked, is the Doc
+  Comment's.
+- **Its limits (ruling R74).** An empty HMAC key is imported as one zero byte, which HMAC pads to
+  the same key and WebCrypto takes; `detail::backend_limits` gains `pbkdf2_iterations`, and
+  WebCrypto's are 2^32 - 1 iterations, an output of (2^32 - 1) / 8 bytes and an HKDF info of
+  1,024 bytes (node's), documented as WebCrypto's limits as D26 documents OpenSSL's.
+- **In the capability table (ruling R90).** `doc/capabilities.json` lists `backends::webcrypto`
+  as a backend with `asynchronous_only`, its cells (the digests SHA-1, SHA-256, SHA-384 and
+  SHA-512, HMAC over them, HKDF, PBKDF2) the asynchronous functions', never a default, rendered by
+  `tools/hash/doc_tables.py` with the note "asynchronous family only".
+
+### D40. The heavy functions: every native build has threads, and the handler holds the storage
+
+- **Natively always.** `WEBCPP_HASH_HAS_THREADS` follows Boost.Config's `BOOST_HAS_THREADS`, which
+  every native build defines, b2's default `threading=single` included (the pre-flight finding
+  C-B1): natively the heavy functions always exist, and only `WEBCPP_HASH_NO_THREADS` takes them
+  away. The guard tests the target first (`WEBCPP_TARGET_NATIVE`, `WEBCPP_TARGET_EMSCRIPTEN`),
+  since wasip3 defines `BOOST_HAS_THREADS` for its cooperative threads (ruling R70). The refusal
+  reads "... needs a build with threads (natively, remove WEBCPP_HASH_NO_THREADS; on Emscripten,
+  link with -pthread). Without threads, call <name>." in place of D24's "natively b2
+  threading=multi".
+- **The functions.** `async_argon2id`, `async_argon2<Variant, Backend>` (ruling R75),
+  `async_scrypt`, and `async_pbkdf2` with a synchronous backend (ruling R72), each defaulting to
+  `default_backend` of its tag (the pre-flight finding C-m8).
+- **The storage is the handler's.** The operation's state and its completion are allocated with
+  the handler's associated allocator and given back before the handler runs, a cancellation's
+  completion included; a completion destroyed unrun gives the state back too; webcpp's own code
+  calls neither `operator new` nor the C allocator (the review of Task 46). A cancellation before
+  the work starts completes at once with `operation_aborted` (the review of Task 44); after it
+  starts, the work runs to its end and the output is zeroed.
+- **Without exceptions.** The `_no_exceptions` twins check an error completion with a callback or
+  `as_tuple`, and `use_future` on success paths alone (ruling R71).
+
+### D41. No construction without a standard
+
+The library exposes primitives a standard defines, never a protocol's construction (ruling R4:
+BIP, EIP, NIP or SLIP constructions appear only in tests and in documentation examples marked as
+what a domain library would build).
+
+- **No HMAC over MD5-SHA1.** OpenSSL computes one, but no standard defines it and no vector checks
+  it: no backend has `macs::hmac<digests::md5_sha1>` (ruling R92).
+- **The standards' hashes.** `sskdf` takes SP 800-56C's approved hashes (SHA-1, SHA-2, SHA-3);
+  `x963kdf` takes the hash functions SEC 1 v2 section 3.5 lists and NIST SP 800-135r1 section 5.1
+  approves for it (SHA-1, SHA-224, SHA-256, SHA-384, SHA-512: not SHA-512/t, not SHA-3); another
+  refuses at compile time. `kbkdf` takes every hmac its backend has, MD5's, RIPEMD-160's and
+  BLAKE2's included, since protocols outside NIST's approval use them; its Doc Comment says to
+  take SHA-2 or SHA-3 where approval matters.
+- **What a library has and hash does not expose** is listed with its reason in
+  `doc/capabilities.json` (`omitted[]`, layout version 5): OpenSSL's SHA-256/192, its KMAC hashes,
+  `NULL`, CMAC, GMAC and Poly1305, and Whirlpool, MD4 and MDC2 in its legacy provider, which
+  webcpp never loads since loading a provider changes the process's default library context
+  (ruling R42).
+
+### D42. Increment 6 waits for Botan
+
+On 2026-11-17 Botan is not provisioned on webcpp's `main`: there is no `third_party/libs/botan` and
+no crypto target, since webcpp::crypto's increment 5 (Botan), built by its foundation change's
+increment 7, is not built (ruling R60). Increment 6 (plan Tasks 41 to 43) is not started, and
+`backends::botan` is not declared; the tags only it would serve (`digests::streebog_256`,
+`streebog_512`, `whirlpool`, `skein_512`, `kdfs::bcrypt`, `bcrypt_pbkdf`) are declared and refuse
+with "... is in no backend yet.". The pre-flight scan's findings stand for when it runs:
+
+- **One module list a program (C-M8 a).** One copy of Botan per program (spec 5.5's rule), so
+  hash's modules (`sha3 shake keccak blake2 blake2s skein sm3 streebog whirlpool rmd160 kmac
+  siphash blake2mac hmac hkdf sp800_108 sp800_56a sp800_56c kdf2 pbkdf2 scrypt argon2 bcrypt
+  bcrypt_pbkdf cshake_xof`) must be in webcpp::crypto's list: a request to crypto's owner before
+  its foundation's increment 7, step 2.
+- **Botan's targets (C-M8 b).** They follow crypto's foundation design D15 (native and Emscripten,
+  wasip2 and wasip3 as its spike finds), not spec 3.1's "native" and Tasks 42 and 43's "Run
+  natively".
+- **Exceptions on (C-M8 c).** Botan's tests are declared `<exception-handling>on` (crypto's D19),
+  never through `hash-run`.
+- **The column overstates (C-m7).** At Botan 3.14.1: no SipHash-2-4x (an 8-byte output), BLAKE2b
+  without salt or personalisation, no TupleHash or ParallelHash; X9.63 is Botan's `kdf2` and the
+  one-step SSKDF its `sp800_56a`. Task 41 corrects spec 3.5's cells by a change of this proposal.
+- **Botan's heavy variants (C-M9).** `async_bcrypt`, `async_bcrypt_pbkdf`, and `async_argon2` and
+  `async_scrypt` on `backends::botan` belong to Task 43, whose Step 2 adds them with their message
+  tests.
+
 ## Risks / Trade-offs
 
 - [libsodium's `sodium_init` on Emscripten stirs its random generator through JavaScript that
@@ -713,8 +937,15 @@ or the set of libraries a program happened to link.
 - [The scope of increments 2 to 6 is wide] -> each increment is usable alone and merged before the
   next; a cell of the capability table is checked against the library at its pin by the
   increment's first task, never assumed.
-- [Botan's provisioning belongs to webcpp::crypto] -> increment 6 waits for it; nothing earlier
-  depends on Botan.
+- [Botan's provisioning belongs to webcpp::crypto] -> increment 6 waits for it (D42), with the
+  pre-flight's findings kept for when it runs; nothing earlier depends on Botan.
+- [OpenSSL 3.5.9's Argon2 leaves some of its allocations unchecked and returns success over a wrong
+  tag when one fails] -> every OpenSSL call that raised an error is a failure whatever its
+  functions returned, and an allocation's error is `errc::not_enough_memory` (spec 3.4); the
+  out-of-memory test requires it exactly.
+- [A default whose engine is not built: `macs::blake2b_mac` on `backends::sodium` (D34)] -> a call
+  that names no backend refuses at compile time, naming `backends::openssl`; the engine, or a change
+  of the default, is a later change of this proposal.
 - [The asynchronous family adds webcpp::asio as a dependency] -> only through `async.hpp`, which
   nothing else includes.
 - [XKCP has no tagged release] -> the pin is a master commit, `d20c8fc` (2026-11-10); moving it is
@@ -741,20 +972,17 @@ program that named a backend in the type is unchanged; one that gave a former pr
 define still compiles, the define having no effect, and runs on `backends::hash2`; one that relied
 on a define to reach BearSSL or OpenSSL names that backend in the type instead.
 
+D34 to D41 change little of increment 1's code, before anything is published: the messages of
+error values 1, 2 and 5 are reworded (the values unchanged); `argon2id` and `scrypt` gain OpenSSL's
+engines, and their refusal on another backend names both libraries; libsodium's "needs" text names
+`blake2b_subkey` too; the allocation table is regenerated from release builds, its counts
+unchanged. A program written against increment 1 compiles and computes the same bytes.
+
 ## Open Questions
 
-- **O3. The default of the families for an algorithm hash2 lacks.** D33 decides the defaults of
-  increment 1. From increment 2 on, `digest`, `hasher`, `mac` and `argon2` default to
-  `default_backend<Algorithm>` over algorithms Boost.Hash2 does not have (Keccak-224, KMAC,
-  BLAKE2b with a salt, Argon2i, ...). The proposed answer, in D33's spirit, is a fixed default
-  written beside the capability table: the first that has the algorithm of `backends::hash2`,
-  `backends::xkcp`, `backends::blake3` and `backends::sodium`, never `backends::bearssl`,
-  `backends::openssl` or `backends::botan`; an algorithm only those have would then have no
-  default, and a call names its backend. It is the owner's to decide before increment 2's first
-  task.
-
-O1 (a browser backend over WebCrypto) was answered by the owner on 2026-11-14: D23. O2 (one
-native throughput order, or one per platform) was closed by the owner's decision of 2026-11-16,
-D33: no measured order decides a default any more. The owner's
+None is open. O3 (the default of the families for an algorithm Boost.Hash2 lacks) was answered by
+the owner on 2026-11-17 as it proposed: D34. O1 (a browser backend over WebCrypto) was answered by
+the owner on 2026-11-14: D23. O2 (one native throughput order, or one per platform) was closed by
+the owner's decision of 2026-11-16, D33: no measured order decides a default any more. The owner's
 gates (creating `webcpporg/hash`, adding `libs/hash`, every push and
 merge, and opening the Boost.Hash2 contribution) are in the plan's "Owner gates".
