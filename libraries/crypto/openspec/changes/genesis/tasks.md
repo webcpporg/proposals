@@ -57,8 +57,8 @@ change (its tasks 1.14a and 1.14, 1.11, and 4.4); they are checked here when tho
 
 ## 4. After version 0.1: increment 3, the memory option without trystero's migration (stream M)
 
-Tasks 31 and 32 (trystero's sealer, `random` and signer) are dropped by the owner's decision of
-2026-11-17 (`design.md` D23); they stay in the plan as the reference of a future change of
+Tasks 31 and 32 (trystero's sealer, `random` and signer; the plan's "Increment 3: trystero's
+migration") are dropped by the owner, 2026-11-17 (`design.md` D23); they stay in the plan as the reference of a future change of
 trystero's own.
 
 - [ ] 4.3 The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake, in crypto's own `test/openssl_memory/` (plan: Task 33, moved by the revision of 2026-11-17; the owner's answer Q6; native only, refused on every WebAssembly target, WASI included)

@@ -344,7 +344,7 @@ foundation's design D32 to D35 hold the decisions shared with it.
   trystero's repository into crypto's own `test/openssl_memory/` (the option beside Boost.Asio's
   SSL, libdatachannel and a TLS handshake, which webcpp::beast's and webcpp::webrtc's programs
   are too), and Task 34 as its close: stream M of the roadmap, beside the foundation's
-  increments 1 and 2. Tasks 31 and 32 (trystero's sealer, `random` and signer) are dropped;
+  increments 1 and 2. Tasks 31 and 32 (trystero's sealer, `random` and signer: the migration) are dropped by the owner, 2026-11-17;
   trystero keeps its code until a change of trystero's own adopts crypto.
 - **Increment 4** (Task 35) is built in the foundation's increment 1 as its Task 8b, over the
   foundation's `ciphers::aead<Family, Backend>`, whose `aead_state` and `aead_engine` replace
@@ -408,8 +408,8 @@ foundation's design D32 to D35 hold the decisions shared with it.
 ## Migration Plan
 
 Nothing to migrate: version 0.1 moved trystero's build onto `/third_party//secp256k1` (Task
-30a, its code unchanged), and the owner dropped the rest of trystero's migration on 2026-11-17
-(D23). A later change of trystero's own may adopt `aes256_gcm`, `random_device` and
+30a, its code unchanged), and trystero's migration onto the library (Tasks 31 and 32) was
+dropped by the owner, 2026-11-17 (D23); no step of it remains. A later change of trystero's own may adopt `aes256_gcm`, `random_device` and
 `curves::secp256k1::keypair`; the plan's Tasks 31 and 32 stay as its reference.
 
 To resume (details in `reference/STATUS.md`): the order is the foundation's

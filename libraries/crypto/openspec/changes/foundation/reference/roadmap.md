@@ -46,8 +46,8 @@ decision is cited, `D<n>` is the foundation's `design.md` and `genesis D<n>` the
 
 | Item | Where it goes | Why |
 | --- | --- | --- |
-| Genesis Task 31 (trystero's sealer and `random`) | dropped | the owner's decision; trystero keeps its own sealer until a change of trystero's own adopts crypto |
-| Genesis Task 32 (trystero's signer) | dropped | the same; its build half (Task 30a) is in version 0.1 |
+| Genesis Task 31 (trystero's sealer and `random`) | dropped by the owner, 2026-11-17 | trystero keeps its own sealer until a change of trystero's own adopts crypto |
+| Genesis Task 32 (trystero's signer) | dropped by the owner, 2026-11-17 | its build half (Task 30a) is in version 0.1 |
 | Genesis Task 33 (the memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake) | stream M, task M3, **moved into crypto's own `test/openssl_memory/`** | it proves the option in any webcpp process that also holds Beast's TLS or libdatachannel's DTLS (webcpp::beast, webcpp::webrtc), not only trystero's; the owner's answer Q6 |
 | Genesis Task 34 (increment 3 whole) | stream M, task M4 | what is left of increment 3 is the memory option |
 | Genesis Tasks 15 and 16 (the memory option) | stream M, tasks M1 and M2 | Task 33 needs them, and D16 routes OpenSSL's per-call allocations through them |

@@ -1056,6 +1056,10 @@ limits.
   - **Threads.** OpenSSL also frees a thread's state when the thread ends: from `DllMain`'s
     `DLL_THREAD_DETACH` on Windows (`crypto/dllmain.c:37-39`), from a thread-local key's
     destructor elsewhere, so for a thread that outlives `main` that free also comes late.
+    The `DLL_THREAD_DETACH` statement holds only for the shared link, which webcpp never
+    builds: with the static link on Windows, every thread that used OpenSSL keeps its state
+    in the resource until it calls `OPENSSL_thread_stop()` (the guide says so, and the test
+    `everything` does so in its second thread).
 
   So the program's resource is freed through after every destructor of the program has run,
   on the default Windows link, and it must never be destroyed (below).
@@ -1256,7 +1260,14 @@ limits.
   functions of a message allocate nothing (above), so a failing resource cannot reach them.
   **A failure during OpenSSL's first initialisation is permanent:** OpenSSL then stays
   unusable for the rest of the process, and every later `make` gives `backend_failure`
-  (above). A bounded resource is sized for the first `make`: 6,061 allocations, 192
+  (above), on a single-threaded OpenSSL. On a threaded OpenSSL, a resource that fails during
+  OpenSSL's base initialisation is unrecoverable, since OpenSSL re-enters its own
+  initialisation: the resource must serve OpenSSL's start-up. When the failing allocation is
+  OpenSSL's base initialisation (OpenSSL 3.5.9: its first lock, `crypto/init.c:66`), OpenSSL
+  never registers its cleanup, and `OPENSSL_cleanup` frees nothing (`init.c:384`): the blocks
+  it took meanwhile stay in use in the resource until the process ends (2,206 on macOS and
+  2,262 on Linux for one `make`, measured 2026-11-17), and the thread's error queue takes no
+  entry afterwards either. The test `fail_init` pins this and prints how many blocks stay. A bounded resource is sized for the first `make`: 6,061 allocations, 192
   reallocations and 4,621 blocks still live after it, with OpenSSL's configuration file read
   (PROBE-R3, OpenSSL 3.6.4 on macOS; other versions and configurations differ).
 - **What the program's resource must be:**
@@ -1276,7 +1287,7 @@ limits.
 - **Where it exists, and the layers that stop a wrong build.** The option exists where the
   OpenSSL backend does, natively (section 3.3). `config.hpp` refuses it (layer 1, section
   4.3; new text, with its tests, section 8.6):
-  - on WebAssembly: `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE configures OpenSSL, a native backend, and this program is built for WebAssembly. Remove that define from the program's Jamfile.`
+  - on WebAssembly: `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE is an option of native programs, and this program is built for WebAssembly. Remove that define from the program's Jamfile.`
   - natively, without `WEBCPP_CRYPTO_HAS_OPENSSL`: `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. In the program's Jamfile, add /webcpp/crypto//openssl beside /webcpp/crypto//crypto, or remove that define. (without b2: define WEBCPP_CRYPTO_HAS_OPENSSL=1 and link libcrypto)`
 
   **A missing definition is a link error** (crypto-r3-review I2). Under the option every
@@ -1603,8 +1614,7 @@ be read and checked by anyone, and documented (DESIGN, 2026-10-11 "entropy, safe
 This is the section of the library's documentation for its users. Every Jamfile line and every
 printed result in it was built and run with b2 on native (clang-darwin), clang-wasip2,
 clang-wasip3 and Emscripten (C-LIBS:527-542, PROBES `jam/app/<case>/Jamfile`), except the new
-error texts of sections 3.7, 4.3 and 4.4, and the memory option of section 7.3, whose OpenSSL
-calls PROBE-R3 ran natively without b2 and whose interface is not built yet. The C++ of the
+error texts of sections 3.7, 4.3 and 4.4. The C++ of the
 programs follows section 2's interface; the probes ran the same programs on the prototype's
 sketch (`jam/crypto/include`), whose `seal` wrote the tag into a span, whose key type was `schnorr_key`, and whose ctaes
 backend was a free function, `backends::ctaes::aes256_encrypt` (`jam/app/ctaes/block.cpp`).
@@ -1720,8 +1730,8 @@ things below; section 3.7 says why each is needed.
    builds only: `config.hpp` stops a target that has the define without OpenSSL, or that is
    built for WebAssembly, with an `#error` (section 7.7). Carrying `/webcpp/crypto//openssl` in
    the same requirements is what keeps every target that gets the define linked with OpenSSL,
-   a tool or a library that only uses `random_device` or `equal` included (this form is not
-   yet built with b2; section 7's introduction):
+   a tool or a library that only uses `random_device` or `equal` included (the fixture
+   `memory_option` builds and runs this form with b2, natively):
 
        project app
          : requirements <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE
@@ -1938,7 +1948,7 @@ At compile time, the first error is the one to read: the lines after it
 | `webcpp::crypto: the backend Botan needs exceptions, and this program is built without them. ...` | Build with exceptions, or name BearSSL or OpenSSL. |
 | `/third_party//botan: ...` on WebAssembly (from b2), or `webcpp::crypto: Botan is a native backend ...` (without b2) | Name `/third_party//bearssl`: Botan is native only for now. |
 | Botan not found for a program, or a wrong `-sBOTAN_ROOT=<dir>` (from b2; the texts come with increment 5, section 4.4) | Install Botan, or give `-sBOTAN_ROOT=<dir>`, the directory of its `include/` and `lib/`, or use BearSSL or OpenSSL (section 4.4). |
-| `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE configures OpenSSL, a native backend, and this program is built for WebAssembly. ...` | Remove `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` from the WebAssembly build: give that build a project of its own, without the define and OpenSSL, naming `/third_party//bearssl` (section 7.3). On WebAssembly the backend is BearSSL, which allocates nothing. |
+| `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE is an option of native programs, and this program is built for WebAssembly. ...` | Remove `<define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` from the WebAssembly build: give that build a project of its own, without the define and OpenSSL, naming `/third_party//bearssl` (section 7.3). On WebAssembly the backend is BearSSL, which allocates nothing. |
 | `webcpp::crypto: WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE routes OpenSSL's allocations, and OpenSSL is not linked. ...` | A target has the define and not OpenSSL: put `<library>/webcpp/crypto//openssl` in the same project requirements as the define (section 7.3), or remove the define. |
 | `Undefined symbols ...: "webcpp::crypto::openssl_memory_resource()"`, at link time (ld64, PROBE-R3; GNU ld and MSVC's `link.exe` name the same function in their own forms, which the link test of section 8.6 fixes) | The program sets `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE`, uses the OpenSSL backend (any `make`, or the install) and does not define the function: define `std::pmr::memory_resource& webcpp::crypto::openssl_memory_resource() noexcept` once, returning a resource that is never destroyed, as in section 7.3. |
 | `LNK2038: mismatch detected for 'webcpp_crypto_openssl_memory'` (MSVC) | Some files of the program were compiled with `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` and some without: give the define in the requirements of the program's project, with OpenSSL beside it, `project app : requirements <define>WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE <library>/webcpp/crypto//openssl ;`, so that every target of the program gets both (natively only; section 7.3). |
