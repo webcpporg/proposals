@@ -54,7 +54,8 @@ Constraints every decision below works within, from the superproject's rulebook 
 - An incremental `open` (a later increment may add it only with the plaintext withheld until the
   tag verifies), an incremental ChaCha20-Poly1305, tags shorter than 16 bytes.
 - A Botan build for WebAssembly, which is a later increment's if a user needs it.
-- OpenSSL on WebAssembly, or the memory option anywhere but native.
+- OpenSSL on Emscripten, or the memory option anywhere but native (never on a WebAssembly target,
+  WASI included).
 - The CI's three levels as a whole: this plan builds only the nightly level of the own lanes.
 - Routing Botan's allocations through the user's allocator: Botan 3.13.0 offers no hook.
 
@@ -220,6 +221,9 @@ adapter functions that store each block's size in a header. The resource is neve
 because OpenSSL frees through it after `main`, and on Windows with a shared libcrypto after every
 static destructor. Every `make` of the backend checks that the functions are webcpp's and
 otherwise returns `memory_functions_not_installed`; a missing definition is a link error.
+The option is native only and `config.hpp` refuses it on every WebAssembly target, WASI included
+(wasip2, wasip3 and Emscripten), by the owner's decision of 2026-11-17; OpenSSL itself still builds
+on WASI, and `/webcpp/crypto//openssl` is refused on Emscripten alone.
 
 - **Why a function the program defines:** OpenSSL's hook carries no user data, so any other form
   would keep the resource in a global variable of webcpp's, which the rulebook forbids; Boost
@@ -340,7 +344,7 @@ foundation's design D32 to D35 hold the decisions shared with it.
   trystero's repository into crypto's own `test/openssl_memory/` (the option beside Boost.Asio's
   SSL, libdatachannel and a TLS handshake, which webcpp::beast's and webcpp::webrtc's programs
   are too), and Task 34 as its close: stream M of the roadmap, beside the foundation's
-  increments 1 and 2. Tasks 31 and 32 (trystero's sealer, `random` and signer) are dropped;
+  increments 1 and 2. Tasks 31 and 32 (trystero's sealer, `random` and signer: the migration) are dropped by the owner, 2026-11-17;
   trystero keeps its code until a change of trystero's own adopts crypto.
 - **Increment 4** (Task 35) is built in the foundation's increment 1 as its Task 8b, over the
   foundation's `ciphers::aead<Family, Backend>`, whose `aead_state` and `aead_engine` replace
@@ -404,8 +408,8 @@ foundation's design D32 to D35 hold the decisions shared with it.
 ## Migration Plan
 
 Nothing to migrate: version 0.1 moved trystero's build onto `/third_party//secp256k1` (Task
-30a, its code unchanged), and the owner dropped the rest of trystero's migration on 2026-11-17
-(D23). A later change of trystero's own may adopt `aes256_gcm`, `random_device` and
+30a, its code unchanged), and trystero's migration onto the library (Tasks 31 and 32) was
+dropped by the owner, 2026-11-17 (D23); no step of it remains. A later change of trystero's own may adopt `aes256_gcm`, `random_device` and
 `curves::secp256k1::keypair`; the plan's Tasks 31 and 32 stay as its reference.
 
 To resume (details in `reference/STATUS.md`): the order is the foundation's
