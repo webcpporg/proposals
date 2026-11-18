@@ -35,9 +35,11 @@ interface over code other projects wrote, with webcpp's own code only where sect
 | From increment 2 on: everything else libsodium, XKCP, OpenSSL, BearSSL and Botan 3 offer for hashing and key derivation | each library, through the families of spec 2.15, by the capability table of 3.5 |
 | From increment 7: SHA-1/256/384/512, HMAC, HKDF and PBKDF2 in the browser | WebCrypto, through the parallel asynchronous family of section 11 |
 
-Every function is synchronous, reports failure as a value (`boost::system::result`), takes its
+Every synchronous function reports failure as a value (`boost::system::result`), takes its
 data as `std::span`, and allocates nothing in webcpp's code (section 6 names the C libraries
-that allocate inside the two memory-hard functions and inside OpenSSL).
+that allocate inside the two memory-hard functions and inside OpenSSL). `<webcpp/hash/async.hpp>`
+gives the slow ones and the ones WebCrypto has an asynchronous form, which completes through an
+event loop with a `boost::system::error_code` (section 11).
 
 ### 1.2 What it is not
 
@@ -1318,8 +1320,9 @@ link it.
   header `detail/xkcp_storage.h` that the adapter and `detail/xkcp.hpp` both read; the adapter's
   `_final_length` writes SP 800-185's L at `finish` (2.15).
 - **`backends::blake3`.** `digests::blake3` over webcpp's `blake3` (2.7), its extendable output.
-- **`backends::sodium`.** `sodium_init()` is called first in every engine function (it returns 0 the
-  first time and 1 after, both success; -1 is `backend_failure`).
+- **`backends::sodium`.** `sodium_init()` is called first in every engine function that starts
+  work on libsodium (`init`, `one_shot`, `compute`, `derive`, `extract`, `expand`; it returns 0
+  the first time and 1 after, both success; -1 is `backend_failure`).
   `crypto_kdf_hkdf_sha256_extract`/`_sha512_extract`, `_expand` (whose `ctx` is the info);
   `crypto_pwhash_argon2id(..., crypto_pwhash_ALG_ARGON2ID13)`;
   `crypto_pwhash_scryptsalsa208sha256_ll`. A return of -1 with `errno == ENOMEM` is
