@@ -800,8 +800,8 @@ A backend's tag type has `static constexpr std::string_view name` (`"bearssl"`,
   (`3.0.13 crypto/mem.c:180-181`). So a null from an allocation inside `EVP_EncryptInit_ex`
   (the provider's context, the second of the two blocks a later `make` takes, PROBE-R3) is a
   `backend_failure` too, and the documentation says so. A null from `EVP_CIPHER_fetch` may
-  mean that OpenSSL's first initialisation failed, which is permanent for the process
-  (section 3.7).
+  mean that OpenSSL's first initialisation failed, which is permanent for the process (on a
+  threaded OpenSSL, an unrecoverable base initialisation; section 3.7).
 - **The key** is given to EVP once, in `make`, and webcpp keeps no copy of it: every message
   re-initialises the context with a null key, which keeps the expanded key, and switching the
   reused context from encryption to decryption that way works (measured on 3.6.4: a seal,
@@ -1187,8 +1187,12 @@ limits.
   import table's `__imp_CRYPTO_malloc`, which exists only with the shared link, is decorated
   differently on x86, and is a reserved name; it answers for any DLL name and either link.
   OpenSSL names its defaults through no API of its own, and calling the functions to see
-  would allocate, which clears the flag. The Windows branch is unmeasured: section 8.5's MSVC
-  lane runs the `late` and `foreign` tests on the shared and the static link. The header
+  would allocate, which clears the flag. The Windows branch is unmeasured, and the tree departs from it (R5):
+  webcpp builds OpenSSL static only, so the branch could never run in a test, and a libcrypto
+  DLL (a program built without b2) is refused with `memory_functions_refused`; the departure
+  is recorded in the superproject's CODING-GUIDELINES.md, chapter 19, and serving such a
+  program takes this branch back, never measured. Section 8.5's MSVC lane runs the `late` and
+  `foreign` tests on the static link. The header
   includes `<windows.h>` for it through `<webcpp/crypto/detail/windows.hpp>`, under
   `NOMINMAX` and `WIN32_LEAN_AND_MEAN` (section 2.2), with `lint-world:` and its reason
   (AGENTS:641-649).
@@ -1260,14 +1264,16 @@ limits.
   functions of a message allocate nothing (above), so a failing resource cannot reach them.
   **A failure during OpenSSL's first initialisation is permanent:** OpenSSL then stays
   unusable for the rest of the process, and every later `make` gives `backend_failure`
-  (above), on a single-threaded OpenSSL. On a threaded OpenSSL, a resource that fails during
+  (above), on a single-threaded OpenSSL. On a threaded OpenSSL (MSVC's always), a resource that fails during
   OpenSSL's base initialisation is unrecoverable, since OpenSSL re-enters its own
-  initialisation: the resource must serve OpenSSL's start-up. When the failing allocation is
-  OpenSSL's base initialisation (OpenSSL 3.5.9: its first lock, `crypto/init.c:66`), OpenSSL
-  never registers its cleanup, and `OPENSSL_cleanup` frees nothing (`init.c:384`): the blocks
+  initialisation: the resource must serve OpenSSL's start-up. On a single-threaded OpenSSL,
+  when the failing allocation is OpenSSL's base initialisation (OpenSSL 3.5.9: its first
+  lock, `crypto/init.c:66`), OpenSSL never registers its cleanup, and `OPENSSL_cleanup` frees nothing (`init.c:384`): the blocks
   it took meanwhile stay in use in the resource until the process ends (2,206 on macOS and
   2,262 on Linux for one `make`, measured 2026-11-17), and the thread's error queue takes no
-  entry afterwards either. The test `fail_init` pins this and prints how many blocks stay. A bounded resource is sized for the first `make`: 6,061 allocations, 192
+  entry afterwards either. The test `fail_init` pins this on a single-threaded OpenSSL and prints how many blocks stay;
+  its threaded twin `fail_init_threads` (built with `<threading>multi`) checks that the first
+  `make` takes blocks of the resource. A bounded resource is sized for the first `make`: 6,061 allocations, 192
   reallocations and 4,621 blocks still live after it, with OpenSSL's configuration file read
   (PROBE-R3, OpenSSL 3.6.4 on macOS; other versions and configurations differ).
 - **What the program's resource must be:**
@@ -1814,8 +1820,10 @@ What to know:
   library of the program's that includes the backend's header has its own copy of webcpp's
   functions, and its `make` returns `memory_functions_not_installed`.
 - When the resource cannot allocate: during the first `make` of the process, OpenSSL's own
-  initialisation fails, and OpenSSL stays unusable for the rest of the process (`make` gives
-  `backend_failure` from then on); later, `make` gives `not_enough_memory` or
+  initialisation fails, and OpenSSL stays unusable for the rest of the process (on a
+  single-threaded OpenSSL `make` gives `backend_failure` from then on; on a threaded OpenSSL,
+  MSVC's always, a resource failing during OpenSSL's base initialisation is unrecoverable,
+  so the resource must serve OpenSSL's start-up); later, `make` gives `not_enough_memory` or
   `backend_failure`. `seal` and `open` allocate nothing. A resource with a fixed size needs
   room for the first `make`: about 6,100 allocations, 4,621 of them still live afterwards,
   with OpenSSL 3.6.4 on macOS (section 3.7). Without exceptions, a resource that throws ends
@@ -1960,7 +1968,7 @@ what to do (section 3.7):
 | --- | --- |
 | `memory_functions_refused`, from `install_memory_functions()`: "OpenSSL's memory functions cannot be installed: OpenSSL has already allocated, or another party installed its own. ..." | Make the call the first statement of `main`. If it is already, a static object of another library used OpenSSL, or called `CRYPTO_set_mem_functions`, before `main`: remove that use, or drop the option. |
 | `memory_functions_not_installed`, from `make` on OpenSSL: "OpenSSL's memory functions are not webcpp::crypto's. ..." | Call `install_memory_functions()` first in `main`, and check that nothing else in the process calls `CRYPTO_set_mem_functions`. If the `make` is in a DLL or a shared library of the program's, move the code that uses the OpenSSL backend into the module that calls the install (section 3.7). |
-| `backend_failure` from every `make` on OpenSSL, under the option, after the resource failed once early in the process | The resource could not allocate during OpenSSL's first initialisation, which OpenSSL does not retry: the process cannot use OpenSSL any more. Give the resource room for the first `make` (section 7.3) and restart. |
+| `backend_failure` from every `make` on OpenSSL, under the option, after the resource failed once early in the process (single-threaded OpenSSL; a threaded one cannot recover from a failing base initialisation) | The resource could not allocate during OpenSSL's base initialisation, which OpenSSL does not retry: the process cannot use OpenSSL any more. Give the resource room for the first `make` (section 7.3) and restart. |
 
 At link time, a symbol whose name is the instruction reports a backend library that is
 missing, or that is of another commit or configuration than the headers. With b2 this cannot
@@ -2221,9 +2229,12 @@ parts on `chacha20_poly1305` land with it, in increment 4 (section 9).
     (crypto-r3-review mode `failsecond`); its second allocation fails: `make` gives
     `backend_failure` (from `EVP_EncryptInit_ex`);
   - in a program of its own, the first allocation after the install fails, inside OpenSSL's
-    first initialisation: `make` gives `backend_failure`, and so does a `make` after the
-    resource has stopped failing, which is the permanence section 3.7 documents
-    (crypto-r3-review mode `failinit`);
+    first initialisation: `make` gives `backend_failure`, and, on a single-threaded OpenSSL, so
+    does a `make` after the resource has stopped failing, which is the permanence section 3.7
+    documents (crypto-r3-review mode `failinit`; the test `fail_init`); its threaded twin
+    `fail_init_threads`, built with `<threading>multi`, checks that the first `make` takes
+    blocks of the resource, since a threaded OpenSSL does not recover from a failing base
+    initialisation;
   - before each `make`, the test raises an entry of its own in the thread's queue, and after
     it the queue holds that entry alone, whatever `make` returned (`ERR_set_mark`, section
     3.3);
