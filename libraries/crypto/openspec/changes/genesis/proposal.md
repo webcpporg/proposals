@@ -57,7 +57,8 @@ foundation change in one order (`design.md` D23, and the foundation's `reference
   `BCryptGenRandom` on Windows), no generator in user space, no weaker fallback.
 - **OpenSSL's memory functions are an option of the config:** with
   `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` a program names a `std::pmr::memory_resource` and
-  every allocation of OpenSSL in the process goes to it. Without the option OpenSSL's and
+  every allocation of OpenSSL in the process goes to it; the option is native only and refused on
+  every WebAssembly target, WASI included. Without the option OpenSSL's and
   Botan's `make` allocate outside the program's allocator, a departure the owner accepted.
 - **webcpp::trystero** names `/third_party//secp256k1` since version 0.1 (its build alone);
   its sealer, entropy and signer are not changed by this library's work (the owner's decision

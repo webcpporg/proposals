@@ -37,7 +37,7 @@ the decision. Measured tables come only from release builds.
 | 22 | the foundation's Task 11' (task 1.11): the own lane `sizes` through `webcpp.size-table`, which requires `<variant>release`; throughput measured by hand by a collect script that refuses a program or data not built at `variant=release`; no `runners.yml`, no ranking; nothing decides a default |
 | 23 | the foundation's increment 4 (task 4.4), Chrome's throughput from release builds |
 | 25b, 9's NIST half | stream N, behind gates O2 and O3 |
-| 31, 32 | **dropped**; kept as the reference of a future change of trystero's own |
+| 31, 32 | **dropped by the owner, 2026-11-17**; kept as the reference of a future change of trystero's own |
 | 33 | stream M, **moved into crypto's own tests** (below) |
 | 34 | stream M's close (below) |
 | 35 | the foundation's Task 8b (task 1.8b), re-cut onto `ciphers::aead<Family, Backend>` |
@@ -5548,7 +5548,9 @@ option's own change; before it runs, re-read it against the source-built provide
 `/webcpp/third_party//openssl` and named through `/webcpp/crypto//openssl` (Task 11), version
 3.5.9, on native, wasip2 and wasip3; the feature `webcpp-crypto-openssl-link`, `OPENSSL_ROOT`
 and the shared link it names are gone; the error values 13 and 14 are reserved and undeclared;
-and the measured counts are 3.6.4's.
+and the measured counts are 3.6.4's. The option itself is native only and is refused on every
+WebAssembly target, WASI included (wasip2, wasip3 and Emscripten), by the owner's decision of
+2026-11-17; only `/webcpp/crypto//openssl` is refused on Emscripten alone.
 
 **Files:**
 - Modify: `include/webcpp/crypto/backends/openssl.hpp`.
@@ -5962,7 +5964,9 @@ option's own change; before it runs, re-read it against the source-built provide
 `/webcpp/third_party//openssl` and named through `/webcpp/crypto//openssl` (Task 11), version
 3.5.9, on native, wasip2 and wasip3; the feature `webcpp-crypto-openssl-link`, `OPENSSL_ROOT`
 and the shared link it names are gone; the error values 13 and 14 are reserved and undeclared;
-and the measured counts are 3.6.4's.
+and the measured counts are 3.6.4's. The option itself is native only and is refused on every
+WebAssembly target, WASI included (wasip2, wasip3 and Emscripten), by the owner's decision of
+2026-11-17; only `/webcpp/crypto//openssl` is refused on Emscripten alone.
 
 **Files:**
 - Create, in `test/openssl_memory/`: `support.hpp` (the counting resource that is never
@@ -10581,6 +10585,8 @@ still moves trystero's code onto webcpp::crypto later; Task 32 Step 3's build ha
 
 # Increment 3: trystero's migration
 
+**Dropped by the owner, 2026-11-17** (Tasks 31 and 32 below, and this increment's precondition, are not built; Task 30a's build half is merged in version 0.1). The text below stays as the reference of a future change of trystero's own, and the plan's numbering is kept.
+
 **Deferred after version 0.1 (revision of 2026-11-14).** Kept as written; before it starts,
 re-read it against the tree of that day. Already true at the revision: trystero's
 shared-connection change has integrated (the precondition below holds, but its table of call
@@ -10626,7 +10632,7 @@ Before Task 31 starts:
 
 ## Task 31: trystero seals with `aes256_gcm` directly, and draws from `random_device`
 
-**Dropped** by the owner's decision of 2026-11-17 (the revision of that day); kept as the reference of a future change of trystero's own.
+**Dropped by the owner, 2026-11-17** (the revision of that day); kept as the reference of a future change of trystero's own.
 
 **Files (in `libs/trystero`):**
 - Create: `include/webcpp/trystero/detail/sealer.hpp`, `test/sealer_test.cpp`.
@@ -10876,7 +10882,7 @@ private:
 
 ## Task 32: trystero signs with `secp256k1::keypair`, and libsecp256k1 comes from `third_party`
 
-**Dropped** by the owner's decision of 2026-11-17 (the revision of that day); its build half is Task 30a, merged in version 0.1.
+**Dropped by the owner, 2026-11-17** (the revision of that day); its build half is Task 30a, merged in version 0.1.
 
 **Files (in `libs/trystero`):**
 - Modify: `include/webcpp/trystero/protocol/nostr.hpp` (`signer`, `verify`),
@@ -10973,7 +10979,8 @@ inline bool verify(std::span<const std::uint8_t, 64> sig, std::span<const std::u
 
 ## Task 33: The memory option beside Boost.Asio's SSL, libdatachannel and a TLS handshake
 
-Stream M, **moved into `libs/crypto/test/openssl_memory/`** by the revision of 2026-11-17, which gives its files.
+Stream M, **moved into `libs/crypto/test/openssl_memory/`** by the revision of 2026-11-17, which gives its files. The option is native only, refused on every WebAssembly target, WASI
+included (the owner's decision of 2026-11-17), so this task's tests build natively alone.
 
 **Files (in `libs/trystero`):**
 - Create: `test/openssl_memory/Jamfile`, `test/openssl_memory/neighbours_test.cpp`,
