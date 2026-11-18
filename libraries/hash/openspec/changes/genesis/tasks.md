@@ -5,7 +5,10 @@ steps, code and expected output. Increment 1 is built and committed in the libra
 repository (branch `main`, not yet on GitHub) and the superproject's integration branch, reviewed
 and green on every local lane; each of its tasks says what was built, with the design decision
 where the build changed the plan; a note dated 2026-11-16 marks the work design D33 retires.
-Increments 2 to 7 and the publication are open. The groups are
+Increments 2, 3, 4, 5 and 7 are built on the library's branch `increments-2-7` and the
+superproject's `hash/increments-2-7` (local), each task reviewed, under the owner's decisions of
+2026-11-17 (design D34 to D36); what their build decided is design D37 to D41. Increment 6 is open,
+blocked: Botan is not provisioned (design D42). The publication is open. The groups are
 the spec's increments (spec 1.5); inside each, the plan's "The order of the work, and the
 parallel streams" says which tasks run in parallel, by backend.
 `reference/STATUS.md` says how to start.
@@ -39,45 +42,47 @@ parallel streams" says which tasks run in parallel, by backend.
 - [x] 1.25 Increment 1 whole: the rulebook, green, review, the gates (plan: Task 24). Built: chapter 5's exceptions and chapter 17 as built, the lint's canary pins over hash, `[[nodiscard]]` on every result under the lint's rule (design D30); native, wasip2, wasip3, Emscripten, gcc-15, `c-suites`, `measure` and the lint green from scratch; the whole review. The gates are 8.1 and 8.2. The lane `measure` is retired on 2026-11-16 by design D33
 - [x] 1.26 Every key derivation defaults to `backends::hash2` (design D33, the owner's decision of 2026-11-16; plan: the notes of 2026-11-16 at Tasks 14 and 21). Built on the branches `hash/defaults-hash2` of `webcpporg/hash` and of the superproject: `default_backend` and `default_kdf_backend` answer `backends::hash2` for `hkdf`, `hkdf_extract`, `hkdf_expand` and `pbkdf2` on every target and link set, `backends::sodium` for `argon2id` and `scrypt`, whose engine's primary template refuses an unlinked libsodium with its "needs" text (messages `argon2id_default_not_linked` and `scrypt_default_not_linked`, their Emscripten fixtures and MSVC cases); `default_backend_former_defines` shows that former profile and override defines change nothing; the profiles, the umbrella's reading, the overrides, `detail/ranking.hpp`, `detail/overrides.hpp`, their `detect_mismatch`, tests and messages removed; the lane `measure`, `tools/hash/measure.py` whole with `hash_measure_test.py`, `tools/ci/matrix.py`'s `EVERY_TARGET_LANES` and `tools/lint/compile_commands.py`'s native WebAssembly commands removed with their tests; `doc/capabilities.json` at layout version 3 with a `"default"` per function row (no `"portable"`, no `"overridable"`); `tools/hash/doc_tables.py` renders `doc/backends.adoc` and `doc/measurements.adoc`, the reference of 2026-11-16, and its `--check` guards `measurements.json`'s digest; `pbkdf2_sha512_key` in every lane, the times by hand with `bench/collect.py`; the chapter `choosing_backend.adoc` and `guide.json`'s use-case field `backend` (layout version 2)
 
+- [x] 1.27 The allocation table from release builds only (design D36, the owner's decision of 2026-11-17; the extra task "Allocation from release builds", stream `alloc`). Built: `bench/Jamfile`'s `allocation_release` and `allocation_openssl_release` at `variant=release`, `bench/allocation_collect.py` reading the variant from b2's build directory and refusing any other, `"build": "variant=release"` in `doc/measurements.allocation.json`, `tools/test/hash_allocation_collect_test.py`; regenerated on native, wasip2, wasip3 and Emscripten, every count unchanged
+
 ## 2. Increment 2: libsodium's whole hashing surface (stream `sodium-2`)
 
-- [ ] 2.1 The families `digest`, `hasher`, `mac`, `argon2` (plan: Task 25; first, every later increment needs it)
-- [ ] 2.2 BLAKE2b with key, salt, personalisation and length (plan: Task 26)
-- [ ] 2.3 SipHash-2-4, SipHash-2-4x, BLAKE2b subkeys (plan: Task 27)
-- [ ] 2.4 SHAKE, TurboSHAKE, SHA-2, SHA-3 and HMACs as digests and MACs (plan: Task 28)
-- [ ] 2.5 Argon2i, `argon2` on libsodium, increment 2 whole (plan: Task 29, Task 47)
+- [x] 2.1 The families `digest`, `hasher`, `mac`, `argon2` (plan: Task 25; first, every later increment needs it). Built: `digest.hpp` (`digest_options`, `digest_of`, named so beside Hash2's `digest<N>`, and `hasher`), `mac.hpp`, `argon2_parameters` and `argon2`, the tags of `digests`, `macs` and `kdfs` and `backends::xkcp` and `backends::blake3` in `config.hpp`, `error::invalid_state` (value 9) and the reworded messages of values 1, 2 and 5 (design D38), the engines' contract and each tag's refusal in `detail/engines.hpp`, every default written once by design D34 (`detail::no_default`), `doc/capabilities.json` at layout version 4, the families on Hash2's algorithms (SHAKE whole and SHAKE's default, design D37; BLAKE2b and keyed BLAKE2s partial; SipHash-2-4), on `keccak_256` and on `blake3`; reviewed in three fix rounds
+- [x] 2.2 BLAKE2b with key, salt, personalisation and length (plan: Task 26). Built: `digest_options<digests::blake2b>` with RFC 7693's guards and the output's size as an option (design D38), libsodium's engine, hash2's partial cell refusing every option, the BLAKE2 test-vector submodule at `ed1974e` (`/third_party//blake2_vectors`) and `/third_party//sodium_vectors`
+- [x] 2.3 SipHash-2-4, SipHash-2-4x, BLAKE2b subkeys (plan: Task 27). Built: libsodium's SipHash-2-4 and -2-4x, `blake2b_subkey` in `blake2b_subkey.hpp` with its guards (16 to 64 bytes, a 32-byte master key, an 8-byte context)
+- [x] 2.4 SHAKE, TurboSHAKE, SHA-2, SHA-3 and HMACs as digests and MACs (plan: Task 28). Built: libsodium's SHA-256, SHA-512, SHA3-256, SHA3-512, SHAKE, TurboSHAKE (its domain byte 0x01 to 0x7F in the family) and HMAC-SHA-256/512 (no HMAC-SHA-512/256), against RFC 9861's and the other backends' results
+- [x] 2.5 Argon2i, `argon2` on libsodium, increment 2 whole (plan: Task 29, Task 47). Built: `argon2<kdfs::argon2i>` and `argon2<kdfs::argon2id>` on libsodium (one lane, Argon2i from 3 passes), libsodium's "needs" text naming `blake2b_subkey`, `allocation_test` over increment 2 and the families; the increment's review
 
 ## 3. Increment 3: XKCP's Keccak family (stream `xkcp-3`)
 
-- [ ] 3.1 XKCP's high-level files (plan: Task 30)
-- [ ] 3.2 Keccak-224 to -512, SHA-3 and SHAKE on XKCP (plan: Task 31)
-- [ ] 3.3 cSHAKE, KMAC, TupleHash, ParallelHash (plan: Task 32)
-- [ ] 3.4 KangarooTwelve and TurboSHAKE, increment 3 whole (plan: Task 33, Task 47)
+- [x] 3.1 XKCP's high-level files (plan: Task 30). Built: `KeccakSponge.c`, `KeccakHash.c`, `SP800-185.c`, `TurboSHAKE.c` and `KangarooTwelve.c` in `/third_party//xkcp` with their `XKCP_has_*` in webcpp's `config.h`, the adapter's opaque storage checked by `_Static_assert`, XKCP's unit tests in `c-suites`
+- [x] 3.2 Keccak-224 to -512, SHA-3 and SHAKE on XKCP (plan: Task 31). Built: their engines on `backends::xkcp`, XKCP's byte-aligned test vectors read through `/third_party//xkcp_vectors`
+- [x] 3.3 cSHAKE, KMAC, TupleHash, ParallelHash (plan: Task 32). Built: their options and both forms, SP 800-185's L written at `finish`, KMAC's tag of 4 bytes or more (design D38), ParallelHash's whole input bounded so that its length in bits cannot wrap on wasm32, NIST's samples
+- [x] 3.4 KangarooTwelve and TurboSHAKE, increment 3 whole (plan: Task 33, Task 47). Built: KT128 and KT256 with their customisation read at `finish`, TurboSHAKE on XKCP, RFC 9861's 67 vectors (36 KangarooTwelve, 31 TurboSHAKE); the increment's review
 
 ## 4. Increment 4: OpenSSL's whole surface (stream `openssl-4`)
 
-- [ ] 4.1 OpenSSL's digests, KECCAK-256 and SM3 included (plan: Task 34)
-- [ ] 4.2 KMAC, BLAKE2 MACs, HMAC (plan: Task 35)
-- [ ] 4.3 scrypt and Argon2 with every RFC 9106 parameter (plan: Task 36)
-- [ ] 4.4 KBKDF, SSKDF, X9.63 KDF (plan: Task 37)
-- [ ] 4.5 Increment 4 whole (plan: Task 38, Task 47)
+- [x] 4.1 OpenSSL's digests, KECCAK-256 and SM3 included (plan: Task 34). Built: every digest of the default provider that has a tag, MD5-SHA1, each `EVP_MD_CTX` a hasher's own; `doc/capabilities.json` at layout version 5 with `omitted[]` (design D41)
+- [x] 4.2 KMAC, BLAKE2 MACs, HMAC (plan: Task 35). Built: KMAC, keyed BLAKE2b and BLAKE2s, SipHash-2-4 and -2-4x, HMAC over OpenSSL's digests through `EVP_MAC`
+- [x] 4.3 scrypt and Argon2 with every RFC 9106 parameter (plan: Task 36). Built: `argon2` with every variant and parameter, `argon2id` and `scrypt` on OpenSSL with spec 3.3's new texts, `kdfs::argon2d`, no HMAC over MD5-SHA1 (design D41), every OpenSSL call that raised an error a failure
+- [x] 4.4 KBKDF, SSKDF, X9.63 KDF (plan: Task 37). Built: `kdf_standards.hpp` (`kbkdf_options`, `kbkdf`, `sskdf`, `x963kdf`), no default, the standards' hashes alone for `sskdf` and `x963kdf` (design D41), OpenSSL's vectors read at run time
+- [x] 4.5 Increment 4 whole (plan: Task 38, Task 47). Built: `agreement_families_test`, `allocation_openssl_test` over increment 4; the increment's review
 
 ## 5. Increment 5: BearSSL's hashes and HMAC (stream `bearssl-5`)
 
-- [ ] 5.1 BearSSL's hashes, HMAC and SHAKE (plan: Task 39)
-- [ ] 5.2 Increment 5 whole (plan: Task 40, Task 47)
+- [x] 5.1 BearSSL's hashes, HMAC and SHAKE (plan: Task 39). Built: MD5, SHA-1, SHA-224 to SHA-512, MD5-SHA1, SHAKE of any length and HMAC over the six on `backends::bearssl`, never a default, against RFC 2202, RFC 4231 and Hash2; it found that Hash2's SHAKE is whole (design D37)
+- [x] 5.2 Increment 5 whole (plan: Task 40, Task 47). Built: `digests::md5_sha1` with no default, its section of the guide, chapter 17's entry with designs D33 and D34, every lane from scratch; the increment's review
 
 ## 6. Increment 6: Botan 3 (stream `botan-6`; after webcpp::crypto provisions Botan)
 
-- [ ] 6.1 Botan's column, checked at its pin (plan: Task 41)
-- [ ] 6.2 Botan's hashes and MACs (plan: Task 42)
-- [ ] 6.3 Botan's KDFs and password hashes, increment 6 whole (plan: Task 43, Task 47)
+- [ ] 6.1 Botan's column, checked at its pin (plan: Task 41). Open, not started: Botan is not provisioned on webcpp's `main` (design D42, which keeps the pre-flight's findings for it)
+- [ ] 6.2 Botan's hashes and MACs (plan: Task 42). Open, blocked as 6.1
+- [ ] 6.3 Botan's KDFs and password hashes, increment 6 whole (plan: Task 43, Task 47). Open, blocked as 6.1; it adds Botan's heavy variants (`async_bcrypt`, `async_bcrypt_pbkdf`)
 
 ## 7. Increment 7: the browser backend, through the asynchronous family (stream `async-7`)
 
-- [ ] 7.1 The cheap asynchronous functions by post, and the heavy ones on another thread where the build has threads (plan: Task 44)
-- [ ] 7.2 `backends::webcrypto` on Emscripten through `browser::async_await` (plan: Task 45)
-- [ ] 7.3 Cancellation, allocation and tokens; increment 7 whole (plan: Task 46, Task 47)
+- [x] 7.1 The cheap asynchronous functions by post, and the heavy ones on another thread where the build has threads (plan: Task 44). Built: `async.hpp` with `default_async_backend` equal to `default_backend` (design D35), `async_digest`, `async_hmac`, `async_hkdf`, `async_pbkdf2`, `async_argon2id`, `async_argon2`, `async_scrypt`, `WEBCPP_HASH_HAS_THREADS` natively in every build unless `WEBCPP_HASH_NO_THREADS`, the refusal text of design D40, `backends::webcrypto` declared on every target
+- [x] 7.2 `backends::webcrypto` on Emscripten through `browser::async_await` (plan: Task 45). Built: `backends/webcrypto.hpp`, named in the type alone, its executor checked, WebCrypto's limits and the empty HMAC key as one zero byte (design D39), its failure paths through stubbed promises
+- [x] 7.3 Cancellation, allocation and tokens; increment 7 whole (plan: Task 46, Task 47). Built: cancellation before, during and racing the work, the operation's state from the handler's allocator given back before the handler runs (design D40), Cobalt's `use_op`, `allocation_test` over the family, `backends::webcrypto` in `doc/capabilities.json` as asynchronous only; the increment's review
 
 ## 8. Publication
 
