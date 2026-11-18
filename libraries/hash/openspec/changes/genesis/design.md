@@ -732,10 +732,9 @@ spirit, and never measured.
   stands once increments 2, 3, 4, 5 and 7 have landed, and no default changes between increments:
   a default whose backend's engine lands in a later stream refuses at compile time until it lands,
   first with the library's "needs" text and then with the backends that have the tag (ruling
-  R84). The table is spec 4.1's.
-- **One default whose engine is not built.** `macs::blake2b_mac` defaults to `backends::sodium`
-  (libsodium's keyed BLAKE2b), but no increment built that engine; until one does, a call that
-  names no backend refuses at compile time and names `backends::openssl`, its one cell.
+  R84). Once the batch has landed every default has its engine: `macs::blake2b_mac`'s,
+  `backends::sodium`, is libsodium's keyed `crypto_generichash_blake2b`, a key and a tag of 1 to
+  64 bytes, built by the task "BLAKE2b MAC on libsodium" (ruling R95). The table is spec 4.1's.
 - **Why:** D33's reasons hold for the families. One rule that a reader of the call can apply
   without knowing the build; hash2 first, header-only and on every target, so that every algorithm
   Boost.Hash2 has keeps it; XKCP and BLAKE3 next, the reference code of the Keccak team and of
@@ -943,9 +942,6 @@ with "... is in no backend yet.". The pre-flight scan's findings stand for when 
   tag when one fails] -> every OpenSSL call that raised an error is a failure whatever its
   functions returned, and an allocation's error is `errc::not_enough_memory` (spec 3.4); the
   out-of-memory test requires it exactly.
-- [A default whose engine is not built: `macs::blake2b_mac` on `backends::sodium` (D34)] -> a call
-  that names no backend refuses at compile time, naming `backends::openssl`; the engine, or a change
-  of the default, is a later change of this proposal.
 - [The asynchronous family adds webcpp::asio as a dependency] -> only through `async.hpp`, which
   nothing else includes.
 - [XKCP has no tagged release] -> the pin is a master commit, `d20c8fc` (2026-11-10); moving it is

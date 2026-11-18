@@ -1,23 +1,23 @@
 # webcpp::hash: where the implementation stands, and how to start
 
 Written 2026-11-14, when this proposal was made, brought up to date on 2026-11-15, when increment 1
-was built, on 2026-11-16, when the owner fixed the default backends (design D33), and on
-2026-11-18, when increments 2, 3, 4, 5 and 7 were built under his decisions of 2026-11-17 (design
-D34 to D36). The owner decided the library's shape on 2026-11-14, widened it the same day (every
-backend's whole hashing and KDF surface, in increments; one profile for every default backend,
-retired on 2026-11-16; documentation in noble's and libsodium's manner) and answered O1 (the
-browser backend through a parallel asynchronous family), and accepted it. On 2026-11-16 he decided
-that every key derivation defaults to `backends::hash2` on every target and link set, and
-`argon2id` and `scrypt` to `backends::sodium`, which retires the profiles, the overrides, the
-measured ranking and the lane `measure` (design D33). On 2026-11-17 he answered O3: a tag of the
-families defaults to the first of `backends::hash2`, `backends::xkcp`, `backends::blake3` and
-`backends::sodium` that offers it, never BearSSL, OpenSSL, Botan or WebCrypto (design D34); the
-asynchronous family's default is the synchronous one (D35); and measured tables come from release
-builds only (D36). `spec.md` is the specification, `plan.md` the implementation plan of 48 tasks
-(0 to 47) in seven increments, `../tasks.md` the checklist. **The reference code is the code
-written in the plan's tasks** (listed in `../proposal.md`, "Implementation"). There is no
-`source/` directory: the code is in the library's own repository, which the owner publishes at
-gate G1.
+was built, on 2026-11-16, when the owner fixed the default backends (design D33), and on 2026-11-18,
+when increments 2, 3, 4, 5 and 7 were built under his decisions of 2026-11-17 (design D34 to D36;
+what the build decided is design D37 to D42), merged, reviewed whole and fixed. The owner decided
+the library's shape on 2026-11-14, widened it the same day (every backend's whole hashing and KDF
+surface, in increments; one profile for every default backend, retired on 2026-11-16; documentation
+in noble's and libsodium's manner) and answered O1 (the browser backend through a parallel
+asynchronous family), and accepted it. On 2026-11-16 he decided that every key derivation defaults
+to `backends::hash2` on every target and link set, and `argon2id` and `scrypt` to
+`backends::sodium`, which retires the profiles, the overrides, the measured ranking and the lane
+`measure` (design D33). On 2026-11-17 he answered O3: a tag of the families defaults to the first of
+`backends::hash2`, `backends::xkcp`, `backends::blake3` and `backends::sodium` that offers it, never
+BearSSL, OpenSSL, Botan or WebCrypto (design D34); the asynchronous family's default is the
+synchronous one (D35); and measured tables come from release builds only (D36). `spec.md` is the
+specification, `plan.md` the implementation plan of 48 tasks (0 to 47) in seven increments,
+`../tasks.md` the checklist. **The reference code is the code written in the plan's tasks** (listed
+in `../proposal.md`, "Implementation"). There is no `source/` directory: the code is in the
+library's own repository, which the owner publishes at gate G1.
 
 ## Where it stands
 
@@ -33,15 +33,24 @@ gate G1.
   Important finding fixed and re-reviewed, each increment whole reviewed. They were built in
   parallel streams by backend (`sodium-2`, `xkcp-3`, `openssl-4`, `bearssl-5`, `async-7`, and
   `alloc` for design D36) from the families' task (Task 25), and merged into the library's branch
-  `increments-2-7` and the superproject's `hash/increments-2-7` (local). Increments 2, 3, 5 and 7
-  are merged; increment 4 (`openssl-4`, reviewed and green on its stream) was being merged when
-  this was written.
-- **Green locally, from scratch**, on the integration branches after increment 7's merge: native
-  204 programs, wasip2 197, wasip3 198, Emscripten 156, gcc-15 165 (each test with its
-  `_no_exceptions` twin), the own lane `c-suites` (105 programs on every target), the tools'
-  tests, the documentation's build and the full lint (`lint: clean`); increment 4 on its stream:
-  native 183, wasip2 181, wasip3 181, Emscripten 120, gcc-15 147. MSVC and Apple clang run only
-  in the CI, after the gates (their cases are written, not run).
+  `increments-2-7` and the superproject's `hash/increments-2-7` (local), all five merged. Three
+  extra tasks ran on the integration branches: "Allocation from release builds" (`../tasks.md`
+  1.27, design D36), "BLAKE2b MAC on libsodium" (2.6, ruling R95: `macs::blake2b_mac`'s default
+  has its engine, so every default has one) and "Agreement across increments" (7.4, rulings R6
+  and R94).
+- **The whole branch was reviewed** by three seats (the core families and the documentation; the
+  C backends and `third_party`; the asynchronous family, the tools and this proposal), and one
+  fix wave answered every finding: the error reference, the overview and the README, the keyed
+  BLAKE2 MACs listed as MACs, XKCP's storage sizes in one header read by C and C++, libsodium's
+  refusal naming the backend alone, HMAC's refusal over a digest no backend will have, WebCrypto's
+  partial cells, and `tools/hash/doc_tables.py`'s checks and llms.txt's defaults derived from the
+  table.
+- **Green locally, from scratch**, on the integration branches after the fix wave: native 229
+  programs, wasip2 222, wasip3 223, Emscripten 161, gcc-15 184 (each test with its
+  `_no_exceptions` twin), the own lane `c-suites` (105 programs on each of the four targets), the
+  tools' tests, the documentation's build and the full lint (`lint: clean`). MSVC and Apple
+  clang run only in the CI, after the gates (their cases are written, not run); the controller
+  runs MSVC's check of XKCP's `config.h` locally.
 - **Increment 6 is not started** (design D42): Botan is not provisioned on webcpp's `main` (no
   `third_party/libs/botan`, no crypto target), since webcpp::crypto's increment 5, built by its
   foundation change's increment 7, is not built. D42 keeps the pre-flight's findings for when it
@@ -89,8 +98,6 @@ gate G1.
   the superproject as the accepted proposal names it (ruling R20).
 - webcpp::asio's `browser::async_await` makes one allocation of the C allocator per awaited
   promise: webcpp::asio's, not hash's (spec 6.1).
-- `macs::blake2b_mac` defaults to `backends::sodium`, whose engine is not built: a call that
-  names no backend refuses at compile time (design D34).
 
 ## How to resume
 

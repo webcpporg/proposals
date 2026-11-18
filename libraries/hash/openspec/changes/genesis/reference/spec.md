@@ -293,11 +293,11 @@ namespace webcpp::hash {
 enum class error : int {
     /** An output that is not of a size the function produces: empty, too short or too long. */
     invalid_output_size = 1,
-    /** A key that is not of a size the function accepts: HKDF's pseudorandom key, a MAC's key. */
+    /** A key that is not of a size the function accepts: a MAC's, a derivation's, HKDF's PRK. */
     invalid_key_size = 2,
     /** A salt that is not of a size the function accepts. */
     invalid_salt_size = 3,
-    /** An iteration count of zero. */
+    /** An iteration count of zero, or above the backend's limit (`backend_limits`). */
     invalid_iterations = 4,
     /** A parameter that is outside the function's limits: a cost, a lane count, an option. */
     invalid_parameters = 5,
@@ -333,7 +333,7 @@ The messages:
 | `invalid_output_size` | "the output is not of a size the function produces" |
 | `invalid_key_size` | "the key is not of a size the function accepts" |
 | `invalid_salt_size` | "the salt is not of a size the function accepts" |
-| `invalid_iterations` | "the iteration count is zero" |
+| `invalid_iterations` | "the iteration count is zero or more than the backend takes" (increment 7: a count above `backend_limits<Backend>::pbkdf2_iterations`, 2^32 - 1 on `backends::webcrypto`, is `invalid_iterations` too, 2.9) |
 | `invalid_parameters` | "a parameter is outside the function's limits" |
 | `input_too_long` | "an input is longer than the function accepts" |
 | `backend_failure` | "the backend failed where it should not" |
@@ -1272,14 +1272,15 @@ row:
   at least 8 bytes)" for ParallelHash);
 - a tag no backend has yet (increment 6's: Streebog, Whirlpool, Skein-512, bcrypt): "webcpp::hash:
   <qualified tag> is in no backend yet."; HMAC over a digest no backend has it over
-  (`digests::md5_sha1` included, ruling R92): "webcpp::hash: macs::hmac over this digest is in no
-  backend yet.";
+  (`digests::md5_sha1` included, ruling R92, and every extendable-output digest, over which HMAC
+  is not defined): "webcpp::hash: macs::hmac over this digest is in no backend.", without "yet",
+  since no backend will have it;
 - a tag whose default is `detail::no_default` (design D34), called without a backend:
   "webcpp::hash: <qualified tag> has no default backend. Name one of: <the backends of its row>."
   (as "webcpp::hash: kdfs::argon2d has no default backend. Name one of: backends::openssl."), or
   "webcpp::hash: <qualified tag> has no default backend, and no backend has it yet." for a tag no
-  backend has (and "webcpp::hash: macs::hmac over this digest has no default backend, and no
-  backend has it yet.");
+  backend has (and "webcpp::hash: macs::hmac over this digest has no default backend: no backend
+  has it.");
 - `kbkdf` over an hmac outside `hmac.hpp`'s aliases on `backends::openssl`: "webcpp::hash:
   backends::openssl has kbkdf over the hmacs of hmac.hpp alone, hmac_ripemd_128 excepted, and no
   other backend has kbkdf."; `sskdf` and `x963kdf` over a digest their standard does not take
@@ -1292,11 +1293,10 @@ row:
   and a synchronous function on `backends::webcrypto`: section 11.2's text.
 
 Between increments a default whose library is not linked may first say "add the library" and then
-name the backends that have the tag; once increments 2 to 5 and 7 have landed every default but one
-has its engine (ruling R84): `macs::blake2b_mac` defaults to `backends::sodium`, whose engine for
-it is not built, so that a call that names no backend refuses with "webcpp::hash:
-macs::blake2b_mac is not in this backend. Name one of: backends::openssl." (libsodium's text of 5.7
-when the program does not link it; 4.1).
+name the backends that have the tag; once increments 2 to 5 and 7 have landed every default has its
+engine (ruling R84), `macs::blake2b_mac`'s on `backends::sodium` included (ruling R95), so that a
+call that names no backend refuses only with its library's text of 5.7 when the program does not
+link it.
 
 ### 3.4 Each backend's work
 
@@ -1314,7 +1314,9 @@ when the program does not link it; 4.1).
   increment 3, FIPS 202's `Keccak_Hash`, SP 800-185's functions, `KangarooTwelve` and
   `TurboSHAKE`, each through webcpp's adapter (`src/xkcp_adapter.c`, `detail/xkcp.hpp`) with
   opaque storage per instance kind, its size and alignment checked by `_Static_assert` in the
-  adapter (ruling R32); the adapter's `_final_length` writes SP 800-185's L at `finish` (2.15).
+  adapter (ruling R32), the number of 64-bit words of each kind written once, in the C and C++
+  header `detail/xkcp_storage.h` that the adapter and `detail/xkcp.hpp` both read; the adapter's
+  `_final_length` writes SP 800-185's L at `finish` (2.15).
 - **`backends::blake3`.** `digests::blake3` over webcpp's `blake3` (2.7), its extendable output.
 - **`backends::sodium`.** `sodium_init()` is called first in every engine function (it returns 0 the
   first time and 1 after, both success; -1 is `backend_failure`).
@@ -1374,9 +1376,13 @@ backend may list `omitted[]` (`names` and `reason`: what its library has and has
 or load, as OpenSSL's legacy provider; ruling R42). Increment 7 gave a backend the field
 `asynchronous_only` (true for `backends::webcrypto`, whose cells are the asynchronous functions'
 and which links no library of its own, `macro` null; ruling R90), which `tools/hash/doc_tables.py`
-renders with the note "asynchronous family only"; it raised no version. `capabilities_test`
-compares every cell with `backend_has_v`, every default with `default_backend`, and every refusal
-text of 3.3 with its row.
+renders with the note "asynchronous family only"; it raised no version. WebCrypto's HKDF and
+PBKDF2 cells are `partial`: their narrower limits (11.2) answer `input_too_long`,
+`invalid_iterations` and `invalid_output_size`, the errors of `backend_limits`, not
+`unsupported_by_backend`. A row sits in an algorithm group of its namespace's chapter (a tag of
+`macs` in a group of chapter `macs`: keyed BLAKE2b and BLAKE2s in `blake2_mac`), which
+`tools/hash/doc_tables.py` checks. `capabilities_test` compares every cell with `backend_has_v`,
+every default with `default_backend`, and every refusal text of 3.3 with its row.
 
 | Function | hash2 | xkcp | blake3 | sodium | bearssl | openssl | botan | webcrypto (async, 11) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1388,7 +1394,7 @@ text of 3.3 with its row.
 | cSHAKE, KMAC, TupleHash, ParallelHash | - | 3 (ParallelHash: a block size that is a power of two of at least 8 bytes) | - | - | - | KMAC: 4 (OpenSSL's limits: a key of 4 to 512 bytes, a customisation of at most 512, a tag of at most 2,097,151) | cSHAKE, KMAC: 6 | - |
 | KangarooTwelve (KT128, KT256) | - | 3 | - | - | - | - | - | - |
 | TurboSHAKE128/256 | - | 3 | - | 2 | - | - | - | - |
-| BLAKE2b (key, salt, personalisation, length) | 512 fixed: 1 (Hash2); family: 2 (64 bytes, no option) | - | - | 2 | - | unkeyed, 1 to 64 bytes: 4; keyed (`macs::blake2b_mac`): 4 | 6 | - |
+| BLAKE2b (key, salt, personalisation, length) | 512 fixed: 1 (Hash2); family: 2 (64 bytes, no option) | - | - | 2; keyed (`macs::blake2b_mac`), a key and a tag of 1 to 64 bytes: 2 | - | unkeyed, 1 to 64 bytes: 4; keyed (`macs::blake2b_mac`): 4 | 6 | - |
 | BLAKE2s-256 | 1 (Hash2); family: 2; keyed (`macs::blake2s_mac`), a 32-byte tag: 2 | - | - | - | - | 4; keyed: 4 | 6 | - |
 | BLAKE3 (hash, keyed, derive_key, XOF) | - | - | 1; family: 2 | - | - | - | - | - |
 | RIPEMD-128, RIPEMD-160 | 1 (Hash2); family, RIPEMD-160: 2 | - | - | - | - | RIPEMD-160: 4 | RIPEMD-160: 6 | - |
@@ -1473,16 +1479,17 @@ override cannot change.
 
 **The families' defaults (the owner's decision of 2026-11-17, design D34).** A tag of the families
 (2.15) names its default through `default_backend<Tag>` too: the first of `backends::hash2`,
-`backends::xkcp`, `backends::blake3` and `backends::sodium`, in that order, that offers the tag,
-its engine serving the family's whole contract (every option and every output size the family's
-guards accept); if none of the four offers it whole, the first of them with a partial cell; if
-none has a cell, `detail::no_default`, and the call names its backend (3.3's "has no default
-backend" text; `"default": null` in `doc/capabilities.json`). `backends::bearssl`,
-`backends::openssl`, `backends::botan` and `backends::webcrypto` are never defaults. One stated
-rule, no measurement (D33's reason). The defaults were written once, by the families' task, from
-the table as it stands once increments 2 to 5 and 7 have landed, and they never change between
-increments (ruling R2); a default whose engine lands in a later stream refuses at compile time until
-it lands (ruling R84).
+`backends::xkcp`, `backends::blake3` and `backends::sodium`, in that order, that offers the tag, its
+engine serving the family's whole contract (every option and every output size the family's guards
+accept); if none of the four offers it whole, the first of them with a partial cell; if none has a
+cell, `detail::no_default`, and the call names its backend (3.3's "has no default backend" text;
+`"default": null` in `doc/capabilities.json`). `backends::bearssl`, `backends::openssl`,
+`backends::botan` and `backends::webcrypto` are never defaults. One stated rule, no measurement
+(D33's reason). The defaults were written once, by the families' task, from the table as it stands
+once increments 2 to 5 and 7 have landed, and they never change between increments (ruling R2); a
+default whose engine landed in a later stream refused at compile time until it landed (ruling R84),
+and once the batch has landed every default has its engine, which `tools/hash/doc_tables.py` checks
+(a family's default without its cell fails).
 
 | Tags | Default backend |
 | --- | --- |
@@ -1492,8 +1499,6 @@ it lands (ruling R84).
 | `digests::blake2b`; `macs::siphash_2_4x`, `macs::blake2b_mac`; `kdfs::argon2i`, `kdfs::argon2id` (partial: one lane); `kdfs::blake2b_subkey` | `backends::sodium` |
 | `digests::md5_sha1`, `sm3`, `streebog_256`, `streebog_512`, `whirlpool`, `skein_512`; `macs::hmac<D>` over any other digest; `kdfs::argon2d`, `bcrypt`, `bcrypt_pbkdf`, `kbkdf_hmac`, `sskdf`, `x963kdf` | none (`detail::no_default`) |
 
-`macs::blake2b_mac`'s default is `backends::sodium`, whose engine for it is not built: a call that
-names no backend refuses at compile time (3.3) and a call names `backends::openssl`, its one cell.
 `capabilities_test` checks each row's default against `default_backend` and that no backend
 before it in the order has the tag whole.
 
@@ -1672,7 +1677,7 @@ whose `#error` is the first message of spec 2.2.
 | `blake3.hpp` without `WEBCPP_HASH_HAS_BLAKE3` | "webcpp::hash: blake3 needs BLAKE3's C implementation. Add /third_party//blake3 to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//blake3 ;" |
 | `backends/xkcp.hpp` without `WEBCPP_HASH_HAS_XKCP` (increment 2) | "webcpp::hash: backends::xkcp needs XKCP. Add /third_party//xkcp to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//xkcp ;" |
 | `backends/blake3.hpp` without `WEBCPP_HASH_HAS_BLAKE3` (increment 2) | "webcpp::hash: backends::blake3 needs BLAKE3's C implementation. Add /third_party//blake3 to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//blake3 ;" |
-| `backends/sodium.hpp` without `WEBCPP_HASH_HAS_SODIUM` | "webcpp::hash: backends::sodium, argon2id, scrypt and blake2b_subkey need libsodium. Add /third_party//sodium to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//sodium ;" (increment 1's text named argon2id and scrypt alone; increment 2 added `blake2b_subkey`) |
+| `backends/sodium.hpp` without `WEBCPP_HASH_HAS_SODIUM` | "webcpp::hash: backends::sodium needs libsodium. Add /third_party//sodium to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//sodium ;" (increment 1's text named argon2id and scrypt; since `backends::openssl` has both and libsodium is the default of several families' tags, the text names the backend alone, as the other libraries' do) |
 | `backends/bearssl.hpp` without `WEBCPP_HASH_HAS_BEARSSL` | "webcpp::hash: backends::bearssl needs BearSSL. Add /third_party//bearssl to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//bearssl ;" |
 | `backends/openssl.hpp` without `WEBCPP_HASH_HAS_OPENSSL` | "webcpp::hash: backends::openssl needs OpenSSL. Add /webcpp/hash//openssl to the program's Jamfile (native, wasip2 and wasip3): exe app : app.cpp /webcpp/hash//hash /webcpp/hash//openssl ;" |
 | OpenSSL on Emscripten | spec 2.2's first `#error` |
@@ -2079,9 +2084,13 @@ never inline. A rejected promise is `error::backend_failure`; a cancelled operat
   fails to compile with "webcpp::hash: backends::webcrypto completes through an io_context run on
   the calling thread, whose run returns to the JavaScript event loop where WebCrypto's promise
   settles: pass that io_context's executor, not a thread_pool's."; a type-erased one
-  (`any_io_executor`) is checked at run time (an `io_context`'s executor, its tracked form, or a
-  strand of either; another completes with `invalid_parameters`, posted to the handler's
-  associated executor, `output` untouched). That the `io_context` runs on the calling thread
+  (`any_io_executor`) is checked at run time: an `io_context`'s executor with any of its
+  properties (blocking, relationship, outstanding work: the eight combinations), and a strand of
+  one, a type-erased strand checked through to its inner executor, are accepted; an `io_context`'s
+  executor rebound to another allocator, and a concrete strand of a strand behind
+  `any_io_executor`, are refused, since the erasure hides their type (pass the inner strand, or the
+  `io_context`'s executor); another completes with `invalid_parameters`, posted to the handler's
+  associated executor, `output` untouched. That the `io_context` runs on the calling thread
   cannot be checked: it is the program's duty, stated in the Doc Comment.
 - **WebCrypto's limits (ruling R74).** An empty HMAC key is imported as one zero byte, which HMAC
   pads to the same key and WebCrypto takes where it refuses an empty one; `detail::backend_limits`

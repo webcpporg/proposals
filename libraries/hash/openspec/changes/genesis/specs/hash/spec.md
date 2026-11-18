@@ -173,7 +173,7 @@ A call of a KDF on a backend that lacks it, or over an hmac the backend lacks, S
 
 #### Scenario: Argon2id without libsodium
 - **WHEN** a program calls `argon2id` (or `scrypt`) with the default backend and does not name `/third_party//sodium`, as the messages `argon2id_default_not_linked` and `scrypt_default_not_linked` do
-- **THEN** compilation fails at the primary template of the engine in `detail/engines.hpp` with "webcpp::hash: backends::sodium, argon2id, scrypt and blake2b_subkey need libsodium. Add /third_party//sodium to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//sodium ;"
+- **THEN** compilation fails at the primary template of the engine in `detail/engines.hpp` with "webcpp::hash: backends::sodium needs libsodium. Add /third_party//sodium to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//sodium ;"
 
 ### Requirement: BearSSL, OpenSSL and libsodium's HKDF only when named in the type
 `backends::bearssl`, `backends::openssl` and the HKDF of `backends::sodium` SHALL stay, with their vectors, agreement tests, limits and refusals as before, and SHALL be reached only by naming the backend in the call's type, as `hkdf<hmac_sha2_256, backends::openssl>`; neither `backends::bearssl` nor `backends::openssl` MUST ever be a default, on any target or link set, for any function or tag (design D34).
