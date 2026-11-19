@@ -22,6 +22,18 @@ created: 2026-11-14
 > Constraints, the Review Focus and the tasks of increments 2 to 7 are amended. The retirement
 > itself is `../tasks.md` 1.26.
 
+> **Amended on 2026-11-18 (design D34 to D42).** The owner decided on 2026-11-17, before Task 25,
+> that a tag of the families defaults to the first of `backends::hash2`, `backends::xkcp`,
+> `backends::blake3` and `backends::sodium` that offers it, else none, never BearSSL, OpenSSL,
+> Botan or WebCrypto (D34, the answer to O3); that `default_async_backend` is `default_backend`
+> on every target (D35); and that every measured table, the allocation counts included, comes
+> from release builds only (D36, built by the extra task "Allocation from release builds",
+> `../tasks.md` 1.27). Tasks 25 to 40 and 44 to 47 were built under the controller's rulings,
+> which override the steps where they differ; what that changed is D37 to D41 and the spec's
+> sections they name. Tasks 41 to 43 (increment 6) are not started: Botan is not provisioned
+> (D42, which keeps the pre-flight's findings for them). The steps keep their boxes as written;
+> `../tasks.md` records what is done.
+
 **Goal:** a new library, webcpp::hash, at `libs/hash`, in seven increments (spec 1.5). Increment 1: Boost.Hash2 1.92's algorithms and HMAC by
 alias; `keccak_256` over XKCP's Keccak-p[1600] and `blake3` over BLAKE3's C implementation, both
 in Hash2's HashAlgorithm form; HKDF and PBKDF2 over four backends (`backends::hash2`, `sodium`,
@@ -2223,6 +2235,12 @@ pitfalls), the changelog line.
 
 ## Task 25: The families: tags, `digest`, `hasher`, `mac`, `argon2`
 
+> **Note of 2026-11-18 (design D34, D37, D38).** Built with the one-shot function named
+> `digest_of` (Boost.Hash2's `digest<N>` keeps its name), every default written once by D34's
+> rule, Hash2's SHAKE whole and SHAKE's default, the engine's `min_output`, `invalid_state` and
+> the reworded messages of values 1, 2 and 5; `backends::webcrypto` is declared by Task 44, not
+> here (`../tasks.md` 2.1).
+
 Stream `sodium-2`, first; every later increment builds on it.
 
 **Files:**
@@ -2442,6 +2460,12 @@ Stream `bearssl-5`.
 
 ## Task 41: Botan's column, at its pin
 
+> **Note of 2026-11-18 (design D42).** Not started, with Tasks 42 and 43: Botan is not provisioned
+> on webcpp's `main`. Before Step 1, read D42: hash's Botan modules must be in webcpp::crypto's one
+> module list; Botan's targets are crypto's (foundation D15); its tests are declared
+> `<exception-handling>on`, never through `hash-run`; the Botan column overstates at 3.14.1; and
+> Task 43's Step 2 adds `async_bcrypt` and `async_bcrypt_pbkdf` with their message tests.
+
 Stream `botan-6`; waits for webcpp::crypto's Botan provisioning (its increment 5) on `main`.
 
 - [ ] **Step 1: Read Botan at the pin** crypto provisions (3.13.0 measured by crypto; 3.14.1 at
@@ -2472,6 +2496,14 @@ Stream `botan-6`; waits for webcpp::crypto's Botan provisioning (its increment 5
   `"hash: Botan's KDFs and password hashes, and increment 6 whole"`.
 
 ## Task 44: The asynchronous family, everywhere
+
+> **Note of 2026-11-18 (design D35, D39, D40).** Built with `default_async_backend` equal to
+> `default_backend` (D35: Task 45's tests name `backends::webcrypto`), `async_argon2<Variant,
+> Backend>` beside the three heavy names, `struct webcrypto;` declared in `config.hpp` on every
+> target, and `WEBCPP_HASH_HAS_THREADS` natively in every build (b2's `threading=single` defines
+> `BOOST_HAS_THREADS` too), so that Step 3's native "without threads" case is built with
+> `WEBCPP_HASH_NO_THREADS` and the refusal reads "(natively, remove WEBCPP_HASH_NO_THREADS; on
+> Emscripten, link with -pthread)" (`../tasks.md` 7.1).
 
 Stream `async-7`.
 
@@ -2545,7 +2577,7 @@ Stream `async-7`.
 - [ ] **Step 1:** `doc/capabilities.json` and `capabilities_test` agree, its defaults included;
   the refusal texts are checked by `capabilities_test` against it, and `doc/backends.adoc` is
   rendered by `tools/hash/doc_tables.py`.
-- [ ] **Step 2:** every new algorithm's default is the one design O3's answer gives, named
+- [ ] **Step 2:** every new algorithm's default is the one design O3's answer, D34, gives, named
   beside `doc/capabilities.json`, and no measurement decides it (design D33).
 - [ ] **Step 3:** every lane from scratch, the own lanes, the tools' tests, the lint, as Task 24's
   Step 2; a review by someone who did not write the increment.
