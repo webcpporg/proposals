@@ -2270,7 +2270,8 @@ it (Task 2.2). Silent payments' header and namespace are `silent_payments` (desi
 header mirrors its namespace), not the outline's `silentpayments`.
 
 **As built (2026-11-19).** The code is on the branches `crypto/secp256k1-modules` of the
-library (head `e7c71db`) and the superproject (head `221357e`). Where it differs from the
+library (head `e7c71db`) and the superproject (head `d25b22f`: the code's verified head
+`221357e` and the rulebook's chapter 17 on it). Where it differs from the
 tasks below, a review accepted the difference or stream B's controller ruled it; each task says
 so under "As built" after its heading. Across the increment:
 
@@ -2296,9 +2297,9 @@ so under "As built" after its heading. Across the increment:
   container: memcheck, MemorySanitizer and dudect) and `sizes`; the docs and the site; the
   tools' tests; MSVC 14.3 and 14.5 in the local Wine lane (`msvc-lane`), with no failure
   outside its known list. The Linux x86-64 run of `constant-time` is the CI's.
-- **Not made:** Task 2.7's superproject commit `guidelines: crypto's increment 2 in chapter 17`;
-  `CODING-GUIDELINES.md` chapter 17 still lists libsecp256k1's remaining modules among what is
-  not built.
+- **The rulebook.** Task 2.7's superproject commit is `d25b22f`, "guidelines: chapter 17 states
+  webcpp::crypto's increment 2 as built, and increment 1 merged", not Step 7's subject:
+  chapter 17's crypto entry gains increment 2's block and records increment 1 as merged.
 
 ---
 
@@ -2738,7 +2739,7 @@ a changed message names another signer
 
 ## Task 2.3: Tweaks, negation, combination; SPKI, PKCS#8 and PEM for secp256k1
 
-**As built.** In two commits: the tweaks with SPKI and PKCS#8 first, and PEM after stream A's
+**As built.** In two task commits: the tweaks with SPKI and PKCS#8 first, and PEM after stream A's
 Task 7b brought `pem.hpp` (`crypto: secp256k1's keys in PEM`). The example is
 `example/secp256k1_key_formats.cpp` with its `.expected`, since stream A's
 `example/key_formats.cpp` is Ed25519's and X25519's; it links
@@ -3699,8 +3700,8 @@ two payments to one address share no output key
   operation's "Use it to".
 - **Steps 5 to 7.** Green before the pull requests is the local run of the increment's "As
   built"; the review is the whole-branch review with one fix wave (the label lookup's exact
-  result type, Task 2.6); the pull requests and the rulebook's chapter 17 remain
-  (`STATUS.md`).
+  result type, Task 2.6); chapter 17 is written (`d25b22f`, the increment's "As built"); the
+  pull requests remain (`STATUS.md`).
 - **Task 2.7d, the owner's two MuSig2 examples (2026-11-19).** `example/musig_network.cpp`:
   two devices' MuSig2 signature in which every public part crosses a byte buffer (each public
   nonce, the aggregate nonce and each partial signature serialised and parsed), each partial

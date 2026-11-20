@@ -7,8 +7,9 @@ recorded as built on 2026-11-19).
 
 - **Increment 2 (stream B, `../tasks.md` group 2) is built and awaits its pull requests.** The
   library's branch `crypto/secp256k1-modules` (head `e7c71db`, 54 commits on `1fc5140`) and the
-  superproject's branch of the same name (head `221357e`, 21 commits on `c00bf7a`, its
-  `libs/crypto` at `e7c71db`) hold Tasks 2.1 to 2.7 and the owner's Task 2.7d; this proposals
+  superproject's branch of the same name (head `d25b22f`, 22 commits on `c00bf7a`: the code's
+  verified head `221357e`, its `libs/crypto` at `e7c71db`, and the rulebook's chapter 17 on top
+  of it) hold Tasks 2.1 to 2.7 and the owner's Task 2.7d; this proposals
   branch, `crypto/foundation-increment-2`, holds the tasks and their record as built. Nothing
   of it is pushed. Every task was reviewed, the whole branch had a final review and one fix
   wave, and a full local verification passed on the final heads (`plan.md`, increment 2's
@@ -55,14 +56,12 @@ Nothing of increment 2. What remains of it:
 - **The pull requests** (`plan.md` Task 2.7, Step 7), opened together: this proposals branch
   (on proposals `main` `f7896ad`), the library's into `webcpporg/crypto`, then the
   superproject's (`third_party/Jamfile`, `tools/test/third_party_test.py`, the three
-  `secp256k1_*_default` fixtures, the library's pin). They need no rebase: both code branches
-  descend from the trees `main`'s merges of stream A hold. If the library's pull request lands
-  as commits other than `e7c71db`, the superproject's `libs/crypto` is re-pointed first.
+  `secp256k1_*_default` fixtures, `CODING-GUIDELINES.md` chapter 17, the library's pin). They
+  need no rebase: both code branches descend from the trees `main`'s merges of stream A hold.
+  If the library's pull request lands as commits other than `e7c71db`, the superproject's
+  `libs/crypto` is re-pointed first.
 - **The CI's run** on both code pull requests, every lane it plans (Task 2.7, Step 5), the Linux
   x86-64 `constant-time` lane included, which the local verification did not run.
-- **The rulebook:** `CODING-GUIDELINES.md` chapter 17's crypto entry still lists libsecp256k1's
-  remaining modules among what is not built; Task 2.7's superproject commit
-  `guidelines: crypto's increment 2 in chapter 17` was not made.
 - **The owner's review and merge**; then task 13.1 once the CI is green on both `main`s.
 
 ## How to resume

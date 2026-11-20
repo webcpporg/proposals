@@ -53,8 +53,7 @@ rows after 1.4, rebases onto `main` when group 1 merges, and merges after it. Bu
 (2026-11-19) on the branches `crypto/secp256k1-modules` of the library and the superproject,
 on stream A's final heads, whose trees `main`'s merges of group 1 equal; where the code
 differs from the plan's text, the plan says so under "As built" in each task. The pull
-requests, the CI's run (Task 2.7, Steps 5 and 7) and chapter 17 of the rulebook remain
-(`reference/STATUS.md`).
+requests and the CI's run (Task 2.7, Steps 5 and 7) remain (`reference/STATUS.md`).
 
 - [x] 2.1 `ecdh` returns `secret<32>` (BREAKING); `ecdh_x` and `ecdh_point`, against Wycheproof's ECDH files (plan: Task 2.1)
 - [x] 2.2 Recovery and hedged ECDSA, with libsecp256k1's own recovery cases; `public_key`, `parse_public_key` and `serialize_public_key` in both forms (plan: Task 2.2)
