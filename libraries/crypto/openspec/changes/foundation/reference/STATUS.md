@@ -1,11 +1,23 @@
 # Status of the foundation change
 
-**Date:** 2026-11-17 (accepted by the owner on 2026-11-14; revised on 2026-11-17).
+**Date:** 2026-11-19 (accepted by the owner on 2026-11-14; revised on 2026-11-17; increment 2
+recorded as built on 2026-11-19).
 
 ## Where things stand
 
-- Nothing of this change is built. Every task of `../tasks.md` is open.
-- **Its base is ready.** crypto's version 0.1 (the genesis's groups 1 and 2) is merged:
+- **Increment 2 (stream B, `../tasks.md` group 2) is built and awaits its pull requests.** The
+  library's branch `crypto/secp256k1-modules` (head `e7c71db`, 54 commits on `1fc5140`) and the
+  superproject's branch of the same name (head `d25b22f`, 22 commits on `c00bf7a`: the code's
+  verified head `221357e`, its `libs/crypto` at `e7c71db`, and the rulebook's chapter 17 on top
+  of it) hold Tasks 2.1 to 2.7 and the owner's Task 2.7d; this proposals
+  branch, `crypto/foundation-increment-2`, holds the tasks and their record as built. Nothing
+  of it is pushed. Every task was reviewed, the whole branch had a final review and one fix
+  wave, and a full local verification passed on the final heads (`plan.md`, increment 2's
+  "As built"); where the code differs from the plan's text, each task's "As built" says so.
+- **Increment 1 (stream A, group 1) is merged** without the CI's run: `webcpporg/crypto#4`
+  (`main` `dae9e84`) and `webcpporg/webcpp#35` (`main` `485c5e0`), 2026-11-19, merges of stream
+  A's final heads `1fc5140` and `c00bf7a`; its boxes in `../tasks.md` are checked.
+- **Its base was ready.** crypto's version 0.1 (the genesis's groups 1 and 2) is merged:
   `webcpporg/crypto` `main` at `d242be8`, recorded by the superproject's `main` (`3fa7ca5` on
   2026-11-17). webcpp::hash's genesis is merged with `/third_party//sodium` (libsodium 1.0.22 at
   `77e1ce5`) and `backends::hash2` as every key derivation's default (hash's D33). The
@@ -39,20 +51,28 @@
 
 ## What to redo
 
-Nothing: no work was done.
+Nothing of increment 2. What remains of it:
+
+- **The pull requests** (`plan.md` Task 2.7, Step 7), opened together: this proposals branch
+  (on proposals `main` `f7896ad`), the library's into `webcpporg/crypto`, then the
+  superproject's (`third_party/Jamfile`, `tools/test/third_party_test.py`, the three
+  `secp256k1_*_default` fixtures, `CODING-GUIDELINES.md` chapter 17, the library's pin). They
+  need no rebase: both code branches descend from the trees `main`'s merges of stream A hold.
+  If the library's pull request lands as commits other than `e7c71db`, the superproject's
+  `libs/crypto` is re-pointed first.
+- **The CI's run** on both code pull requests, every lane it plans (Task 2.7, Step 5), the Linux
+  x86-64 `constant-time` lane included, which the local verification did not run.
+- **The owner's review and merge**; then task 13.1 once the CI is green on both `main`s.
 
 ## How to resume
 
 1. Read `roadmap.md`: the overlaps resolved, the defaults, the waves and their streams.
-2. Wave 1: stream A follows `plan.md` from Task 1 through its revision of 2026-11-17, in the
-   task groups A1 to A4, with superpowers:subagent-driven-development; stream B writes
-   increment 2's tasks in full first (a proposals pull request), then branches from A's branch
-   once A's Task 3 (`secret<N>`) is committed and runs beside it; stream M follows the genesis's plan, Tasks 15,
-   16, 33 (in crypto's own tests) and 34, as `../../genesis/reference/plan.md`'s revision of
-   2026-11-17 says.
-3. Wave 2, after stream A merges: each of increments 3 to 8, 10 and 11 writes its tasks in full
-   first, then runs as its own stream (design D35), rebasing and regenerating with
+2. Increment 2: push the three branches and open the pull requests above; fix on the same
+   branches whatever the CI or the review finds, with a failing test first, and record each
+   difference from the plan in its task's "As built". Stream B's ledger is the untracked
+   `.superpowers/sdd/plan/progress.md` of its superproject worktree, with its `briefs/` (every
+   task's brief, report and review, the rebases, the final review and verification).
+3. Wave 2, now that stream A is merged: each of increments 3 to 8, 10 and 11 writes its tasks in
+   full first, then runs as its own stream (design D35), rebasing and regenerating with
    `generate.py` after every merge. Wave 3: 9 after 6, 12 after 8.
-4. Record progress in the untracked ledger
-   `.superpowers/sdd/WEBCPP_CRYPTO_FOUNDATION/progress.md` of the worktree, and check a box of
-   `../tasks.md` only for work done and committed.
+4. Check a box of `../tasks.md` only for work done and committed.

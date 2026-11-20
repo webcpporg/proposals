@@ -917,7 +917,9 @@ encoding (no protocol layout, D24):
 - **Tests:** round trips on every backend; malformed inputs (wrong OID, trailing bytes, long-form
   lengths that need not be, a version 2 PKCS#8, a bad PEM label or line) refused with
   `invalid_encoding`; OpenSSL (natively, through its C API in the tests even before increment 8)
-  and WebCrypto's `importKey` and `exportKey` with `spki` and `pkcs8` (node, on Emscripten) as
+  and WebCrypto's `importKey` and `exportKey` with `spki` and `pkcs8` (node, on Emscripten; for
+  secp256k1, which WebCrypto lacks, node's `crypto` module's `createPrivateKey`,
+  `createPublicKey` and `export`) as
   outside oracles.
 - **JWK stays out:** it is JSON, which belongs to a layer above crypto.
 - **Alternatives:** a DER library of webcpp's (an ASN.1 parser is a security boundary webcpp
@@ -993,9 +995,9 @@ by target. It never differs by what the program links.
   compilation with an `#error` that names the type to write (the owner's answer Q3), since a
   silently ignored define would change which code a program runs.
 - **Measurements are references.** The own lane `sizes` builds every (family, backend) program
-  through the superproject's `webcpp.size-table`, which requires `<variant>release` and extends,
-  by the owner's decision of 2026-11-17 (C36), from Emscripten page programs to plain linked
-  programs on every target (Task 11'), and the
+  through the superproject's `webcpp.program-sizes`, which requires `<variant>release` and,
+  by the owner's decision of 2026-11-17 (C36), sizes plain linked programs on every target
+  beside `webcpp.size-table`'s Emscripten page programs (Task 11'), and the
   generated size matrix reads its table; throughput is measured by hand with a collect script
   that refuses a program or data not built at `variant=release` (hash's `bench/collect.py` is
   the model), on the machines the page names, and published as a dated page. Neither decides a

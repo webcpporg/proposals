@@ -58,7 +58,7 @@ decision is cited, `D<n>` is the foundation's `design.md` and `genesis D<n>` the
 | Genesis Task 38 (the Botan backend: AES block, AES-GCM, ChaCha20-Poly1305, exceptions only) | stream 7 (foundation increment 7), step 3, first cells | genesis D19's exceptions rule stands (D15); Botan serves native and Emscripten, and WASI as the spike finds |
 | Genesis Task 39 (Botan in every native lane, three-way agreement, constant time) | stream 7, step 4 | the same work over the submodule |
 | Genesis Task 20 (constant time) | stream A, foundation Task 14, **whole**: the harness, v0.1's backends (BearSSL, OpenSSL with assembly, ctaes, libsecp256k1's `ctime_tests.c`) and the new code | D18 already absorbs it; v0.1's paths are measured in the same lane |
-| Genesis Task 22 (sizes, throughput, `runners.yml`) | stream A, foundation Task 11 **re-cut**: the own lane `sizes` through `webcpp.size-table` (release builds only), a throughput page measured by hand from release builds; no `runners.yml`, no ranking | D32: no measurement decides anything |
+| Genesis Task 22 (sizes, throughput, `runners.yml`) | stream A, foundation Task 11 **re-cut**: the own lane `sizes` through `webcpp.program-sizes` (release builds only), a throughput page measured by hand from release builds; no `runners.yml`, no ranking | D32: no measurement decides anything |
 | Genesis Task 23 (the browser oracle, the audio worklet, throughput in Chrome) | stream 4 (foundation increment 4) | D13 |
 | Genesis Task 25b (the nightly level) | stream N, unchanged, owner gate O2 | independent of the code |
 | Genesis Task 9's NIST CAVP half | stream N, owner gate O3 | independent of the code |
@@ -175,7 +175,7 @@ minor version, the owner naming each release.
 
 - Each task's test is written first and seen failing; lanes native, gcc-15, wasip2, wasip3 and
   Emscripten from scratch, exceptions on and off; MSVC and Apple clang in the CI.
-- Size and throughput tables are built only from release builds (`webcpp.size-table`, and a
+- Size and throughput tables are built only from release builds (`webcpp.program-sizes`, and a
   collect script that refuses a program or data not built at `variant=release`, as hash's
   `bench/collect.py`); they are dated references and decide nothing.
 - A protocol's rules stay out (D24). Documentation per D19, its tables generated from
@@ -216,7 +216,9 @@ is the recommendation, and `../design.md` D32 to D34 and the genesis's design re
   alias is refused on Emscripten alone.
 - **Q9. Size tooling reaches every target (2026-11-17, C36).** The superproject's release-only
   `webcpp.size-table` extends from Emscripten page programs to plain linked programs on every
-  target; crypto's own lane `sizes` (foundation Task 11') builds on that.
+  target; crypto's own lane `sizes` (foundation Task 11') builds on that. As built, the
+  superproject's rule for plain programs is `webcpp.program-sizes` (`tools/webcpp.jam`), beside
+  `webcpp.size-table`, which keeps Emscripten's page programs.
 - Still open from before: O1 (a ZIP-215 verifier), O2 (the nightly level), O3 (NIST's
   archives), and the genesis's O5 departure C17 (C16, a throughput workflow, falls away with
   D32).

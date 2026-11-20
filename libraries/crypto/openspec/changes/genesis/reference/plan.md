@@ -34,7 +34,7 @@ the decision. Measured tables come only from release builds.
 | --- | --- |
 | 15, 16 | stream M, as written, re-read against the source-built provider as their notes say |
 | 20 | the foundation's Task 14, whole (its tasks 1.14a and 1.14) |
-| 22 | the foundation's Task 11' (task 1.11): the own lane `sizes` through `webcpp.size-table`, which requires `<variant>release`; throughput measured by hand by a collect script that refuses a program or data not built at `variant=release`; no `runners.yml`, no ranking; nothing decides a default |
+| 22 | the foundation's Task 11' (task 1.11): the own lane `sizes` through `webcpp.program-sizes`, which requires `<variant>release`; throughput measured by hand by a collect script that refuses a program or data not built at `variant=release`; no `runners.yml`, no ranking; nothing decides a default |
 | 23 | the foundation's increment 4 (task 4.4), Chrome's throughput from release builds |
 | 25b, 9's NIST half | stream N, behind gates O2 and O3 |
 | 31, 32 | **dropped by the owner, 2026-11-17**; kept as the reference of a future change of trystero's own |

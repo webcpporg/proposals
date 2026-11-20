@@ -59,7 +59,7 @@ No macro SHALL change a default: the library MUST NOT read `WEBCPP_CRYPTO_PROFIL
 - **THEN** its backend is libsodium, as without the define
 
 ### Requirement: Measurements: references from release builds that decide nothing
-The own lane `sizes` SHALL build the baseline program and one program per (family, backend) through the superproject's `webcpp.size-table`, which requires `<variant>release` and, by the owner's decision of 2026-11-17 (C36), reaches plain linked programs on every target and not only Emscripten page programs (foundation Task 11'), on native, wasip2, wasip3 and Emscripten, and the documentation's size matrix MUST be generated from its table. Throughput MUST be measured only from programs built at `variant=release`, by a collect script that refuses any other program or data, and published as a dated page that names the machines. No size or throughput MAY decide a default, an order of backends or an API.
+The own lane `sizes` SHALL build the baseline program and one program per (family, backend) through the superproject's `webcpp.program-sizes`, which requires `<variant>release` and, by the owner's decision of 2026-11-17 (C36), sizes plain linked programs on every target beside `webcpp.size-table`'s Emscripten page programs (foundation Task 11'), on native, wasip2, wasip3 and Emscripten, and the documentation's size matrix MUST be generated from its table. Throughput MUST be measured only from programs built at `variant=release`, by a collect script that refuses any other program or data, and published as a dated page that names the machines. No size or throughput MAY decide a default, an order of backends or an API.
 
 #### Scenario: A debug build is offered to the throughput page
 - **WHEN** the collect script is given a program built at `variant=debug`
@@ -163,7 +163,7 @@ The library SHALL offer `hybrid::box` (X25519, XSalsa20-Poly1305) and `hybrid::b
 - **THEN** it opens, and a sealed box changed in one byte returns `authentication_failed` with `data` zeroed
 
 ### Requirement: Key formats: SPKI, PKCS#8 and PEM, strict
-Each curve's increment SHALL add, in its namespace, `encode_spki`, `decode_spki`, `encode_pkcs8` and `decode_pkcs8` (into the caller's buffer, with `max_spki_size` and `max_pkcs8_size`, nothing written on refusal), and the root `pem::armour` and `pem::unarmour` (labels `PUBLIC KEY` and `PRIVATE KEY`, lines of 64 characters, LF): Ed25519 and X25519 per RFC 8410 in increment 1 (on libsodium, RFC 8410's fixed DER prefix and the 32 key bytes, a recorded constant), secp256k1 per RFC 5480 with its OID in increment 2, P-256, P-384 and P-521 per RFC 5480 and RFC 5915 in increment 3 (PKCS#8 and PEM on BearSSL, SPKI on OpenSSL and Botan), RSA with PKCS #1 inside SPKI and PKCS#8 with RSA, and on OpenSSL and Botan for every key type they have. Decoding MUST accept an encoding only when re-encoding what was decoded gives the same bytes, on every backend, and refuse anything else with `invalid_encoding`. JWK MUST NOT be offered. Tests MUST run round trips, malformed-input refusals, and OpenSSL natively and WebCrypto's `importKey` and `exportKey` (`spki`, `pkcs8`) under node as outside oracles.
+Each curve's increment SHALL add, in its namespace, `encode_spki`, `decode_spki`, `encode_pkcs8` and `decode_pkcs8` (into the caller's buffer, with `max_spki_size` and `max_pkcs8_size`, nothing written on refusal), and the root `pem::armour` and `pem::unarmour` (labels `PUBLIC KEY` and `PRIVATE KEY`, lines of 64 characters, LF): Ed25519 and X25519 per RFC 8410 in increment 1 (on libsodium, RFC 8410's fixed DER prefix and the 32 key bytes, a recorded constant), secp256k1 per RFC 5480 with its OID in increment 2, P-256, P-384 and P-521 per RFC 5480 and RFC 5915 in increment 3 (PKCS#8 and PEM on BearSSL, SPKI on OpenSSL and Botan), RSA with PKCS #1 inside SPKI and PKCS#8 with RSA, and on OpenSSL and Botan for every key type they have. Decoding MUST accept an encoding only when re-encoding what was decoded gives the same bytes, on every backend, and refuse anything else with `invalid_encoding`. JWK MUST NOT be offered. Tests MUST run round trips, malformed-input refusals, and OpenSSL natively and WebCrypto's `importKey` and `exportKey` (`spki`, `pkcs8`) under node as outside oracles; for secp256k1, which WebCrypto lacks, node's `crypto` module (`createPrivateKey`, `createPublicKey`, `export`) is the oracle under node.
 
 #### Scenario: An Ed25519 key from WebCrypto
 - **WHEN** node's WebCrypto exports an Ed25519 key pair as `pkcs8` and `spki` and the library decodes both on libsodium
@@ -219,9 +219,13 @@ Increment 2 SHALL add, as thin wrappers over libsecp256k1 v0.8.0: `sign_recovera
 ### Requirement: secp256k1: ElligatorSwift, MuSig2 and silent payments
 Increment 2 SHALL add ElligatorSwift (`ellswift_encode`, `ellswift_create`, `ellswift_xdh` with BIP324's hash function), MuSig2 per BIP327 (key aggregation with its tweaks, `musig::secret_nonce`, a move-only object consumed by `partial_sign` so that a nonce is never used twice, partial signature verification and aggregation) and silent payments per BIP352 (the sender's outputs and the recipient's scan with labels), checked against the BIP vectors in the `bips` submodule.
 
+#### Scenario: A MuSig2 nonce passed without a move
+- **WHEN** a program passes a `secret_nonce` lvalue to `partial_sign`
+- **THEN** it does not compile, because `partial_sign` takes the nonce by value and the nonce cannot be copied
+
 #### Scenario: A MuSig2 nonce used twice
-- **WHEN** a program calls `partial_sign` twice with the same `secret_nonce`
-- **THEN** the second call does not compile, because the first consumed the nonce by move
+- **WHEN** a program passes to `partial_sign` a `secret_nonce` already moved into an earlier call
+- **THEN** `partial_sign` returns `invalid_state` without calling libsecp256k1, since C++ cannot reject a second `std::move` of one object at compile time
 
 #### Scenario: BIP352's vectors
 - **WHEN** every sending and receiving case of BIP352's test vectors runs
@@ -562,7 +566,7 @@ Every backend SHALL be compared against every other that has the same algorithm,
 - **THEN** both give the same shared secrets for the same keys
 
 ### Requirement: Tests: sizes and throughput
-The own lane `sizes` SHALL build, through `webcpp.size-table` at `<variant>release` on every target, the baseline program and one program per (algorithm, backend) of the capability table, stripped, and its table MUST feed the documentation's size matrix; throughput MUST be measured by hand from release builds alone, by a collect script that refuses a program or data not built at `variant=release`, and published as a dated page. Neither MAY decide a default; no `runners.yml` and no ranking exist.
+The own lane `sizes` SHALL build, through `webcpp.program-sizes` at `<variant>release` on every target, the baseline program and one program per (algorithm, backend) of the capability table, stripped, and its table MUST feed the documentation's size matrix; throughput MUST be measured by hand from release builds alone, by a collect script that refuses a program or data not built at `variant=release`, and published as a dated page. Neither MAY decide a default; no `runners.yml` and no ranking exist.
 
 #### Scenario: BearSSL's code size on WebAssembly
 - **WHEN** the sizes lane builds the AES-GCM program on wasip2
