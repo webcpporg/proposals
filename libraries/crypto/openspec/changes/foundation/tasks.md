@@ -7,8 +7,9 @@ there in full (Tasks 2.1 to 2.7); increments 3 to 12 are outlined there and writ
 task by task, when each starts; each one's documentation step follows design D19. **The order and the parallel streams are `reference/roadmap.md`**
 (design D35): wave 1 runs groups 1 (stream A) and 2 (stream B) beside the genesis's memory
 option (stream M, `../genesis/tasks.md` group 4); wave 2 runs groups 3 to 8, 10 and 11 after
-group 1 merges; wave 3 runs 9 after 6 and 12 after 8. Nothing is built; the base is ready
-(version 0.1 merged, webcpp::hash's `/third_party//sodium` on the superproject's `main`).
+group 1 merges; wave 3 runs 9 after 6 and 12 after 8. Group 2 (increment 2) is built on its
+branches and awaits its pull requests; group 1 (increment 1) was merged on 2026-11-19 and its
+boxes wait for its own record as built; `reference/STATUS.md` says where each stands.
 
 ## 1. Increment 1: libsodium's core, ChaCha20-Poly1305 on three backends, the capability table, the defaults (version 0.2; stream A)
 
@@ -47,15 +48,21 @@ Group A4:
 ## 2. Increment 2: libsecp256k1's remaining modules (version 0.2, beside 1; stream B)
 
 It branches from stream A's branch once 1.3 (`secret<N>`) is committed, adds its capability
-rows after 1.4, rebases onto `main` when group 1 merges, and merges after it.
+rows after 1.4, rebases onto `main` when group 1 merges, and merges after it. Built
+(2026-11-19) on the branches `crypto/secp256k1-modules` of the library and the superproject,
+on stream A's final heads, whose trees `main`'s merges of group 1 equal; where the code
+differs from the plan's text, the plan says so under "As built" in each task. The pull
+requests, the CI's run (Task 2.7, Steps 5 and 7) and chapter 17 of the rulebook remain
+(`reference/STATUS.md`).
 
-- [ ] 2.1 `ecdh` returns `secret<32>` (BREAKING); `ecdh_x` and `ecdh_point`, against Wycheproof's ECDH files (plan: Task 2.1)
-- [ ] 2.2 Recovery and hedged ECDSA, with libsecp256k1's own recovery cases; `public_key`, `parse_public_key` and `serialize_public_key` in both forms (plan: Task 2.2)
-- [ ] 2.3 Tweaks, negation and combination, the caller's workspace; SPKI, PKCS#8 and PEM for secp256k1, with OpenSSL and node as oracles (plan: Task 2.3)
-- [ ] 2.4 ElligatorSwift with BIP 324's vectors (plan: Task 2.4)
-- [ ] 2.5 MuSig2 with BIP 327's vectors, the consumed nonce (plan: Task 2.5)
-- [ ] 2.6 Silent payments with BIP 352's vectors (plan: Task 2.6)
-- [ ] 2.7 The families in the capability table, the constant-time cases, the size cells, the teaching chapters' secp256k1 sections; increment 2 whole (plan: Task 2.7)
+- [x] 2.1 `ecdh` returns `secret<32>` (BREAKING); `ecdh_x` and `ecdh_point`, against Wycheproof's ECDH files (plan: Task 2.1)
+- [x] 2.2 Recovery and hedged ECDSA, with libsecp256k1's own recovery cases; `public_key`, `parse_public_key` and `serialize_public_key` in both forms (plan: Task 2.2)
+- [x] 2.3 Tweaks, negation and combination, the caller's workspace; SPKI, PKCS#8 and PEM for secp256k1, with OpenSSL and node as oracles (plan: Task 2.3)
+- [x] 2.4 ElligatorSwift with BIP 324's vectors (plan: Task 2.4)
+- [x] 2.5 MuSig2 with BIP 327's vectors, the consumed nonce (plan: Task 2.5)
+- [x] 2.6 Silent payments with BIP 352's vectors (plan: Task 2.6)
+- [x] 2.7 The families in the capability table, the constant-time cases, the size cells, the teaching chapters' secp256k1 sections; increment 2 whole (plan: Task 2.7; its review and a full local verification in place of Step 5's CI, which runs with the pull requests of Step 7)
+- [x] 2.7d The owner's two MuSig2 examples, `musig_network` (every public part through a byte buffer) and `musig_taproot` (a Taproot key-path output), run on every lane against their `.expected` and shown in the MuSig2 section (plan: Task 2.7, "As built")
 
 ## 3. Increment 3: BearSSL's remaining parts (wave 2, stream 3)
 

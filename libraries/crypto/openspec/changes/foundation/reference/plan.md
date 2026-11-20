@@ -2269,9 +2269,44 @@ The outline's `curves/secp256k1/recovery.hpp` is not created: design D11 makes
 it (Task 2.2). Silent payments' header and namespace are `silent_payments` (design D29: a
 header mirrors its namespace), not the outline's `silentpayments`.
 
+**As built (2026-11-19).** The code is on the branches `crypto/secp256k1-modules` of the
+library (head `e7c71db`) and the superproject (head `221357e`). Where it differs from the
+tasks below, a review accepted the difference or stream B's controller ruled it; each task says
+so under "As built" after its heading. Across the increment:
+
+- **The base.** Both branches sit on stream A's final heads (library `1fc5140`, superproject
+  `c00bf7a`), whose trees `main`'s merges of stream A (`dae9e84`, `485c5e0`, 2026-11-19)
+  equal, so increment 2 was not rebased onto `main` and its pull requests hold its own commits
+  alone.
+- **The changelog.** `doc/changelog.adoc`'s `unreleased` tag holds at most ten lines of at most
+  30 words (the lint), so the tasks' lines below are merged into two: the `curves::secp256k1`
+  line ("key pairs, BIP340, hedged and recoverable ECDSA, raw and hashed ECDH, strict DER,
+  low-S, tweaks, SPKI, PKCS#8, PEM, BIP 324's ElligatorSwift, BIP 327's MuSig2, BIP 352's
+  silent payments") and the `supports_v` line ("secp256k1's modules among them"). No line says
+  BREAKING: the changelog has no released section yet (version 0.1 is in the same `unreleased`
+  tag).
+- **The default aliases' fixtures.** Stream A's rule that every `<family>-default` alias has a
+  user's Jamfile fixture gives the superproject
+  `tools/test/fixtures/crypto_jamfiles/secp256k1_ellswift_default/`, `secp256k1_musig_default/`
+  and `secp256k1_silent_payments_default/`, each run by `crypto_jamfiles_test.py`.
+- **Green before the pull requests** is a full local run in place of Task 2.7's Step 5, which is
+  the CI's and runs with Step 7: the full lint; the five lanes from scratch (native 344 passed,
+  gcc-15 307, wasip2 303, wasip3 291, emscripten 230, none failed, no warning); the own lanes
+  `c-suites`, `constant-time` (natively on macOS arm64, on wasip2, and in a Linux arm64
+  container: memcheck, MemorySanitizer and dudect) and `sizes`; the docs and the site; the
+  tools' tests; MSVC 14.3 and 14.5 in the local Wine lane (`msvc-lane`), with no failure
+  outside its known list. The Linux x86-64 run of `constant-time` is the CI's.
+- **Not made:** Task 2.7's superproject commit `guidelines: crypto's increment 2 in chapter 17`;
+  `CODING-GUIDELINES.md` chapter 17 still lists libsecp256k1's remaining modules among what is
+  not built.
+
 ---
 
 ## Task 2.1: `ecdh` returns `secret<32>`; `ecdh_x` and `ecdh_point`
+
+**As built.** As written, but the changelog: its two lines are merged into the
+`curves::secp256k1` line ("raw and hashed ECDH"), without BREAKING (the increment's "As
+built").
 
 **Files:**
 - Modify: `include/webcpp/crypto/curves/secp256k1.hpp` (`ecdh`'s return type, the two new
@@ -2456,6 +2491,9 @@ conversation key (what a NIP-44 library derives): 2cbdf074f601178c24da3f829b5045
   `crypto: secp256k1's ECDH returns secret<32>, and gives the raw x coordinate and the shared point`.
 
 ## Task 2.2: Recovery, hedged ECDSA, and the parsed public key in both forms
+
+**As built.** As written, but the changelog: its lines are merged into the `curves::secp256k1`
+line ("hedged and recoverable ECDSA").
 
 **Files:**
 - Modify: `include/webcpp/crypto/curves/secp256k1.hpp`, `include/webcpp/crypto/backends/secp256k1.hpp`
@@ -2699,6 +2737,15 @@ a changed message names another signer
   `crypto: secp256k1's recoverable signatures, hedged ECDSA and the parsed public key in both forms`.
 
 ## Task 2.3: Tweaks, negation, combination; SPKI, PKCS#8 and PEM for secp256k1
+
+**As built.** In two commits: the tweaks with SPKI and PKCS#8 first, and PEM after stream A's
+Task 7b brought `pem.hpp` (`crypto: secp256k1's keys in PEM`). The example is
+`example/secp256k1_key_formats.cpp` with its `.expected`, since stream A's
+`example/key_formats.cpp` is Ed25519's and X25519's; it links
+`/webcpp/crypto//pem-default` for PEM, as stream A's example does, and the use case
+"Store or exchange a secp256k1 key" names it. A compressed public key inside RFC 5915's `[1]`
+makes a 102-byte PKCS#8, not 103 as Step 1 says (`secp256k1_formats_test.cpp` asserts 102 for
+OpenSSL's encoding).
 
 **Files:**
 - Create: `include/webcpp/crypto/curves/secp256k1/tweak.hpp`,
@@ -3091,6 +3138,15 @@ initiator and responder agree
 
 ## Task 2.5: MuSig2, with BIP 327's vectors and a nonce its signature consumes
 
+**As built.** The message case `musig_nonce_copied` expects one error,
+`{{call to deleted constructor of}}`, and one note on `musig.hpp`,
+`{{'secret_nonce' has been explicitly marked deleted here}}`, not two substrings of one
+error: `webcpp.compile-diagnostic` matches each directive with a diagnostic of its own. The
+entropy test checks `entropy_unavailable` and that `nonce_gen` drew once and called nothing
+after the failure; the zeroed buffer is `random_device::fill`'s contract, tested by
+`random_device_failing`. The owner's two examples of Task 2.7d (below) show this task's
+serialisation and tweak functions.
+
 **Files:**
 - Create: `include/webcpp/crypto/curves/secp256k1/musig.hpp`, `test/secp256k1_musig_test.cpp`,
   `test/secp256k1_musig_entropy_test.cpp`, `test/messages/musig_nonce_copied/Jamfile`, `test/messages/musig_nonce_copied/musig_nonce_copied.cpp`,
@@ -3364,6 +3420,19 @@ the aggregate signature verifies as one BIP 340 signature
 
 ## Task 2.6: Silent payments, with BIP 352's vectors
 
+**As built.** `support/bip352_vectors.c` is an `obj` of its own in `test/Jamfile`, compiled with
+`<warnings>off <warnings-as-errors>off`, so the C++ test keeps every warning. The concept
+`label_lookup` holds when the lookup is `noexcept` and its result type is exactly
+`std::optional<std::span<std::uint8_t const, 32>>` (`std::same_as` on
+`std::invoke_result_t`), not any type convertible to it: a lookup returning a `std::array` or
+an optional of one by value would leave the span over a destroyed temporary, which
+libsecp256k1 reads after the lookup returns. The Doc Comment says the lookup owns the bytes
+until it is called again, and the message case `label_lookup_by_value` (with its MSVC case)
+shows the refusal. `scan_outputs` calls libsecp256k1 with the scan key pair's context, not
+`secp256k1_context_static` as the increment's "Contexts" rule has it, so that libsecp256k1
+marks its public values public under the constant-time checkers (Task 2.7, Step 2); outside
+them every key pair's context has no flag (`SECP256K1_CONTEXT_NONE`), as before.
+
 **Files:**
 - Create: `include/webcpp/crypto/curves/secp256k1/silent_payments.hpp`,
   `test/secp256k1_silent_payments_test.cpp`, `test/support/bip352_vectors.c`,
@@ -3591,6 +3660,57 @@ two payments to one address share no output key
   `third_party: BIP 352's vectors among the bips target's files, the same as libsecp256k1's copy`.
 
 ## Task 2.7: The capability rows, constant time, sizes and the teaching chapters; increment 2 whole
+
+**As built.**
+
+- **Step 1.** Each function's assertion is
+  `static_assert(webcpp::crypto::detail::secp256k1_refuses_others<families::<family>, Backend>)`:
+  `secp256k1_refusal<Family, Backend>`, specialised per family for a backend other than
+  libsecp256k1, holds the generated `WEBCPP_CRYPTO_DETAIL_REFUSE_<FAMILY>(Backend)` (the form
+  Task 4' landed), which cannot stand bare in a function since for libsecp256k1 it asserts both
+  "linked" and "not linked". The third family's title is "BIP 352 silent payments", not "Silent
+  payments", so that the generated refusals and tables read as sentences ("has no BIP 352
+  silent payments"). The three module families' backend cells take Task 14's per-checker form,
+  `lane` and `lane_note`: memcheck and MemorySanitizer natively over `ctime_tests.c` and
+  webcpp's code around each module; dudect is listed only on the `secp256k1` family, for
+  `ecdh_x`.
+- **Step 2.** The cases are in `test/constant_time/paths.hpp`, which `ctgrind_test.cpp` and
+  `msan_test.cpp` share (stream A's form), and cover the key pair's `make`, `sign_schnorr`,
+  `tweak_xonly` and `create_label` beside the listed functions. dudect times `ecdh_x` in a
+  program of its own, `test/constant_time/dudect_secp256k1_test.cpp` (`dudect_secp256k1`), as
+  stream A split `dudect_sodium_test.cpp` from `dudect_test.cpp`, keeping libsecp256k1 off
+  BearSSL's program; it takes 500,000 measurements (wasmtime's 600 seconds) and, natively on
+  arm64 (macOS and Linux), runs under DIT (data-independent timing) as stream A's dudect
+  programs do, so that its |t| is judged against the threshold 10 there; under wasmtime no DIT
+  is set and it is judged too. Measured on the final code: 1.33 on macOS arm64, 1.99 in the
+  Linux arm64 container, 2.86 on wasip2. The lane ran locally (macOS arm64, wasip2, and a
+  Linux arm64 container for memcheck and MemorySanitizer); its Linux x86-64 run is the CI's.
+- **Step 3.** The programs follow `test/sizes`' contract, `<family>_<backend>` and
+  `<family>_<backend>_<operation>`: `secp256k1_secp256k1_ecdh_x`, `secp256k1_secp256k1_recover`,
+  `secp256k1_ellswift_secp256k1`, `secp256k1_musig_secp256k1` and
+  `secp256k1_silent_payments_secp256k1`, declared with `webcpp.link` and tabled by the
+  superproject's `webcpp.program-sizes` (release builds only), with the two operations named in
+  the `secp256k1` family's `sized_operations`. The ElligatorSwift program makes the two
+  encodings and their shared secret.
+- **Step 4.** No section names an application (none was looked for, so none has a public source
+  showing noble or scure for the primitive shown), and each section says, in one sentence, "This
+  section names no application." The five use cases link the teaching sections, and a use case's
+  `answers` key names the operation section it answers, so that `llms.txt` keeps each
+  operation's "Use it to".
+- **Steps 5 to 7.** Green before the pull requests is the local run of the increment's "As
+  built"; the review is the whole-branch review with one fix wave (the label lookup's exact
+  result type, Task 2.6); the pull requests and the rulebook's chapter 17 remain
+  (`STATUS.md`).
+- **Task 2.7d, the owner's two MuSig2 examples (2026-11-19).** `example/musig_network.cpp`:
+  two devices' MuSig2 signature in which every public part crosses a byte buffer (each public
+  nonce, the aggregate nonce and each partial signature serialised and parsed), each partial
+  signature verified before the aggregate, and a part with one byte flipped refused.
+  `example/musig_taproot.cpp`: the aggregate key tweaked by BIP 341's TapTweak with
+  `aggregate_key::tweak_xonly_add` before any nonce is made (the TapTweak hash, the protocol's,
+  computed in the example with webcpp::hash's SHA-256, D24), and the signature
+  verifying under the output key and refused under the internal one. Both run on every lane
+  against their `.expected`, are included in `doc/secp256k1.adoc`'s MuSig2 section beside
+  `musig_wallet`, and add no changelog line.
 
 Runs once stream B is rebased onto stream A's branch with Tasks 4', 5', 7b, 11', 14 and 15
 committed (or onto `main` after A merges).
