@@ -995,9 +995,9 @@ by target. It never differs by what the program links.
   compilation with an `#error` that names the type to write (the owner's answer Q3), since a
   silently ignored define would change which code a program runs.
 - **Measurements are references.** The own lane `sizes` builds every (family, backend) program
-  through the superproject's `webcpp.size-table`, which requires `<variant>release` and extends,
-  by the owner's decision of 2026-11-17 (C36), from Emscripten page programs to plain linked
-  programs on every target (Task 11'), and the
+  through the superproject's `webcpp.program-sizes`, which requires `<variant>release` and,
+  by the owner's decision of 2026-11-17 (C36), sizes plain linked programs on every target
+  beside `webcpp.size-table`'s Emscripten page programs (Task 11'), and the
   generated size matrix reads its table; throughput is measured by hand with a collect script
   that refuses a program or data not built at `variant=release` (hash's `bench/collect.py` is
   the model), on the machines the page names, and published as a dated page. Neither decides a

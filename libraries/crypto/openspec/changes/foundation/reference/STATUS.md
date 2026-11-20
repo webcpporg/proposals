@@ -13,9 +13,9 @@ recorded as built on 2026-11-19).
   of it is pushed. Every task was reviewed, the whole branch had a final review and one fix
   wave, and a full local verification passed on the final heads (`plan.md`, increment 2's
   "As built"); where the code differs from the plan's text, each task's "As built" says so.
-- **Increment 1 (stream A, group 1) is merged** without the CI's run: `webcpporg/crypto` `main`
-  `dae9e84` and the superproject's `main` `485c5e0`, 2026-11-19, merges of stream A's final
-  heads `1fc5140` and `c00bf7a`. Its boxes in `../tasks.md` wait for its own record as built.
+- **Increment 1 (stream A, group 1) is merged** without the CI's run: `webcpporg/crypto#4`
+  (`main` `dae9e84`) and `webcpporg/webcpp#35` (`main` `485c5e0`), 2026-11-19, merges of stream
+  A's final heads `1fc5140` and `c00bf7a`; its boxes in `../tasks.md` are checked.
 - **Its base was ready.** crypto's version 0.1 (the genesis's groups 1 and 2) is merged:
   `webcpporg/crypto` `main` at `d242be8`, recorded by the superproject's `main` (`3fa7ca5` on
   2026-11-17). webcpp::hash's genesis is merged with `/third_party//sodium` (libsodium 1.0.22 at
@@ -73,8 +73,7 @@ Nothing of increment 2. What remains of it:
    difference from the plan in its task's "As built". Stream B's ledger is the untracked
    `.superpowers/sdd/plan/progress.md` of its superproject worktree, with its `briefs/` (every
    task's brief, report and review, the rebases, the final review and verification).
-3. Increment 1: its record as built (`../tasks.md` group 1, `plan.md`), from stream A's ledger.
-4. Wave 2, now that stream A is merged: each of increments 3 to 8, 10 and 11 writes its tasks in
+3. Wave 2, now that stream A is merged: each of increments 3 to 8, 10 and 11 writes its tasks in
    full first, then runs as its own stream (design D35), rebasing and regenerating with
    `generate.py` after every merge. Wave 3: 9 after 6, 12 after 8.
-5. Check a box of `../tasks.md` only for work done and committed.
+4. Check a box of `../tasks.md` only for work done and committed.

@@ -7,43 +7,44 @@ there in full (Tasks 2.1 to 2.7); increments 3 to 12 are outlined there and writ
 task by task, when each starts; each one's documentation step follows design D19. **The order and the parallel streams are `reference/roadmap.md`**
 (design D35): wave 1 runs groups 1 (stream A) and 2 (stream B) beside the genesis's memory
 option (stream M, `../genesis/tasks.md` group 4); wave 2 runs groups 3 to 8, 10 and 11 after
-group 1 merges; wave 3 runs 9 after 6 and 12 after 8. Group 2 (increment 2) is built on its
-branches and awaits its pull requests; group 1 (increment 1) was merged on 2026-11-19 and its
-boxes wait for its own record as built; `reference/STATUS.md` says where each stands.
+group 1 merges; wave 3 runs 9 after 6 and 12 after 8. Group 1 (increment 1) is merged
+(`webcpporg/crypto#4`, `dae9e84`; `webcpporg/webcpp#35`, `485c5e0`; 2026-11-19); group 2
+(increment 2) is built on its branches and awaits its pull requests; `reference/STATUS.md`
+says where each stands.
 
 ## 1. Increment 1: libsodium's core, ChaCha20-Poly1305 on three backends, the capability table, the defaults (version 0.2; stream A)
 
 Group A1, in order:
 
-- [ ] 1.1 The worktree from `origin/main`, the ledger and the baseline (plan: Task 1)
-- [ ] 1.2 crypto's canary on `/third_party//sodium`, `backends/sodium.hpp` and its three layers (plan: Task 2)
-- [ ] 1.3 `secret<N>` and the errors 15 to 20 (plan: Task 3)
-- [ ] 1.4 The capability table grown in version 0.1's `doc/tables/crypto.json`, `generate.py`'s new outputs, `supports_v` and the generated refusals (plan: Task 4', design D33)
-- [ ] 1.5 One default per family and target with its reason, `default_backend_t`, the "needs" messages, version 0.1's two defines refused with the type to write (plan: Task 5', design D32)
+- [x] 1.1 The worktree from `origin/main`, the ledger and the baseline (plan: Task 1)
+- [x] 1.2 crypto's canary on `/third_party//sodium`, `backends/sodium.hpp` and its three layers (plan: Task 2)
+- [x] 1.3 `secret<N>` and the errors 15 to 20 (plan: Task 3)
+- [x] 1.4 The capability table grown in version 0.1's `doc/tables/crypto.json`, `generate.py`'s new outputs, `supports_v` and the generated refusals (plan: Task 4', design D33)
+- [x] 1.5 One default per family and target with its reason, `default_backend_t`, the "needs" messages, version 0.1's two defines refused with the type to write (plan: Task 5', design D32)
 
 Group A2, in parallel:
 
-- [ ] 1.6 Ed25519 and Ed25519ph on libsodium (plan: Task 6)
-- [ ] 1.6b Ed25519's strict policy, and the twelve "Taming the many EdDSAs" cases per backend, committed and published (plan: Task 6b)
-- [ ] 1.7 X25519 and the Ed25519 to X25519 conversion (plan: Task 7)
-- [ ] 1.8 `ciphers::aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs on libsodium (plan: Task 8)
-- [ ] 1.8b ChaCha20-Poly1305 on BearSSL and OpenSSL over `ciphers::aead`, the genesis's increment 4: RFC 8439, Wycheproof, three-way agreement, allocation, OpenSSL's error queue, ctaes's refusal, its constant-time cases (plan: Task 8b; genesis plan: Task 35)
-- [ ] 1.11 The own lane `sizes` through `webcpp.size-table` (release builds only) and the throughput page measured by hand from release builds, version 0.1's operations first; no ranking (plan: Task 11'; genesis plan: Task 22)
-- [ ] 1.12 Threads: `WEBCPP_CRYPTO_HAS_THREADS` and the refusal of a heavy variant without them (plan: Task 12)
-- [ ] 1.14a The constant-time harness over version 0.1's backends: BearSSL, OpenSSL with assembly, ctaes, libsecp256k1's `ctime_tests.c`, the planted leak (plan: Task 14; genesis plan: Task 20)
+- [x] 1.6 Ed25519 and Ed25519ph on libsodium (plan: Task 6)
+- [x] 1.6b Ed25519's strict policy, and the twelve "Taming the many EdDSAs" cases per backend, committed and published (plan: Task 6b)
+- [x] 1.7 X25519 and the Ed25519 to X25519 conversion (plan: Task 7)
+- [x] 1.8 `ciphers::aead<Family, Backend>` and the three ChaCha20-Poly1305 AEADs on libsodium (plan: Task 8)
+- [x] 1.8b ChaCha20-Poly1305 on BearSSL and OpenSSL over `ciphers::aead`, the genesis's increment 4: RFC 8439, Wycheproof, three-way agreement, allocation, OpenSSL's error queue, ctaes's refusal, its constant-time cases (plan: Task 8b; genesis plan: Task 35)
+- [x] 1.11 The own lane `sizes` through `webcpp.program-sizes` (release builds only) and the throughput page measured by hand from release builds, version 0.1's operations first; no ranking (plan: Task 11'; genesis plan: Task 22)
+- [x] 1.12 Threads: `WEBCPP_CRYPTO_HAS_THREADS` and the refusal of a heavy variant without them (plan: Task 12)
+- [x] 1.14a The constant-time harness over version 0.1's backends: BearSSL, OpenSSL with assembly, ctaes, libsecp256k1's `ctime_tests.c`, the planted leak (plan: Task 14; genesis plan: Task 20)
 
 Group A3, in parallel:
 
-- [ ] 1.7b SPKI, PKCS#8 and PEM for Ed25519 and X25519, strict, with OpenSSL and WebCrypto as oracles (plan: Task 7b)
-- [ ] 1.9 `hybrid::box`, sealed boxes and `ciphers::secretbox`, in both forms (plan: Task 9)
-- [ ] 1.10 `kx` (plan: Task 10)
-- [ ] 1.13 Vectors, libsodium's own suite in `c-suites`, node's WebCrypto as the oracle for Ed25519 and X25519 (plan: Task 13)
-- [ ] 1.14 The constant-time lane over libsodium's paths, the ChaCha engines and the new guards (plan: Task 14)
+- [x] 1.7b SPKI, PKCS#8 and PEM for Ed25519 and X25519, strict, with OpenSSL and WebCrypto as oracles (plan: Task 7b)
+- [x] 1.9 `hybrid::box`, sealed boxes and `ciphers::secretbox`, in both forms (plan: Task 9)
+- [x] 1.10 `kx` (plan: Task 10)
+- [x] 1.13 Vectors, libsodium's own suite in `c-suites`, node's WebCrypto as the oracle for Ed25519 and X25519 (plan: Task 13)
+- [x] 1.14 The constant-time lane over libsodium's paths, the ChaCha engines and the new guards (plan: Task 14)
 
 Group A4:
 
-- [ ] 1.15 The documentation (design D19): `generate.py`'s comparison tables, backend lists with each default's reason, matrices from the release-build tables, decision table and `llms.txt`, the sections of increment 1, the teaching chapters' first sections (plan: Task 15)
-- [ ] 1.16 Increment 1 whole, with the genesis's increment 4 review items: the rulebook, green, review and the pull requests (plan: Task 16; genesis plan: Task 36)
+- [x] 1.15 The documentation (design D19): `generate.py`'s comparison tables, backend lists with each default's reason, matrices from the release-build tables, decision table and `llms.txt`, the sections of increment 1, the teaching chapters' first sections (plan: Task 15)
+- [x] 1.16 Increment 1 whole, with the genesis's increment 4 review items: the rulebook, green, review and the pull requests (plan: Task 16; genesis plan: Task 36)
 
 ## 2. Increment 2: libsecp256k1's remaining modules (version 0.2, beside 1; stream B)
 

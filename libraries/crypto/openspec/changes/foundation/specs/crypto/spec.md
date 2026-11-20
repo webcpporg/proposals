@@ -59,7 +59,7 @@ No macro SHALL change a default: the library MUST NOT read `WEBCPP_CRYPTO_PROFIL
 - **THEN** its backend is libsodium, as without the define
 
 ### Requirement: Measurements: references from release builds that decide nothing
-The own lane `sizes` SHALL build the baseline program and one program per (family, backend) through the superproject's `webcpp.size-table`, which requires `<variant>release` and, by the owner's decision of 2026-11-17 (C36), reaches plain linked programs on every target and not only Emscripten page programs (foundation Task 11'), on native, wasip2, wasip3 and Emscripten, and the documentation's size matrix MUST be generated from its table. Throughput MUST be measured only from programs built at `variant=release`, by a collect script that refuses any other program or data, and published as a dated page that names the machines. No size or throughput MAY decide a default, an order of backends or an API.
+The own lane `sizes` SHALL build the baseline program and one program per (family, backend) through the superproject's `webcpp.program-sizes`, which requires `<variant>release` and, by the owner's decision of 2026-11-17 (C36), sizes plain linked programs on every target beside `webcpp.size-table`'s Emscripten page programs (foundation Task 11'), on native, wasip2, wasip3 and Emscripten, and the documentation's size matrix MUST be generated from its table. Throughput MUST be measured only from programs built at `variant=release`, by a collect script that refuses any other program or data, and published as a dated page that names the machines. No size or throughput MAY decide a default, an order of backends or an API.
 
 #### Scenario: A debug build is offered to the throughput page
 - **WHEN** the collect script is given a program built at `variant=debug`
@@ -566,7 +566,7 @@ Every backend SHALL be compared against every other that has the same algorithm,
 - **THEN** both give the same shared secrets for the same keys
 
 ### Requirement: Tests: sizes and throughput
-The own lane `sizes` SHALL build, through `webcpp.size-table` at `<variant>release` on every target, the baseline program and one program per (algorithm, backend) of the capability table, stripped, and its table MUST feed the documentation's size matrix; throughput MUST be measured by hand from release builds alone, by a collect script that refuses a program or data not built at `variant=release`, and published as a dated page. Neither MAY decide a default; no `runners.yml` and no ranking exist.
+The own lane `sizes` SHALL build, through `webcpp.program-sizes` at `<variant>release` on every target, the baseline program and one program per (algorithm, backend) of the capability table, stripped, and its table MUST feed the documentation's size matrix; throughput MUST be measured by hand from release builds alone, by a collect script that refuses a program or data not built at `variant=release`, and published as a dated page. Neither MAY decide a default; no `runners.yml` and no ranking exist.
 
 #### Scenario: BearSSL's code size on WebAssembly
 - **WHEN** the sizes lane builds the AES-GCM program on wasip2

@@ -50,7 +50,7 @@ change (its tasks 1.14a and 1.14, 1.11, and 4.4); they are checked here when tho
 - [ ] 3.1 OpenSSL's memory functions, an option of the config: the adapter and the install (plan: Task 15; stream M; native only, refused on every WebAssembly target, WASI included)
 - [ ] 3.2 The memory option, process by process (plan: Task 16; stream M; native only, refused on every WebAssembly target, WASI included)
 - [ ] 3.3 Constant time: Valgrind, MemorySanitizer and dudect, over version 0.1's backends (plan: Task 20; built as the foundation's tasks 1.14a and 1.14)
-- [ ] 3.4 Sizes from release builds through `webcpp.size-table`, throughput measured by hand from release builds, deciding nothing; no `runners.yml` (plan: Task 22, re-cut; built as the foundation's task 1.11)
+- [ ] 3.4 Sizes from release builds through `webcpp.program-sizes`, throughput measured by hand from release builds, deciding nothing; no `runners.yml` (plan: Task 22, re-cut; built as the foundation's task 1.11)
 - [ ] 3.5 The browser: WebCrypto as an outside oracle, the audio worklet, throughput in Chrome from release builds (plan: Task 23; built as the foundation's task 4.4)
 - [ ] 3.6 The nightly level: the heavy own lanes, the tools' macOS and Windows legs (plan: Task 25b; owner gate O2; stream N)
 - [ ] 3.7 NIST CAVP's archives and their tests (plan: Task 9's deferred half; owner gate O3; stream N)
