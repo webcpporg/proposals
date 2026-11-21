@@ -269,12 +269,20 @@ from the decisions above, or adds to them:
   the two-pass open allocates nothing per message (on OpenSSL `verify` restarts the context with
   `EVP_CipherInit_ex`). The error reference names the open's sources of `invalid_state`,
   `invalid_tag_size` and `invalid_input_size`.
-- **D3, `gcm.hpp` includes `aes.hpp`**, whose resolver it names. The WebAssembly row of the block
+- **D3, the default's header is `ciphers/aes_block.hpp`, not `aes.hpp`.** `aes.hpp` and `gcm.hpp`
+  stay inside the genesis's boundary of headers that name no backend (a program that only draws
+  random bytes or compares tags links none), so the block default's backend header is included
+  by a header of its own, `ciphers/aes_block.hpp`, as `aes256_gcm.hpp` does for AES-GCM's;
+  `crypto.hpp` includes it. `aes.hpp` alone naming `aes256<>` is refused with the backend
+  header's name, as `gcm.hpp` alone naming `gcm<aes256<>>` is. `gcm.hpp` includes `aes.hpp`, whose
+  resolver it names. The WebAssembly row of the block
   cipher's default cites `default_bearssl` (a type check, since it links no ctaes) and
   `default_both_wasm` links ctaes; the message test of the default not linked runs natively (ctaes
   alone), on wasip2 and wasip3 (OpenSSL alone), and on Emscripten as the superproject's fixture
   `aes_block_default_not_linked_on_emscripten`, with `aes_block_default` the fixture of the alias.
-  The page states that `aes256<>` is not the type `aes256<backends::openssl>`. A program that
+  The page states that `aes256<>` is not the type `aes256<backends::openssl>`. On WebAssembly the
+  ctaes canary's declaration carries the same note for `bugprone-dynamic-static-initializers` as
+  BearSSL's and libsodium's, which `aes_block.hpp` made reachable there. A program that
   names `aes256<backends::openssl>` natively without linking OpenSSL is now refused by the
   default's text, as GCM's already was: a wording of the generator's to improve later.
 - **D4, the bound is `basic_keypair::max_draws`** (4), a public constant the test reads; an
