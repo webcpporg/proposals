@@ -3872,11 +3872,374 @@ committed (or onto `main` after A merges).
    Emscripten.
 2. `async.hpp`: `async_initiate` over webcpp::asio, `webcpp::asio::browser::async_await` for
    promises, `asio::post` over synchronous backends; only the algorithms WebCrypto offers.
+   **Built ahead as part A (below, 2026-11-20):** the post over synchronous backends, the
+   completion shape, the seam `detail::async_engine`, and the heavy machinery; part B adds
+   `async_engine<backends::browser>` and the functions R-A1 leaves to it.
 3. The errors of rejected promises, cancellation, run-time availability (node with an
    algorithm removed).
 4. The lane `browser`: node and Chrome, every algorithm WebCrypto has against every synchronous
    backend on `main` (D13), and the audio worklet's `not_supported`.
 5. Pages, green, review, pull requests.
+
+## Increment 4, part A: the asynchronous family over the synchronous backends (written in full on 2026-11-20)
+
+Written on 2026-11-20 on the library's tree with the changes `data-independent-timing` and
+`api-gaps` (`../../api-gaps/`) merged, which it requires; the owner's queue of that day puts it
+after `api-gaps` and after increment 3's P-256 (stream 3). Its rulings are recorded below and
+in `../design.md` (D13 and D23, amended 2026-11-20), `../specs/crypto/spec.md` and
+`roadmap.md`. Part B, the browser backend, is this increment's steps 1, 3 and 4 above, unchanged
+but for the shape part A fixes.
+
+**Goal:** `<webcpp/crypto/async.hpp>`, webcpp::hash's asynchronous family's twin, for every
+algorithm WebCrypto offers that crypto has on `main` (AES-GCM; Ed25519; X25519; and P-256's
+ECDSA and ECDH when increment 3 has merged), completing through a post on every target, and the
+heavy operations' machinery rebuilt on hash's model, so that increments 3, 6, 7, 8, 9 and 10
+declare their `async_` variants in one line each and part B plugs WebCrypto in behind the same
+functions.
+
+**Architecture:** two kinds, as hash's `async.hpp`. The cheap functions take the executor the
+completion is posted to first, run the synchronous call at once (its guards and its work) and
+post the completion, `void(boost::system::error_code, T)` or `void(boost::system::error_code)`,
+never inside the call; a seam, `detail::asynchronous_backend_v<Backend>` and
+`detail::async_engine<Backend>`, is where part B's `backends::browser` answers instead. The heavy
+machinery, `detail::run_on_work`, takes the work executor first, checks the guards on the
+caller's thread, runs the work on the work executor and completes on the handler's associated
+executor, with hash's cancellation rules. Everything is on webcpp::asio (`<webcpp/asio/*.hpp>`,
+`/webcpp/asio//asio`), never on Boost.Asio's headers directly.
+
+**Tech stack:** as increment 1, with webcpp::asio and, in one test, webcpp::cobalt.
+
+### Rulings of 2026-11-20 (the owner on autopilot)
+
+- **R-A1. Part A now, part B later.** What needs no browser is built now: the family's
+  functions over the synchronous backends, their completion-token shape, the seam part B fills,
+  and the heavy machinery (natively and on Emscripten with `-pthread`, as hash's). Waiting for
+  part B: `backends::browser`, its key table and handles, `async_engine<backends::browser>`, the
+  DOMException mapping and the promise's cancellation (spec "Asynchronous family: the browser's
+  errors"), `async_encrypt`, `async_decrypt`, `async_wrap`, `async_unwrap`, `async_export` and
+  `async_make` from SPKI or PKCS#8 (their shape depends on the browser's non-extractable keys,
+  and crypto has none of AES-CBC, AES-CTR, AES-KW or RSA on `main`), the lane `browser`, the
+  audio worklet's `not_supported`, Chrome's throughput page, and the completion on
+  `webcpp::asio::browser::main_thread_context`.
+- **R-A2. Executor first, as hash's.** Every cheap function takes the executor its completion is
+  posted to as its first parameter (`async_seal(executor, aead, iv, ad, data, token)`), every
+  heavy one the work executor. Without it, Asio would post to the system executor, a thread of
+  its own, and a handler would run off the program's loop; hash's family takes it for that
+  reason. The spec's scenario "One coroutine, two targets" is amended to pass it.
+- **R-A3. Results as `void(error_code, T)`.** As the spec says and as every Asio operation does;
+  hash's functions write into the caller's spans and complete with `void(error_code)`, crypto's
+  return values, so the value is the second argument. On an error `T` is the empty object a
+  move leaves (a `gcm` or key pair without a key, a `secret<N>` or array of zeros), made through
+  `detail::async_access`, a friend of each such type; a program that reads it gets
+  `invalid_state` from every member. Operations without a value (`open`, `verify`) complete
+  with `void(error_code)`.
+- **R-A4. The default is the synchronous one, everywhere.** `default_async_backend_t<Family>` is
+  `default_backend_t<Family>` on every target, Emscripten included; `backends::browser` is used
+  only where a type names it, as hash's owner decided for `backends::webcrypto` (hash's ruling
+  R76, decision O2): one program gives the same bytes on every target, and the browser's key
+  model is chosen, not inherited. This amends the roadmap's last default row.
+- **R-A5. The heavy machinery is hash's model, ported.** crypto's `detail::run_heavy` of Task 12
+  completes with `void(R)` and has no cancellation; it is replaced by hash's `heavy_state`,
+  `heavy_job` and `heavy_initiation` (`libs/hash/include/webcpp/hash/async.hpp`), carrying a
+  value: a cancellation before the work starts completes at once with `operation_aborted`
+  (every type); after it starts, `terminal` and `partial` let it end, destroy its value (which
+  wipes a `secret<N>` or a key pair) and complete with `operation_aborted`; `total` is not
+  honoured. The code is ported, not shared: crypto does not reach into hash's `detail`, and
+  lifting the state into webcpp::asio is a later change of that library when a third one needs
+  it (recorded here as a follow-up).
+- **R-A6. No heavy operation exists yet.** The stated list of D32 holds none that `main` has;
+  part A tests the machinery with a test-only heavy operation, and each later increment declares
+  its own with `WEBCPP_CRYPTO_DETAIL_REQUIRE_THREADS` and `detail::run_on_work`.
+- **R-A7. The timing guard.** Every `async_` function holds `detail::timing_guard` as its first
+  statement (the change `data-independent-timing`'s rule R1, forwarders included), and the
+  synchronous call it makes holds its own: for a cheap function both run on the caller's thread;
+  for a heavy one the synchronous call's guard runs on the pool's thread, where DIT matters. The
+  coverage tests call every `async_` function of their backend.
+- **R-A8. A test that waits for a timer never races.** Each test that shows the loop going on
+  while work runs keeps the work from completing until the timer's handler has run (a latch, as
+  hash's `async_heavy_test.cpp` after its fix of 2026-11-20), never by timing; the examples
+  likewise.
+
+### Global Constraints
+
+The foundation's (above), with: `async.hpp` and `detail/heavy.hpp` include only
+`<webcpp/asio/*.hpp>` for Asio; every test of the family links `/webcpp/asio//asio`; the
+convenience header `crypto.hpp` does not include `async.hpp`; webcpp's code calls neither
+`operator new` nor the C allocator in the family (the handler's associated allocator holds every
+state); every new public function holds the timing guard and is in its backend's coverage test.
+
+### Review Focus
+
+1. **A handler bound to another executor** (`bind_executor(loop, ...)` with a pool's executor
+   given): the completion runs on the loop. Pinned by Task 4.A2's `post_bound_executor`.
+2. **The object or the spans destroyed before completion.** On a synchronous backend the work
+   runs before the call returns, so this is harmless today, and part B's browser reads them
+   later: the documentation says they are the caller's until completion; Task 4.A6's page
+   states it and Task 4.A2's `post_never_inline` proves the completion is later.
+3. **A cancellation emitted from another thread** or a signal destroyed before its handler:
+   Task 4.A1's `heavy_cancel_before_start`, `heavy_cancel_while_running` and
+   `heavy_signal_outlives`.
+4. **`use_future` in a build without exceptions:** the family compiles there with callbacks and
+   `as_tuple`; Task 4.A2's test runs in both builds (`crypto-run`'s twins).
+5. **An error completion's value read by mistake:** the empty object refuses every member with
+   `invalid_state`. Task 4.A3's `async_make_refused` reads it.
+
+### Task 4.A1: the heavy machinery on hash's model
+
+**Files:**
+- Modify: `include/webcpp/crypto/detail/heavy.hpp` (replace `run_heavy` and `carrying` by the
+  port of hash's `heavy_phase`, `heavy_state`, `heavy_job`, `heavy_initiation`, `run_on_work`;
+  `WEBCPP_CRYPTO_DETAIL_REQUIRE_THREADS` kept with its text)
+- Create: `include/webcpp/crypto/detail/async_access.hpp`
+- Modify: `test/heavy_test.cpp` (rewritten), `test/heavy_refusal_forgotten_test.cpp` (names
+  `run_on_work`), `test/messages/heavy_without_threads*/`, `test/Jamfile` (`heavy` gains
+  `<library>/webcpp/asio//asio` and the target `emscripten` with
+  `<toolset>emscripten:<linkflags>-sPTHREAD_POOL_SIZE=3`, as hash's `async_heavy`)
+
+**Interfaces:**
+- Produces, in `webcpp::crypto::detail`:
+
+```cpp
+// Empty objects for error completions (R-A3); each returned type befriends it.
+struct async_access {
+    template <class T>
+    [[nodiscard]] static T empty() noexcept;  // T's private default constructor, or T{}
+};
+
+// The completion signature of a synchronous result: void(error_code, T) or void(error_code).
+template <class Result>
+struct completion_of;  // completion_of<result<T>>::type, completion_of<result<void>>::type
+
+#ifdef WEBCPP_CRYPTO_HAS_THREADS
+// Checks guards() on the caller's thread (a refusal is posted to the handler's associated
+// executor with its error and the empty value); then runs run() on `work`, completing on the
+// handler's associated executor with run()'s result split into (error_code, value).
+template <class CompletionToken, class WorkExecutor, class Guards, class Work>
+auto run_on_work(WorkExecutor const& work, Guards guards, Work run, CompletionToken& token);
+#endif
+```
+
+  `Guards` returns `boost::system::result<void>`; `Work` returns `boost::system::result<T>` or
+  `result<void>`, is `noexcept`, and is called once.
+
+- [ ] **Step 1: The failing tests,** `heavy_test.cpp`, on a test-only heavy operation
+  `async_slow(work, value, token)` whose work returns `result<crypto::secret<32>>` (bytes all
+  `value`) or `invalid_input_size` for `value == 0` as its guard:
+  - `heavy_runs_on_pool`: the work's thread id differs from the caller's; the completion runs on
+    the caller's `io_context` thread (bound with `bind_executor`).
+  - `heavy_loop_goes_on`: a latch holds the work until a 1 ms timer on the loop fired (R-A8);
+    the completion follows the timer.
+  - `heavy_guard_refused`: `value == 0` completes with `invalid_input_size` and an all-zero
+    secret, without the pool running anything (a pool of one thread held by a latch).
+  - `heavy_cancel_before_start`: the pool's one thread held; a `terminal` cancellation emitted
+    on the loop completes at once with `operation_aborted`; the work never runs.
+  - `heavy_cancel_while_running`: the work started (latched); `partial` emitted; the work ends;
+    the completion is `operation_aborted`, the value empty; `total` emitted the same way is
+    ignored (the value arrives).
+  - `heavy_signal_outlives`: the signal declared before the loop and the pool, as hash's page
+    requires; destroying the pool with work queued destroys the handler unrun.
+  - `heavy_tokens`: callback, `use_future` (exceptions build), `deferred`, `as_tuple`.
+  - `heavy_allocator`: with a counting allocator bound by `bind_allocator`, every allocation of
+    the operation goes through it and is freed before the handler runs; `operator new` is not
+    called (a replaced global `operator new` counts).
+  Natively and on Emscripten with `-pthread` under node.
+- [ ] **Step 2: Run** `$B2 libs/crypto/test//heavy`; expected: compile errors naming
+  `run_on_work`.
+- [ ] **Step 3: Implement** the port: hash's code with `webcpp::hash` names replaced, the
+  output span replaced by the value carried in the state (`std::optional<T>` emplaced by the
+  job, destroyed on an aborted completion), the completion through `completion_of`. Doc
+  comments carry hash's text adapted, and cite hash's file as the model.
+- [ ] **Step 4: Run** `heavy`, `heavy_refusal_forgotten`, `heavy_without_threads`,
+  `heavy_without_threads_first` on native (clang, gcc-15), Emscripten with and without
+  `-pthread`, wasip2 and wasip3 (the refusal only); expected: PASS.
+- [ ] **Step 5: Commit** `crypto: the heavy operations' machinery on webcpp::hash's model, with
+  cancellation before and during the work and values that wipe themselves`.
+
+### Task 4.A2: `async.hpp`'s base, the post and the browser's seam
+
+**Files:**
+- Create: `include/webcpp/crypto/async.hpp`
+- Create: `test/async_post_test.cpp`; modify `test/Jamfile` (`crypto-run async_post :
+  async_post_test.cpp : <library>/webcpp/asio//asio <library>/webcpp/crypto//gcm-default
+  <library>/third_party//sodium ;` on every target), the headers-alone block (`crypto/async.hpp`
+  with `/webcpp/asio//asio`)
+- Modify: `test/convenience_header_test.cpp` (asserts `WEBCPP_CRYPTO_ASYNC_HPP` undefined after
+  `crypto.hpp`)
+
+**Interfaces:**
+- Produces, in `webcpp::crypto`:
+
+```cpp
+template <class Family>
+using default_async_backend_t = default_backend_t<Family>;  // R-A4
+
+namespace detail {
+template <class Backend>
+inline constexpr bool asynchronous_backend_v = false;  // part B: true for backends::browser
+template <class Backend>
+struct async_engine;  // part B specialises it for backends::browser
+
+// Runs operation() at once and posts the completion, split by completion_of, to `executor`,
+// whence it reaches the handler's associated executor, in its associated allocator.
+template <class CompletionToken, class Executor, class Operation>
+auto complete_by_post(Executor const& executor, CompletionToken& token, Operation operation);
+}  // namespace detail
+```
+
+- [ ] **Step 1: The failing tests,** `async_post_test.cpp`, through Task 4.A3's `async_seal`
+  and Task 4.A4's `async_verify` once they exist, and first through `complete_by_post` on a
+  lambda: `post_never_inline` (a flag set by the callback is unset when the call returns, set
+  after `run`), `post_bound_executor` (bound to a second `io_context`, the completion runs
+  there), `post_allocator` (the post allocates through the bound allocator only),
+  `post_tokens` (callback, `use_future` where exceptions are on, `deferred`, `as_tuple`,
+  `use_awaitable` in a coroutine), and `post_error_value` (an error completes with the empty
+  value).
+- [ ] **Step 2: Run** `$B2 libs/crypto/test//async_post`; expected: FAIL (no header).
+- [ ] **Step 3: Implement** `async.hpp`'s base: licence, the header comment (hash's, adapted:
+  the two kinds, the default, the Jamfile line, an example), includes of `config.hpp`,
+  `detail/heavy.hpp`, `detail/async_access.hpp`, the families' headers of Tasks 4.A3 and 4.A4,
+  and the webcpp::asio headers hash's includes.
+- [ ] **Step 4: Run** on all five lanes; expected: PASS.
+- [ ] **Step 5: Commit** `crypto: async.hpp's base, completions posted on every target, and the
+  seam the browser backend fills`.
+
+### Task 4.A3: AES-GCM's asynchronous functions
+
+**Files:**
+- Modify: `include/webcpp/crypto/async.hpp`; `include/webcpp/crypto/ciphers/gcm.hpp`
+  (`friend struct detail::async_access;`)
+- Create: `test/async_gcm_test.cpp`; `test/messages/async_seal_xchacha/` and its MSVC fixture;
+  modify `test/Jamfile`
+
+**Interfaces:**
+- Produces:
+
+```cpp
+// Algorithm: a gcm<...> (Task 4.A4 adds the Ed25519 key pair). void(error_code, Algorithm).
+template <class Algorithm, class Executor, class CompletionToken>
+auto async_make(Executor const& executor, std::span<std::uint8_t const> key_bytes,
+                CompletionToken&& token);
+// void(error_code, typename Gcm::result_type)
+template <class Gcm, class Executor, class CompletionToken>
+auto async_seal(Executor const& executor, Gcm& aead, std::span<std::uint8_t const> iv_bytes,
+                std::span<std::uint8_t const> additional_data_bytes,
+                std::span<std::uint8_t> data_bytes, CompletionToken&& token);
+// void(error_code)
+template <class Gcm, class Executor, class CompletionToken>
+auto async_open(Executor const& executor, Gcm& aead, std::span<std::uint8_t const> iv_bytes,
+                std::span<std::uint8_t const> additional_data_bytes,
+                std::span<std::uint8_t> data_bytes, std::span<std::uint8_t const> tag_bytes,
+                CompletionToken&& token);
+```
+
+  Each refuses at compile time a family WebCrypto lacks: "webcpp::crypto: async_seal takes
+  AES-GCM, the AEAD WebCrypto has: call seal for the others." (and `async_open`'s likewise).
+
+- [ ] **Step 1: The failing tests,** `async_gcm_test.cpp` on `gcm<aes256<B>>` for each AES-GCM
+  backend the target links: the 18 specification cases through `async_make`, `async_seal` and
+  `async_open` give the synchronous answers byte for byte; a wrong tag completes with
+  `authentication_failed` and zeroed data; a 129-byte IV with `invalid_iv_size` and data
+  untouched; `async_make_refused` (a 31-byte key) completes with `invalid_key_size` and an empty
+  `gcm` whose `seal` returns `invalid_state`. The message test: `async_seal` on
+  `ciphers::xchacha20_poly1305<>` stops with the text above, while its `seal` compiles.
+- [ ] **Step 2: Run** `$B2 libs/crypto/test//async_gcm`; expected: FAIL.
+- [ ] **Step 3: Implement** the three, each `detail::timing_guard const timing;` first, then
+  `if constexpr (detail::asynchronous_backend_v<backend>)` to `async_engine`, else
+  `detail::complete_by_post` over the synchronous member.
+- [ ] **Step 4: Coverage:** `test/support/timing_coverage.hpp` gains `cover_async_gcm<Gcm>(family,
+  backend)` (an `io_context` run after each call; the first guard is `async_make`'s,
+  `async_seal`'s, `async_open`'s), called by `timing_coverage_bearssl_test.cpp` and
+  `timing_coverage_openssl_test.cpp`, whose Jamfile targets gain `<library>/webcpp/asio//asio`.
+- [ ] **Step 5: Run** on all five lanes and the MSVC fixture; expected: PASS.
+- [ ] **Step 6: Commit** `crypto: AES-GCM's asynchronous make, seal and open, posted on every
+  target`.
+
+### Task 4.A4: Ed25519's and X25519's asynchronous functions
+
+**Files:**
+- Modify: `include/webcpp/crypto/async.hpp`; `include/webcpp/crypto/curves/ed25519.hpp`
+  (`friend struct detail::async_access;` in `basic_keypair`)
+- Create: `test/async_25519_test.cpp`; `test/messages/async_sign_secp256k1/` and its MSVC
+  fixture; modify `test/Jamfile` (`<library>/third_party//sodium`, every target)
+- Modify: `test/support/timing_coverage.hpp` (`cover_async_ed25519`, `cover_async_x25519`),
+  `test/timing_coverage_sodium_test.cpp`
+
+**Interfaces:**
+- Produces (`async_make<curves::ed25519::basic_keypair<B>>` through Task 4.A3's template):
+
+```cpp
+// void(error_code, Keypair)
+template <class Keypair = curves::ed25519::keypair, class Executor, class CompletionToken>
+auto async_generate(Executor const& executor, CompletionToken&& token);
+// void(error_code, std::array<std::uint8_t, 64>)
+template <class Keypair, class Executor, class CompletionToken>
+auto async_sign(Executor const& executor, Keypair const& key_pair,
+                std::span<std::uint8_t const> message, CompletionToken&& token);
+// void(error_code)
+template <class Policy = curves::ed25519::strict,
+          class Backend = default_async_backend_t<families::ed25519>, class Executor,
+          class CompletionToken>
+auto async_verify(Executor const& executor, std::span<std::uint8_t const> public_key,
+                  std::span<std::uint8_t const> message, std::span<std::uint8_t const> signature,
+                  CompletionToken&& token);
+// void(error_code, secret<32>)
+template <class Backend = default_async_backend_t<families::x25519>, class Executor,
+          class CompletionToken>
+auto async_agree(Executor const& executor, std::span<std::uint8_t const> secret_key,
+                 std::span<std::uint8_t const> peer_public_key, CompletionToken&& token);
+```
+
+  `async_generate`, `async_make` and `async_sign` take the Ed25519 key pair (and P-256's, Task
+  4.A5); a secp256k1 key pair stops with "webcpp::crypto: async_sign takes a key pair of an
+  algorithm WebCrypto has (Ed25519, P-256): call the key pair's sign for the others."
+
+- [ ] **Step 1: The failing tests,** `async_25519_test.cpp`: RFC 8032's test 1, 2 and 3 through
+  `async_make` and `async_sign` equal the synchronous signatures, and `async_verify` accepts
+  them; a changed byte completes `async_verify` with `invalid_signature`; `async_generate` gives
+  a key pair whose signature verifies; RFC 7748's section 6.1 through `async_agree`; a peer key
+  of low order completes with `weak_public_key` and a zero secret. The message test on
+  `curves::secp256k1::keypair`.
+- [ ] **Step 2: Run** `$B2 libs/crypto/test//async_25519`; expected: FAIL.
+- [ ] **Step 3: Implement** as Task 4.A3, each with its guard first.
+- [ ] **Step 4: Coverage** in `timing_coverage_sodium_test.cpp`, as Task 4.A3's.
+- [ ] **Step 5: Run** on all five lanes and the MSVC fixture; expected: PASS.
+- [ ] **Step 6: Commit** `crypto: Ed25519's and X25519's asynchronous functions, posted on every
+  target`.
+
+### Task 4.A5: P-256's asynchronous functions (when increment 3's P-256 is on `main`)
+
+Increment 3 runs before this part (the owner's queue of 2026-11-20). With its P-256 key pair
+and its functions on `main`, `async_generate`, `async_make` (from the raw 32-byte scalar),
+`async_sign`, `async_verify` and `async_agree` (the raw x coordinate, WebCrypto's `deriveBits`)
+take its types through the same templates, named as increment 3 built them (its "As built");
+`test/async_p256_test.cpp` runs Wycheproof's ECDSA P-256 SHA-256 file's first 50 valid cases and
+its ECDH P-256 file's first 50 through the async functions against the synchronous answers on
+BearSSL, on every target; the coverage is BearSSL's. If increment 3 has not merged when this
+part starts, this task moves to increment 3's stream, which then adds it.
+
+- [ ] **Step 1:** the test, failing; **Step 2:** the functions accept P-256's types; **Step
+  3:** the coverage; **Step 4:** five lanes; **Step 5:** commit `crypto: P-256's asynchronous
+  functions, posted on every target`.
+
+### Task 4.A6: the page, the examples, the table and part A whole
+
+**Files:**
+- Create: `doc/async.adoc` (`[#crypto-async]` "Asynchronous calls", hash's chapter's form: the
+  two kinds, the executor, the default, the completion's value on an error, the spans and the
+  object kept until completion, cancellation of the heavy ones, `use_future` without
+  exceptions, the storage, and "the browser's WebCrypto" as part B's section to come);
+  `example/async_seal.cpp` and `.expected` (a loop seals a record and opens it, the handler
+  printing the tag), `example/async_sign.cpp` and `.expected` (a coroutine with
+  `use_awaitable` signs and verifies); modify `example/Jamfile`, `doc/crypto.adoc` (the
+  include), `doc/tables/crypto.json` (an operation `async` with the functions and the header,
+  backends per family as the table already says), regenerate
+- Modify: `../tasks.md` boxes 4.A1 to 4.A6; `STATUS.md`
+
+- [ ] **Step 1:** the page and the examples, the generated tables, `--check`, the doc build.
+- [ ] **Step 2:** every lane, the lints, the MSVC lane (the foundation's Task 16's rules); the
+  review against R-A1 to R-A8 and the Review Focus.
+- [ ] **Step 3:** commit `crypto: the asynchronous family's page and examples`; the pull
+  requests, merged; the CI once at the end of the owner's queue.
 
 ## Increment 5: libsodium completed (a stream after 1)
 
