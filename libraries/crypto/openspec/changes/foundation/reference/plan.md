@@ -3854,6 +3854,42 @@ and public key forms", "P-256: a key pair from a raw scalar, raw ECDH and low S"
 SPKI, PKCS#8 and PEM, strict", "Tests: WebCrypto as an outside oracle", "Tests: constant time
 for the new code", "Allocation" and the documentation requirements (D19).
 
+**As built (2026-11-21), Tasks 3.1 to 3.6.** The code is on the branches `crypto/p256` of the
+library (head `9cc0060`) and the superproject (head `c228b06`, its `libs/crypto` gitlink not
+yet moved). Where it differs from the tasks below, stream 3a's controller ruled it (most of it
+in a pre-flight scan of the tasks against the code before Task 3.1) or a review accepted it;
+each task says so under "As built" after its heading, and design D36 records the deviations
+of substance under its own "As built". Across the part:
+
+- **The base.** The branches started from the library's and the superproject's branches
+  `crypto/dit` (library `d5054e7`, superproject `4bf6eff`) before that change merged; once it
+  merged (library `main` `3f27988`, superproject `8f38ac7`), `main` was merged into each
+  (library `9121118`, superproject `436dbe8`), not rebased as "Branches" says: the owner's
+  direction, no rebase of published work. The merge needed no change for the guard's API
+  (`b3fdc44`'s constructor without `std::source_location` outside tests).
+- **Capability rows.** Each task adds the operation rows its functions prove (`p256_keypair`
+  and `p256_public_key` in 3.1, `p256_ecdsa` in 3.2, `p256_ecdh` in 3.3, `p256_formats` in
+  3.4), each with `"family": "p256"`, and the family's `default.tests` grows with the tests
+  that exist at each commit, since `generate.py` refuses a default naming a test that does not
+  run and a family cell no operation's test proves. The family's `lane` and `lane_note` come
+  with Task 3.6, not 3.1: the generator refuses a note on a checker its `lane` does not run.
+  `crypto.json` gains the source `bearssl` (none existed), and `llms` names P-256.
+- **The changelog.** P-256 is folded into the `backends::bearssl` line, not a `curves` line
+  (there are two), which also corrected that line's stale "AES-GCM alone": "P-256 keys,
+  ECDSA, ECDH, SPKI/PKCS#8", within the lint's 30 words.
+- **Commits.** The superproject's subjects keep that repository's prefixes, `tools/test:` and
+  `CODING-GUIDELINES:` (not `guidelines:`).
+- **Green before the pull requests** is a full local run in place of Task 3.6's Step 5 CI,
+  which the owner deferred to the coordinator's final run: the five lanes from scratch in
+  debug and release (debug: native clang 7800 targets updated, gcc-15 7491, wasip2 7888,
+  wasip3 7770, Emscripten 6971; none failed, no warning), `constant-time` natively and on
+  wasip2 (dudect), `sizes`, the docs from scratch, `generate.py --check`, the macOS lint (in
+  full at the merge of `main`, on the touched files after it), the tools' tests. MSVC ran in
+  the local Wine lane during the part (14.3 at `20a4e07`, 14.5 at `ae82bbd`) with no failure
+  outside its known list, to which the three P-256 Boost.JSON tests' `_no_exceptions` builds
+  were added (the known Wine/Rosetta class); MSVC and the Linux lint on the final heads are
+  the controller's. memcheck and MemorySanitizer: Task 3.6's "As built".
+
 **What Trystero 0.27.0 needs, and where each piece is.**
 
 | Trystero 0.27.0 through WebCrypto | webcpp::crypto | Task |
@@ -4089,14 +4125,36 @@ template <class Curve, class Backend> struct p_curve_engine;   // primary: the f
 
 ## Task 3.1: The family `p256`, its engine on BearSSL, key pairs and public keys
 
+**As built.** Commits `20a4e07` and `5fdce87` (library), `531d930` (superproject).
+`detail::p_curve_access` (Task 3.2's in the text) comes here, since `public_key()` already
+writes a `basic_public_key`'s point, and `basic_public_key`'s default constructor is private
+(the interface above declares none, which would make an all-zero key public). `p_curves.hpp`
+declares the primary `p_curve_engine` alone; `curves/p256.hpp` defines the partial
+specialisation `p_curve_engine<families::p256, Backend>` with the refusal, so that Task 3.7's
+curves add theirs; `curves/p256.hpp` ends with the conditional include of
+`backends/bearssl.hpp` under `WEBCPP_CRYPTO_DETAIL_DEFAULT_P256_BEARSSL`, as `ed25519.hpp`
+does. `scalar_check_reaches_no_backend` counts through the seam macro
+`WEBCPP_CRYPTO_DETAIL_P_CURVE_ENGINE_ENTERED()`, defined by the test, not a `thread_local`
+under `WEBCPP_TEST_CRYPTO_COUNT_BEARSSL`. `uncovered` is in `test/support/timing_seam.hpp`, not
+`timing_coverage.hpp` (Task 3.2's `test/timing_test.cpp` includes the seam alone). The traits
+test asserts `supports_v<keypair, backends::bearssl>` (a family tag is incomplete and
+`supports_v` reads an algorithm's `family_type`). `support/hex.hpp` gains a compile-time
+`hex<N>`, with `test/hex_test.cpp`. The message tests are laid out as the others are
+(`<name>.cpp` and a `Jamfile`), and the superproject gains two more fixtures,
+`p256_default_not_linked_on_emscripten` and `p256_on_sodium_on_emscripten`, with
+`crypto.json`'s `fixes` and `fixtures`. `example/p256_keys.cpp` is added, since `generate.py`
+refuses a use case without an example. The tests pin the non-canonical coordinates (x + p and
+y + p refused) and the engine chosen per target (`backend_choice`). The library's `AGENTS.md`
+names the P-curve state and engine beside the six traits.
+
 **Files:**
 - Modify: `doc/tables/crypto.json` (the family `p256`, below), then run `generate.py` and commit
   `detail/capabilities.hpp`, `detail/defaults.hpp`, `build.jam`'s generated block,
   `test/capabilities_test.cpp`, `doc/generated/`, `doc/llms.txt`.
 - Create: `include/webcpp/crypto/detail/p_curves.hpp`, `include/webcpp/crypto/curves/p256.hpp`,
   `test/p256_keys_bearssl_test.cpp`, `test/support/p256_data.hpp`, `doc/p256.adoc`,
-  `test/messages/p256_default_not_linked/` (`main.cpp`, `expected.txt`, as
-  `ed25519_default_not_linked/` is laid out), `test/messages/p256_on_sodium/`, their
+  `test/messages/p256_default_not_linked/` (as built: `p256_default_not_linked.cpp` and a
+  `Jamfile`, as the other message tests are laid out), `test/messages/p256_on_sodium/`, their
   `test/msvc/` cases.
 - Modify: `include/webcpp/crypto/backends/bearssl.hpp` (the state and engine: `make`,
   `public_point`, `scalar`, `valid_point`, `reset`), `include/webcpp/crypto.hpp`,
@@ -4454,6 +4512,19 @@ it. `since` is the version the owner names at the merge; `0.3` is the next minor
 
 ## Task 3.2: ECDSA: RFC 6979 signatures, verification, DER and low S
 
+**As built.** Commits `3364579`, `ae82bbd` and `806ad57`. `normalize_ecdsa` and `check_low_s`
+are `inline` (non-template functions in a header), and the `const_cast` carries
+`NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)` with its reason. `verify_ecdsa` checks
+0 < r, s < n itself (`p_curve_signature_in_range`) before BearSSL. It refuses a valid
+signature over a digest that is 0 modulo n (BearSSL's `muladd` refuses a zero multiplier),
+which the test `zero_digest` pins and the Doc Comment states (design D36). `der_round_trip`
+tries 70- and 71-byte buffers. The Wycheproof test asserts the counts per verdict (P1363: 262,
+173 valid, 89 invalid, 70 valid with a high S; DER: 484, 174 valid, 310 invalid, 71 high S).
+`moved_from` gains the `sign_ecdsa` line here and the `ecdh_x` line in Task 3.3. The seeded
+tests print their seed and replay it with `define=WEBCPP_TEST_P256_SEED=<seed>`. The pages
+state that BearSSL's signing leaves the scalar, the nonce and its DRBG state on its stack
+(source `bearssl-ecdsa-stack`), BearSSL not patched.
+
 **Files:**
 - Modify: `include/webcpp/crypto/curves/p256.hpp` (`sign_ecdsa`, `verify_ecdsa`, `to_der`,
   `from_der`, `normalize_ecdsa`, `check_low_s`), `include/webcpp/crypto/detail/p_curves.hpp`
@@ -4667,6 +4738,16 @@ interface marked (3.2), and in `detail`:
 
 ## Task 3.3: ECDH's raw x coordinate
 
+**As built.** Commits `663a5d6` and `e660ca3`, and `ffbd690` for the motivation's citation.
+`own_key` checks d * (d * G) = (d^2 mod n) * G, and the doubled scalar through the peer 2G
+(Step 1, corrected below). The type check is
+`std::is_same_v<decltype(a.ecdh_x(peer)), boost::system::result<secret<32>>>`, since
+`result`'s `operator*` on an rvalue returns by value. The Wycheproof test asserts 355 cases:
+330 valid agreed, 24 invalid refused with `invalid_public_key`, one acceptable compressed
+point refused. The use case and the page cite Trystero 0.27.0's pairwise keys at commit
+`8d3f57e` (`packages/core/src/crypto.ts`, lines 303 to 304; `packages/core/src/scale/manager.ts`,
+line 306), and the page states what BearSSL's multiplication leaves on its stack.
+
 **Files:**
 - Modify: `include/webcpp/crypto/curves/p256.hpp` (`ecdh_x`), `include/webcpp/crypto/backends/bearssl.hpp`
   (`ecdh_x`), `test/p256_keys_bearssl_test.cpp` (`moved_from`), `test/timing_coverage_bearssl_test.cpp`,
@@ -4680,9 +4761,10 @@ result<secret<32>>`.
 - [ ] **Step 1: Write the failing tests.** `test/p256_ecdh_bearssl_test.cpp`:
   - `agreement`: two generated key pairs; `a.ecdh_x(b.public_key())` equals
     `b.ecdh_x(a.public_key())`, 100 times.
-  - `own_key`: `a.ecdh_x(a.public_key())` is the x coordinate of 2 * d * G, which the test
-    checks equals `make(2d mod n)`'s public x (a second key pair made from the doubled scalar,
-    computed in the test by byte arithmetic): a fixed point of the algebra, no table.
+  - `own_key`: `a.ecdh_x(a.public_key())` is the x coordinate of d * (d * G) = (d^2 mod n) * G
+    (not 2 * d * G, as this step first said), which the test checks equals `make(d^2 mod n)`'s
+    public x, and `a.ecdh_x(make(2).public_key())` equals `make(2d mod n)`'s public x (the
+    scalars computed in the test by byte arithmetic): fixed points of the algebra, no table.
   - `wycheproof_ecpoint` (`WEBCPP_TEST_WYCHEPROOF`): `ecdh_secp256r1_ecpoint_test.json`, each
     case's `private` (hex, which may carry a leading `00` byte: the test strips leading zero
     bytes and left-pads to 32, and a value longer than 32 significant bytes must be an
@@ -4694,7 +4776,7 @@ result<secret<32>>`.
     points alone, design D36") and counted; any other disagreement fails. The count of cases
     run is printed and must be 355.
   - `moved_from`: `ecdh_x` of a moved-from key pair is `invalid_state`.
-  - The output is a `secret<32>`: `static_assert(std::is_same_v<decltype(*a.ecdh_x(...)),
+  - The output is a `secret<32>` (as built: the assertion is on `decltype(a.ecdh_x(peer))`, Task 3.3's "As built"): `static_assert(std::is_same_v<decltype(*a.ecdh_x(...)),
     webcpp::crypto::secret<32>&>)`.
 
   The coverage file gains `covered("p256::basic_keypair::ecdh_x on bearssl", ...)` and the
@@ -4740,6 +4822,20 @@ result<secret<32>>`.
 
 ## Task 3.4: SPKI and PKCS#8 for P-256, by fixed layouts; PEM through `pem`
 
+**As built.** Commits `0a8fb41`, `16a5341` and `d9e9319`. A PKCS#8 without its `publicKey` is
+67 bytes, not 105 (corrected in Step 1). `decode_pkcs8` stays strict: a PKCS#8 whose
+`ECPrivateKey` carries `[0] parameters`, the W3C text's literal export (150 bytes), is refused
+and documented as a pitfall; Task 3.5 observed node's and OpenSSL's exports to be the 138-byte
+layout. `decode_spki` maps only `invalid_public_key` to `invalid_encoding` and passes a backend
+failure through. The refusals also cover an unused-bits byte, a hybrid prefix, a compressed
+point inside PKCS#8 and `ECPrivateKey` version 0. The Wycheproof test names every acceptable
+flag with its reason and asserts 612 cases: 330 valid agreed, 52 invalid refused at
+`decode_spki`, 230 acceptable refused for a listed flag (InvalidAsn 222, UnnamedCurve 7,
+UnusedParam 7, WrongOrder 2, ModifiedGenerator 2, ModifiedCofactor, NoCofactor,
+ModifiedCurveParameter and CompressedPublic 1 each). The namespace tables name P-256's SPKI
+and PKCS#8 with their sizes. No claim is made about Trystero and these formats: its 0.27.0
+sources import keys `raw` alone.
+
 **Files:**
 - Create: `include/webcpp/crypto/curves/p256/formats.hpp`, `test/p256_formats_bearssl_test.cpp`,
   `example/p256_key_formats.cpp`, `example/p256_key_formats.expected`.
@@ -4777,7 +4873,8 @@ inline constexpr std::array<std::uint8_t, 5> p256_pkcs8_infix{0xa1, 0x44, 0x03, 
   - `refusals`, each `invalid_encoding` with nothing written: an SPKI with the secp256k1 OID; with
     a compressed point (`03 22 00` and 33 bytes, the form some tools emit: BearSSL's cell is
     absent, D36); with an off-curve point; with a trailing byte; truncated by one; a PKCS#8
-    without its `publicKey` (BearSSL's encoder with a null public key writes it: 105 bytes);
+    without its `publicKey` (BearSSL's encoder with a null public key writes it: 67 bytes, not
+    105 as this step first said);
     with `[0] parameters` present (the form `openssl ec` writes outside PKCS#8: refused here);
     with a `publicKey` that is not d * G; with d = 0 and d = n; version 1 (`02 01 01` in place
     of `02 01 00`); a long-form length that need not be. `encode_spki` and `encode_pkcs8` into a
@@ -4820,6 +4917,16 @@ inline constexpr std::array<std::uint8_t, 5> p256_pkcs8_infix{0xa1, 0x44, 0x03, 
 - [ ] **Step 5: Commit** `crypto: SPKI and PKCS#8 for P-256 by RFC 5480's and RFC 5915's fixed layouts, strict, with BearSSL's encoder as their oracle`.
 
 ## Task 3.5: OpenSSL and WebCrypto as outside oracles of P-256
+
+**As built.** Commits `2e9a79c`, `9353697`, `b21b096` and `ca341d9`. OpenSSL 3.5.9's
+`EVP_PKEY_fromdata` with the group and the private key alone computes no public point, so the
+test computes d * G with OpenSSL's `EC_POINT_mul` and passes it; the private key is encoded
+through an `OSSL_ENCODER` to `PrivateKeyInfo` (`i2d_PrivateKey` writes the bare `ECPrivateKey`),
+and the scalar OpenSSL loads from webcpp's PKCS#8 is compared too. OpenSSL counts one
+agreement per case and checks (600); WebCrypto counts checks: two per case for signatures,
+one for ECDH, one for the formats (800; the corrupted twin 798). node 26.13.0 and OpenSSL
+3.5.9 write exactly webcpp's 138-byte PKCS#8, so the strict decoder holds. The WebCrypto
+oracle ran in node alone; Chrome joins with the browser lane (Task 4.4).
 
 **Files:**
 - Create: `test/p256_openssl_oracle_test.cpp`, `test/p256_webcrypto_oracle_test.cpp`.
@@ -4877,6 +4984,36 @@ inline constexpr std::array<std::uint8_t, 5> p256_pkcs8_infix{0xa1, 0x44, 0x03, 
 
 ## Task 3.6: Constant time, sizes and throughput, the teaching chapter; P-256 whole
 
+**As built.** Commits `98fbcec`, `a7fe945`, `1dde538`, `cea6e28` and `9cc0060` (library),
+`a1e5811` and `c228b06` (superproject).
+
+- **Step 1.** The paths are as written, and three verdicts are declassified where they are
+  made (design D36): `p_curve_low_s`'s, since a fresh signature carries the scalar's mark;
+  BearSSL's `api_mul` verdict in the engine's `ecdh_x`; and `decode_pkcs8`'s point comparison.
+  `br_ecdsa_i31_sign_raw`'s branches on its own verdicts are suppressed for memcheck by
+  `test/constant_time/bearssl_verdicts.supp`, BearSSL not patched. The public point's and the
+  ECDH x's traces run only under memcheck (`Checker::exact_subtraction`). The planted copy of
+  the scalar check is in `paths.hpp`, run by two programs of its own, `ctgrind_planted_scalar`
+  and `msan_planted_scalar`, each passing only when its checker's report names
+  `planted_scalar_valid`.
+- **Step 2.** dudect, release, |t| natively on macOS arm64: signing 2.29, ECDH 1.84; on wasip2:
+  2.51 and 2.08; the threshold is 10. memcheck and MemorySanitizer in the arm64 Linux
+  container:
+  TODO(controller): memcheck/MSan result
+- **Step 3.** The size programs take `generate.py`'s names, `p256_bearssl`,
+  `p256_bearssl_verify_ecdsa` and `p256_bearssl_ecdh_x`, not the three below.
+  `bench/collect.py` measures a family's further operation by a third word (the
+  `sized_operations` key), tested by `tools/test/crypto_collect_test.py`. The tables are
+  provisional (a loaded machine) and are measured again in the coordinator's final measurement
+  pass.
+- **Step 4.** As written: `example/p256_handshake.cpp` and "Signed handshakes a browser
+  verifies" in `doc/p2p.adoc`, citing Trystero 0.27.0's low-S refusals and its HKDF from ECDH.
+- **Steps 5 to 7.** Green is the part's local run (the increment's "As built"); the CI is
+  deferred to the coordinator's final run. The review of the task asked for the memcheck and
+  MemorySanitizer run above before the pages claim it. The superproject's commit is
+  `CODING-GUIDELINES: webcpp::crypto's P-256 as built, increment 3's first part`. The pull
+  requests remain (`STATUS.md`).
+
 **Files:**
 - Modify: `test/constant_time/paths.hpp` (`bearssl_p256_make`, `bearssl_p256_sign`,
   `bearssl_p256_ecdh`, `bearssl_p256_pkcs8`), `ctgrind_test.cpp`, `msan_test.cpp`,
@@ -4922,8 +5059,8 @@ inline constexpr std::array<std::uint8_t, 5> p256_pkcs8_infix{0xa1, 0x44, 0x03, 
   Task 8 ran: the lanes from scratch (native clang and gcc-15, wasip2, wasip3, Emscripten,
   release and debug as each lane builds), the own lanes `constant-time` and `sizes`, the docs
   (`b2 -a doc`, `doc-check`), the full macOS lint and the Linux lint
-  (`/Users/rodrigo/dev/webcpporg/linux-lint/run.sh <superproject>`), the MSVC lane
-  (`/Users/rodrigo/dev/webcpporg/msvc-lane`, 14.3 and 14.5, no failure outside
+  (the local `linux-lint`'s `run.sh <superproject>`), the MSVC lane
+  (the local Wine lane `msvc-lane`, 14.3 and 14.5, no failure outside
   `known-failures.txt`), the timing and coverage tests in the arm64 Linux container, and the
   superproject's tools tests that the change touches (`tools/test/crypto_jamfiles_test.py`).
   A review of the whole part (spec, design D36, every task's diff). Any failure or flake, ours

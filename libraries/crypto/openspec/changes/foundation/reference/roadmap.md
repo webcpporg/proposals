@@ -139,8 +139,8 @@ ChaCha20-Poly1305's case to `everything_test.cpp`, if M merges second its M2 add
 
 | Stream | Branch | Foundation increment | Notes |
 | --- | --- | --- | --- |
-| 3a | `crypto/p256` | 3, its P-256 part (Tasks 3.1 to 3.6, D36) | written in full on 2026-11-20; after the change data-independent-timing merges; merges on its own, first of stream 3, for webcpp::trystero's port of Trystero 0.27.0 |
-| 3 | `crypto/bearssl-rest` | 3, the rest (Tasks 3.7 to 3.11), without ChaCha20-Poly1305 (moved to 8b) | after 3a merges: P-384 and P-521, X25519, the `acvp` pin, AES modes, RSA |
+| 3a | `crypto/p256` | 3, its P-256 part (Tasks 3.1 to 3.6, D36) | written in full on 2026-11-20; after the change data-independent-timing merges; merges on its own, first of stream 3, for webcpp::trystero's port of Trystero 0.27.0. **Delivered 2026-11-21, pending merge** (library head `9cc0060`, superproject `c228b06`, `main` merged into both; `STATUS.md`). Parked: memcheck and MemorySanitizer (below the table); sizes and throughput provisional until the final measurement pass; ACVP's vectors (Task 3.8) and the Chrome oracle (Task 4.4) deferred |
+| 3 | `crypto/bearssl-rest` | 3, the rest (Tasks 3.7 to 3.11), without ChaCha20-Poly1305 (moved to 8b) | next, after 3a merges: P-384 and P-521, X25519, the `acvp` pin, AES modes, RSA; each task written in full when it starts |
 | 4 | `crypto/browser` | 4 | absorbs genesis Task 23 (the oracle for every algorithm on `main`, the audio worklet, Chrome's throughput page from release builds) |
 | 5 | `crypto/sodium-rest` | 5 | |
 | 6 | `crypto/blst` | 6 | unblocks stream 9 |
@@ -148,6 +148,10 @@ ChaCha20-Poly1305's case to `everything_test.cpp`, if M merges second its M2 add
 | 8 | `crypto/openssl-rest` | 8, without ChaCha20-Poly1305 (moved to 8b) | changes the AES modes' native default to OpenSSL (D32); unblocks stream 12 |
 | 10 | `crypto/mcl` | 10 | starts with the spike |
 | 11 | `crypto/sss` | 11 | starts with the MSVC spike |
+
+Stream 3a's memcheck and MemorySanitizer: see Task 3.6's constant-time results (`plan.md`, Task
+3.6's "As built").
+TODO(controller): memcheck/MSan result
 
 ### Wave 3: as dependencies merge
 

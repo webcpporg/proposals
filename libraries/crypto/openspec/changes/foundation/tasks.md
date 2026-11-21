@@ -10,8 +10,9 @@ task by task, when each starts; each one's documentation step follows design D19
 option (stream M, `../genesis/tasks.md` group 4); wave 2 runs groups 3 to 8, 10 and 11 after
 group 1 merges; wave 3 runs 9 after 6 and 12 after 8. Group 1 (increment 1) is merged
 (`webcpporg/crypto#4`, `dae9e84`; `webcpporg/webcpp#35`, `485c5e0`; 2026-11-19); group 2
-(increment 2) is built on its branches and awaits its pull requests; `reference/STATUS.md`
-says where each stands.
+(increment 2) is built on its branches and awaits its pull requests; group 3's P-256 part
+(3.1 to 3.6, stream 3a) is built on its branches and awaits its pull requests;
+`reference/STATUS.md` says where each stands.
 
 ## 1. Increment 1: libsodium's core, ChaCha20-Poly1305 on three backends, the capability table, the defaults (version 0.2; stream A)
 
@@ -70,18 +71,34 @@ requests and the CI's run (Task 2.7, Steps 5 and 7) remain (`reference/STATUS.md
 P-256 (3.1 to 3.6) is written in full and merges on its own (stream 3a, branch `crypto/p256`),
 after the change data-independent-timing (`../data-independent-timing/`); webcpp::trystero's port
 of Trystero 0.27.0 waits on it. 3.7 to 3.11 are outlined and written in full when it has merged.
+Built (2026-11-21) on the branches `crypto/p256` of the library (head `9cc0060`, `main`
+`3f27988` merged into it) and the superproject (head `c228b06`, `main` `8f38ac7` merged into
+it, its `libs/crypto` gitlink not yet moved); where the code differs from the plan's text, the
+plan says so under "As built" in each task, and design D36 under its own "As built". The
+measurements are provisional and are taken again in the coordinator's final measurement pass;
+the CI is deferred to the coordinator's final run; the pull requests remain
+(`reference/STATUS.md`).
 
-- [ ] 3.1 The family `p256` with BearSSL its default, its engine, key pairs from a raw scalar (0 < d < n) with the scalar's export, validated public keys from the uncompressed point or from x and y (plan: Task 3.1)
-- [ ] 3.2 ECDSA over a SHA-256 digest with RFC 6979's nonce, raw (P1363) and strict DER, `normalize_ecdsa` and `check_low_s`, against RFC 6979 and Wycheproof (plan: Task 3.2)
-- [ ] 3.3 ECDH's raw x coordinate (`ecdh_x`, WebCrypto's `deriveBits`), against Wycheproof (plan: Task 3.3)
-- [ ] 3.4 SPKI and PKCS#8 for P-256 by fixed layouts, strict, on BearSSL; PEM through `pem` (plan: Task 3.4)
-- [ ] 3.5 OpenSSL natively and WebCrypto in node as oracles (plan: Task 3.5)
-- [ ] 3.6 The constant-time paths, sizes and throughput, the teaching section; P-256 whole: green, review, pull requests (plan: Task 3.6)
+- [x] 3.1 The family `p256` with BearSSL its default, its engine, key pairs from a raw scalar (0 < d < n) with the scalar's export, validated public keys from the uncompressed point or from x and y (plan: Task 3.1)
+- [x] 3.2 ECDSA over a SHA-256 digest with RFC 6979's nonce, raw (P1363) and strict DER, `normalize_ecdsa` and `check_low_s`, against RFC 6979 and Wycheproof (plan: Task 3.2)
+- [x] 3.3 ECDH's raw x coordinate (`ecdh_x`, WebCrypto's `deriveBits`), against Wycheproof (plan: Task 3.3)
+- [x] 3.4 SPKI and PKCS#8 for P-256 by fixed layouts, strict, on BearSSL; PEM through `pem` (plan: Task 3.4)
+- [x] 3.5 OpenSSL natively and WebCrypto in node as oracles (plan: Task 3.5)
+- [x] 3.6 The constant-time paths, sizes and throughput, the teaching section; P-256 whole: green, review, pull requests (plan: Task 3.6; its review and a full local verification in place of Step 5's CI, the CI deferred to the coordinator's final run; sizes and throughput provisional, re-measured in the coordinator's final measurement pass; the pull requests remain)
 - [ ] 3.7 P-384 and P-521 on the same engine, with their files and pages; a passkey's ES256 assertion from its COSE key's coordinates (plan: Task 3.7, outlined)
 - [ ] 3.8 X25519 on BearSSL, joining libsodium in agreement; the `acvp` submodule and ACVP's ECDSA SigVer and KeyVer for the P-curves (plan: Task 3.8, outlined)
 - [ ] 3.9 AES-CTR, AES-CBC, AES-CCM, AES-EAX, with ACVP's AES vectors (plan: Task 3.9, outlined)
 - [ ] 3.10 RSA: PKCS #1 v1.5, PSS, OAEP, key generation, PKCS#8; its heavy variants (plan: Task 3.10, outlined)
 - [ ] 3.11 Increment 3 whole (plan: Task 3.11, outlined)
+
+Open from 3.1 to 3.6 (design D36, "As built"):
+
+- [ ] memcheck and MemorySanitizer over P-256's paths and the planted scalar check, in the arm64
+  Linux container: see Task 3.6's constant-time results
+  TODO(controller): memcheck/MSan result
+- [ ] Sizes and throughput measured again in the coordinator's final measurement pass
+- [ ] NIST ACVP's ECDSA SigVer and KeyVer for P-256, with the `acvp` submodule (3.8)
+- [ ] The WebCrypto oracle in Chrome, with the browser lane (4.4)
 
 ## 4. Increment 4: the browser backend and the asynchronous family (wave 2, stream 4; the genesis's Task 23)
 

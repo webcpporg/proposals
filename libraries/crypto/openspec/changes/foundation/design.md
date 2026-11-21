@@ -1193,6 +1193,116 @@ complete them.
   the fixed layouts the other backends use, and a base64 decoder whose constant time BearSSL
   does not state).
 
+**As built (2026-11-21).** P-256 (Tasks 3.1 to 3.6) is built on the branches `crypto/p256` of
+the library (head `9cc0060`) and the superproject (head `c228b06`), each with `main` merged
+into it after the change data-independent-timing merged (library `3f27988`, superproject
+`8f38ac7`), not rebased: the owner's direction, no rebase of published work. Where the code
+differs from the rulings above, or adds to them:
+
+- **The API is the one ruled above.** In `curves::p256` (`curves/p256.hpp`): the constants
+  `secret_key_size` 32, `coordinate_size` 32, `public_key_size` 65, `digest_size` 32,
+  `signature_size` 64, `max_der_size` 72; `basic_public_key<Backend =
+  default_backend_t<families::p256>>` with `static result<basic_public_key>
+  make(std::span<std::uint8_t const> uncompressed_point)`, `static result<basic_public_key>
+  make(std::span<std::uint8_t const, 32> x, std::span<std::uint8_t const, 32> y)` and
+  `std::array<std::uint8_t, 65> uncompressed() const`, copyable, its default constructor
+  private (a test requires `!std::is_default_constructible_v<public_key>`); `basic_keypair<Backend
+  = default_backend_t<families::p256>>`, move-only, with `static result<basic_keypair>
+  make(std::span<std::uint8_t const> secret_scalar)`, `static result<basic_keypair> generate()`,
+  `result<basic_public_key<Backend>> public_key() const`, `result<secret<32>> secret_scalar()
+  const`, `result<std::array<std::uint8_t, 64>> sign_ecdsa(std::span<std::uint8_t const, 32>
+  digest) const` and `result<secret<32>> ecdh_x(basic_public_key<Backend> const& peer) const`;
+  the aliases `public_key` and `keypair`; the free `template <class Backend> result<void>
+  verify_ecdsa(std::span<std::uint8_t const, 64> signature, std::span<std::uint8_t const, 32>
+  digest, basic_public_key<Backend> const& key)`, `result<std::size_t> to_der<Backend>(std::span<std::uint8_t
+  const, 64> signature, std::span<std::uint8_t> output)`, `result<std::array<std::uint8_t, 64>>
+  from_der<Backend>(std::span<std::uint8_t const> der_signature)`, and the inline, backend-free
+  `result<std::array<std::uint8_t, 64>> normalize_ecdsa(std::span<std::uint8_t const, 64>)` and
+  `result<void> check_low_s(std::span<std::uint8_t const, 64>)`. In `curves/p256/formats.hpp`:
+  `max_spki_size` 91, `max_pkcs8_size` 138, `result<std::size_t> encode_spki(basic_public_key<Backend>
+  const&, std::span<std::uint8_t>)`, `result<basic_public_key<Backend>> decode_spki<Backend>(std::span<std::uint8_t
+  const>)`, `result<std::size_t> encode_pkcs8(basic_keypair<Backend> const&,
+  std::span<std::uint8_t>)` and `result<basic_keypair<Backend>> decode_pkcs8<Backend>(std::span<std::uint8_t
+  const>)`, the decoders' `Backend` defaulting to `default_backend_t<families::p256>`. Every
+  function is `[[nodiscard]]` and `noexcept`; `result` is `boost::system::result`. The family
+  is `families::p256`, BearSSL its default on all four targets, `/webcpp/crypto//p256-default`
+  its alias.
+- **The engine per target is as ruled:** natively `br_ec_p256_m62_get()` where it is not null,
+  else `br_ec_p256_m31`; on wasip2, wasip3 and Emscripten `br_ec_p256_m31`; ECDSA
+  `br_ecdsa_i31_sign_raw` and `br_ecdsa_i31_vrfy_raw`. A test (`backend_choice`) pins the
+  choice on every target.
+- **The engine's structure.** `detail/p_curves.hpp` declares the primaries `p_curve_state` and
+  `p_curve_engine` and holds `p_curve_traits<families::p256>`, the constant-time
+  `p_curve_scalar_valid`, `p_curve_low_s`, `p_curve_negate_scalar` and
+  `p_curve_signature_in_range`; `curves/p256.hpp` defines the partial specialisation
+  `p_curve_engine<families::p256, Backend>` (the family's refusal and fail-closed members), so
+  that P-384 and P-521 (Task 3.7) add their own without touching a primary; BearSSL's full
+  specialisation is in `backends/bearssl.hpp`. `detail::p_curve_access`, the one door into
+  `basic_public_key`'s private constructor and point for the family's own functions, comes
+  with Task 3.1 (the plan brought it in Task 3.2), and the engine's test counter is the seam
+  macro `WEBCPP_CRYPTO_DETAIL_P_CURVE_ENGINE_ENTERED()`, empty unless a test defines it, as
+  the timing seam is, not test state in a library header.
+- **The tests' support.** `uncovered` is in `test/support/timing_seam.hpp` beside
+  `require_enters` (it reads only the seam's count, and `test/timing_test.cpp` includes that
+  header alone), not in `timing_coverage.hpp`; `test/support/hex.hpp` gains the compile-time
+  `hex<N>` the vectors use, with `test/hex_test.cpp`. A fourth example, `example/p256_keys.cpp`,
+  joins the three of the plan, since `generate.py` refuses a use case without an example (D19).
+- **`verify_ecdsa` and a digest that is 0 modulo n.** `verify_ecdsa` checks 0 < r < n and
+  0 < s < n itself before BearSSL (`invalid_signature`), so the error rule holds by webcpp's
+  check. It refuses a valid signature over a digest whose value modulo n is 0 (32 zero bytes,
+  or n itself), which `sign_ecdsa` signs: BearSSL's `muladd` refuses a zero multiplier, and no
+  SHA-256 of a message reaches that value in practice. The limit is accepted rather than
+  BearSSL patched, stated in the function's Doc Comment and pinned by the test `zero_digest`.
+- **What BearSSL leaves on its stack is documented, not patched.** BearSSL zeroes nothing it
+  computes on the stack: `br_ecdsa_i31_sign_raw` leaves the scalar, the nonce and its DRBG
+  state in its frame (`src/ec/ecdsa_i31_sign_raw.c`, lines 45 to 51 and 115 to 135, at the pin
+  `7bea48e`), and the multiplications leave values derived from the scalar
+  (`ec_p256_m62.c`'s `point_mul_inner`, `ec_p256_m31.c`'s `p256_mul`). webcpp wipes what it
+  holds (the `secret<32>`, its copy of a point); `doc/p256.adoc` and `doc/backends.adoc` state
+  the limit with those sources. The pin stays pristine.
+- **PKCS#8 is strict, and the browsers' and tools' form is the 138 bytes.** `decode_pkcs8`
+  accepts exactly the layout webcpp writes. node 26.13.0's WebCrypto (`exportKey("pkcs8")`, for
+  ECDSA and ECDH keys) and OpenSSL 3.5.9's `PrivateKeyInfo` encoder were observed writing
+  exactly webcpp's 138-byte layout, with no `[0] parameters`, and BearSSL's
+  `br_encode_ec_pkcs8_der` writes it too (a test). The W3C text's literal export, with the
+  curve in the `ECPrivateKey`'s `[0] parameters` (150 bytes), is refused and documented as a
+  pitfall, with `openssl pkey` as the way to rewrite it. A PKCS#8 without `publicKey`, as
+  BearSSL writes it with no public key, is 67 bytes, and refused.
+- **ECDH's motivation is cited at its source.** Trystero 0.27.0 (tag commit `8d3f57e`) derives
+  its pairwise keys with `deriveBits` of ECDH over 256 bits into HKDF-SHA-256
+  (`packages/core/src/crypto.ts`, lines 303 to 304) and generates ECDH P-256 key pairs in its
+  scale manager (`packages/core/src/scale/manager.ts`, line 306); the ECDH use case and
+  `doc/p256.adoc` cite those lines. No claim is made about Trystero and SPKI or PKCS#8: its
+  0.27.0 sources import keys `raw` alone.
+- **Constant time: the declassifications and BearSSL's verdicts.** Each verdict webcpp branches
+  on is declassified where it is made, alone: the scalar's range check
+  (`p_curve_scalar_valid`); the low-S verdict in `p_curve_low_s`, since a signature is public
+  once made but a fresh one carries the scalar's mark under the checkers, so that a program
+  normalizing a fresh signature under memcheck reports nothing; the verdict of BearSSL's
+  `api_mul` in the engine's `ecdh_x` (on `m62` its decoding of the point, its own range check
+  of the scalar and whether the product is the point at infinity; on `m31` the decoding
+  alone), on which the engine branches; and `decode_pkcs8`'s comparison of the recomputed point
+  with the file's. BearSSL's `br_ecdsa_i31_sign_raw` branches on its own verdicts (the
+  scalar's decoding, RFC 6979's nonce retry), each computed without a branch elsewhere: they
+  are suppressed for memcheck by `test/constant_time/bearssl_verdicts.supp` (innermost frame
+  `br_ecdsa_i31_sign_raw`, re-read when the pin moves), as libsodium's are, and BearSSL is not
+  patched; MemorySanitizer needs no suppression. Under MemorySanitizer the public point's and
+  ECDH's x traces run only where the checker's subtraction is exact (memcheck), as X25519's
+  public key already does. The planted scalar check (an early return in a copy of
+  `p_curve_scalar_valid`) has its own programs, `ctgrind_planted_scalar` and
+  `msan_planted_scalar`, each passing only when its checker's report names the planted
+  function. dudect reads |t| 2.29 (signing) and 1.84 (ECDH) natively on macOS arm64, 2.51 and
+  2.08 on wasip2, below the threshold 10. memcheck and MemorySanitizer: `reference/plan.md`
+  Task 3.6's constant-time results.
+- **Sizes and throughput are provisional.** The size programs take `generate.py`'s names
+  (`p256_bearssl`, `p256_bearssl_verify_ecdsa`, `p256_bearssl_ecdh_x`), and `bench/collect.py`
+  measures a family's further operation by a third word, the `sized_operations` key. Both
+  tables were measured from release builds on a loaded machine and are taken again in the
+  coordinator's final measurement pass.
+- **Deferred.** NIST ACVP's ECDSA SigVer and KeyVer join with the `acvp` submodule (Task 3.8),
+  as ruled; the WebCrypto oracle ran in node alone, and Chrome joins with the browser lane
+  (Task 4.4). The CI is deferred to the coordinator's final run.
+
 ## Risks / Trade-offs
 
 - [The capability table grows to hundreds of cells] -> it is generated into the code and the
