@@ -34,7 +34,25 @@ program to do.
 Not changed: webcpp::hash (its keyed functions are a follow-up the owner has not decided), the
 public interface, the errors, any backend's library.
 
+## Capabilities
+
+### New Capabilities
+
+None.
+
+### Modified Capabilities
+
+- `crypto`: every public cryptographic operation runs with arm64's DIT set where the CPU has
+  FEAT_DIT, and restores the thread's state; a test proves each enters its own guard.
+
 ## Impact
+
+- **Kind:** a wrapper (`"port-of": null`), as the genesis.
+- **Implementation:** merged into webcpporg/crypto's `main` (pull request 11, 2026-11-21);
+  the reference code is the guard as built, `reference/timing.hpp`, and the tasks of
+  `reference/plan.md`.
+- **Status:** implementing until the release that carries it; the final quiet measurement
+  pass of `design.md`'s open item follows.
 
 `libs/crypto/include/webcpp/crypto/` (the new header and the families' headers),
 `libs/crypto/test/` (the guard's tests, the coverage test, the constant-time lane),

@@ -396,8 +396,8 @@ comment.
   container (the linux-lint image, where the Linux path of `cpu_has_dit` runs on real DIT
   hardware).
 - [ ] **Step 2:** the full macOS lint (`AGENTS.md`); the Linux lint,
-  `/Users/rodrigo/dev/webcpporg/linux-lint/run.sh <superproject>` (exit 0); the MSVC lane
-  (`/Users/rodrigo/dev/webcpporg/msvc-lane`, 14.3 and 14.5, `summarize.sh`, no failure beyond
+  the owner's local Linux lint lane, `linux-lint/run.sh <superproject>` (exit 0); the MSVC lane
+  (the owner's local `msvc-lane`, 14.3 and 14.5, `summarize.sh`, no failure beyond
   `known-failures.txt`); the superproject's tools tests if a tool changed. Any failure or flake,
   related or not, is fixed at its cause.
 - [ ] **Step 3:** tick `../tasks.md`; pull requests in crypto, proposals and the superproject

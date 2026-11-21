@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-20
+webcpp:
+  library: crypto
+  title: "crypto: the library sets arm64's DIT around every cryptographic operation"
+  kind: wrapper
+  port_of: null
+  status: implementing
+  release: null
+  implementation: https://github.com/webcpporg/crypto
+  decided: 2026-11-20
