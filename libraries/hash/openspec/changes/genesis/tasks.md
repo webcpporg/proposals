@@ -73,11 +73,12 @@ parallel streams" says which tasks run in parallel, by backend.
 - [x] 5.1 BearSSL's hashes, HMAC and SHAKE (plan: Task 39). Built: MD5, SHA-1, SHA-224 to SHA-512, MD5-SHA1, SHAKE of any length and HMAC over the six on `backends::bearssl`, never a default, against RFC 2202, RFC 4231 and Hash2; it found that Hash2's SHAKE is whole (design D37)
 - [x] 5.2 Increment 5 whole (plan: Task 40, Task 47). Built: `digests::md5_sha1` with no default, its section of the guide, chapter 17's entry with designs D33 and D34, every lane from scratch; the increment's review
 
-## 6. Increment 6: Botan 3 (stream `botan-6`; after webcpp::crypto provisions Botan)
+## 6. Increment 6: Botan 3 (stream `botan-6`; Botan provisioned by the stream, design D43)
 
-- [ ] 6.1 Botan's column, checked at its pin (plan: Task 41). Open, not started: Botan is not provisioned on webcpp's `main` (design D42, which keeps the pre-flight's findings for it)
-- [ ] 6.2 Botan's hashes and MACs (plan: Task 42). Open, blocked as 6.1
-- [ ] 6.3 Botan's KDFs and password hashes, increment 6 whole (plan: Task 43, Task 47). Open, blocked as 6.1; it adds Botan's heavy variants (`async_bcrypt`, `async_bcrypt_pbkdf`)
+- [x] 6.0 Botan provisioned in the superproject (plan: Task 40b). Built: the submodule `third_party/libs/botan` at 3.14.1 (`01af88c`), configured per target by upstream's `configure.py` into `config-<hash>` and compiled by b2 one object per source through `tools/webcpp-botan.jam` as `/third_party//botan`, one module list for hash and webcpp::crypto (`tools/botan/modules.txt`), native and Emscripten, exceptions only, no RNG module, `botan_test` and `botan_vectors`; designs D43 and D45
+- [x] 6.1 Botan's column, checked at its pin (plan: Task 41). Built: spec 3.5's Botan cells read at 3.14.1, the `exceptions_only` field (design D44)
+- [x] 6.2 Botan's hashes and MACs (plan: Task 42). Built: `backends/botan.hpp` with 25 digests and 27 MACs through the families, hash's canary `src/canary_botan.cpp`, an HMAC key past 8,192 bytes hashed first, `botan-run`, Botan's own suite in `c-suites`, the messages `botan_not_linked` and `botan_without_exceptions`
+- [x] 6.3 Botan's KDFs and password hashes, increment 6 whole (plan: Task 43, Task 47). Built: HKDF, PBKDF2, `argon2id`, `argon2`, `scrypt`, `kbkdf`, `sskdf`, `x963kdf` on `backends::botan`, `bcrypt.hpp` (`bcrypt`, `bcrypt_verify`, `bcrypt_pbkdf`) with `async_bcrypt`, `async_bcrypt_pbkdf` and `async_bcrypt_verify`; no default changed (design D34); the guide's sections of Botan with an example each, its allocations from release builds, the changelog, chapter 17's entry; every lane from scratch, MSVC 14.3 and 14.5 on the owner's lane, and the increment's review (plan Task 47, Step 6.3, the controller's)
 
 ## 7. Increment 7: the browser backend, through the asynchronous family (stream `async-7`)
 

@@ -3,7 +3,8 @@
 Written 2026-11-14, when this proposal was made, brought up to date on 2026-11-15, when increment 1
 was built, on 2026-11-16, when the owner fixed the default backends (design D33), and on 2026-11-18,
 when increments 2, 3, 4, 5 and 7 were built under his decisions of 2026-11-17 (design D34 to D36;
-what the build decided is design D37 to D42), merged, reviewed whole and fixed. The owner decided
+what the build decided is design D37 to D42), merged, reviewed whole and fixed, and on 2026-11-21,
+when increment 6 (Botan) was built on the stream `botan-6` (design D43 to D45). The owner decided
 the library's shape on 2026-11-14, widened it the same day (every backend's whole hashing and KDF
 surface, in increments; one profile for every default backend, retired on 2026-11-16; documentation
 in noble's and libsodium's manner) and answered O1 (the browser backend through a parallel
@@ -51,11 +52,21 @@ library's own repository, which the owner publishes at gate G1.
   tools' tests, the documentation's build and the full lint (`lint: clean`). MSVC and Apple
   clang run only in the CI, after the gates (their cases are written, not run); the controller
   runs MSVC's check of XKCP's `config.h` locally.
-- **Increment 6 is not started** (design D42): Botan is not provisioned on webcpp's `main` (no
-  `third_party/libs/botan`, no crypto target), since webcpp::crypto's increment 5, built by its
-  foundation change's increment 7, is not built. D42 keeps the pre-flight's findings for when it
-  runs (one Botan module list per program, Botan's targets, exceptions on, the Botan column's
-  corrections at 3.14.1, Botan's heavy variants).
+- **Increment 6 is built** (the plan's Tasks 40b to 43 and 47, `../tasks.md` group 6) on the
+  branches `hash/botan-6` of the library, the superproject and this repository, each task reviewed
+  by someone who did not write it. The stream provisioned Botan itself, as webcpp::crypto's
+  specification says (design D43, which supersedes D42's waiting): the submodule
+  `third_party/libs/botan` at 3.14.1 (`01af88c`), configured by upstream's `configure.py` per
+  target and compiled by b2 through `tools/webcpp-botan.jam` as `/third_party//botan`, one module
+  list for hash and webcpp::crypto, natively and on Emscripten, with exceptions only, no RNG
+  module. Its column was read at 3.14.1 (D44); `backends::botan` has its digests (Streebog,
+  Whirlpool and Skein-512 among them, which no other backend has), its MACs, HKDF, PBKDF2,
+  Argon2, scrypt, the key derivations of standards, and `bcrypt.hpp`'s `bcrypt`, `bcrypt_verify`
+  and `bcrypt_pbkdf` with their heavy forms; no default changed (D34). Every call into Botan runs
+  inside one boundary, so that no exception leaves hash, and a program without exceptions has no
+  `backends::botan` (D45). The guide has a section per Botan algorithm with an example, its
+  allocations from release builds (to be re-measured in the final pass), and `NOTICE.md` keeps
+  Botan's licence for the documentation it adapts.
 - **The spec and the design are amended** to what increments 2 to 5 and 7 built (design D37 to
   D41): Boost.Hash2's SHAKE is a whole extendable output and SHAKE's default; `digest_of`, the
   families' guards in one place, BLAKE2b's output size as an option, SP 800-185's L at `finish`,
@@ -88,8 +99,11 @@ library's own repository, which the owner publishes at gate G1.
   (`/third_party//bearssl`, `webcpp.same-program`).
 - **The owner's merge of the branches `hash/defaults-hash2`** (task 1.26, design D33), then of
   `increments-2-7` and `hash/increments-2-7`.
-- **webcpp::crypto's Botan provisioning** (its increment 5, built by its foundation change's
-  increment 7) for increment 6, with hash's Botan modules in its one module list (design D42).
+- **The lanes and review of increment 6** (plan Task 47, Step 6.3: every lane from scratch, MSVC
+  14.3 and 14.5 on the owner's lane, both lints, a review of the whole increment), then its pull
+  requests (Step 6.6), the library's, the superproject's and this proposal's.
+- **webcpp::crypto's increment 7** reuses `/third_party//botan` (design D43): it adds its canary
+  beside hash's, and decides Botan's wasip2 and wasip3 cells, which then become hash's too.
 - webcpp::asio's `browser::async_await`, which increment 7 needed, is on `main`.
 
 ## Flagged to the owner
@@ -105,10 +119,12 @@ Prerequisites are the superproject's (its `AGENTS.md`, chapter 1): Boost 1.92, b
 compiler, wasi-sdk 34, wasmtime, Emscripten 6.0.11 with node 26.7.0, Python 3.9 or newer,
 `.local/user-config.jam`.
 
-1. **Increments 1 to 5 and 7** are done; what remains of them is the owner's: the gates G1, G2
-   and G4, then the CI's MSVC and Apple clang lanes.
-2. **Increment 6 starts with Task 41** once webcpp::crypto has provisioned Botan on `main`, from
-   the integration branches, reading design D42's findings first.
+1. **Increments 1 to 7** are built; what remains of increments 1 to 5 and 7 is the owner's: the
+   gates G1, G2 and G4, then the CI's MSVC and Apple clang lanes.
+2. **Increment 6** resumes at plan Task 47's Step 6.3 on the branches `hash/botan-6`: run every
+   lane from scratch (its "Global Constraints" list, `c-suites` with Botan's own suite, MSVC on the
+   owner's lane through `run-lane.sh 14.3` and `14.5`), the review of the whole increment, then
+   Step 6.6's pull requests. Read designs D43 to D45 first.
 
 Every b2 command runs as `$B2` (`env -u CPATH -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH b2
 --user-config=.local/user-config.jam`); only a build from scratch (`-a`) counts as evidence. The
