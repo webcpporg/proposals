@@ -5583,8 +5583,8 @@ WebAssembly target, WASI included (wasip2, wasip3 and Emscripten), by the owner'
 // The adapter's C functions, called directly (spec section 3.7): 0 bytes and a size whose
 // header overflows give null without asking the resource; a block is aligned as malloc's;
 // realloc grows, shrinks, frees at 0 and, when the resource fails, returns null and
-// leaves the old block valid; a resource that throws (with exceptions) or returns null
-// (without) is a null for OpenSSL.
+// leaves the old block valid; a resource that throws (with exceptions) is a null for
+// OpenSSL, and one that cannot allocate without exceptions ends the process.
 
 #include <webcpp/crypto/backends/openssl.hpp>
 #include <webcpp/test/exit_status.hpp>
@@ -5610,11 +5610,8 @@ public:
 private:
     void* do_allocate(std::size_t size, std::size_t alignment) override {
         if (failing) {
-#ifdef WEBCPP_CRYPTO_NO_EXCEPTIONS
-            return nullptr;
-#else
+            // A resource fails by throwing, never by returning null (spec 3.7).
             boost::throw_exception(std::bad_alloc());
-#endif
         }
         ++allocations;
         ++live;
@@ -6411,8 +6408,10 @@ memory-run fresh_install : fresh_install_test.cpp : $(.counter) ;
 memory-run forgotten : forgotten_test.cpp : $(.counter) ;
 memory-run replaced : replaced_test.cpp : $(.counter) ;
 memory-run second_install : second_install_test.cpp : $(.counter) ;
-memory-run fail_second : fail_second_test.cpp : $(.counter) ;
-memory-run fail_init : fail_init_test.cpp : $(.counter) ;
+# A resource fails by throwing, never by returning null, which allocate is declared never
+# to do: without exceptions it ends the process, so these two run with exceptions only.
+webcpp.run fail_second : fail_second_test.cpp : $(.counter) ;
+webcpp.run fail_init : fail_init_test.cpp : $(.counter) ;
 ```
 
   `lib` is not one of the raw rules the lint refuses (AGENTS chapter 6). The static twins on
