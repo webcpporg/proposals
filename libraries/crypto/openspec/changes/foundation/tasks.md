@@ -3,7 +3,8 @@
 Each task of increment 1 points to its section in `reference/plan.md`, which holds its files,
 interfaces, steps, code and expected output, read through the plan's revision of 2026-11-17;
 tasks marked from the genesis point to `../genesis/reference/plan.md`. Increment 2 is written
-there in full (Tasks 2.1 to 2.7); increments 3 to 12 are outlined there and written in full,
+there in full (Tasks 2.1 to 2.7), and increment 3's P-256 part (Tasks 3.1 to 3.6, design D36);
+the rest of increment 3 and increments 4 to 12 are outlined there and written in full,
 task by task, when each starts; each one's documentation step follows design D19. **The order and the parallel streams are `reference/roadmap.md`**
 (design D35): wave 1 runs groups 1 (stream A) and 2 (stream B) beside the genesis's memory
 option (stream M, `../genesis/tasks.md` group 4); wave 2 runs groups 3 to 8, 10 and 11 after
@@ -64,13 +65,23 @@ requests and the CI's run (Task 2.7, Steps 5 and 7) remain (`reference/STATUS.md
 - [x] 2.7 The families in the capability table, the constant-time cases, the size cells, the teaching chapters' secp256k1 sections; increment 2 whole (plan: Task 2.7; its review and a full local verification in place of Step 5's CI, which runs with the pull requests of Step 7)
 - [x] 2.7d The owner's two MuSig2 examples, `musig_network` (every public part through a byte buffer) and `musig_taproot` (a Taproot key-path output), run on every lane against their `.expected` and shown in the MuSig2 section (plan: Task 2.7, "As built")
 
-## 3. Increment 3: BearSSL's remaining parts (wave 2, stream 3)
+## 3. Increment 3: BearSSL's remaining parts (wave 2, stream 3; P-256 first, design D36)
 
-- [ ] 3.1 P-256, P-384, P-521 ECDSA and ECDH, strict DER signatures and public key forms (uncompressed point, raw x and y); PKCS#8 and PEM (plan: Increment 3, step 1)
-- [ ] 3.2 X25519 on BearSSL, joining libsodium in agreement; its ChaCha20-Poly1305 is task 1.8b (plan: Increment 3, step 2)
-- [ ] 3.3 AES-CTR, AES-CBC, AES-CCM, AES-EAX (plan: Increment 3, step 3)
-- [ ] 3.4 RSA: PKCS #1 v1.5, PSS, OAEP, key generation, PKCS#8; its heavy variants (plan: Increment 3, step 4)
-- [ ] 3.5 Increment 3 whole (plan: Increment 3, step 5)
+P-256 (3.1 to 3.6) is written in full and merges on its own (stream 3a, branch `crypto/p256`),
+after the change data-independent-timing (`../data-independent-timing/`); webcpp::trystero's port
+of Trystero 0.27.0 waits on it. 3.7 to 3.11 are outlined and written in full when it has merged.
+
+- [ ] 3.1 The family `p256` with BearSSL its default, its engine, key pairs from a raw scalar (0 < d < n) with the scalar's export, validated public keys from the uncompressed point or from x and y (plan: Task 3.1)
+- [ ] 3.2 ECDSA over a SHA-256 digest with RFC 6979's nonce, raw (P1363) and strict DER, `normalize_ecdsa` and `check_low_s`, against RFC 6979 and Wycheproof (plan: Task 3.2)
+- [ ] 3.3 ECDH's raw x coordinate (`ecdh_x`, WebCrypto's `deriveBits`), against Wycheproof (plan: Task 3.3)
+- [ ] 3.4 SPKI and PKCS#8 for P-256 by fixed layouts, strict, on BearSSL; PEM through `pem` (plan: Task 3.4)
+- [ ] 3.5 OpenSSL natively and WebCrypto in node as oracles (plan: Task 3.5)
+- [ ] 3.6 The constant-time paths, sizes and throughput, the teaching section; P-256 whole: green, review, pull requests (plan: Task 3.6)
+- [ ] 3.7 P-384 and P-521 on the same engine, with their files and pages; a passkey's ES256 assertion from its COSE key's coordinates (plan: Task 3.7, outlined)
+- [ ] 3.8 X25519 on BearSSL, joining libsodium in agreement; the `acvp` submodule and ACVP's ECDSA SigVer and KeyVer for the P-curves (plan: Task 3.8, outlined)
+- [ ] 3.9 AES-CTR, AES-CBC, AES-CCM, AES-EAX, with ACVP's AES vectors (plan: Task 3.9, outlined)
+- [ ] 3.10 RSA: PKCS #1 v1.5, PSS, OAEP, key generation, PKCS#8; its heavy variants (plan: Task 3.10, outlined)
+- [ ] 3.11 Increment 3 whole (plan: Task 3.11, outlined)
 
 ## 4. Increment 4: the browser backend and the asynchronous family (wave 2, stream 4; the genesis's Task 23)
 

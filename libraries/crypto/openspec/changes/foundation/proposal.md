@@ -40,7 +40,9 @@ Q1 to Q7).
   2. libsecp256k1's remaining modules: recovery, raw ECDH, tweaks, uncompressed keys,
      ElligatorSwift, MuSig2, silent payments (beside 1, also in version 0.2);
   3. BearSSL's remaining parts: P-256, P-384 and P-521 ECDSA and ECDH, X25519, AES-CTR,
-     AES-CBC, AES-CCM, AES-EAX, RSA;
+     AES-CBC, AES-CCM, AES-EAX, RSA; P-256 first and on its own, with a key pair made from a
+     raw scalar and its export, ECDH's raw x coordinate and low S as two primitives, for
+     webcpp::trystero's port of Trystero 0.27.0 (the owner's approval of 2026-11-20, design D36);
   4. the browser backend on Emscripten, WebCrypto's SubtleCrypto, through the asynchronous
      family `async_*` that takes a webcpp::asio completion token;
   5. libsodium completed: ristretto255 and edwards25519 groups, ML-KEM-768 and X-Wing, and the

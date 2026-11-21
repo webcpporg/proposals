@@ -139,7 +139,8 @@ ChaCha20-Poly1305's case to `everything_test.cpp`, if M merges second its M2 add
 
 | Stream | Branch | Foundation increment | Notes |
 | --- | --- | --- | --- |
-| 3 | `crypto/bearssl-rest` | 3, without ChaCha20-Poly1305 (moved to 8b) | P-curves, DER, key forms, AES modes, RSA |
+| 3a | `crypto/p256` | 3, its P-256 part (Tasks 3.1 to 3.6, D36) | written in full on 2026-11-20; after the change data-independent-timing merges; merges on its own, first of stream 3, for webcpp::trystero's port of Trystero 0.27.0 |
+| 3 | `crypto/bearssl-rest` | 3, the rest (Tasks 3.7 to 3.11), without ChaCha20-Poly1305 (moved to 8b) | after 3a merges: P-384 and P-521, X25519, the `acvp` pin, AES modes, RSA |
 | 4 | `crypto/browser` | 4 | absorbs genesis Task 23 (the oracle for every algorithm on `main`, the audio worklet, Chrome's throughput page from release builds) |
 | 5 | `crypto/sodium-rest` | 5 | |
 | 6 | `crypto/blst` | 6 | unblocks stream 9 |
@@ -165,7 +166,7 @@ ChaCha20-Poly1305's case to `everything_test.cpp`, if M merges second its M2 add
 ### Merging
 
 A stream merges when it is green and reviewed. When two are ready at once, the value order
-decides (A, B, then 3, 4, 5, 6, 7, 8, 10, 11, then 9, 12); a ready stream never waits for an
+decides (A, B, then 3a, 3, 4, 5, 6, 7, 8, 10, 11, then 9, 12); a ready stream never waits for an
 earlier one unless its rebase conflicts. After every merge each open stream rebases, merges
 `crypto.json`'s rows as JSON, regenerates with `generate.py`, and runs its lanes again.
 Version 0.2 is A and B (and M if merged by then); after it, each merged increment is the next

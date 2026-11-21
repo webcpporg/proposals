@@ -5,6 +5,16 @@ recorded as built on 2026-11-19).
 
 ## Where things stand
 
+- **2026-11-20: increment 3's P-256 part is written in full** (`plan.md` Tasks 3.1 to 3.6,
+  `../design.md` D36, the spec's "P-256: a key pair from a raw scalar, raw ECDH and low S"),
+  after the owner approved on 2026-11-20 the scalar's import and export and ECDH's raw x for
+  webcpp::trystero's port of Trystero 0.27.0. It starts once the change
+  `../data-independent-timing/` has merged (every new public function holds its
+  `detail::timing_guard`), as stream 3a on `crypto/p256`, and merges on its own. By then
+  increment 2 is merged (`webcpporg/crypto#5`, `6fc9d7a`); the bullets below are this file's
+  record of 2026-11-19 and are brought up to date by the stream R task that records version
+  0.2.
+
 - **Increment 2 (stream B, `../tasks.md` group 2) is built and awaits its pull requests.** The
   library's branch `crypto/secp256k1-modules` (head `e7c71db`, 54 commits on `1fc5140`) and the
   superproject's branch of the same name (head `d25b22f`, 22 commits on `c00bf7a`: the code's
