@@ -381,6 +381,10 @@ The genesis's constant-time harness (memcheck's client requests, MemorySanitizer
 - **WHEN** the seed and the message are marked undefined and `curves::ed25519::keypair::sign` runs under memcheck
 - **THEN** no conditional jump depends on them, and the planted branch on the seed fails the same test
 
+#### Scenario: P-256 signing under memcheck and MemorySanitizer
+- **WHEN** the secret scalar and the digest are marked undefined and `curves::p256::keypair::sign_ecdsa` runs on BearSSL, under memcheck and under MemorySanitizer, over webcpp's BearSSL at `32381d6` (upstream `7bea48e` plus the fix that decodes RFC 6979's nonce at its full length)
+- **THEN** no conditional jump or store address depends on them, including the nonce's bit length, and the same programs fail on upstream `7bea48e` unfixed
+
 ### Requirement: Documentation: two readers, and pages in the owner's style
 The documentation SHALL let a developer who knows little cryptography and an LLM that collects a person's use case choose correctly from it alone. Every page MUST open with a lead paragraph in webcpp's own words saying what the thing is and what it is for, then how it works, then details; MUST put use cases from ordinary applications first; MUST say what goes wrong without the primitive and what the mistake costs; and every algorithm's section MUST give what it is, a compiled example included by tag with its expected output, and its pitfalls. Wikipedia (CC BY-SA) MUST only be cited by link, never copied; the libsodium families' pages adapt libsodium's documentation (`jedisct1/libsodium-doc` at `6d1ea27b79b853b2a04f09ae9e1a8231c90e3b56`, ISC) with an attribution line each, and the library MUST ship its notice as `LICENSE-LIBSODIUM-DOC.txt`. Every increment's documentation task MUST follow these rules and the requirements below.
 

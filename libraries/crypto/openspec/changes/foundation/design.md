@@ -101,7 +101,7 @@ Hash2's hmac when needed". hash never includes crypto's headers.
 | --- | --- | --- | --- |
 | `sodium` | libsodium 1.0.22 (`77e1ce5`) | Ed25519, Ed25519ph, X25519, the Ed25519 to X25519 conversion, `crypto_box` (XSalsa20 and XChaCha20 forms) with precomputation, sealed boxes, `crypto_secretbox` (both forms), ChaCha20-Poly1305 IETF and original, XChaCha20-Poly1305, AEGIS-128L, AEGIS-256, AES256-GCM (where the CPU has it), `ciphers::secretstream`, `crypto_kx`, `crypto_auth`, `crypto_onetimeauth`, the stream ciphers (ChaCha20 IETF and original, XChaCha20, Salsa20, XSalsa20, Salsa20/12, Salsa20/8) and the cores HChaCha20 and HSalsa20, ristretto255 and edwards25519 groups and scalars with their maps from hashes, ML-KEM-768, X-Wing, `randombytes_uniform` and `randombytes_buf_deterministic`, the memory utilities (`is_zero`, `compare`, `increment`, `add`, `sub`, `mlock`), ISO/IEC 7816-4 padding, constant-time hexadecimal and base64, IP address encryption (`crypto_ipcrypt`), guarded memory (`sodium_malloc`) | all four; AES256-GCM native only, guarded memory and `mlock` native only |
 | `secp256k1` | libsecp256k1 v0.8.0 (`6e2c8bc`) | the genesis's (with version 0.1's generic x-only tweak, D24), and recovery, raw ECDH, seckey and pubkey tweaks, negation, combination, uncompressed keys, ElligatorSwift (BIP324), MuSig2 (BIP327), silent payments (BIP352), hedged ECDSA | all four |
-| `bearssl` | BearSSL (`7bea48e`) | the genesis's, and P-256, P-384, P-521 ECDSA (RFC 6979, raw and DER) and ECDH, X25519, ChaCha20-Poly1305, AES-CTR, AES-CBC, AES-CCM, AES-EAX, RSA (PKCS #1 v1.5 and PSS signatures, OAEP, key generation) | all four |
+| `bearssl` | BearSSL (`32381d6`: upstream `7bea48e` plus one security fix, D36) | the genesis's, and P-256, P-384, P-521 ECDSA (RFC 6979, raw and DER) and ECDH, X25519, ChaCha20-Poly1305, AES-CTR, AES-CBC, AES-CCM, AES-EAX, RSA (PKCS #1 v1.5 and PSS signatures, OAEP, key generation) | all four |
 | `openssl` | OpenSSL 3.5.9 (`45e844f`), the superproject's provider | the genesis's, and P-256, P-384, P-521, Ed25519, Ed448, X25519, X448, ML-KEM, ML-DSA, SLH-DSA, RSA, AES-CTR, CBC, CCM, OCB, KW, KWP, SIV, GCM-SIV, CMAC, ChaCha20-Poly1305 | native, wasip2, wasip3 |
 | `ctaes` | ctaes of Bitcoin Core v31.1 (`9be056a`) | the genesis's block cipher; nothing else exists in it | all four |
 | `botan` | Botan 3.14.1 (`01af88c`) | Ed25519, Ed448, X25519, X448, P-curves, brainpool, ECDSA, ECDH, RSA, ML-KEM, ML-DSA, SLH-DSA, AES and its modes (GCM, SIV, GCM-SIV, CCM, OCB, EAX, KW, KWP, CMAC), ChaCha20-Poly1305, XChaCha20-Poly1305, the other block ciphers it ships (Camellia, ARIA, SM4, Serpent, Twofish), hash-to-curve on the P-curves | native, Emscripten; wasip2 and wasip3 as increment 7's spike finds (D15) |
@@ -1259,7 +1259,8 @@ differs from the rulings above, or adds to them:
   `7bea48e`), and the multiplications leave values derived from the scalar
   (`ec_p256_m62.c`'s `point_mul_inner`, `ec_p256_m31.c`'s `p256_mul`). webcpp wipes what it
   holds (the `secret<32>`, its copy of a point); `doc/p256.adoc` and `doc/backends.adoc` state
-  the limit with those sources. The pin stays pristine.
+  the limit with those sources. The stack residue is not patched; the pin carries one other fix,
+  the nonce's (below).
 - **PKCS#8 is strict, and the browsers' and tools' form is the 138 bytes.** `decode_pkcs8`
   accepts exactly the layout webcpp writes. node 26.13.0's WebCrypto (`exportKey("pkcs8")`, for
   ECDSA and ECDH keys) and OpenSSL 3.5.9's `PrivateKeyInfo` encoder were observed writing
@@ -1285,8 +1286,8 @@ differs from the rulings above, or adds to them:
   with the file's. BearSSL's `br_ecdsa_i31_sign_raw` branches on its own verdicts (the
   scalar's decoding, RFC 6979's nonce retry), each computed without a branch elsewhere: they
   are suppressed for memcheck by `test/constant_time/bearssl_verdicts.supp` (innermost frame
-  `br_ecdsa_i31_sign_raw`, re-read when the pin moves), as libsodium's are, and BearSSL is not
-  patched; MemorySanitizer needs no suppression. Under MemorySanitizer the public point's and
+  `br_ecdsa_i31_sign_raw`, re-read when the pin moves), as libsodium's are, and these verdicts
+  are not patched; MemorySanitizer needs no suppression. Under MemorySanitizer the public point's and
   ECDH's x traces run only where the checker's subtraction is exact (memcheck), as X25519's
   public key already does. The planted scalar check (an early return in a copy of
   `p_curve_scalar_valid`) has its own programs, `ctgrind_planted_scalar` and
@@ -1294,6 +1295,20 @@ differs from the rulings above, or adds to them:
   function. dudect reads |t| 2.29 (signing) and 1.84 (ECDH) natively on macOS arm64, 2.51 and
   2.08 on wasip2, below the threshold 10. memcheck and MemorySanitizer: `reference/plan.md`
   Task 3.6's constant-time results.
+- **BearSSL carries one fix of webcpp's, for a leak memcheck and MemorySanitizer found
+  (2026-11-21).** In the arm64 Linux container the lane found upstream `7bea48e`'s ECDSA
+  signing branching on the nonce's bit length: `br_ecdsa_i31_bits2int` reads RFC 6979's nonce
+  with `br_i31_decode`, which announces its actual length, and `br_i31_rshift` loops and stores
+  by it (8 words instead of 9 when k < 2^248, one signature in about 256: the Minerva class;
+  dudect does not see it). Commit `32381d6` on `webcpporg/bearssl`'s branch `webcpp` sets the
+  full announced length before the shift in `ecdsa_i31_bits.c` and `ecdsa_i15_bits.c`, which
+  preserves every value; the superproject's pin is `32381d6`, and webcpp::hash's canary moves
+  to it in a separate PR. This is the exception chapter 5 rule 1 now states (a minimal,
+  value-preserving security fix upstream lacks, on a `webcpp` branch, carried to each pin and
+  reported upstream; the report is a parked owner item), and "never patched" elsewhere in this
+  change means no other edits. After it ctgrind, ctgrind_space, msan, secp256k1_ctime (with
+  msan) and the four dudect programs pass and the four planted programs fail as required;
+  `doc/backends.adoc`'s `crypto-backends-bearssl-fix` is the library's text.
 - **Sizes and throughput are provisional.** The size programs take `generate.py`'s names
   (`p256_bearssl`, `p256_bearssl_verify_ecdsa`, `p256_bearssl_ecdh_x`), and `bench/collect.py`
   measures a family's further operation by a third word, the `sized_operations` key. Both
