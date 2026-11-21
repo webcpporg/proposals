@@ -689,8 +689,8 @@ Doc Comment says what depends on it (AGENTS:772-787, CR-REVIEW M2):
 - the Botan backend, which exists only with exceptions (section 3.6);
 - the `try` of OpenSSL's memory adapter, which turns an exception of the user's resource into
   a null pointer for OpenSSL (section 3.7), and is absent without exceptions: there, a
-  resource that throws ends the process at the adapter's `noexcept`, and only a resource that
-  returns null reports a failure (section 3.7).
+  resource that throws ends the process at the adapter's `noexcept`, and a resource never
+  reports a failure by returning null (section 3.7).
 
 ### 2.11 Allocation and keys
 
@@ -1232,9 +1232,9 @@ limits.
     nothing more, since it aligns inside the block (`mem.c:286-313`).
   - `malloc(n)`: 0 bytes, or a size whose header would overflow `size_t`, give a null
     pointer, which OpenSSL takes as no block for 0 and as a failure otherwise (`mem.c:196`);
-    otherwise `allocate(header + n, alignment)` on the resource. A null from `allocate` is a
-    failure and is returned as such; otherwise the size is stored and the address after the
-    header returned.
+    otherwise `allocate(header + n, alignment)` on the resource, which never returns null (a
+    resource fails by throwing, below); the size is stored and the address after the header
+    returned.
   - `free(p)`: a null `p` does nothing; otherwise the size is read and
     `deallocate(p - header, header + size, alignment)` called. OpenSSL wipes key material
     before it frees it (`OPENSSL_clear_free`, `mem.c:386-393`); the adapter adds no wipe.
@@ -1249,9 +1249,11 @@ limits.
     `do_allocate`: an appropriate exception when it cannot allocate), and a resource built
     on `operator new` throws `std::bad_alloc` from code compiled with exceptions; the
     exception then meets the adapter's `noexcept` and the process ends (`std::terminate`). So without exceptions an
-    allocation failure in the program's resource ends the process, unless the resource
-    returns null instead, which the adapter checks and reports to OpenSSL as a failure. The
-    documentation says so.
+    allocation failure in the program's resource ends the process, as `std::pmr`'s own
+    resources do. A resource never reports a failure by returning null: `allocate` is
+    declared never to return null (`returns_nonnull` in libc++ and libstdc++), so an
+    optimiser removes any check of its result and a null would be written through in a
+    release build, and the adapter checks nothing. The documentation says so.
 - **What `make` returns when the resource fails** (crypto-r3-review I3). By the call that
   failed, as section 3.3 maps it: `EVP_CIPHER_CTX_new` null gives `errc::not_enough_memory`;
   `EVP_CIPHER_fetch` null or `EVP_EncryptInit_ex` 0 gives `backend_failure`, the second
@@ -1826,8 +1828,8 @@ What to know:
   so the resource must serve OpenSSL's start-up); later, `make` gives `not_enough_memory` or
   `backend_failure`. `seal` and `open` allocate nothing. A resource with a fixed size needs
   room for the first `make`: about 6,100 allocations, 4,621 of them still live afterwards,
-  with OpenSSL 3.6.4 on macOS (section 3.7). Without exceptions, a resource that throws ends
-  the process; one that returns null reports the failure.
+  with OpenSSL 3.6.4 on macOS (section 3.7). Without exceptions, a resource that cannot
+  allocate ends the process; a resource never fails by returning null.
 - Two allocations stay outside the resource, because no hook of OpenSSL's reaches them: the C
   library's `FILE` and its buffer while OpenSSL reads its configuration file at
   initialisation (one or two blocks, by C library, freed when the file closes), and OpenSSL's
@@ -2221,9 +2223,9 @@ parts on `chacha20_poly1305` land with it, in increment 4 (section 9).
 - **The adapter's edges:** an allocation of 0 bytes, one whose header overflows `size_t`, a
   `realloc` that grows, one that shrinks, one to 0 bytes, and one that fails (the old block
   still valid), called through the adapter's C functions directly.
-- **A failing resource,** armed by the test. With exceptions on it throws `std::bad_alloc`;
-  with exceptions off it returns null, the only failure a program without exceptions can
-  report (section 3.7):
+- **A failing resource,** armed by the test. It throws `std::bad_alloc`,
+  so the failure is tested with exceptions on; without exceptions a resource that
+  cannot allocate ends the process and is not tested (section 3.7):
   - after one successful `make`, the next `make`'s first allocation fails: `make` gives
     `not_enough_memory` (from `EVP_CIPHER_CTX_new`), and a `make` after it succeeds
     (crypto-r3-review mode `failsecond`); its second allocation fails: `make` gives
