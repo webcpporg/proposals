@@ -12,7 +12,7 @@ On 64-bit ARM under macOS, iOS, Linux and Android, where the CPU has FEAT_DIT, e
 - **THEN** it is still set when the operation returns
 
 ### Requirement: Timing: every guarded function is tested to enter the guard
-A seam `WEBCPP_CRYPTO_DETAIL_TIMING_ENTERED()`, empty unless a test defines it, SHALL fire on every guard's construction, and a test MUST call every public function the first requirement names, on every backend the target builds, and fail when one does not fire it. The test SHALL run on every lane.
+A seam `WEBCPP_CRYPTO_DETAIL_TIMING_ENTERED(where)`, empty unless a test defines it, SHALL fire on every guard's construction with the guard's source location, and a test MUST call every public function the first requirement names, on every backend the target builds, and fail when the first guard the call enters is not that function's own. The test SHALL run on every lane.
 
 #### Scenario: A new function without a guard
 - **WHEN** a public function is added that calls a backend and holds no guard, and the coverage test calls it

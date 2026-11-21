@@ -99,3 +99,45 @@ there is no machine to test on. The guard is empty there; the documentation says
   extended with the function, which the review checklist of every later increment carries.
 - A kernel that does not preserve DIT across a context switch: Linux and Darwin keep PSTATE in
   the saved state, so the bit follows the thread.
+
+## As built (2026-11-20)
+
+The change was built on the branch `crypto/dit` of the library and the superproject, by the plan
+`reference/plan.md`, whose rulings R1 to R10 stand. What differs from the decisions above, or
+adds to them:
+
+- **D3, the seam is strict.** The seam is `WEBCPP_CRYPTO_DETAIL_TIMING_ENTERED(where)`, and
+  where a test defines it, `timing_guard` takes the `std::source_location` of its declaration;
+  without it the constructor takes no argument, since clang on arm64 does not inline the
+  constructor in release and kept every guarded function's signature and header path in the
+  program (test `timing_unseamed`, which reads its own release executable natively). The coverage test
+  records the function of the first guard a call enters and fails, naming the check, when no
+  guard fires or when that first guard is not the function's own: a count alone passed a
+  forwarder without its guard whenever its callee held one (the free `pem::unarmour`, `generate`
+  calling `make`). Each of these deleted guards was shown to fail the test, naming it.
+- **D1, `gcm`'s moves hold the guard** (ruling R3): on BearSSL a move runs `br_gcm_init`, an AES
+  encryption under the key, and abandoning a message runs the cipher on both BearSSL and
+  OpenSSL.
+- **D5, the planted leak runs inside the guard,** so that `dudect_planted` shows that DIT does
+  not hide an early-exit scan: |t| 66.72 and 65.53 (Apple M5 Max, 2026-11-21 UTC).
+- **D5, what the lane measured** (Apple M5 Max, natively, release, 2026-11-21 UTC): libsodium's
+  X25519 agreement with the library's guard alone |t| 1.78 to 2.82 over five runs; without DIT
+  (the library before the change, the harness's call removed) 4.34 to 7.78 over three runs,
+  below the threshold that day where the record of 2026-11-19 read 6.7 to 14.5; with the old
+  harness setting DIT 1.48 to 2.40. On wasip2 the case read 25.25, printed and not judged: the
+  finding stays open.
+- **D6, the cost of a guard** is measured by `bench/timing.cpp` and rendered by
+  `bench/collect.py --timing`: 40.3 ns per call where DIT was clear, 0.7 ns where it was set
+  (Apple M5 Max, release). **Open item:** these numbers and the throughput tables regenerated
+  with them were measured on a loaded machine; the page says so, and they are measured again in
+  a final measurement pass on a quiet machine after the streams of 2026-11-20 merge. That pass
+  also: (i) measures the guard again after its constructor stopped taking a
+  `std::source_location` outside tests (the 40.3 ns include an out-of-line call and its
+  argument); (ii) writes UTC dates (`doc/performance.json` holds local ones, 2026-11-20 for
+  measurements made on 2026-11-21 UTC); (iii) regenerates the release size matrix
+  (`doc/tables/sizes.json`, `generate.py --sizes`), which the guard changes on native arm64; and
+  (iv) tests which barrier each DIT write needs: Apple's guide ("Writing ARM64 code for Apple
+  platforms", "Enable DIT for constant-time cryptographic operations") asks for `sb` after
+  turning DIT on (`dsb nsh` then `isb sy` without FEAT_SB) and for none after turning it off,
+  while the guard executes `isb` after both; drop the exit `isb`, then both, try Apple's
+  barrier, and check dudect and the cost of each.

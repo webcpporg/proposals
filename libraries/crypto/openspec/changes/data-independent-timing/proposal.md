@@ -24,7 +24,7 @@ program to do.
   boxes, Ed25519, X25519 and kx, secp256k1 with its groups, the key formats and PEM), on every
   backend. Verification and public-key operations are included, so that the rule needs no
   judgment per function.
-- **A test seam, `WEBCPP_CRYPTO_DETAIL_TIMING_ENTERED()`**, empty unless a test defines it,
+- **A test seam, `WEBCPP_CRYPTO_DETAIL_TIMING_ENTERED(where)`**, empty unless a test defines it,
   through which a test proves that every such function enters the guard, on every target.
 - **The constant-time lane no longer sets DIT**: its dudect programs measure what a program gets
   from the library, and print what the CPU offers.
