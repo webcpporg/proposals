@@ -141,7 +141,7 @@ grouped by them and, inside each, into streams by backend (plan, "The order of t
 | 3 | XKCP's Keccak family: Keccak-224/384/512, SHA-3 and SHAKE as XKCP computes them, cSHAKE, KMAC (and its XOF), TupleHash, ParallelHash (SP 800-185), KangarooTwelve (KT128, KT256), TurboSHAKE128/256 | xkcp | the Keccak team's reference for everything above Keccak-p; one library already linked |
 | 4 | OpenSSL's whole hashing and KDF surface: every EVP digest of the default provider (SHA-1/2/3, SHAKE, KECCAK-224 to -512, SM3, BLAKE2b-512, BLAKE2s-256, RIPEMD-160, MD5), KMAC, BLAKE2 MACs, scrypt, Argon2d/i/id with every RFC 9106 parameter (lanes, secret, associated data), KBKDF (SP 800-108), SSKDF (SP 800-56C), X9.63 KDF | openssl | full Argon2 on servers; KDFs of standards (ECIES, TLS-adjacent formats); native, wasip2, wasip3 |
 | 5 | BearSSL's hashes and HMAC: MD5, SHA-1, SHA-224/256/384/512, MD5-SHA1, SHAKE | bearssl | the smallest WebAssembly programs, where measured so |
-| 6 | Botan 3's: PBKDF2, Argon2d/i/id with any parameters, bcrypt and bcrypt-pbkdf, scrypt, HKDF, BLAKE2b variable, Keccak, SHAKE, cSHAKE, KMAC, Skein-512, SM3, Streebog, Whirlpool | botan | the long tail; waits for webcpp::crypto's Botan provisioning (its increment 5: native, exceptions only) |
+| 6 | Botan 3's: MD5, SHA-1, SHA-2 but SHA-512/224, SHA-3, SHAKE, Keccak, BLAKE2b (no salt, no personalisation), BLAKE2s-256, RIPEMD-160, SM3, Streebog, Whirlpool, Skein-512, HMAC, KMAC (a key of at most 192 bytes, no KMACXOF), SipHash-2-4, keyed BLAKE2b; HKDF, PBKDF2, scrypt, Argon2d/i/id with lanes, secret and associated data, bcrypt and bcrypt-pbkdf, KBKDF, SSKDF, X9.63 KDF | botan | the long tail; Botan provisioned by this increment (plan Task 40b): native and Emscripten, exceptions only |
 | 7 | the browser backend over WebCrypto (SHA-1/256/384/512, HMAC, HKDF, PBKDF2), reached through the parallel asynchronous family (`async_digest`, `async_hmac`, `async_hkdf`, `async_pbkdf2`) | webcrypto | the owner's answer to O1 (section 11): the smallest Emscripten programs and JavaScript's own behaviour |
 
 **As built (2026-11-18).** Increments 2, 3, 4, 5 and 7 are built, each reviewed, on the
@@ -1076,7 +1076,7 @@ The one-shot hash is `digest_of`, not `digest`: `digest<N>` is Boost.Hash2's res
 2.4 re-exports by alias (ruling R10). Increment 2 adds to `config.hpp` the tags `backends::xkcp`
 and `backends::blake3` (the libraries behind `keccak_256` and `blake3`, now backends of the
 families) and every tag whose default 4.1 names; increment 7 adds `backends::webcrypto` (design
-D39). `backends::botan` is increment 6's, not built (design D42).
+D39). Increment 6 adds `backends::botan` (design D43).
 
 **The guards, in one place.** `detail::digest_traits<Digest>` and `detail::mac_traits<Mac>` hold
 each tag's guards; `digest_of` runs, in order: the output's size for the options
@@ -1175,8 +1175,7 @@ algorithm, which the agreement tests compare on the first result. Each tag's per
 are specified by the increment's task in the plan, from the backend's own documentation at its pin;
 the capability table of 3.5 says which backend has each. The tags of increment 6's functions
 (`digests::streebog_256`, `streebog_512`, `whirlpool`, `skein_512`, `kdfs::bcrypt`,
-`bcrypt_pbkdf`) are declared with no backend: a call refuses with "... is in no backend yet."
-(3.3).
+`bcrypt_pbkdf`) are served by `backends::botan`, which has them (3.5's Botan column, design D44).
 
 ## 3. Backends
 
@@ -1191,7 +1190,7 @@ the capability table of 3.5 says which backend has each. The tags of increment 6
 | (none: `keccak_256`) | XKCP, `lib/low/KeccakP-1600/plain-64bits` | master at `d20c8fcaecc543f816a0721d0dfc13b4cf27c14d` (2026-11-10) | CC0 (`brg_endian.h`: Brian Gladman's BSD-style terms) | all | Keccak-p[1600] |
 | (none: `blake3`) | BLAKE3's C implementation, `c/` | 1.8.7 at `f3149ec5bb5449af877ba20377a11008ff499fa2` | CC0-1.0, Apache-2.0, or Apache-2.0 with LLVM exception | all | BLAKE3 |
 | `backends::xkcp` (`keccak_256` in increment 2, the rest in increment 3) | XKCP, more of it: `lib/high/Keccak/KeccakSponge.c`, `lib/high/Keccak/FIPS202/KeccakHash.c`, `lib/high/Keccak/SP800-185/SP800-185.c`, `lib/high/TurboSHAKE/TurboSHAKE.c`, `lib/high/KangarooTwelve/KangarooTwelve.c` (5.2) | as above | as above | all | 3.5's XKCP column |
-| `backends::botan` (increment 6, not built: design D42) | Botan 3, as webcpp::crypto's increment 5 provisions it | 3.13.0 measured by crypto; 3.14.1 the latest tag on 2026-11-14 (`01af88c`) | BSD-2-Clause | native, with exceptions only (crypto's D19) | 3.5's Botan column |
+| `backends::botan` (increment 6, design D43) | Botan 3, provisioned by this stream (plan Task 40b) | Botan 3.14.1, tag `3.14.1`, commit `01af88c039fcfaedc418b1af4d6d3a139674e591`, provisioned by `/third_party//botan` (plan Task 40b) | BSD-2-Clause | native, Emscripten (wasip2 and wasip3 as webcpp::crypto's increment 7 finds), with exceptions only | 3.5's Botan column |
 | `backends::webcrypto` (increment 7, section 11) | the browser's or node's WebCrypto | the engine's | - | Emscripten | SHA-1/256/384/512, HMAC, HKDF, PBKDF2 over them, through the asynchronous family alone |
 
 ### 3.2 What each backend has
@@ -1272,7 +1271,7 @@ row:
   backends are listed in the order hash2, xkcp, blake3, sodium, bearssl, openssl, and a partial
   cell may carry its limit in brackets ("backends::xkcp (a block size that is a power of two of
   at least 8 bytes)" for ParallelHash);
-- a tag no backend has yet (increment 6's: Streebog, Whirlpool, Skein-512, bcrypt): "webcpp::hash:
+- a tag no backend has yet (a tag declared before its backend is built; none remains after increment 6): "webcpp::hash:
   <qualified tag> is in no backend yet."; HMAC over a digest no backend has it over
   (`digests::md5_sha1` included, ruling R92, and every extendable-output digest, over which HMAC
   is not defined): "webcpp::hash: macs::hmac over this digest is in no backend.", without "yet",
@@ -1389,31 +1388,31 @@ every default with `default_backend`, and every refusal text of 3.3 with its row
 
 | Function | hash2 | xkcp | blake3 | sodium | bearssl | openssl | botan | webcrypto (async, 11) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| MD5, SHA-1, SHA-2 (six) | 1 (Hash2); family: 2 | - | - | SHA-256, SHA-512: 2 | 5 (no SHA-512/t) | 4 | 6 | SHA-1/256/384/512: 7 |
+| MD5, SHA-1, SHA-2 (six) | 1 (Hash2); family: 2 | - | - | SHA-256, SHA-512: 2 | 5 (no SHA-512/t) | 4 | 6 (no SHA-512/224) | SHA-1/256/384/512: 7 |
 | MD5-SHA1 (TLS 1.0's 36 bytes) | - | - | - | - | 5 | 4 | - | - |
 | SHA-3 (four), SHAKE128/256 | 1 (Hash2); family: 2, SHAKE of any length (design D37) | 3 | - | SHA3-256/512, SHAKE: 2 | SHAKE: 5 | 4 | 6 | - |
 | Keccak-256 | - | 1 (`keccak_256`); family: 2 | - | - | - | 4 (`KECCAK-256`) | 6 | - |
 | Keccak-224, -384, -512 | - | 3 | - | - | - | 4 | 6 | - |
-| cSHAKE, KMAC, TupleHash, ParallelHash | - | 3 (ParallelHash: a block size that is a power of two of at least 8 bytes) | - | - | - | KMAC: 4 (OpenSSL's limits: a key of 4 to 512 bytes, a customisation of at most 512, a tag of at most 2,097,151) | cSHAKE, KMAC: 6 | - |
+| cSHAKE, KMAC, TupleHash, ParallelHash | - | 3 (ParallelHash: a block size that is a power of two of at least 8 bytes) | - | - | - | KMAC: 4 (OpenSSL's limits: a key of 4 to 512 bytes, a customisation of at most 512, a tag of at most 2,097,151) | KMAC: 6 (a key of at most 192 bytes; no KMACXOF) | - |
 | KangarooTwelve (KT128, KT256) | - | 3 | - | - | - | - | - | - |
 | TurboSHAKE128/256 | - | 3 | - | 2 | - | - | - | - |
-| BLAKE2b (key, salt, personalisation, length) | 512 fixed: 1 (Hash2); family: 2 (64 bytes, no option) | - | - | 2; keyed (`macs::blake2b_mac`), a key and a tag of 1 to 64 bytes: 2 | - | unkeyed, 1 to 64 bytes: 4; keyed (`macs::blake2b_mac`): 4 | 6 | - |
-| BLAKE2s-256 | 1 (Hash2); family: 2; keyed (`macs::blake2s_mac`), a 32-byte tag: 2 | - | - | - | - | 4; keyed: 4 | 6 | - |
+| BLAKE2b (key, salt, personalisation, length) | 512 fixed: 1 (Hash2); family: 2 (64 bytes, no option) | - | - | 2; keyed (`macs::blake2b_mac`), a key and a tag of 1 to 64 bytes: 2 | - | unkeyed, 1 to 64 bytes: 4; keyed (`macs::blake2b_mac`): 4 | 1 to 64 bytes, keyed: 6 (no salt, no personalisation); keyed (`macs::blake2b_mac`): 6 | - |
+| BLAKE2s-256 | 1 (Hash2); family: 2; keyed (`macs::blake2s_mac`), a 32-byte tag: 2 | - | - | - | - | 4; keyed: 4 | 6 (unkeyed: no `macs::blake2s_mac`) | - |
 | BLAKE3 (hash, keyed, derive_key, XOF) | - | - | 1; family: 2 | - | - | - | - | - |
 | RIPEMD-128, RIPEMD-160 | 1 (Hash2); family, RIPEMD-160: 2 | - | - | - | - | RIPEMD-160: 4 | RIPEMD-160: 6 | - |
 | SM3, Streebog, Whirlpool, Skein-512 | - | - | - | - | - | SM3: 4 | 6 | - |
-| HMAC | 1 (Hash2, every hash); family: 2 | - | - | SHA-256/512: 2 | 5 (MD5, SHA-1, SHA-224 to SHA-512) | 4 (each fixed-size digest of its own but MD5-SHA1; a key of at most `INT_MAX` bytes) | 6 | 7 |
-| SipHash-2-4, SipHash-2-4x | SipHash-2-4 64: 1 (Hash2); family, SipHash-2-4: 2 | - | - | 2 | - | 4 | 6 | - |
+| HMAC | 1 (Hash2, every hash); family: 2 | - | - | SHA-256/512: 2 | 5 (MD5, SHA-1, SHA-224 to SHA-512) | 4 (each fixed-size digest of its own but MD5-SHA1; a key of at most `INT_MAX` bytes) | 6 (each fixed-size digest it has) | 7 |
+| SipHash-2-4, SipHash-2-4x | SipHash-2-4 64: 1 (Hash2); family, SipHash-2-4: 2 | - | - | 2 | - | 4 | SipHash-2-4: 6 | - |
 | HKDF | 1 | - | - | 1 (SHA-256/512) | 1 | 1 | 6 | 7 |
-| `async_argon2id`, `async_argon2`, `async_scrypt`, `async_pbkdf2` on another thread | every backend that has the function, only with threads (11.5): natively always (unless `WEBCPP_HASH_NO_THREADS`), Emscripten `-pthread`; never WASI | | | | | | | `async_pbkdf2` without threads too |
-| PBKDF2 | 1 | - | - | - | - | 1 | 6 | 7 |
-| scrypt | - | - | - | 1 | - | 4 (r p below 2^24) | 6 | - |
+| `async_argon2id`, `async_argon2`, `async_scrypt`, `async_pbkdf2` on another thread | every backend that has the function, only with threads (11.5): natively always (unless `WEBCPP_HASH_NO_THREADS`), Emscripten `-pthread`; never WASI | | | | | | `async_argon2`, `async_argon2id`, `async_scrypt`, `async_pbkdf2`, `async_bcrypt`, `async_bcrypt_pbkdf`, `async_bcrypt_verify` (Task 43) | `async_pbkdf2` without threads too |
+| PBKDF2 | 1 | - | - | - | - | 1 | 6 (on wasm32 at most 2^32 - 1 iterations) | 7 |
+| scrypt | - | - | - | 1 | - | 4 (r p below 2^24) | 6 (N of at most 2^22, r of at most 256, p of at most 1,024, at most 8 GiB, 2 GiB on wasm32) | - |
 | Argon2id, one lane | - | - | - | 1 | - | 4 | 6 | - |
 | Argon2i | - | - | - | 2 (one lane, 3 passes or more) | - | 4 | 6 | - |
-| Argon2d; Argon2 with lanes, secret, associated data | - | - | - | - | - | 4 (m of at most 4,194,303 KiB on wasm32) | 6 | - |
+| Argon2d; Argon2 with lanes, secret, associated data | - | - | - | - | - | 4 (m of at most 4,194,303 KiB on wasm32) | 6 (at most 128 lanes; m of at most 8 GiB, 2 GiB on wasm32) | - |
 | BLAKE2b subkeys (`crypto_kdf`) | - | - | - | 2 | - | - | - | - |
-| bcrypt, bcrypt-pbkdf | - | - | - | - | - | - | 6 | - |
-| KBKDF (SP 800-108), SSKDF (SP 800-56C), X9.63 KDF | - | - | - | - | - | 4 (SSKDF and X9.63: at most 2^30 bytes each) | 6 (where it has them) | - |
+| bcrypt, bcrypt-pbkdf | - | - | - | - | - | - | 6 (bcrypt: a cost of at most 18) | - |
+| KBKDF (SP 800-108), SSKDF (SP 800-56C), X9.63 KDF | - | - | - | - | - | 4 (SSKDF and X9.63: at most 2^30 bytes each) | 6 (KBKDF with the separator and L; SSKDF without SHA-512/224) | - |
 
 A cell with a limit in brackets is partial in `doc/capabilities.json`: the backend answers
 `unsupported_by_backend` (for the families) or the function's guard error (for increment 1's
@@ -1421,13 +1420,13 @@ functions) where it refuses a value the family accepts, which the row's `partial
 "family: 2" is the cell of the families (2.15) over increment 1's library, from increment 2. The
 webcrypto column is the asynchronous family's alone (section 11): no synchronous function takes
 `backends::webcrypto`, which `doc/capabilities.json` marks `asynchronous_only` (design D39).
-Increment 6 is not built (design D42): the botan column is the plan's, not a cell of
-`doc/capabilities.json`, and at Botan 3.14.1 it overstates (no SipHash-2-4x, BLAKE2b without salt
-or personalisation, no TupleHash or ParallelHash; X9.63 is Botan's `kdf2` and the one-step SSKDF
-its `sp800_56a`).
-
-A cell of 6 is checked against Botan's documentation at its pin by increment 6's first task,
-which corrects the table where Botan lacks a function; no cell is assumed.
+The botan column is Botan 3.14.1's, as read by plan Task 41 at its tag (design D44): X9.63 is
+Botan's `KDF2`, the one-step SSKDF its `SP800-56A`; no SipHash-2-4x, no cSHAKE, TupleHash or
+ParallelHash, no `macs::blake2s_mac`. The cells reach `doc/capabilities.json` with each engine
+(plan Tasks 42 and 43). `doc/capabilities.json`'s backend `botan` has the targets `native` and
+`emscripten` and a field `exceptions_only: true`, which `tools/hash/doc_tables.py` renders as
+"with exceptions only" beside the backend, as `asynchronous_only` is rendered; like it, it
+raises no layout version.
 
 ## 4. The default backend
 
@@ -2112,8 +2111,8 @@ never inline. A rejected promise is `error::backend_failure`; a cancelled operat
 The deliberately slow functions get asynchronous variants that truly run on another thread, and only
 when the build has threads: `async_argon2id`, `async_argon2` (increment 2 on), `async_scrypt` and
 `async_pbkdf2` (with a synchronous backend), and every later memory-hard or deliberately slow
-function (Botan's bcrypt and bcrypt-pbkdf, increment 6, not built: their `async_bcrypt` and
-`async_bcrypt_pbkdf` come with it, design D42). Separate from the browser's family, which exists on
+function (Botan's bcrypt and bcrypt-pbkdf, increment 6: their `async_bcrypt`, `async_bcrypt_pbkdf` and
+`async_bcrypt_verify` come with it, plan Task 43, design D44). Separate from the browser's family, which exists on
 Emscripten with or without threads.
 
 ```cpp

@@ -330,8 +330,8 @@ length, SipHash-2-4 and -2-4x, `crypto_kdf` subkeys, Argon2i, SHAKE and TurboSHA
 SHA-3 and HMACs for agreement); 3, XKCP's Keccak family (Keccak-224/384/512, cSHAKE, KMAC,
 TupleHash, ParallelHash, KangarooTwelve, TurboSHAKE); 4, OpenSSL's (every EVP digest of the
 default provider, KECCAK-224 to -512 included, KMAC, BLAKE2 MACs, scrypt, Argon2d/i/id with every
-RFC 9106 parameter, KBKDF, SSKDF, X9.63); 5, BearSSL's hashes and HMAC; 6, Botan 3's (after
-webcpp::crypto provisions it); 7, the browser backend (D23). A capability table (spec 3.5),
+RFC 9106 parameter, KBKDF, SSKDF, X9.63); 5, BearSSL's hashes and HMAC; 6, Botan 3's (provisioned by
+the increment itself, D43); 7, the browser backend (D23). A capability table (spec 3.5),
 kept as `doc/capabilities.json` and compared by a test with `backend_has_v`, says which backend
 provides each function; every refusal names the backends that have it.
 
@@ -892,6 +892,10 @@ what a domain library would build).
 
 ### D42. Increment 6 waits for Botan
 
+> **Superseded by D43 and D44** on 2026-11-20: the stream provisions Botan itself instead of waiting
+> for webcpp::crypto (D43), and its module list and column are corrected at Botan 3.14.1 (D43, D44).
+> What follows is kept as the pre-flight's record.
+
 On 2026-11-17 Botan is not provisioned on webcpp's `main`: there is no `third_party/libs/botan` and
 no crypto target, since webcpp::crypto's increment 5 (Botan), built by its foundation change's
 increment 7, is not built (ruling R60). Increment 6 (plan Tasks 41 to 43) is not started, and
@@ -916,6 +920,68 @@ with "... is in no backend yet.". The pre-flight scan's findings stand for when 
   `async_scrypt` on `backends::botan` belong to Task 43, whose Step 2 adds them with their message
   tests.
 
+### D43. Botan provisioned by the stream, one module list, its targets, exceptions, canaries and randomness
+
+On 2026-11-20 the plan's controller ruled (rulings P1 to P6) that increment 6 does not wait for
+webcpp::crypto: its first task (plan Task 40b) provisions Botan on the stream, and D42's waiting
+is retired.
+
+- **Provisioning (P1).** The submodule `third_party/libs/botan` at Botan 3.14.1, tag `3.14.1`,
+  commit `01af88c039fcfaedc418b1af4d6d3a139674e591`, configured by upstream's `configure.py` per
+  target and configuration into the b2 build directory (`--minimized-build --enable-modules=<list>`),
+  each listed source compiled as its own object, never patched, never the amalgamation. The jam
+  module is `tools/webcpp-botan.jam`, the name crypto's D15 gives, declared as
+  `/third_party//botan`. A missing checkout stops with `git submodule update --init
+  third_party/libs/botan`.
+- **One module list (P2).** One copy of Botan per program (spec 5.5's rule), so one list,
+  `tools/botan/modules.txt`, holds hash's modules (D42's list, corrected at 3.14.1) and the modules
+  webcpp::crypto's Botan row needs, each with who needs it; crypto adds nothing.
+- **Targets (P3).** Native and Emscripten. wasip2 and wasip3 stop with a message until
+  webcpp::crypto's spike decides them; hash's Botan tests are native and Emscripten alone.
+- **Exceptions only (P4).** `/third_party//botan` with exception handling off stops the build with
+  a message; hash's Botan tests are `<exception-handling>on`, never through `hash-run`, and
+  `backends/botan.hpp` declares nothing under `WEBCPP_HASH_NO_EXCEPTIONS`.
+- **No canary in the provisioning (P5).** Each library adds its own, as bearssl's.
+- **No randomness from Botan (P6).** hash draws no random bytes from Botan; bcrypt's salt is the
+  caller's. No module of the list loads `system_rng`, `auto_rng` or an entropy source, and the
+  configuration step refuses a list that would.
+- **Why:** webcpp::crypto's Botan increment was not built, so waiting left increment 6 unbuilt for
+  no technical reason; one list keeps one copy of Botan in a program that uses both libraries.
+- **Alternatives:** waiting for crypto (D42; the blocker has no end date); a Botan list of hash's
+  own (two copies of Botan in one program, spec 5.5).
+- **Cost if wrong:** the list or the jam module moves to crypto's change, a rename of files.
+
+### D44. Botan's column at 3.14.1
+
+Plan Task 41 read the column against the checkout at `01af88c` (`HashFunction::create`,
+`XOF::create`, `MessageAuthenticationCode::create`, `KDF::create`, `PasswordHashFamily::create` and
+the modules' sources); spec 3.5's Botan cells are corrected to it:
+
+- **Absent:** `digests::sha2_512_224` (`sha2_64` has SHA-384, SHA-512 and SHA-512-256 alone);
+  `digests::cshake_128` and `cshake_256` (`cshake_xof` is an internal module, KMAC's);
+  TupleHash, ParallelHash, KT128, KT256, TurboSHAKE, BLAKE3 and MD5-SHA1; `macs::siphash_2_4x`
+  (`SipHash::output_length()` is 8); `macs::blake2s_mac` (`blake2mac` is BLAKE2b's alone);
+  `blake2b_subkey`.
+- **Partial:** `digests::blake2b` (no salt, no personalisation: `BLAKE2b(<bits>)`, keyed through
+  `BLAKE2bMAC`, a key of 1 to 64 bytes); `macs::kmac_128` and `kmac_256` (a key of at most 192
+  bytes, `KMAC::key_spec`, and no KMACXOF); `pbkdf2` on Emscripten (an iteration count above
+  2^32 - 1, a `size_t`); `kdfs::argon2d`, `argon2i`, `argon2id` (at most 128 lanes; m of at most
+  8 GiB, 2 GiB on wasm32); `scrypt` (N a power of two of at most 2^22, r of at most 256, p of at
+  most 1,024, memory of at most 8 GiB plus 2 MiB, 2 GiB plus 2 MiB on wasm32); `kdfs::bcrypt` (a
+  cost of 4 to 18, versions `a`, `b`, `y`, the salt 16 bytes drawn from the `rng` given);
+  `kbkdf` (`SP800-108-Counter` always writes the separator and L).
+- **Whole:** every other tag of the column, with `x963kdf` as Botan's `KDF2(<h>)` and `sskdf` as
+  its `SP800-56A(<h>)`; `kdfs::bcrypt_pbkdf` is whole (hash's guards are OpenBSD's, below them);
+  Keccak and Streebog-512 are deprecated in 3.14.1 and still served.
+- **The backend's field.** `doc/capabilities.json`'s backend `botan` has the targets `native` and
+  `emscripten`, and a field `exceptions_only: true`, which `tools/hash/doc_tables.py` renders as
+  "with exceptions only" beside the backend, as `asynchronous_only` is rendered (ruling R90); like
+  it, it raises no layout version (spec 3.5's precedent). Why: a reader of the table must see that
+  a program without exceptions has no `backends::botan`. Cost if wrong: one field renamed in the
+  file, the tool and its test.
+- **Heavy variants.** Task 43 adds `async_bcrypt`, `async_bcrypt_pbkdf` and `async_bcrypt_verify`
+  beside `async_argon2`, `async_argon2id`, `async_scrypt` and `async_pbkdf2` on `backends::botan`.
+
 ## Risks / Trade-offs
 
 - [libsodium's `sodium_init` on Emscripten stirs its random generator through JavaScript that
@@ -936,8 +1002,8 @@ with "... is in no backend yet.". The pre-flight scan's findings stand for when 
 - [The scope of increments 2 to 6 is wide] -> each increment is usable alone and merged before the
   next; a cell of the capability table is checked against the library at its pin by the
   increment's first task, never assumed.
-- [Botan's provisioning belongs to webcpp::crypto] -> increment 6 waits for it (D42), with the
-  pre-flight's findings kept for when it runs; nothing earlier depends on Botan.
+- [Botan's provisioning is shared with webcpp::crypto] -> hash provisions it (D43) with one module
+  list both libraries read; nothing earlier depends on Botan.
 - [OpenSSL 3.5.9's Argon2 leaves some of its allocations unchecked and returns success over a wrong
   tag when one fails] -> every OpenSSL call that raised an error is a failure whatever its
   functions returned, and an allocation's error is `errc::not_enough_memory` (spec 3.4); the

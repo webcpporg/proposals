@@ -9,7 +9,7 @@ from libsodium; from increment 2, the families `digest_of`, `hasher`, `mac` and 
 backend's hashes, MACs and KDFs, and the asynchronous family with the browser's WebCrypto. These
 requirements are the structured form of `reference/spec.md` and of the build, tests and tools of
 `reference/plan.md`; increments 1 to 5 and 7 are built in the library's repository, not yet
-published, and increment 6 waits for Botan.
+published, and increment 6 (Botan) is the stream's own, with Botan provisioned by it (design D43).
 
 ## ADDED Requirements
 
@@ -325,7 +325,7 @@ The library's page SHALL open the chapter of each namespace (digests, MACs, key 
 - **THEN** each chapter has two tables led by `Name`, each of fewer than eight columns, the second with the measured columns only when there are measurements
 
 ### Requirement: Increments by value, and a capability table
-The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next (increment 6 waits for Botan's provisioning and is not built, design D42): 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the default backend, the measured table as dated reference), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, after webcpp::crypto provisions Botan), 7 (the browser backend). `doc/capabilities.json` (layout version 5) MUST hold spec 3.5's table and, for each function row, its `"default"` backend (`hash2`, `xkcp`, `blake3`, `sodium`, or `null` for a type and for a tag with no default), and a test MUST compare it with `backend_has_v` for every cell and with `default_backend` for every default, and each increment's first task MUST check its column against the library at its pin.
+The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next (increment 6 provisions Botan itself, design D43): 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the default backend, the measured table as dated reference), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, provisioned by the increment), 7 (the browser backend). `doc/capabilities.json` (layout version 5) MUST hold spec 3.5's table and, for each function row, its `"default"` backend (`hash2`, `xkcp`, `blake3`, `sodium`, or `null` for a type and for a tag with no default), and a test MUST compare it with `backend_has_v` for every cell and with `default_backend` for every default, and each increment's first task MUST check its column against the library at its pin.
 
 #### Scenario: The table and the code agree
 - **WHEN** `capabilities_test` reads `doc/capabilities.json` and evaluates `backend_has_v` for every function and backend
@@ -357,7 +357,7 @@ From increment 2 on, `digest_of<Digest, Backend>` (named so beside Boost.Hash2's
 - **THEN** every output matches
 
 ### Requirement: OpenSSL's, BearSSL's and Botan's surfaces (increments 4 to 6)
-`backends::openssl` SHALL provide every EVP digest of the default provider (KECCAK-224 to -512 included), KMAC, BLAKE2 MACs, scrypt, Argon2d/i/id with every RFC 9106 parameter, KBKDF, SSKDF and the X9.63 KDF on native, wasip2 and wasip3; `backends::bearssl` its MD5, SHA-1, SHA-224/256/384/512, MD5-SHA1, SHAKE and HMAC; `backends::botan` (native, exceptions only, after webcpp::crypto provisions Botan) the functions of spec 3.5's Botan column that its first task confirms at Botan's pin. Each MUST pass the official vectors of every function and agree with every other backend that has it.
+`backends::openssl` SHALL provide every EVP digest of the default provider (KECCAK-224 to -512 included), KMAC, BLAKE2 MACs, scrypt, Argon2d/i/id with every RFC 9106 parameter, KBKDF, SSKDF and the X9.63 KDF on native, wasip2 and wasip3; `backends::bearssl` its MD5, SHA-1, SHA-224/256/384/512, MD5-SHA1, SHAKE and HMAC; `backends::botan` (native and Emscripten, exceptions only) the functions of spec 3.5's Botan column, as read at Botan 3.14.1 (design D44). Each MUST pass the official vectors of every function and agree with every other backend that has it.
 
 #### Scenario: RFC 9106 through the public interface
 - **WHEN** `argon2<kdfs::argon2id, backends::openssl>` runs RFC 9106 section 5.3's case
