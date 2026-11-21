@@ -71,14 +71,17 @@ None.
 ## Impact
 
 - **Kind:** a change to a wrapper (`"port-of": null`), as the genesis and the foundation.
-- **Implementation:** not started. `reference/plan.md` is the plan, written on 2026-11-20 on
-  the library's tree with the change `data-independent-timing` (the guard, its seam and the
-  coverage tests per backend), which this change requires merged first.
+- **Implementation:** built on 2026-11-21 on the branches `crypto/gaps` of the library and the
+  superproject, stacked on the change `data-independent-timing` (the guard, its seam and the
+  coverage tests per backend), by `reference/plan.md`; `design.md`'s section "As built" says what
+  differs.
 - **Status:** accepted on 2026-11-20 (the owner approved the six items that day and rules the
-  rest on autopilot; the rulings are `design.md`'s); nothing built.
+  rest on autopilot; the rulings are `design.md`'s); built and merged, its hosted-runner CI run
+  deferred to the end of the queue (`tasks.md` 4.3).
 - **Dependencies:** none new. The CI's judge is Python 3, as the superproject's tools.
 - **Other proposals:** it modifies requirements of `../genesis` (the block cipher's default,
   GCM's incremental open) and of `../foundation` (the defaults); the foundation's asynchronous
   family (its increment 4, part A, written the same day) is built after it, on the types this
   change leaves. The superproject's
-  `.github/workflows/library.yml` gains one step for crypto's constant-time lane.
+  `.github/workflows/library.yml` gains one step for crypto's constant-time lane, and that lane
+  a longer bound under wasmtime and a longer job timeout.

@@ -254,6 +254,51 @@ its examples). `aes256<>`'s type identity changes; its `backend_type` natively d
 changelog's first line gains a clause (the ten-line rule, as the change
 `data-independent-timing` did).
 
+## As built (2026-11-21)
+
+The change was built on the branch `crypto/gaps` of the library and the superproject, by the plan
+`reference/plan.md`, with each task reviewed and a final review of the whole branch. What differs
+from the decisions above, or adds to them:
+
+- **D2, one rule for a call out of phase.** Every member of the incremental seal and open checks
+  its phase the same way: with no message it only answers `invalid_state`; in another phase it
+  abandons that message, then answers. So `update` and `result` during an open end it, as
+  `begin_seal` does. The example `opened_in_two_passes` keeps its "file" in a `std::stringstream`,
+  since the WASI launchers give a program no directory, and says to discard the plaintext written
+  so far when `decrypt` or `end_open` fails. The allocation tests of OpenSSL and BearSSL pin that
+  the two-pass open allocates nothing per message (on OpenSSL `verify` restarts the context with
+  `EVP_CipherInit_ex`). The error reference names the open's sources of `invalid_state`,
+  `invalid_tag_size` and `invalid_input_size`.
+- **D3, `gcm.hpp` includes `aes.hpp`**, whose resolver it names. The WebAssembly row of the block
+  cipher's default cites `default_bearssl` (a type check, since it links no ctaes) and
+  `default_both_wasm` links ctaes; the message test of the default not linked runs natively (ctaes
+  alone), on wasip2 and wasip3 (OpenSSL alone), and on Emscripten as the superproject's fixture
+  `aes_block_default_not_linked_on_emscripten`, with `aes_block_default` the fixture of the alias.
+  The page states that `aes256<>` is not the type `aes256<backends::openssl>`. A program that
+  names `aes256<backends::openssl>` natively without linking OpenSSL is now refused by the
+  default's text, as GCM's already was: a wording of the generator's to improve later.
+- **D4, the bound is `basic_keypair::max_draws`** (4), a public constant the test reads; an
+  all-zero draw is tested as well as one above the group order.
+- **D5, the ECDH pin already existed** in `secp256k1_ecdh_test.cpp`; nothing was added for it.
+- **D6, every decision is on the value as printed,** rounded to two decimals (`printed`), so a
+  |t| of 9.996 prints `t=10.00`, with its evidence, and fails. An unjudged case (X25519's
+  agreement on wasip2) is measured once, since a second seed changes no verdict. On arm64 Linux,
+  whose `/proc/cpuinfo` has no `model name`, the machine line names the CPU by its implementer,
+  part, variant and revision. The addresses print three hex digits. What the lane read (Apple M5
+  Max, natively, release, 2026-11-21 UTC, on a machine under a load average of 95 to 235, so
+  provisional): the A/A controls 1.61, 2.42 and 1.95; `dudect_planted` 92.88 and 53.20; on wasip2
+  X25519's agreement 53.53 (not judged), its A/A 2.58, `ecdh_x` 1.90 and `ecdh_x_aa` 1.97.
+- **D7, the judge also skips `dudect_harness`,** whose values are made up and which b2 judges
+  itself. Under wasmtime `dudect_secp256k1` (two cases of 500,000 measurements) and
+  `dudect_sodium` take several minutes, close to the launcher's 600 seconds: the CI gives
+  crypto's constant-time lane and the judge `WEBCPP_WASIP2_TEST_TIMEOUT=1800`, the job 120
+  minutes in place of 60, and the judge's own subprocesses 2400 seconds, so the launcher's bound
+  fires first; the step runs unless the job was cancelled. The release notes of 0.1.0 list it
+  under "Tools and build".
+- **Open items.** The final measurement pass, after the streams of 2026-11-20 merge, times both
+  wasip2 programs against the 1800-second bound and measures the lane's values on a quiet
+  machine; the hosted constant-time lane's first judged run is read then (`tasks.md` 4.3).
+
 ## Open Questions
 
 None: the owner approved the six items and rules the rest on autopilot; each ruling above is

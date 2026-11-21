@@ -5,7 +5,7 @@ webcpp:
   title: "crypto: the API gaps of version 0.2 closed, and dudect judged on hosted runners"
   kind: wrapper
   port_of: null
-  status: accepted
+  status: implementing
   release: null
-  implementation: null
+  implementation: https://github.com/webcpporg/crypto
   decided: 2026-11-20
