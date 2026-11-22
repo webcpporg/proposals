@@ -46,6 +46,13 @@ On 2026-11-22 the owner decided to type all three in one small change merged bef
   data they refused. `crypto::seal`, `crypto::open` and the asynchronous forms are constrained by
   them, and `async_seal` and `async_open` extend to every AEAD and box on native backends; the
   browser backend keeps WebCrypto's AES-GCM only, refusing the others with a clear message.
+- **Constructions grouped by purpose**: the namespace `crypto::hybrid` is removed;
+  `crypto::public_key_encryption` holds `basic_box`, `box`, `box_xchacha20poly1305`,
+  `basic_sealed_box` and `sealed_box` (`<webcpp/crypto/public_key_encryption/box.hpp>`,
+  `sealed_box.hpp`), and `crypto::key_exchange` holds `kx_keypair` and `session_keys`, out of
+  `curves::x25519` (`<webcpp/crypto/key_exchange/kx.hpp>`); no alias. "Hybrid" now names
+  post-quantum hybrids (X25519MLKEM768, X-Wing), which keep `crypto::hybrid` free; a future HPKE
+  goes to `public_key_encryption`.
 - **Four mirrored forms** for every new operation that calls a backend.
 
 ## Capabilities
@@ -67,7 +74,8 @@ None.
   then crypto's formats; then phase 3 of
   webcpp::trystero's port of Trystero 0.27, which adapts to both.
 - **Implementation:** webcpporg/crypto (`signing.hpp`, `keypair.hpp`, `curves/*.hpp`,
-  `curves/x25519/kx.hpp`, `ciphers/*.hpp`, `hybrid/*.hpp`, `async.hpp`, a new `aead.hpp` concept
+  `key_exchange/kx.hpp` (was `curves/x25519/kx.hpp`), `ciphers/*.hpp`,
+  `public_key_encryption/*.hpp` (was `hybrid/*.hpp`), `async.hpp`, a new `aead.hpp` concept
   header, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
   the generated files), the superproject's pointer.
 - **Status:** approved by the owner on 2026-11-22 (`decided`); it stays `proposed` in the

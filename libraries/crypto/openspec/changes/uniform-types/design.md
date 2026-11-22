@@ -72,9 +72,21 @@ Second round, the same day, answering the first draft's rulings:
 6. **`verify` takes only the typed signature**, with no bytes overload; a signature from the wire
    goes through `make` first (R1 confirmed).
 7. **libsodium's seeded kx derivation keeps a distinct name**, option (b):
-   `x25519::kx_keypair::derive_from_seed(seed)` (`crypto_kx_seed_keypair`: the secret is
+   `key_exchange::kx_keypair::derive_from_seed(seed)` (`crypto_kx_seed_keypair`: the secret is
    BLAKE2b-256 of the seed), beside `make(x25519_keypair)` and `generate()`; `make` keeps its
    library-wide meaning, "these bytes, or this key, are the secret" (R5 replaced).
+
+Third round, the same day:
+
+8. **`crypto::hybrid` is removed as a namespace; constructions are grouped by purpose**:
+   `crypto::public_key_encryption::{basic_box, box, box_xchacha20poly1305, basic_sealed_box,
+   sealed_box}` and `crypto::key_exchange::{kx_keypair, session_keys}` (out of `curves::x25519`),
+   with no alias for the old names; kx's `derive_from_seed` is unchanged. The reason: "hybrid
+   encryption" (a KEM with a DEM) does not describe crypto_kx, and "hybrid" now means post-quantum
+   hybrids (X25519MLKEM768, X-Wing), so `crypto::hybrid` stays free for those. `curves` holds curve
+   primitives only, `ciphers` symmetric ciphers, and the two new namespaces the composed
+   constructions, named by the problem they solve; a future HPKE (RFC 9180) lives in
+   `public_key_encryption`.
 
 ## Approaches
 
@@ -141,7 +153,7 @@ false for a signature of another curve or scheme, with a message naming the type
 
 ### D3. crypto_kx, the boxes and Ed25519's conversion on typed keys
 
-- `curves::x25519::kx_keypair<Backend>` holds an `x25519::basic_keypair<Backend>`: made from one
+- `key_exchange::kx_keypair<Backend>` holds an `x25519::basic_keypair<Backend>`: made from one
   (`make(x25519_keypair)`), by `generate()`, or by `derive_from_seed(seed)`, libsodium's seeded
   derivation (`crypto_kx_seed_keypair`: the secret is BLAKE2b-256 of the 32-byte seed), kept under
   its own name because programs store kx seeds (owner decision 7). The two differ on the same 32
@@ -151,9 +163,9 @@ false for a signature of another curve or scheme, with a message naming the type
   `x25519::public_key`; `client_session_keys(server)` and `server_session_keys(client)` take an
   `x25519::public_key` and return `session_keys` as today. Its seed and secret are the inner key
   pair's (`keypair()` gives it by reference).
-- `hybrid::basic_box<Family, B>::make(own, peer)`, `own` an `x25519::basic_keypair<B>`, `peer` an
+- `public_key_encryption::basic_box<Family, B>::make(own, peer)`, `own` an `x25519::basic_keypair<B>`, `peer` an
   `x25519::public_key`, computing the shared key once (libsodium's `beforenm`) as today.
-- `hybrid::basic_sealed_box<B>::seal(recipient, message, out)`, `recipient` an
+- `public_key_encryption::basic_sealed_box<B>::seal(recipient, message, out)`, `recipient` an
   `x25519::public_key`; `open(recipient, sealed, out)`, `recipient` an `x25519::basic_keypair<B>`.
 - `ed25519::basic_keypair<B>::to_x25519()` returns `result<x25519::basic_keypair<B'>>`, `B'` the
   X25519 family's backend that matches (libsodium for libsodium), and
@@ -161,6 +173,23 @@ false for a signature of another curve or scheme, with a message naming the type
   a key that is not canonical or of small order; the free `crypto::to_x25519(value)` calls either.
   They are conversions of bytes the program holds and WebCrypto has none: synchronous only, member
   and free (R4). `x25519_secret()` and `curves::ed25519::to_x25519_public` are removed.
+
+### D3b. Namespaces by purpose (owner decision 8)
+
+| Before | After | Header |
+|---|---|---|
+| `hybrid::basic_box`, `hybrid::box`, `hybrid::box_xchacha20poly1305` | `public_key_encryption::basic_box`, `box`, `box_xchacha20poly1305` | `<webcpp/crypto/public_key_encryption/box.hpp>` (was `hybrid/box.hpp`) |
+| `hybrid::basic_sealed_box`, `hybrid::sealed_box` | `public_key_encryption::basic_sealed_box`, `sealed_box` | `<webcpp/crypto/public_key_encryption/sealed_box.hpp>` (was `hybrid/sealed_box.hpp`) |
+| `curves::x25519::kx_keypair`, `curves::x25519::session_keys` | `key_exchange::kx_keypair`, `key_exchange::session_keys` | `<webcpp/crypto/key_exchange/kx.hpp>` (was `curves/x25519/kx.hpp`) |
+
+The namespaces follow the directories, as `ciphers` and `curves` do; `detail`'s engines and states
+of these types move with them (`detail::box_engine` and the others keep their names). The families
+(`families::box_xsalsa20poly1305`, `families::box_xchacha20poly1305`, `families::sealed_box`,
+`families::kx`), their backends and their capability rows are unchanged: only the namespaces and
+headers of the public types move, and `crypto.json`'s entries that name a header or a type are
+updated and its generated files rerun. The convenience header includes the new headers in place of
+the old. The directory `hybrid/` and the namespace `crypto::hybrid` stay empty and unused in this
+change, free for a later post-quantum hybrid (X25519MLKEM768, X-Wing).
 
 ### D4. The key pair concepts
 
@@ -210,7 +239,7 @@ A new header `<webcpp/crypto/aead.hpp>` (the concepts only; `ciphers/aead.hpp` k
 | `ciphers::gcm<Cipher>` (`aes128_gcm`, `aes256_gcm`) | `streaming_aead` |
 | `ciphers::chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305` | `aead` |
 | `ciphers::secretbox`, `secretbox_xchacha20poly1305` | `authenticated_box` |
-| `hybrid::box`, `box_xchacha20poly1305` | `authenticated_box` |
+| `public_key_encryption::box`, `box_xchacha20poly1305` | `authenticated_box` |
 
 Each header checks its row with a `static_assert`. secretbox leaves the `ciphers::aead` template:
 it becomes `ciphers::basic_secretbox<Family, B>` with `make(key)`, `seal(iv, data)` and
@@ -240,9 +269,10 @@ these concepts cover.
 Removed with no alias: the span `verify` and `recover` overloads of crypto/sign-unified; `sign`'s
 array results; `curves::x25519::public_key(secret)`, `curves::x25519::agree(secret, peer)`;
 `ed25519::basic_keypair::x25519_secret()`, `curves::ed25519::to_x25519_public`;
-`kx_keypair::make(seed)` (now `derive_from_seed`); the boxes'
+`kx_keypair::make(seed)` (now `derive_from_seed`); the namespace `crypto::hybrid` and the headers
+`hybrid/box.hpp`, `hybrid/sealed_box.hpp` and `curves/x25519/kx.hpp` (D3b); the boxes'
 byte-key `make`, `seal` and `open`; secretbox's additional data. Every caller in libs/crypto moves
-in the same change: tests, examples, the page, the constant-time harnesses and suppressions, the
+in the same change: tests, examples, fixtures, the page, the constant-time harnesses and suppressions, the
 benches, the message tests, the MSVC tests, `doc/tables/crypto.json` and its generated files
 (rerun, never edited). The X25519 format functions keep their names here and leave with the
 formats change, which gives them the typed keys' formats.

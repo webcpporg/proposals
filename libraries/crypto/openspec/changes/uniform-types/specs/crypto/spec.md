@@ -37,7 +37,7 @@ The library SHALL offer `curves::ed25519::signature` (64 bytes), `curves::p256::
 - **THEN** the converted key pair's `public_key()` equals the converted public key, and libsodium's `crypto_sign_ed25519_sk_to_curve25519` and `pk_to_curve25519` give the same bytes
 
 ### Requirement: AEADs and boxes: concepts
-`<webcpp/crypto/aead.hpp>` SHALL declare `crypto::aead<C>` (`key_size`, `iv_size`, `tag_size`, `result_type`, `static make(key)` returning `result<C>`, `seal(iv, additional_data, data)` returning `result<result_type>`, `open(iv, additional_data, data, tag)` returning `result<void>`), its refinement `crypto::streaming_aead<C>` (`begin_seal`, `update`, `result`, `begin_open`, `authenticate`, `decrypt`, `verify`, `end_open`) and the sibling `crypto::authenticated_box<C>` (`key_size`, `iv_size`, `tag_size`, `result_type`, `seal(iv, data)`, `open(iv, data, tag)`). `ciphers::gcm<Cipher>` MUST be a `streaming_aead`; `ciphers::chacha20_poly1305`, `chacha20_poly1305_original` and `xchacha20_poly1305` `aead`s; `ciphers::secretbox`, `secretbox_xchacha20poly1305`, `hybrid::box` and `box_xchacha20poly1305` `authenticated_box`es taking no additional data; each checked by a `static_assert` in its header. `crypto::seal` and `crypto::open` MUST exist in an `aead` form (with additional data) and an `authenticated_box` form (without), each constrained by its concept.
+`<webcpp/crypto/aead.hpp>` SHALL declare `crypto::aead<C>` (`key_size`, `iv_size`, `tag_size`, `result_type`, `static make(key)` returning `result<C>`, `seal(iv, additional_data, data)` returning `result<result_type>`, `open(iv, additional_data, data, tag)` returning `result<void>`), its refinement `crypto::streaming_aead<C>` (`begin_seal`, `update`, `result`, `begin_open`, `authenticate`, `decrypt`, `verify`, `end_open`) and the sibling `crypto::authenticated_box<C>` (`key_size`, `iv_size`, `tag_size`, `result_type`, `seal(iv, data)`, `open(iv, data, tag)`). `ciphers::gcm<Cipher>` MUST be a `streaming_aead`; `ciphers::chacha20_poly1305`, `chacha20_poly1305_original` and `xchacha20_poly1305` `aead`s; `ciphers::secretbox`, `secretbox_xchacha20poly1305`, `public_key_encryption::box` and `box_xchacha20poly1305` `authenticated_box`es taking no additional data; each checked by a `static_assert` in its header. `crypto::seal` and `crypto::open` MUST exist in an `aead` form (with additional data) and an `authenticated_box` form (without), each constrained by its concept.
 
 #### Scenario: secretbox has no additional data
 - **WHEN** a program calls `secretbox.seal(nonce, additional_data, data)`
@@ -49,6 +49,13 @@ The library SHALL offer `curves::ed25519::signature` (64 bytes), `curves::p256::
 #### Scenario: XChaCha20-Poly1305 asynchronously
 - **WHEN** a coroutine `co_await crypto::async_seal(executor, aead, nonce, ad, data, use_awaitable)` runs with `ciphers::xchacha20_poly1305` on libsodium natively
 - **THEN** it completes with the tag the synchronous `seal` gives, and the same call on a stand-in browser backend does not compile
+
+### Requirement: Constructions: grouped by purpose
+The library SHALL offer crypto_box and sealed boxes in namespace `webcpp::crypto::public_key_encryption` (`basic_box`, `box`, `box_xchacha20poly1305` in `<webcpp/crypto/public_key_encryption/box.hpp>`; `basic_sealed_box`, `sealed_box` in `<webcpp/crypto/public_key_encryption/sealed_box.hpp>`) and crypto_kx in namespace `webcpp::crypto::key_exchange` (`kx_keypair`, `session_keys` in `<webcpp/crypto/key_exchange/kx.hpp>`). The namespace `webcpp::crypto::hybrid`, the headers `hybrid/box.hpp`, `hybrid/sealed_box.hpp` and `curves/x25519/kx.hpp`, and `curves::x25519::kx_keypair` and `curves::x25519::session_keys` MUST NOT exist, with no alias; `curves` MUST hold curve primitives only.
+
+#### Scenario: The old names are gone
+- **WHEN** a program includes `<webcpp/crypto/hybrid/box.hpp>` or names `crypto::hybrid::box` or `crypto::curves::x25519::kx_keypair`
+- **THEN** it does not compile, and the same program with `<webcpp/crypto/public_key_encryption/box.hpp>`, `crypto::public_key_encryption::box` and `crypto::key_exchange::kx_keypair` builds and runs
 
 ## MODIFIED Requirements
 
@@ -105,14 +112,14 @@ The library SHALL offer `curves::ed25519::signature` (64 bytes), `curves::p256::
 - **THEN** its `public_key()` equals the Ed25519 key pair's public key's `to_x25519()`
 
 ### Requirement: Boxes: crypto_box, sealed boxes and secretbox
-The library SHALL offer `hybrid::box` (X25519, XSalsa20-Poly1305) and `hybrid::box_xchacha20poly1305`, made from an `x25519::basic_keypair` and a peer's `x25519::public_key` so that the shared key is computed once (libsodium's `beforenm`), with `seal(nonce, data)` and `open(nonce, data, tag)` in place and the 16-byte tag apart; `hybrid::sealed_box::seal(recipient, data, out)`, `recipient` an `x25519::public_key`, and `open(recipient, sealed, out)`, `recipient` an `x25519::basic_keypair`; and `ciphers::secretbox` and `ciphers::secretbox_xchacha20poly1305`, keyed objects over 32-byte keys with 24-byte nonces, `seal(nonce, data)` and `open(nonce, data, tag)`, taking no additional data. A failed `open` MUST zero `data`, as the genesis's AEADs do.
+The library SHALL offer `public_key_encryption::box` (X25519, XSalsa20-Poly1305) and `public_key_encryption::box_xchacha20poly1305`, made from an `x25519::basic_keypair` and a peer's `x25519::public_key` so that the shared key is computed once (libsodium's `beforenm`), with `seal(nonce, data)` and `open(nonce, data, tag)` in place and the 16-byte tag apart; `public_key_encryption::sealed_box::seal(recipient, data, out)`, `recipient` an `x25519::public_key`, and `open(recipient, sealed, out)`, `recipient` an `x25519::basic_keypair`; and `ciphers::secretbox` and `ciphers::secretbox_xchacha20poly1305`, keyed objects over 32-byte keys with 24-byte nonces, `seal(nonce, data)` and `open(nonce, data, tag)`, taking no additional data. A failed `open` MUST zero `data`, as the genesis's AEADs do.
 
 #### Scenario: A sealed box opened by its recipient
 - **WHEN** a message is sealed to a recipient's `x25519::public_key` and opened with the recipient's key pair
 - **THEN** it opens, and a sealed box changed in one byte returns `authentication_failed` with `data` zeroed
 
 ### Requirement: Key exchange: crypto_kx
-`curves::x25519::kx_keypair<Backend>` SHALL be made from an `x25519::basic_keypair<Backend>` by `make`, by `generate()`, or from a 32-byte seed by `derive_from_seed(seed)`, libsodium's `crypto_kx_seed_keypair` (the secret is BLAKE2b-256 of the seed), no `make` taking a seed, give its `x25519::public_key`, and compute `client_session_keys(server_public_key)` and `server_session_keys(client_public_key)`, each peer an `x25519::public_key`, each returning a receive key and a transmit key as `secret<32>`, through libsodium's `crypto_kx`, and return `weak_public_key` where libsodium refuses the peer's key.
+`key_exchange::kx_keypair<Backend>` SHALL be made from an `x25519::basic_keypair<Backend>` by `make`, by `generate()`, or from a 32-byte seed by `derive_from_seed(seed)`, libsodium's `crypto_kx_seed_keypair` (the secret is BLAKE2b-256 of the seed), no `make` taking a seed, give its `x25519::public_key`, and compute `client_session_keys(server_public_key)` and `server_session_keys(client_public_key)`, each peer an `x25519::public_key`, each returning a receive key and a transmit key as `secret<32>`, through libsodium's `crypto_kx`, and return `weak_public_key` where libsodium refuses the peer's key.
 
 #### Scenario: Client and server agree
 - **WHEN** a client and a server compute their session keys from each other's public keys

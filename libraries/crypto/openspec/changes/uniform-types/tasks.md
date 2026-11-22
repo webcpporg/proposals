@@ -16,6 +16,8 @@ accepted.
 - [ ] 2.2 `kx_keypair` on the typed key pair, `make`, `generate` and `derive_from_seed`, tested against `crypto_kx_seed_keypair` and against `make` on the same bytes; the boxes and the sealed box on typed keys (D3, R5, R6, owner decision 7)
 - [ ] 2.3 Ed25519's `to_x25519()` on the key pair and the public key, the free `crypto::to_x25519`; `x25519_secret()` and `to_x25519_public` removed (D3, R4)
 
+- [ ] 2.4 `crypto::public_key_encryption` and `crypto::key_exchange`: the boxes, the sealed boxes, `kx_keypair` and `session_keys` moved with their headers, `crypto::hybrid` removed with no alias; every caller moved (tests, examples, fixtures, the page, `crypto.json` and its generated files, the MSVC and message tests), the convenience header updated (D3b, owner decision 8)
+
 ## 3. Concepts
 
 - [ ] 3.1 `keypair`, `signing_keypair`, `agreement_keypair` and each curve's `static_assert`s; `crypto::sign`, `crypto::agree` and their asynchronous forms constrained; message tests (D4)
