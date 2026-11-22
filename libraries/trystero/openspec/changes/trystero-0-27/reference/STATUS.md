@@ -116,6 +116,8 @@ Carries inside trystero:
 - Commit subjects of the review-fix commits (`5c7f578`, `ea6f2d1`, `b4b87e9`, `487c99e`) are
   paragraphs; Phase 2's commits take a one-sentence subject and the list in the body (no history
   rewrite).
+- The clauses "not interoperable before Phase 2" in `room.hpp`'s doc comments, and the same
+  marking on the library's pages, come out in 2.6 once the interop lanes pass.
 - 2.7 writes the docs whole (README, every page, chapter 15), the changelog's entry, and merges.
 
 ## How to resume
