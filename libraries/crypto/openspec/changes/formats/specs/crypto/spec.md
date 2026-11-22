@@ -1,25 +1,25 @@
 ## ADDED Requirements
 
 ### Requirement: Formats: tags as values and one list
-`<webcpp/crypto/formats.hpp>` SHALL declare, in namespace `webcpp::crypto`, the format tags `raw`, `spki`, `pkcs8`, `der`, `jwk` and `pem`, constexpr objects of empty types whose default constructors are explicit; the point form modifiers `compressed`, `uncompressed` and `xonly`, taken by `raw(form)` and `spki(form)`; `pem(inner)` for an `inner` that is `spki` (with any form) or `pkcs8`, whose label is `PUBLIC KEY` for `spki` and `PRIVATE KEY` for `pkcs8`, taken from the inner format and never from the caller; and one list of formats, `detail::all_formats`, from which `detail::is_format_v`, the concepts, the tests and the guide's table of valid pairs derive. `pem` of any other format MUST stop the build, no function MUST take a PEM label from its caller, and `formats.hpp` MUST include no curve and no backend.
+`<webcpp/crypto/formats.hpp>` SHALL declare, in namespace `webcpp::crypto`, the format tags `raw`, `spki`, `pkcs8`, `der` and `pem`, constexpr objects of empty types whose default constructors are explicit; the point form modifiers `compressed`, `uncompressed` and `xonly`, taken by `raw(form)` and `spki(form)`; `pem(inner)` for an `inner` that is `spki` (with any form) or `pkcs8`, whose label is `PUBLIC KEY` for `spki` and `PRIVATE KEY` for `pkcs8`, taken from the inner format and never from the caller; and one list of formats, `detail::all_formats`, from which `detail::is_format_v`, the concepts, the tests and the guide's table of valid pairs derive, and to which a later format (JWK) is added as one tag, one line of the list and its codecs, with no change to any existing signature or concept. `pem` of any other format MUST stop the build, no function MUST take a PEM label from its caller, and `formats.hpp` MUST include no curve and no backend.
 
 #### Scenario: The label follows the inner format
 - **WHEN** a P-256 public key is encoded with `crypto::pem(crypto::spki)` and a P-256 key pair with `crypto::pem(crypto::pkcs8)`
 - **THEN** the texts begin with `-----BEGIN PUBLIC KEY-----` and `-----BEGIN PRIVATE KEY-----`, and each is byte for byte what OpenSSL's `PEM_write_PUBKEY` and `PEM_write_PrivateKey` write for the same key
 
 #### Scenario: PEM of a format that is not DER
-- **WHEN** a program writes `crypto::pem(crypto::jwk)` or `crypto::pem(crypto::der)`
+- **WHEN** a program writes `crypto::pem(crypto::der)` or `crypto::pem(crypto::raw)`
 - **THEN** compilation stops with a message saying that PEM carries `pem(crypto::spki)` or `pem(crypto::pkcs8)`
 
 ### Requirement: Formats: four mirrored forms and a fixed result
-The library SHALL offer `crypto::encode(format, value)`, returning `boost::system::result<crypto::encoded<N, Form>>`; `crypto::encode(format, value, output)`, writing into a caller's `std::span<std::uint8_t>` (binary formats) or `std::span<char>` (text formats) and returning `result<std::size_t>`; `crypto::decode<T>(format, input)`, returning `result<T>`, `input` a `std::span<std::uint8_t const>` for `raw`, `spki`, `pkcs8` and `der`, a `std::string_view` for `pem(F)` and `jwk`; and the members `value.encode(format)` and `T::decode(format, input)`, with one implementation behind all four. Each curve's `curves/<curve>/formats.hpp` MUST hold its types' codecs and define their members, so that a program using one curve's formats pulls no other backend. `encoded<N, Form>` MUST hold its bytes in a fixed array of `N = crypto::max_encoded_size<Format, T>` elements, the format's maximum for the type computed at compile time, with its length, `bytes()` on every form and `text()` on text forms only; the encodings of a private key (`pkcs8`, `pem(pkcs8)`, a key pair's `jwk` and `raw`) MUST be move-only and wiped on destruction and on move, as `secret<N>` is. No encode or decode MUST allocate from the heap, except that encoding a JWK into a document allocates in that document's storage. The span form MUST refuse an output shorter than `max_encoded_size` with `invalid_input_size` and write nothing on any error.
+The library SHALL offer `crypto::encode(format, value)`, returning `boost::system::result<crypto::encoded<N, Form>>`; `crypto::encode(format, value, output)`, writing into a caller's `std::span<std::uint8_t>` (binary formats) or `std::span<char>` (text formats) and returning `result<std::size_t>`; `crypto::decode<T>(format, input)`, returning `result<T>`, `input` a `std::span<std::uint8_t const>` for `raw`, `spki`, `pkcs8` and `der`, a `std::string_view` for `pem(F)`; and the members `value.encode(format)` and `T::decode(format, input)`, with one implementation behind all four. Each curve's `curves/<curve>/formats.hpp` MUST hold its types' codecs and define their members, so that a program using one curve's formats pulls no other backend. `encoded<N, Form>` MUST hold its bytes in a fixed array of `N = crypto::max_encoded_size<Format, T>` elements, the format's maximum for the type computed at compile time, with its length, `bytes()` on every form and `text()` on text forms only; the encodings of a private key (`pkcs8`, `pem(pkcs8)` and a key pair's `raw`) MUST be move-only and wiped on destruction and on move, as `secret<N>` is. No encode or decode MUST allocate from the heap. The span form MUST refuse an output shorter than `max_encoded_size` with `invalid_input_size` and write nothing on any error.
 
 #### Scenario: The same bytes from every form
 - **WHEN** a secp256k1 public key is encoded with `crypto::encode(crypto::spki, key)`, `key.encode(crypto::spki)` and `crypto::encode(crypto::spki, key, output)`
 - **THEN** the three give the same 88 bytes, and `crypto::decode<secp256k1::public_key>(crypto::spki, bytes)` and `secp256k1::public_key::decode(crypto::spki, bytes)` give the key back
 
 #### Scenario: No heap
-- **WHEN** every valid pair of the format table is encoded and decoded under a counting `operator new`, JWK texts included
+- **WHEN** every valid pair of the format table is encoded and decoded under a counting `operator new`
 - **THEN** the count is zero
 
 #### Scenario: One curve, one backend
@@ -31,12 +31,12 @@ The concepts `crypto::encodes<Format, T>` and `crypto::decodes<Format, T>` SHALL
 
 | Type | Formats | `max_encoded_size` |
 |---|---|---|
-| `ed25519::public_key`, `x25519::public_key` | `raw`, `spki`, `pem(spki)`, `jwk` | 32, 44, 113, 79 (X25519: 78) |
-| `p256::basic_public_key<B>` | `raw` (also `compressed`), `spki` (also `compressed`), `pem(spki)`, `jwk` | 65 (33), 91 (59), 178 (134), 126 |
-| `secp256k1::public_key` | `raw` (also `compressed`, `xonly`), `spki` (also `compressed`), `pem(spki)`, `jwk` | 65 (33, 32), 88 (56), 174 (130), 130 |
-| `ed25519::basic_keypair<B>`, `x25519::basic_keypair<B>` | `raw` (its `secret()`), `pkcs8`, `pem(pkcs8)`, `jwk` with `d` | 32, 48, 119, 129 (X25519: 128) |
-| `p256::basic_keypair<B>` | `raw` (its `secret()`), `pkcs8`, `pem(pkcs8)`, `jwk` with `d` | 32, 138, 241, 176 |
-| `secp256k1::basic_keypair<B>` | `raw` (its `secret()`), `pkcs8`, `pem(pkcs8)`, `jwk` with `d` | 32, 135, 237, 180 |
+| `ed25519::public_key`, `x25519::public_key` | `raw`, `spki`, `pem(spki)` | 32, 44, 113 |
+| `p256::basic_public_key<B>` | `raw` (also `compressed`), `spki` (also `compressed`), `pem(spki)` | 65 (33), 91 (59), 178 (134) |
+| `secp256k1::public_key` | `raw` (also `compressed`, `xonly`), `spki` (also `compressed`), `pem(spki)` | 65 (33, 32), 88 (56), 174 (130) |
+| `ed25519::basic_keypair<B>`, `x25519::basic_keypair<B>` | `raw` (its `secret()`), `pkcs8`, `pem(pkcs8)` | 32, 48, 119 |
+| `p256::basic_keypair<B>` | `raw` (its `secret()`), `pkcs8`, `pem(pkcs8)` | 32, 138, 241 |
+| `secp256k1::basic_keypair<B>` | `raw` (its `secret()`), `pkcs8`, `pem(pkcs8)` | 32, 135, 237 |
 | `p256::ecdsa_signature`, `secp256k1::ecdsa_signature` | `raw`, `der` | 64, 72 |
 | `secp256k1::recoverable_signature` | `raw` | 65 |
 | `secp256k1::schnorr_signature`, `ed25519::signature` | `raw` | 64 |
@@ -66,72 +66,17 @@ A key pair's `raw` MUST be its `secret()` on encoding and its `make` on decoding
 - **WHEN** `crypto::decode<p256::ecdsa_signature>(crypto::der, bytes)` is given a Wycheproof case whose DER has a leading zero byte it does not need
 - **THEN** it returns `invalid_signature`
 
-### Requirement: JWK: its header, its target and its text
-`<webcpp/crypto/jwk.hpp>` and the Jamfile target `/webcpp/crypto//jwk` SHALL offer JWK (RFC 7517, RFC 7518 section 6.2, RFC 8037, RFC 8812) for Ed25519 (`kty` `"OKP"`, `crv` `"Ed25519"`, `x`, and `d` for a key pair), X25519 (`kty` `"OKP"`, `crv` `"X25519"`, `x`, and `d`), P-256 (`kty` `"EC"`, `crv` `"P-256"`, `x`, `y`, and `d`) and secp256k1 (`kty` `"EC"`, `crv` `"secp256k1"`, `x`, `y`, and `d`), each value base64url without padding of 32 bytes. The target MUST bring webcpp::document, and `/webcpp/crypto//crypto` and every header but `jwk.hpp` MUST build without document. Encoding a JWK MUST write one JSON object with no white space, its members in lexicographic order of their names (`crv`, `d`, `kty`, `x`, `y`) and no other member, into the fixed result, with no heap; the public JWK's text MUST be RFC 7638's thumbprint input. A JWK pair called without `jwk.hpp` MUST stop the build with a message naming the header and the target. JWK's base64url MUST run on the PEM family's constant-time backend.
-
-#### Scenario: WebCrypto reads the text
-- **WHEN** node's WebCrypto imports the JWK text of a P-256 key pair (176 bytes) and of its public key (126 bytes) with `importKey("jwk", ...)`, signs and verifies
-- **THEN** it accepts both, its signature verifies under `crypto::verify`, and its `exportKey("jwk")` of the public key, with `key_ops` and `ext`, decodes to the same public key
-
-#### Scenario: RFC 8037's example
-- **WHEN** the Ed25519 key pair of RFC 8037 appendix A.1 is encoded with `crypto::jwk`
-- **THEN** the members are the appendix's, and `crypto::thumbprint` of its public key is appendix A.3's
-
-### Requirement: JWK: the rules of decoding a text
-`crypto::decode<T>(crypto::jwk, text)` SHALL refuse with `invalid_encoding` a root that is not an object, a text that is not one JSON value, any of `kty`, `crv`, `x`, `y`, `d` present twice or not a string, a `kty` or `crv` that is not the type's, a coordinate that is not strict base64url of 32 bytes, a key pair's decode without `d`, a public key's decode with `d`, a key pair whose `x` and `y` are not `d`'s public key, and a point or scalar its curve refuses; it SHALL ignore every other member, whatever its value and size; and it SHALL return `jwk_too_large` when its memory is exhausted or the optional `jwk_options::max_bytes` is passed, an error value with or without exceptions, never the end of the program. No size cap MUST be needed for the decoder to be safe.
-
-#### Scenario: A duplicate member
-- **WHEN** a P-256 public JWK has `"x"` twice
-- **THEN** the decode returns `invalid_encoding`, and with a second `"kid"` instead it decodes
-
-#### Scenario: A large unknown member
-- **WHEN** a P-256 JWK carries a `"kid"` of 10 MB and is decoded as a public key with the default working buffer, and as a key pair, in a build with exceptions and in one without
-- **THEN** each decodes, with no heap allocation and no memory beyond the default buffer
-
-#### Scenario: The wrong kind of key
-- **WHEN** a public JWK is decoded as a key pair, and a private JWK as a public key
-- **THEN** both return `invalid_encoding`
-
-### Requirement: JWK: a private key's text in constant time
-`crypto::decode<K>(crypto::jwk, text)`, `K` a key pair, SHALL read the text with a reader of crypto's own that uses no document and no allocator, in memory independent of the text's size, validates all of JSON's grammar on the text, decodes escapes in keys and in `kty`, `crv`, `x` and `y`, and reads `d` without a branch or an index that depends on its bytes: the 43 bytes after `"d":"` copied as they are, the next byte required to be `"`, and the 43 decoded by the constant-time base64url, an escape in `d` refused. The constant-time lane MUST trace the decode of a valid private JWK of every key pair type with the bytes of `d` marked secret, as it traces PKCS#8, and every byte that held `d` MUST be wiped before the call returns.
-
-#### Scenario: The lane finds nothing
-- **WHEN** the constant-time lane runs the private JWK decode of Ed25519, X25519, P-256 and secp256k1 key pairs with `d` marked secret
-- **THEN** it reports no branch and no memory access that depends on `d`, with the existing suppressions only
-
-#### Scenario: The two readers agree
-- **WHEN** the differential fuzz target gives the same texts to the private reader and to the public decode
-- **THEN** both accept or both refuse every text whose `d` is absent, and every text both accept gives the same public key
-
-### Requirement: JWK: a public key's text in bounded memory
-`crypto::decode<P>(crypto::jwk, text)`, `P` a public key, SHALL read the text with webcpp::document's bounded-parse mode, its selectors `$.kty`, `$.crv`, `$.x`, `$.y` and `$.d`, over a `document::bounded_resource` on a stack buffer of `crypto::jwk_working_size` bytes, and `crypto::decode<P>(crypto::jwk, text, working)` over the caller's span, so that members no selector names are skipped without being buffered or built, the whole text given at once so that nothing is allocated in the global heap, and an exhausted buffer is `jwk_too_large`.
-
-#### Scenario: Bounded whatever the size
-- **WHEN** public JWKs with unknown members of 1 KB, 1 MB and 100 MB, and with unknown keys of 1 MB, are decoded under a counting `operator new`
-- **THEN** each decodes, the count is zero, and the working buffer's high-water mark is the same for all
-
-### Requirement: JWK: documents and the thumbprint
-`crypto::decode<T>(crypto::jwk, value)` SHALL read a `document::basic_const_value<Traits, Storage>` (a JWK Set's element, a JWT header's member) with the rules of the text's decode except duplicates, which a document has already resolved, allocating nothing; for a key pair, its documentation MUST state that `d` went through document's parser, which is not constant time, and that a private key whose `d` must stay in constant time is decoded from its text. `crypto::encode<Document>(crypto::jwk, value, arguments...)` SHALL build a `document::basic_document<Traits, Storage>` in the storage its arguments give, and `crypto::encode(crypto::jwk, value, target)` SHALL set a `document::basic_value` to the JWK object, the members in the text's order so that `stringify()` gives the text. `crypto::thumbprint(key)` SHALL return RFC 7638's SHA-256 thumbprint, `result<std::array<std::uint8_t, 32>>`, of a public key or of a key pair's public key, computed with webcpp::hash's `sha2_256` over the public JWK's text.
-
-#### Scenario: A JWK Set's element
-- **WHEN** a document holding a JWK Set is parsed and its `keys[1]`, a P-256 public JWK, is decoded under a counting `operator new` and a counting resource of the document
-- **THEN** it gives the key, and both counts are zero
-
-#### Scenario: A document's text
-- **WHEN** a secp256k1 key pair is encoded into a `document::pmr::document` and stringified
-- **THEN** the text equals `crypto::encode(crypto::jwk, key)->text()`
-
 ### Requirement: Formats: every decoder is fuzzed
-Every decoder of this change SHALL have a fuzz target from the commit that adds it, one per format and type family (`raw`, `spki`, `pkcs8`, `der`, `pem(spki)`, `pem(pkcs8)`, a private JWK text, a public JWK text, a JWK document value), and a differential target over both JWK readers, each asserting that nothing crashes, nothing is allocated from the heap, what is accepted encodes back to the same input or to the canonical form of the same key, and the buffers that held a secret are wiped, seeded with Wycheproof's, the RFCs' and WebCrypto's vectors, and run for a bounded time in CI.
+Every decoder of this change SHALL have a fuzz target from the commit that adds it, one per format and type family (`raw`, `spki`, `pkcs8`, `der`, `pem(spki)`, `pem(pkcs8)`), each asserting that nothing crashes, nothing is allocated from the heap, what is accepted encodes back to the same input, and the buffers that held a secret are wiped, seeded with Wycheproof's, the RFCs' and WebCrypto's vectors, and run for a bounded time in CI.
 
-#### Scenario: A fuzzed JWK
-- **WHEN** the JWK targets run their corpus and a bounded run in CI
-- **THEN** they find no crash, no allocation, no disagreement between the readers, and no accepted text whose re-encoding differs from the canonical form of the same key
+#### Scenario: A fuzzed PKCS#8
+- **WHEN** the `pkcs8` and `pem(pkcs8)` targets run their corpus and a bounded run in CI
+- **THEN** they find no crash, no allocation, and no accepted input whose re-encoding differs from it
 
 ## MODIFIED Requirements
 
 ### Requirement: Key formats: SPKI, PKCS#8 and PEM, strict
-Each curve SHALL offer its keys through `crypto::encode` and `crypto::decode` with the formats `raw`, `spki`, `pkcs8`, `pem(spki)` and `pem(pkcs8)` (PEM per RFC 7468: labels `PUBLIC KEY` and `PRIVATE KEY` taken from the inner format, lines of 64 characters, LF), and `jwk` through `<webcpp/crypto/jwk.hpp>`: Ed25519 and X25519 per RFC 8410 (on libsodium, RFC 8410's fixed DER prefix and the 32 key bytes, a recorded constant), secp256k1 per RFC 5480 with its OID, P-256 per RFC 5480 and RFC 5915 (SPKI with the uncompressed point by default, 91 bytes, or the compressed point, 59 bytes, and PKCS#8 version 0 whose `ECPrivateKey` is version 1 with the `publicKey` and without `parameters`, 138 bytes, by fixed layouts on every backend of the curve, BearSSL included, `design.md` D36; a PKCS#8 without `publicKey` or with `[0] parameters` refused). The names `encode_spki`, `decode_spki`, `encode_pkcs8`, `decode_pkcs8`, `max_spki_size` and `max_pkcs8_size` of every curve, and the namespace `crypto::pem`, MUST NOT exist. Decoding MUST accept an encoding only when re-encoding what was decoded gives the same bytes, on every backend, and refuse anything else with `invalid_encoding`. Tests MUST run round trips, malformed-input refusals, and OpenSSL natively and WebCrypto's `importKey` and `exportKey` (`raw`, `spki`, `pkcs8`, `jwk`) under node as outside oracles; for secp256k1, which WebCrypto lacks, node's `crypto` module (`createPrivateKey`, `createPublicKey`, `export`, its `jwk` format included) is the oracle under node.
+Each curve SHALL offer its keys through `crypto::encode` and `crypto::decode` with the formats `raw`, `spki`, `pkcs8`, `pem(spki)` and `pem(pkcs8)` (PEM per RFC 7468: labels `PUBLIC KEY` and `PRIVATE KEY` taken from the inner format, lines of 64 characters, LF): Ed25519 and X25519 per RFC 8410 (on libsodium, RFC 8410's fixed DER prefix and the 32 key bytes, a recorded constant), secp256k1 per RFC 5480 with its OID, P-256 per RFC 5480 and RFC 5915 (SPKI with the uncompressed point by default, 91 bytes, or the compressed point, 59 bytes, and PKCS#8 version 0 whose `ECPrivateKey` is version 1 with the `publicKey` and without `parameters`, 138 bytes, by fixed layouts on every backend of the curve, BearSSL included, `design.md` D36; a PKCS#8 without `publicKey` or with `[0] parameters` refused). The names `encode_spki`, `decode_spki`, `encode_pkcs8`, `decode_pkcs8`, `max_spki_size` and `max_pkcs8_size` of every curve, and the namespace `crypto::pem`, MUST NOT exist. Decoding MUST accept an encoding only when re-encoding what was decoded gives the same bytes, on every backend, and refuse anything else with `invalid_encoding`. Tests MUST run round trips, malformed-input refusals, and OpenSSL natively and WebCrypto's `importKey` and `exportKey` (`raw`, `spki`, `pkcs8`) under node as outside oracles; for secp256k1, which WebCrypto lacks, node's `crypto` module (`createPrivateKey`, `createPublicKey`, `export`) is the oracle under node.
 
 #### Scenario: An Ed25519 key from WebCrypto
 - **WHEN** node's WebCrypto exports an Ed25519 key pair as `pkcs8` and `spki` and the library decodes both on libsodium with `crypto::decode`
@@ -146,7 +91,7 @@ Each curve SHALL offer its keys through `crypto::encode` and `crypto::decode` wi
 - **THEN** the exports are exactly the 138 and 91 bytes `crypto::encode` writes, and a PKCS#8 of the same key carrying `[0] parameters` (150 bytes) or without `publicKey` (67 bytes) is refused with `invalid_encoding`
 
 #### Scenario: An X25519 key from WebCrypto
-- **WHEN** node's WebCrypto exports an X25519 key pair as `pkcs8`, `spki` and `jwk`, and the library decodes each into `x25519::keypair` or `x25519::public_key`
+- **WHEN** node's WebCrypto exports an X25519 key pair as `pkcs8` and `spki`, and the library decodes each into `x25519::keypair` or `x25519::public_key`
 - **THEN** each agrees with WebCrypto's `deriveBits` against the same peer, and encoding again gives the same bytes
 
 #### Scenario: A libp2p PeerId's key
@@ -206,8 +151,8 @@ Increment 3 SHALL add, on BearSSL on all four targets and first of the P-curves 
 - **THEN** it returns `invalid_secret_key` without calling BearSSL, and 31 or 33 bytes give `invalid_key_size`
 
 #### Scenario: ECDH with WebCrypto
-- **WHEN** node's WebCrypto imports the same scalar (`pkcs8` from `crypto::encode(crypto::pkcs8, key)`, and `jwk` from `crypto::encode(crypto::jwk, key)`) and a peer's raw public key and derives 256 bits
-- **THEN** the bits equal `agree` of the key pair with the peer's `basic_public_key`, through either import
+- **WHEN** node's WebCrypto imports the same scalar (`pkcs8` from `crypto::encode(crypto::pkcs8, key)`) and a peer's raw public key and derives 256 bits
+- **THEN** the bits equal `agree` of the key pair with the peer's `basic_public_key`
 
 #### Scenario: A high-S signature from a peer
 - **WHEN** `crypto::verify` is given RFC 6979's signature of "sample" as the section prints it, whose S is high, as WebCrypto may sign

@@ -1,6 +1,6 @@
 ## Context
 
-This change builds on three others, merged before it:
+This change builds on two others, merged before it:
 
 - **crypto/sign-unified, as merged**: typed public keys (`ed25519::public_key`,
   `p256::basic_public_key<B>`, `secp256k1::public_key`), scheme tags as values
@@ -12,10 +12,6 @@ This change builds on three others, merged before it:
   `recoverable_signature`, `schnorr_signature`), X25519's typed keys (`x25519::public_key`,
   `x25519::basic_keypair<B>`), and the key pair concepts split into `keypair`, `signing_keypair`
   and `agreement_keypair`.
-- **document/bounded-parse** (`libraries/document/openspec/changes/bounded-parse/`): a parse mode
-  of document's streaming parser that skips the values no selector can match without buffering or
-  building them, keeps its working state in the caller's memory, and reports exhaustion as an
-  error value, with or without exceptions.
 
 The formats as they are on crypto/sign-unified:
 
@@ -29,8 +25,7 @@ The formats as they are on crypto/sign-unified:
 and the root's `pem::armour(label, der, out)` and `pem::unarmour(label, text, out)` (RFC 7468,
 64-character lines, LF, strict), on libsodium's constant-time base64 (`families::pem`). Every
 encoder writes into a caller's span sized by a per-curve constant; every decoder accepts exactly
-the bytes its encoder writes (foundation D30). The foundation's requirement "Key formats" says
-"JWK MUST NOT be offered".
+the bytes its encoder writes (foundation D30).
 
 ## Intent
 
@@ -38,7 +33,7 @@ A call site should read as what it does, and a mistake should not compile:
 
 ```cpp
 auto const pem_text = crypto::encode(crypto::pem(crypto::spki), public_key);   // the label is right by construction
-auto const key = crypto::decode<p256::keypair>(crypto::jwk, text);             // a JWK into a key pair, d in constant time
+auto const key = crypto::decode<p256::keypair>(crypto::pem(crypto::pkcs8), text);
 auto const der = crypto::encode(crypto::der, signature);                       // only an ECDSA signature compiles
 ```
 
@@ -50,24 +45,22 @@ not a missing name).
 ## Goals / Non-Goals
 
 **Goals:** one `encode` and one `decode` for every key and signature format of Ed25519, X25519,
-P-256 and secp256k1, in four mirrored forms with one implementation; format tags as values, PEM
-composing over the DER formats with its label taken from them; a fixed result with no heap, and a
-span form; a concept that gates every pair with the type's list of formats in the diagnostic; one
-list of formats from which the concepts, the tests and the guide derive; JWK in its own header and
-target, encoding with no heap, a private JWK's text read in constant time and constant memory, a
-public JWK's text read in bounded memory whatever its size; RFC 7638's thumbprint; every caller in
-libs/crypto moved; the old names removed.
+P-256 and secp256k1 (`raw`, `spki`, `pkcs8`, `der`, `pem(F)`), in four mirrored forms with one
+implementation; format tags as values, PEM composing over the DER formats with its label taken from
+them; a fixed result with no heap, and a span form; a concept that gates every pair with the type's
+list of formats in the diagnostic; one list of formats from which the concepts, the tests and the
+guide derive, built so that JWK joins later as one more tag with no change to any interface; every
+caller in libs/crypto moved; the old names removed.
 
-**Non-goals:** X.509 and certificates (another session's change); asynchronous forms of encode and
-decode (pure functions over bytes the program holds); compressed PEM; encrypted PKCS#8 (PKCS#5,
-`ENCRYPTED PRIVATE KEY`); curves and key types crypto does not have today (P-384, P-521, RSA, and
-the keys only OpenSSL or Botan have): each joins the formats with its own change; JWK's `RSA` and
-`oct` keys; JWS, JWE and JWT themselves; a public base64url function.
+**Non-goals:** JWK (deferred by the owner, see "Deferred: JWK"); X.509 and certificates (another
+session's change); asynchronous forms of encode and decode (pure functions over bytes the program
+holds); compressed PEM; encrypted PKCS#8 (PKCS#5, `ENCRYPTED PRIVATE KEY`); curves and key types
+crypto does not have today (P-384, P-521, RSA, and the keys only OpenSSL or Botan have): each joins
+the formats with its own change; a public base64 or base64url function.
 
 **Anti-goals:** a format chosen at run time (an enum or a string) on the main path, which would
 lose the compile-time size and the compile-time refusal; any function that infers a curve or a
-format from a number of bytes; a PEM label a caller spells; a private key's `d` read by a parser
-whose time depends on it.
+format from a number of bytes; a PEM label a caller spells.
 
 ## Approaches
 
@@ -99,26 +92,19 @@ allocation per call on paths that allocate nothing today, and a secret on the he
 buffer sized at compile time, with a span overload for callers that manage memory (chosen by the
 owner); (c) the span alone: today's form, which makes every caller size a buffer.
 
-**G. Reading a JWK text.** (a) document's streaming parser as it is: it buffers and builds every
-member, selected or not, and in a build without exceptions an exhausted memory resource ends the
-program (D8's finding), so a bound becomes a size cap and `d` goes through code whose time
-depends on it; (b) one reader of crypto's own for every JWK: constant time and constant memory,
-but a second JSON reader for the public path, which document serves; (c) crypto's reader for a
-private JWK, document's bounded-parse mode for a public one (chosen by the owner).
-
-**H (chosen).** Tags as values passed first, the free function as the main form with mirrored
-members, a fixed result, one list, concepts with the list in the diagnostic, JWK in its own target
-with G (c).
+**G (chosen).** Tags as values passed first, the free function as the main form with mirrored
+members, a fixed result, one list, concepts with the list in the diagnostic.
 
 ## Owner decisions (2026-11-22, binding)
 
 First round:
 
 1. **Format tags are values passed as the first argument**, as the schemes are: `crypto::raw`,
-   `crypto::spki`, `crypto::pkcs8`, `crypto::der` (an ECDSA signature), `crypto::jwk`, and
-   `crypto::pem(F)`, which composes over `spki` or `pkcs8` and takes its label (`PUBLIC KEY`,
-   `PRIVATE KEY`) from the inner format, so that the label can never be wrong. One list of formats,
-   as `all_schemes`, from which the concepts and the documentation derive.
+   `crypto::spki`, `crypto::pkcs8`, `crypto::der` (an ECDSA signature), and `crypto::pem(F)`,
+   which composes over `spki` or `pkcs8` and takes its label (`PUBLIC KEY`, `PRIVATE KEY`) from the
+   inner format, so that the label can never be wrong. One list of formats, as `all_schemes`, from
+   which the concepts and the documentation derive. (`crypto::jwk` was in this list; decision 14
+   defers it.)
 2. **Free functions are the main form**, `crypto::encode(format, value)` and
    `crypto::decode<T>(format, input)`, with mirrored members `value.encode(format)` and
    `T::decode(format, input)`, one implementation.
@@ -126,44 +112,38 @@ First round:
    whose N is the format's maximum for that type at compile time, with the actual length and
    `bytes()` / `text()` views; plus an overload writing into a caller's `std::span`.
 4. **A concept gates every pair** (`encodes<Format, T>`, `decodes<Format, T>`), with a message
-   listing the formats valid for that type. Public keys: `raw`, `spki`, `pem(spki)`, `jwk`; key
-   pairs: `pkcs8`, `pem(pkcs8)`, `jwk` (private, with `d`); a key pair's `raw` is its `secret()`
-   (not duplicated; ruled in R2); ECDSA signatures (P-256, secp256k1): `der`; Ed25519 and Schnorr
-   signatures refuse `der`.
+   listing the formats valid for that type. Public keys: `raw`, `spki`, `pem(spki)`; key pairs:
+   `pkcs8`, `pem(pkcs8)`; a key pair's `raw` is its `secret()` (not duplicated; ruled in R2); ECDSA
+   signatures (P-256, secp256k1): `der`; Ed25519 and Schnorr signatures refuse `der`.
 5. **Old names are removed with no aliases**: `encode_spki`, `decode_spki`, `encode_pkcs8`,
    `decode_pkcs8`, `to_der`, `from_der`, `pem::armour` and `pem::unarmour` as public API, and the
    `max_*_size` constants the new form supersedes; every caller migrates.
-6. **JWK is in this change** (RFC 7517, 7518, 8037, 8812; EC P-256 and secp256k1 with `x`, `y` and
-   optionally `d`; OKP Ed25519 and X25519 with `x` and optionally `d`; base64url without padding),
-   in its own header `<webcpp/crypto/jwk.hpp>` and target `/webcpp/crypto//jwk`, which pulls
-   webcpp::document; the core of crypto does not depend on document. Encoding to text: a fixed
-   buffer, no heap, canonical member order (lexicographic, no white space), so that the text equals
-   RFC 7638's thumbprint input; maximum sizes computed. Encoding to a document in the storage the
-   user picks. Decoding text in bounded working memory, exhaustion an error (`jwk_too_large`);
-   duplicate members among the fields read refused; unknown members ignored; `kty`, `crv` and size
-   mismatches refused; a public JWK given to a key pair's decode refused. Decoding an existing
-   document value with no new allocation. A thumbprint (RFC 7638) with webcpp::hash's SHA-256.
+6. *(JWK in this change: superseded by decision 14.)*
 7. **Out of scope**: X.509 and certificates, asynchronous forms of encode and decode, compressed
    PEM, encrypted PKCS#8.
 
 Second round, answering the first draft's open questions:
 
-8. **A private JWK's text is decoded in constant time** by a small JWK reader of crypto's own,
-   which handles `d` in constant time (base64url never needs an escape) and is traced by the
-   constant-time lane as PKCS#8 is. webcpp::document stays for a public JWK's decode, for encoding
-   to a document and for decoding an existing document value; a private JWK read out of a
-   program's document has had its `d` through document's parser, which is not constant time, and
-   the rule is stated (D9).
-9. **document gains a bounded-memory parse mode first** (document/bounded-parse): unselected
-   values skipped without being buffered, exhaustion an error instead of termination. A size cap
-   is an option, never the safety mechanism.
+8. *(A constant-time reader for a private JWK's text: deferred with JWK by decision 14; recorded
+   in "Deferred: JWK".)*
+9. *(A bounded-memory parse mode in document: withdrawn by decision 14; the deferred JWK's bounds
+   come from JSON Schema instead.)*
 10. **Typed signatures are a separate small change merged first** (crypto/uniform-types); this
     change builds on them.
 11. **The uncompressed point is the default of `spki` and `raw` on every curve**, the compressed
     point always available by name; secp256k1's SPKI default changes.
-12. **A private JWK given to a public key's decode is refused** with an error.
+12. *(A private JWK given to a public key's decode is refused: deferred with JWK, kept as its
+    rule.)*
 13. **X25519 is typed by uniform-types, so this change covers it**; its old functions are removed
     as the others are.
+
+Change of plan, the same day:
+
+14. **JWK leaves this change**: it ships `raw`, `spki`, `pkcs8`, `der` and `pem(F)` only, the list
+    designed so that `jwk` joins later as one more tag with no interface change. JWK comes after
+    webcpp::json_schema gains document support, so that a JWK's shape and limits are a JSON Schema
+    that document applies while parsing (the chain is in "Deferred: JWK"). The document
+    bounded-parse change is not written.
 
 ## Decisions
 
@@ -178,7 +158,7 @@ schemes:
   objects `crypto::compressed`, `crypto::uncompressed`, `crypto::xonly`; `raw(crypto::compressed)`
   and `spki(crypto::compressed)` are `constexpr` calls that return `raw_t<compressed_t>{}` and
   `spki_t<compressed_t>{}`.
-- `pkcs8_t` and `pkcs8`, `der_t` and `der`, `jwk_t` and `jwk`.
+- `pkcs8_t` and `pkcs8`, `der_t` and `der`.
 - `pem_t<Inner>` and `crypto::pem`, an object whose `constexpr operator()(Inner)` returns
   `pem_t<Inner>{}` for an `Inner` that is `spki_t<Form>` or `pkcs8_t` and stops the build for any
   other with "PEM carries a DER key: pem(crypto::spki) or pem(crypto::pkcs8)". `pem_t<Inner>`
@@ -186,7 +166,7 @@ schemes:
   `spki_t<Form>` and `"PRIVATE KEY"` for `pkcs8_t`; no other way to name a label exists.
 
 The one list, beside the tags: `detail::format_list<...>` and `detail::all_formats`, a
-`format_list` of `raw_t<default_form_t>`, `spki_t<default_form_t>`, `pkcs8_t`, `der_t`, `jwk_t`,
+`format_list` of `raw_t<default_form_t>`, `spki_t<default_form_t>`, `pkcs8_t`, `der_t`,
 `pem_t<spki_t<default_form_t>>` and `pem_t<pkcs8_t>`. The point forms are modifiers of a listed
 format, not entries; `detail::base_format_t<F>` maps `raw_t<compressed_t>` to
 `raw_t<default_form_t>` and so on. `detail::is_format_v` derives from the list; a new format is one
@@ -196,6 +176,16 @@ Each value type declares the formats it has in one place, beside its codecs, as 
 their schemes: `detail::formats_of<T>` is a `format_list`, every member of which must be in
 `all_formats` (a `static_assert` beside the declaration); `detail::forms_of<Format, T>` lists the
 point forms the type accepts.
+
+**Room for JWK (decision 14).** Nothing in the interface assumes a closed set of formats or of input
+kinds: a format's input kind is a trait of the format (`detail::input_of<Format>`: a byte span for
+the binary formats, `std::string_view` for the text ones), `encoded`'s form is a trait of the pair,
+and the concepts fold over the list. JWK joins as a tag `jwk_t` / `crypto::jwk`, one line in
+`all_formats`, `jwk_t` in the `formats_of` of the types that have it, its codecs in a header of its
+own, and, if it decodes from a document value, one more input kind for that tag; no existing call,
+signature or concept changes. A test adds a stand-in text format to a copy of the list and checks
+that the concepts, `encoded` and the free functions take it with no change, so that the room stays
+real.
 
 ### D2. The four forms, the result, and where they live
 
@@ -208,9 +198,9 @@ point forms the type accepts.
 One implementation: `detail::codec<Format, T>` holds `static encode_into(value, span)` and
 `static decode(input)`; the free functions call it, the members call the free functions.
 
-Where each part lives (the builder's check, a ruling, R14): `formats.hpp` holds the tags, the list,
-the concepts, `encoded` and the free functions, generic over `detail::codec`, and includes no curve
-and no backend. Each curve's `curves/<curve>/formats.hpp` includes its curve and `formats.hpp`,
+Where each part lives (the builder's check, R14): `formats.hpp` holds the tags, the list, the
+concepts, `encoded` and the free functions, generic over `detail::codec`, and includes no curve and
+no backend. Each curve's `curves/<curve>/formats.hpp` includes its curve and `formats.hpp`,
 specializes `detail::codec` and `formats_of` for its types, and defines its types' members, which
 each class declares as member templates with a deduced return type (as unified-sign's D9 declares
 the asynchronous members): a curve's own header never includes a formats header, and calling a
@@ -220,9 +210,8 @@ other backend, and the existing tests that build each family without the others'
 without X") stay and gain the formats headers.
 
 `input` is `std::span<std::uint8_t const>` for a binary format (`raw`, `spki`, `pkcs8`, `der`)
-and `std::string_view` for a text format (`pem(F)`, `jwk`); each decode takes exactly its form
-(the other does not convert), so that PEM text is never read as DER. A JWK also decodes from a
-document value (D9).
+and `std::string_view` for a text format (`pem(F)`); each decode takes exactly its kind (the other
+does not convert), so that PEM text is never read as DER.
 
 `crypto::encoded<N, Form>` is a class template with `Form` one of `encoded_form::binary`, `text`,
 `secret_binary`, `secret_text`:
@@ -234,21 +223,21 @@ document value (D9).
 - the secret forms wipe their storage on destruction and on move as `secret<N>` does (the detail
   wipe), are move-only, and `clone()` copies explicitly, as `secret<N>` does.
 
-The form follows from the pair: `pkcs8`, `pem(pkcs8)`, a key pair's `jwk` and a key pair's `raw`
-are secret; everything else is not. `crypto::max_encoded_size<Format, T>` is N; it replaces every
-`max_*_size` constant. The span overload takes `std::span<std::uint8_t>` for a binary format and
-`std::span<char>` for a text format, refuses one shorter than `max_encoded_size` with
-`invalid_input_size`, and writes nothing on any error, as today's encoders.
+The form follows from the pair: `pkcs8`, `pem(pkcs8)` and a key pair's `raw` are secret; everything
+else is not. `crypto::max_encoded_size<Format, T>` is N; it replaces every `max_*_size` constant.
+The span overload takes `std::span<std::uint8_t>` for a binary format and `std::span<char>` for a
+text format, refuses one shorter than `max_encoded_size` with `invalid_input_size`, and writes
+nothing on any error, as today's encoders.
 
 Backends: a `T` that names its backend (`p256::basic_public_key<B>`, `basic_keypair<B>`) decodes
 on it; a `T` that has none (`ed25519::public_key`, `x25519::public_key`, `secp256k1::public_key`)
-decodes on its family's default, as `make` does. PEM and JWK's base64 run on `families::pem`'s
-backend (libsodium's constant-time codec), as today, which a program using either links.
+decodes on its family's default, as `make` does. PEM's base64 runs on `families::pem`'s backend
+(libsodium's constant-time codec), as today, which a program using PEM links.
 
 ### D3. The concepts and the diagnostic
 
 `crypto::encodes<Format, T>` is true when `base_format_t<Format>` is in `formats_of<T>`, the form
-is in `forms_of<Format, T>`, and the backend can export it (D11). `crypto::decodes<Format, T>` is
+is in `forms_of<Format, T>`, and the backend can export it (D7). `crypto::decodes<Format, T>` is
 the same for reading. Each free function and member checks its concept in a `static_assert`
 before anything else, its message fixed text ("this type has no such format; the formats it has
 are the format_list named in this assertion") and its condition
@@ -257,35 +246,33 @@ compiler prints in the failed requirement, so that the list of formats the type 
 diagnostic without a string written by hand. Pairs with a reason of their own add a sentence:
 `der` on Ed25519's or BIP340's signature ("Ed25519 and BIP340 signatures have no DER form; their
 64 bytes are the signature"), `der` on a recoverable signature ("a recoverable signature has no
-DER form"), `jwk` without `<webcpp/crypto/jwk.hpp>` ("include <webcpp/crypto/jwk.hpp> and link
-/webcpp/crypto//jwk"), a type whose curve's `formats.hpp` is not included ("include
-<webcpp/crypto/curves/<curve>/formats.hpp>"), `pem(der)` and `pem(jwk)` (D1). A test of message
-compilation (`webcpp.compile-diagnostic`) pins each.
+DER form"), a type whose curve's `formats.hpp` is not included ("include
+<webcpp/crypto/curves/<curve>/formats.hpp>"), and `pem(der)` (D1). A test of message compilation
+(`webcpp.compile-diagnostic`) pins each.
 
 ### D4. The valid pairs
 
-| Type | `raw` | `spki` | `pem(spki)` | `pkcs8` | `pem(pkcs8)` | `der` | `jwk` |
-|---|---|---|---|---|---|---|---|
-| `ed25519::public_key` | 32 | 44 | 113 | - | - | - | 79 (OKP) |
-| `x25519::public_key` | 32 | 44 | 113 | - | - | - | 78 (OKP) |
-| `p256::basic_public_key<B>` | 65; `compressed` 33 | 91; `compressed` 59 | 178; `compressed` 134 | - | - | - | 126 (EC) |
-| `secp256k1::public_key` | 65; `compressed` 33; `xonly` 32 | 88; `compressed` 56 | 174; `compressed` 130 | - | - | - | 130 (EC) |
-| `ed25519::basic_keypair<B>` | 32, secret (R2) | - | - | 48 | 119 | - | 129 (OKP, `d`) |
-| `x25519::basic_keypair<B>` | 32, secret (R2) | - | - | 48 | 119 | - | 128 (OKP, `d`) |
-| `p256::basic_keypair<B>` | 32, secret (R2) | - | - | 138 | 241 | - | 176 (EC, `d`) |
-| `secp256k1::basic_keypair<B>` | 32, secret (R2) | - | - | 135 | 237 | - | 180 (EC, `d`) |
-| `p256::ecdsa_signature` | 64 | - | - | - | - | 72 (8 to 72) | - |
-| `secp256k1::ecdsa_signature` | 64 | - | - | - | - | 72 (8 to 72) | - |
-| `secp256k1::recoverable_signature` | 65 | - | - | - | - | - | - |
-| `secp256k1::schnorr_signature` | 64 | - | - | - | - | - | - |
-| `ed25519::signature` | 64 | - | - | - | - | - | - |
+| Type | `raw` | `spki` | `pem(spki)` | `pkcs8` | `pem(pkcs8)` | `der` |
+|---|---|---|---|---|---|---|
+| `ed25519::public_key` | 32 | 44 | 113 | - | - | - |
+| `x25519::public_key` | 32 | 44 | 113 | - | - | - |
+| `p256::basic_public_key<B>` | 65; `compressed` 33 | 91; `compressed` 59 | 178; `compressed` 134 | - | - | - |
+| `secp256k1::public_key` | 65; `compressed` 33; `xonly` 32 | 88; `compressed` 56 | 174; `compressed` 130 | - | - | - |
+| `ed25519::basic_keypair<B>` | 32, secret (R2) | - | - | 48 | 119 | - |
+| `x25519::basic_keypair<B>` | 32, secret (R2) | - | - | 48 | 119 | - |
+| `p256::basic_keypair<B>` | 32, secret (R2) | - | - | 138 | 241 | - |
+| `secp256k1::basic_keypair<B>` | 32, secret (R2) | - | - | 135 | 237 | - |
+| `p256::ecdsa_signature` | 64 | - | - | - | - | 72 (8 to 72) |
+| `secp256k1::ecdsa_signature` | 64 | - | - | - | - | 72 (8 to 72) |
+| `secp256k1::recoverable_signature` | 65 | - | - | - | - | - |
+| `secp256k1::schnorr_signature` | 64 | - | - | - | - | - |
+| `ed25519::signature` | 64 | - | - | - | - | - |
 
 Each number is `max_encoded_size`, the bytes or characters `encode` writes; every pair marked `-`
 stops the build. The sizes of PEM are `armoured_size(label, der)` of today's `pem.hpp`: for P-256,
 an SPKI of 91 bytes is 124 base64 characters in 2 lines, 27 characters before and 25 after, 178 in
 all; a PKCS#8 of 138 bytes is 184 characters in 3 lines, 28 before and 26 after, 241 in all.
 P-256's compressed SPKI is the same AlgorithmIdentifier around a BIT STRING of 34 bytes, 59 in all.
-The JWK sizes are D7's.
 
 Decoding takes the same pairs. Each decoder keeps today's strictness (foundation D30): it accepts
 exactly what its encoder writes. A modifier names the one form encoded; a decode with the default
@@ -314,154 +301,17 @@ BIP340's and the recoverable signature refuse `der` by type. `encode(der, signat
 DER (8 to 72 bytes); `decode<p256::ecdsa_signature>(der, bytes)` reads strict DER only, the same
 code as today's `to_der` and `from_der` behind the new names.
 
-### D7. JWK: the members and the text
-
-| Key | Members, in the order written | Public | Private |
-|---|---|---|---|
-| Ed25519 | `crv` `"Ed25519"`, [`d`], `kty` `"OKP"`, `x` | 79 | 129 |
-| X25519 | `crv` `"X25519"`, [`d`], `kty` `"OKP"`, `x` | 78 | 128 |
-| P-256 | `crv` `"P-256"`, [`d`], `kty` `"EC"`, `x`, `y` | 126 | 176 |
-| secp256k1 | `crv` `"secp256k1"`, [`d`], `kty` `"EC"`, `x`, `y` | 130 | 180 |
-
-`x`, `y` and `d` are base64url without padding of 32 bytes, 43 characters each; EC's `x` and `y`
-are the uncompressed point's coordinates and `d` the scalar (RFC 7518 section 6.2), OKP's `x` the
-public key's 32 bytes and `d` the seed or secret key (RFC 8037). The text is one JSON object, no
-white space, members in lexicographic order of their names, which is RFC 7638's order: the public
-JWK's text is byte for byte the thumbprint's input; a private JWK's thumbprint is its public key's
-(R8). The P-256 public text is `{"crv":"P-256","kty":"EC","x":"` (31 characters), 43, `","y":"`
-(7), 43, `"}` (2): 126; the private one adds `"d":"` (5), 43 and `",` (2): 176. The encoder writes
-no other member (`alg`, `use`, `key_ops`, `kid`, `ext`): a program that needs them builds a
-document (D9) and sets them.
-
-The encoder writes through `families::pem`'s backend (libsodium's constant-time base64url, its
-`URLSAFE_NO_PADDING` variant), into the fixed result, with no heap; the text of a private JWK is
-`encoded_form::secret_text`.
-
-### D8. JWK: decoding a text
-
-`crypto::decode<T>(crypto::jwk, text)` reads the text by one of two readers, chosen by `T` at
-compile time; both apply the same rules:
-
-- a root that is not an object, a text that is not one JSON value, or any of `kty`, `crv`, `x`,
-  `y`, `d` present twice: `invalid_encoding`;
-- `kty` missing, not a string, or not the type's (`"EC"` for P-256 and secp256k1, `"OKP"` for
-  Ed25519 and X25519); `crv` missing or not the type's; `x` (and `y` for EC) missing; any of them
-  not a string: `invalid_encoding`;
-- `x`, `y` or `d` not strict base64url without padding of exactly 32 bytes (43 characters, the
-  unused bits zero, which libsodium's decoder checks): `invalid_encoding`;
-- a key pair's decode without `d`: `invalid_encoding` (a public JWK is not a key pair);
-- a public key's decode with `d`: `invalid_encoding` (owner decision 12);
-- a key pair whose `x` (and `y`) are not `d`'s public key: `invalid_encoding`, as PKCS#8's decode
-  refuses a public key that is not the scalar's;
-- the point off the curve, a scalar 0 or not below n: `invalid_encoding`, as `spki` and `pkcs8`
-  map `make`'s refusals;
-- memory exhausted, or the program's optional cap passed: `jwk_too_large`, a new code of
-  `crypto::error`.
-
-Unknown members, `alg`, `use`, `key_ops`, `ext` and `kid` included, are ignored, whatever their
-value and size, duplicates included. An optional `crypto::jwk_options` (`max_bytes`, no limit by
-default; `max_depth`, 64 by default) is a policy a program may add, never what keeps the decoder
-safe.
-
-**A private JWK: crypto's own reader** (owner decision 8). `decode<K>(jwk, text)` for a key pair
-`K` runs `detail::jwk_reader`, a strict JSON reader of a few hundred lines in `jwk.hpp`, which uses
-no document and no allocator: a cursor, a fixed bit stack of `max_depth` bits (object or array at
-each level), fixed buffers of 16 bytes for `kty` and `crv`, 64 for `x` and `y`, and 43 for `d`. It
-validates all of JSON's grammar (strings and their escapes, UTF-8, numbers, literals, nesting) on
-the public bytes and skips every unknown member as it reads it, so that memory is constant whatever
-the input's size. Keys are compared as they are read, their escapes decoded, so `"d"` is `d`.
-`d`'s value is read without a branch on its bytes: after `"d":"` the reader copies the next 43
-bytes, requires the 44th to be `"`, and decodes the 43 with the constant-time base64url, whose
-validity is one flag computed over all of them; an escape in `d` is therefore refused, which no
-base64url text needs (R10). The time of the read depends on the text's length and structure,
-public data, never on `d`. The constant-time lane traces it as it traces PKCS#8: a harness marks
-the 43 bytes of `d` in a valid text as secret and runs the decode under the lane's tools, with
-the existing suppressions only. Every byte that held `d`, its text or its value, is wiped before
-the call returns, on every path.
-
-**A public JWK: document's bounded-parse mode** (owner decision 9). `decode<P>(jwk, text)` for a
-public key `P` runs document's bounded parser (document/bounded-parse) with five selectors,
-`$.kty`, `$.crv`, `$.x`, `$.y` and `$.d` (the last only to refuse it), over a
-`document::bounded_resource` on a stack buffer of `crypto::jwk_working_size` bytes (R9) or a span
-the program passes (`decode<P>(jwk, text, working)`). Members no selector names are skipped by the
-parser without being buffered or built, whatever their size; a key is compared as it streams and
-never buffered unless a selector names it. Each delivery copies its string into the fixed buffers
-above and counts it, so a duplicate is seen. The parser reports an exhausted buffer as
-`errc::capacity`, an error value with or without exceptions, which is `jwk_too_large`; it is given
-the whole text at once, so nothing reaches the global heap. If a private JWK reaches this path, its
-`d` is delivered, refused, and the buffer that held it wiped; the guide says to decode a private
-JWK as a key pair.
-
-**What document does today** (verified in libs/document at 284ac01, the reason for owner decision
-9). The streaming parser builds the document node by node; a selector only chooses which values
-are delivered, and `on` removes a delivered value after its callback. A value no selector matches
-stays in the document, and the text of every string, key and number is accumulated whole in the
-handler's pending buffers (`detail/handler.hpp`: `on_string_part` and `on_key_part` append to
-`text_` and `key_`, allocated through the storage's allocator) before the value is stored. So a
-10 KB `kid` is buffered in full, in the working state and in the image, and the bound of a working
-buffer applies to skipped members too. And document turns an allocator's failure into
-`errc::capacity` only with exceptions; without them (`WEBCPP_DOCUMENT_NO_EXCEPTIONS`), a
-`null_memory_resource` upstream ends the program (`detail/allocation.hpp`). The first draft
-bounded the text with `max_bytes` to stay safe; that reasoning is withdrawn, the bounded-parse mode
-removes both problems, and a size cap remains only as `jwk_options::max_bytes`.
-
-### D9. JWK and documents
-
-- **Decode from a value**: `crypto::decode<T>(crypto::jwk, value)`, `value` any
-  `document::basic_const_value<Traits, Storage>` (a JWK Set's `keys[i]`, a JWT header's `jwk`
-  member), reads the five members with D8's rules and allocates nothing: it asks
-  `contains(name)` before `operator[]`, because a handle of a missing member holds its key in the
-  document's allocator (`value.hpp`), and reads a present string as a `std::string_view` into the
-  image. Duplicates cannot be seen: the document kept the last of a repeated key, as JavaScript
-  does, when it was parsed (R13).
-- **The rule for a private JWK in a document** (owner decision 8): decoding a key pair from a
-  document value is offered, and crypto's part of it, from the `std::string_view` of `d` on, is
-  constant time; but `d`'s text already went through document's parser, whose time depends on it
-  (UTF-8 validation, escape handling, copies), and through the document's image. So a private key
-  whose `d` must stay in constant time from end to end is decoded from its text (D8), never from a
-  document; the guide and the function's documentation say so in those words, and a program that
-  keeps private JWKs in documents accepts that their parse was not constant time.
-- **Encode to a new document**: `crypto::encode<Document>(crypto::jwk, value, arguments...)`,
-  `Document` a `document::basic_document<Traits, Storage>`, `arguments` forwarded to
-  `Document::create` (an allocator, a maximum, for an owned document) or to the external form (a
-  buffer); the members are set in D7's order, so that `stringify()` gives D7's text. It allocates
-  in the storage the program picked, and nothing elsewhere.
-- **Encode into a value**: `crypto::encode(crypto::jwk, value, target)`, `target` a
-  `document::basic_value<Traits, Storage>` (a new element of a JWK Set's `keys`), set to the object.
-
-A private JWK in a document is the private key in that document's image, and setting it copies
-`d`'s text through document's code: the same rule applies, and the guide points to document's
-`pmr` storages over a resource that wipes on free.
-
-### D10. The thumbprint
-
-`crypto::thumbprint(key)` returns `result<std::array<std::uint8_t, 32>>`, the SHA-256
-(`webcpp::hash::sha2_256`) of the public JWK's text (D7) of a public key, or of a key pair's public
-key: RFC 7638 with SHA-256 (R8). It needs no document and lives in `jwk.hpp` with the rest of JWK.
-
-### D11. WebCrypto and non-extractable keys
+### D7. WebCrypto and non-extractable keys
 
 Encode and decode are synchronous: they read bytes the program holds. A browser backend (part B of
 the asynchronous family) whose key pair lives in a WebCrypto `CryptoKey` holds no secret bytes, and
 a non-extractable key has none to give. `encodes<F, K>` is therefore false for a private format
-(`pkcs8`, `pem(pkcs8)`, a key pair's `jwk` and `raw`) on a backend whose
-`detail::asynchronous_backend_v` is true, with a message naming WebCrypto's `exportKey`; the public
-formats of such a key are computed from the public key the backend keeps. When part B lands, its
-own change decides whether an `async_export` exists; nothing here blocks it.
+(`pkcs8`, `pem(pkcs8)`, a key pair's `raw`) on a backend whose `detail::asynchronous_backend_v` is
+true, with a message naming WebCrypto's `exportKey`; the public formats of such a key are computed
+from the public key the backend keeps. When part B lands, its own change decides whether an
+`async_export` exists; nothing here blocks it.
 
-### D12. The JWK target and the core
-
-`<webcpp/crypto/formats.hpp>` (core) declares `jwk_t` and its row in `all_formats`, and each
-curve's `formats.hpp` lists `jwk_t` in `formats_of<T>`, so that the concepts are the same whether
-`jwk.hpp` is included or not. `<webcpp/crypto/jwk.hpp>` holds the JWK codecs, the reader of D8 and
-the thumbprint, includes document, and specializes `detail::codec<jwk_t, T>` for every type whose
-curve's `formats.hpp` it sees; a call of a JWK pair without it stops at a `static_assert` naming
-the header and the target (D3), never at a link error. The Jamfile gains
-`alias jwk : : : : <library>/webcpp/crypto//crypto <library>/webcpp/document//document ;`;
-`/webcpp/crypto//crypto` does not name document, and a test builds every core header without
-document's include path.
-
-### D13. What is removed and what moves
+### D8. What is removed and what moves
 
 Removed with no alias: on Ed25519, X25519, P-256 and secp256k1 `encode_spki`, `decode_spki`,
 `encode_pkcs8`, `decode_pkcs8`, `max_spki_size`, `max_pkcs8_size`; secp256k1's
@@ -478,37 +328,20 @@ class.
 
 ## Rulings
 
-The first draft's R3 (typed signatures) moved to crypto/uniform-types and its R11 (X25519 kept
-out) was withdrawn by owner decision 13; the other numbers are kept.
+The numbers of the first drafts are kept; R3 (typed signatures) moved to crypto/uniform-types, R11
+(X25519 kept out) was withdrawn by owner decision 13, and the JWK rulings (R6 to R10, R12, R13)
+moved to "Deferred: JWK" with decision 14.
 
-- **R1** (owner decision 11, kept as the first draft ruled): the uncompressed point is the default
-  of `raw` and `spki` on every EC curve; `crypto::compressed` names the other form everywhere.
+- **R1** (owner decision 11): the uncompressed point is the default of `raw` and `spki` on every EC
+  curve; `crypto::compressed` names the other form everywhere.
 - **R2: a key pair's `raw` is `secret()` and `make` under the format's name**: `encode(raw, kp)`
   calls `kp.secret()` and returns its bytes as `encoded<32, secret_binary>`, `decode<K>(raw, bytes)`
   calls `K::make(bytes)`; one implementation each, so that generic code over formats round-trips
   every type. `secret()` and `make` stay the documented primary forms.
 - **R4: decoding is typed by its input**: binary formats take a byte span, text formats a
-  `std::string_view`, JWK also a document value; nothing sniffs PEM from DER.
+  `std::string_view`; nothing sniffs PEM from DER.
 - **R5: secp256k1's `raw(xonly)` decodes** to the even-y key (BIP340's lift_x), so that a Nostr
   key in 32 bytes becomes a typed key in one call; `spki` has no x-only form.
-- **R6: the encoder writes only the required JWK members** (D7), never `alg`, `use`, `key_ops`,
-  `kid` or `ext`; WebCrypto's `importKey("jwk")` accepts such a JWK. The decoders ignore them, so a
-  WebCrypto export with `key_ops` and `ext` decodes; usage restrictions are the program's concern,
-  as with SPKI.
-- **R7** (owner decision 12): a private JWK given to a public key's decode is `invalid_encoding`.
-- **R8: `crypto::thumbprint(key)` is SHA-256 only**, as RFC 7638's examples and every JOSE
-  library default; a hash parameter or RFC 9278's URI form can join later without changing a call.
-- **R9: `crypto::jwk_working_size` is 4 KiB** for the public reader's buffer, on the stack: with
-  unselected members skipped, it holds the selectors, their callbacks, the frames of `max_depth`
-  and the five selected strings, each at most 64 bytes; task 4.3 measures the need and the guide
-  records it. The private reader needs no buffer.
-- **R10: the private reader refuses an escape in `d`** and decodes escapes everywhere else (keys,
-  `kty`, `crv`, `x`, `y`), so that both readers agree on every text but one whose `d` is escaped,
-  which the public reader refuses anyway; a differential fuzz target checks that they agree.
-- **R12: JWK shares the PEM family's base64 backend** (libsodium's constant-time codec), so that
-  `d` is never decoded by a variable-time table; a program that uses JWK links libsodium, as one
-  that uses PEM does.
-- **R13: a document value's decode cannot refuse duplicates** (D9); the guide says so.
 - **R14** (the builder's check): the members and codecs live in each `curves/<curve>/formats.hpp`;
   `formats.hpp` includes no curve and no backend; the "builds without X" tests stay and cover the
   formats headers.
@@ -518,6 +351,7 @@ out) was withdrawn by owner decision 13; the other numbers are kept.
   to join the formats in the change that brings it.
 - **R16: P-256's compressed point is decoded by crypto on BearSSL**, a square root on public data
   (D5), its result checked by `make`; Wycheproof's and OpenSSL's compressed points are its oracle.
+- **R17: the list leaves room for JWK** (D1), proven by a test with a stand-in text format.
 
 ## Before and after
 
@@ -551,15 +385,9 @@ auto const der = crypto::encode(crypto::der, *key.sign(crypto::ecdsa_sha256, mes
 // Refused at compile time, the diagnostic naming format_list<raw_t<default_form_t>>.
 auto const no = crypto::encode(crypto::der, *ed_key.sign(crypto::eddsa, message));
 
-// JWK, new.
-auto const jwk_text = crypto::encode(crypto::jwk, key);                  // 176 bytes, secret text
-auto const back = crypto::decode<p256::keypair>(crypto::jwk, jwk_text->text());   // d in constant time
-auto const pub = crypto::decode<p256::public_key>(crypto::jwk, peer_text);        // any size, bounded memory
-auto const in_a_set = crypto::decode<p256::public_key>(crypto::jwk, jwks["keys"][0]);
-auto const id = crypto::thumbprint(*key.public_key());
-
-// X25519, new.
+// X25519 and the point forms, new.
 auto const x = crypto::encode(crypto::spki, *x25519_key.public_key());
+auto const small = crypto::encode(crypto::raw(crypto::compressed), p256_public_key);
 
 // A caller that manages memory.
 std::array<std::uint8_t, crypto::max_encoded_size<crypto::spki_t<>, p256::public_key>> out{};
@@ -568,17 +396,12 @@ auto const written = crypto::encode(crypto::spki, public_key, out);
 
 ## Allocation analysis
 
-| Operation | Heap | Stack and other memory |
+| Operation | Heap | Stack |
 |---|---|---|
 | `encode` of every format | none | the result, N bytes (at most 241, P-256's `pem(pkcs8)`), and a DER buffer of at most 138 bytes inside `pem(F)`, wiped for `pkcs8` |
 | `encode` into a span | none | the DER buffer of `pem(F)` |
 | `decode` of `raw`, `spki`, `pkcs8`, `der` | none | today's: a re-encoding buffer to check strictness, wiped for `pkcs8` |
 | `decode` of `pem(F)` | none | the DER buffer, at most 138 bytes, wiped for `pkcs8` |
-| `decode` of a private JWK text | none | the reader's cursor, its bit stack and fixed buffers, under 256 bytes, wiped; constant whatever the input's size |
-| `decode` of a public JWK text | none (whole text given at once; proven by a counting `operator new`) | the working buffer, 4 KiB by default or the caller's span; constant whatever the input's size |
-| `decode` of a JWK document value | none (`contains` before `operator[]`) | fixed buffers of 64 bytes, wiped |
-| `encode<Document>(jwk, ...)`, `encode(jwk, value, target)` | the document's storage, which the program picked | none |
-| `thumbprint` | none | the public JWK text, 130 bytes at most, and the hash's state |
 
 secp256k1's decoders keep their existing behaviour (libsecp256k1's static context, no allocation).
 Every public function that calls a backend keeps `detail::timing_guard` first and joins its
@@ -595,41 +418,95 @@ on the wire as the compact text `x.y` of the JWK's two coordinates (`jwkToCompac
 (`identity-idb.ts`). Its exported user key is `trystero_uk_` and the base64url of the JSON
 `{d, x, y}`, a JWK without `kty` and `crv`, and its import also takes a JWK text whose `kty` and
 `crv` may be absent. webcpp::trystero reads that today with webcpp::document itself
-(`protocol/identity.hpp`, `parse_user_key`). That leniency is Trystero's protocol, not RFC 7517:
-`crypto::jwk` stays strict (`kty` and `crv` required), and webcpp::trystero keeps its own reading
-of the user key, building the key pair through crypto's typed forms; it can use `crypto::jwk` where
-it exchanges a full JWK with WebCrypto, and the typed `raw` and JWK coordinates for the compact
-text. Phase 3 of the port adapts after this change.
+(`protocol/identity.hpp`, `parse_user_key`), building the key from the coordinates. That leniency
+is Trystero's protocol, not RFC 7517, so phase 3 of the port does not wait for crypto's JWK: it
+keeps its own reading and builds the typed keys through this change's `raw` forms
+(`p256::keypair::make(d)`, `p256::public_key::make` of `0x04 || x || y`); when crypto's JWK lands,
+webcpp::trystero can use it where it exchanges a full JWK with WebCrypto.
+
+## Deferred: JWK
+
+The owner deferred JWK on 2026-11-22 (decision 14). This section records what the first drafts
+designed, so that the later change starts from it, and the chain it waits for.
+
+**The chain.** JWK comes last of three steps, none of them written here:
+
+1. **json_schema's genesis** (`libraries/json_schema/openspec/changes/genesis/`, a draft: "a JSON
+   Schema validator for every dialect"): drafts 4 to 2020-12 and OpenAPI 3.0, an IR compiled into a
+   flat plan run by a small VM, errors as values, allocation only through the program's
+   allocators, user vocabularies; today its parser dependency is Boost.JSON.
+2. **json_schema on document**, the step document's genesis names as its open question O1 ("moving
+   xstate, trystero and json_schema from Boost.JSON to document: each is its own proposal"): the
+   validator reads webcpp::document values, and document's streaming parser applies a compiled
+   schema while it parses, so that what the schema forbids (a member not allowed, a string longer
+   than its `maxLength`, a value of the wrong type or constant) is refused as it streams, before it
+   is buffered, and what the schema does not need is skipped. This schema-driven, bounded parsing
+   replaces the bounded-parse mode the second draft asked of document.
+3. **crypto's JWK**: each key type's JWK is a JSON Schema (required `kty`, `crv`, `x`, `y` and,
+   for a private key, `d`; `kty` and `crv` as `const`; `x`, `y` and `d` with `minLength` and
+   `maxLength` 43 and a base64url `pattern` or a custom `format`; `additionalProperties` true, or
+   bounded by `maxProperties` and a `maxLength` on unknown members; possibly a small vocabulary or
+   meta keywords of crypto's own for "base64url of N bytes" and "secret"), compiled once, which
+   document applies while parsing a JWK. JWK joins this change's list as `crypto::jwk` with no
+   interface change (D1).
+
+**What the first drafts designed, kept for that change** (the details are in this change's history
+on branch `crypto/formats`):
+
+- RFC 7517, 7518, 8037 and 8812: EC P-256 and secp256k1 (`x`, `y`, `d`), OKP Ed25519 and X25519
+  (`x`, `d`), base64url without padding of 32 bytes, 43 characters.
+- Its own header `<webcpp/crypto/jwk.hpp>` and target `/webcpp/crypto//jwk`, the only part of
+  crypto that depends on document.
+- Encoding to text into the fixed result with no heap: members in lexicographic order, no white
+  space, nothing but the required members (no `alg`, `use`, `key_ops`, `kid`, `ext`), so that the
+  public text is RFC 7638's thumbprint input. Sizes: Ed25519 79 public, 129 private; X25519 78 and
+  128; P-256 126 and 176; secp256k1 130 and 180. Encoding to a document or into a document value,
+  in the storage the program picks.
+- Decoding: duplicates of the five members refused, unknown members ignored, `kty`, `crv` and sizes
+  checked, a public JWK refused as a key pair, a private JWK refused as a public key (owner decision
+  12), `x` and `y` required to be `d`'s public key, exhaustion an error value (`jwk_too_large`),
+  never termination, with or without exceptions.
+- A private JWK's `d` read in constant time (owner decision 8): after `"d":"`, 43 bytes copied
+  without a branch on them, the next byte required to be `"`, decoded by the constant-time
+  base64url, an escape in `d` refused; traced by the constant-time lane as PKCS#8 is; every byte
+  that held `d` wiped. Whether a schema-driven document parse can give that guarantee, or a small
+  reader of crypto's own stays for private keys, is the later change's first question.
+- Decoding from an existing document value (a JWK Set's element, a JWT header's member) with no
+  allocation (`contains` before `operator[]`, since a handle of a missing member holds its key);
+  the rule that a private JWK read out of a program's document had its `d` through document's
+  parser, not constant time.
+- `crypto::thumbprint(key)`: RFC 7638 with SHA-256, on webcpp::hash.
+- JWK's base64url on the PEM family's constant-time backend.
+- What document does today, verified in libs/document at 284ac01: its streaming parser builds the
+  whole document (selectors only choose deliveries), buffers the text of every string and key whole
+  before storing it (`detail/handler.hpp`, `on_string_part`, `on_key_part`), so a 10 KB unknown
+  member costs its full size; and without exceptions an allocator's failure ends the program
+  (`detail/allocation.hpp`). Step 2 of the chain is where both are answered.
 
 ## Risks / Trade-offs
 
-- **Parser attack surface.** JWK decoding reads network input with two readers (crypto's and
-  document's bounded mode), and PEM, DER, SPKI and PKCS#8 decoders read untrusted bytes. Every
-  decoder gets a fuzz target from the first commit (`test/fuzz/decode_<format>.cpp`, one per
+- **Parser attack surface.** The PEM, DER, SPKI, PKCS#8 and raw decoders read untrusted bytes.
+  Every decoder gets a fuzz target from the first commit (`test/fuzz/decode_<format>.cpp`, one per
   format and type family, libFuzzer natively, each asserting no crash, no allocation, the
   round-trip property for what it accepts and the wipe of its buffers), seeded with Wycheproof's
-  and the RFCs' vectors and WebCrypto's exports, plus a differential target that feeds the same
-  texts to both JWK readers and requires the same verdict (R10); run in CI for a bounded time and
-  locally for longer before the merge.
-- **A second JSON reader** in crypto is code to keep correct; it is small, strict, fuzzed against
-  document, and exists because `d` must not pass through a reader whose time depends on it.
+  and the RFCs' vectors and WebCrypto's exports; run in CI for a bounded time and locally for
+  longer before the merge.
 - **secp256k1's SPKI default changes** (R1); a program that stored compressed SPKIs still decodes
   them.
 - **P-256's square root on BearSSL** (R16) is new arithmetic, on public data only, checked by the
   point validation that follows it.
 - **A deduced-return member without its curve's `formats.hpp`** gives the compiler's message, not
   ours, as the asynchronous members do; the guide says which header to include.
-- **Code size**: one codec per pair is a template instantiated only when called; the JWK decoders
-  pull document and Boost.JSON's parser, which is why JWK has a target of its own.
+- **JWK waits for two other changes**; programs that need JWK now (webcpp::trystero) read their own
+  shapes with document and build typed keys through `raw`.
 
 ## Migration Plan
 
-crypto/sign-unified merges; then crypto/uniform-types and document/bounded-parse, in parallel; then
-this change, on branches `crypto/formats` of webcpporg/crypto, webcpporg/proposals and the
-superproject; then webcpp::trystero's phase 3 of the 0.27 port. Local verification on every lane,
-merged by the controller, one CI run at the end by the coordinator.
+crypto/sign-unified merges; then crypto/uniform-types; then this change, on branches
+`crypto/formats` of webcpporg/crypto, webcpporg/proposals and the superproject; then
+webcpp::trystero's phase 3 of the 0.27 port. JWK follows the chain of "Deferred: JWK". Local
+verification on every lane, merged by the controller, one CI run at the end by the coordinator.
 
 ## Open Questions
 
-None for this change: the first draft's five were answered on 2026-11-22 (owner decisions 8 to
-13).
+None for this change; the deferred JWK's first question is recorded in its section.
