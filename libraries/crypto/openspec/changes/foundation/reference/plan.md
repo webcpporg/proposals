@@ -4241,6 +4241,97 @@ part starts, this task moves to increment 3's stream, which then adds it.
 - [ ] **Step 3:** commit `crypto: the asynchronous family's page and examples`; the pull
   requests, merged; the CI once at the end of the owner's queue.
 
+### Increment 4, part A: as built (2026-11-21)
+
+Part A was built on the branch `crypto/async` of the library and the superproject (the
+library's commits on its `main` at `e999052`, listed below), by the tasks above, each reviewed,
+with a final review of the branch and one fix wave. The code is the truth; where it differs from
+the text above, this subsection says so. Task 4.A5 is recorded when P-256's forms land.
+
+**The commits** of the library, oldest first:
+
+- `f4db5b3` crypto: the heavy operations' machinery on webcpp::hash's model, with cancellation before and during the work and values that wipe themselves
+- `9da0387` crypto: the heavy job's allocator is chosen lazily, with a type-erased work executor tested, and a heavy operation's value must move without throwing
+- `4a7450b` crypto: async.hpp's base, completions posted on every target, and the seam the browser backend fills
+- `8240676` crypto: AES-GCM's asynchronous make, seal and open, posted on every target
+- `4828b3d` crypto: Ed25519's and X25519's asynchronous functions, posted on every target
+- `f7c314d` crypto: refusal texts name the synchronous function to call, the coverage counter is generic, and the review's minors of 4.A3 and 4.A4 are closed
+- `27d53a5` crypto: the asynchronous family's page and examples
+- `3d567f5` crypto: the asynchronous family's tables list each backend's own functions, with use cases, and the sign example reports a missing public key
+- `68f2976` crypto: the asynchronous family's remaining wording matches its behavior, a const AES-GCM object gets the constness error, and crypto.hpp names the header it leaves out
+
+**The public API** (`include/webcpp/crypto/async.hpp`; every function takes the executor its
+completion is posted to first and the completion token last; a failure is a value of the
+completion, never a throw; the spans and the objects are the caller's until the completion):
+
+| Function | Completion signature |
+|---|---|
+| `async_make<Algorithm>(executor, key_bytes, token)`, AES-GCM or an Ed25519 key pair | `void(error_code, Algorithm)`; on an error the empty object, every member of which answers `invalid_state` |
+| `async_generate<Keypair = curves::ed25519::keypair>(executor, token)` | `void(error_code, Keypair)`; empty on an error |
+| `async_seal(executor, aead, iv, additional_data, data, token)` | `void(error_code, Gcm::result_type)`, the tag; zeroed on an error |
+| `async_open(executor, aead, iv, additional_data, data, tag, token)` | `void(error_code)`; the plaintext in `data` on success, zeroed on `authentication_failed` or a backend's failure, untouched on a guard's refusal |
+| `async_sign(executor, key_pair, message, token)`, an Ed25519 key pair | `void(error_code, std::array<std::uint8_t, 64>)`; zeros on an error |
+| `async_verify<Policy = curves::ed25519::strict, Backend = default_async_backend_t<families::ed25519>>(executor, public_key, message, signature, token)` | `void(error_code)` |
+| `async_agree<Backend = default_async_backend_t<families::x25519>>(executor, secret_key, peer_public_key, token)` | `void(error_code, secret<32>)`; zeros on an error |
+
+`default_async_backend_t<Family>` is `default_backend_t<Family>` on every target (R-A4). The seam
+for part B is `detail::asynchronous_backend_v<Backend>` (false for every backend now) and the
+declared-only `detail::async_engine<Backend>`, whose member functions and their argument order
+`async.hpp` documents. The heavy machinery is `detail/heavy.hpp`'s `detail::run_on_work` with
+`WEBCPP_CRYPTO_DETAIL_REQUIRE_THREADS`; no heavy operation exists yet, so only the test-only
+operation in `test/heavy_test.cpp` uses it (R-A6). `detail/async_access.hpp` holds
+`async_access`, the friend that builds the empty objects.
+
+**Departures from the plan's text:**
+
+- **The heavy job's allocator is the work executor's, else `std::allocator<void>`** (Task 4.A1),
+  where webcpp::hash's `heavy_job` always uses `std::allocator<void>`. The choice is lazy
+  (`heavy_job_allocator_of<WorkExecutor>`), so that an executor that cannot answer the allocator
+  query, such as a type-erased `asio::any_io_executor`, names nothing ill-formed; the test
+  `heavy_allocator` pins that the completed path calls no `operator new` (the cases with a
+  connected cancellation slot do not, since Asio's own signal storage allocates).
+- **A heavy operation's value must move without throwing** (a `static_assert`), so that the
+  state moves it into the completion on every path; a `secret<N>` or a key pair does.
+- **`async_gcm` is two targets, `async_gcm` (BearSSL) and `async_gcm_openssl`**, running the same
+  test: one target cannot link OpenSSL on Emscripten, where only BearSSL is built.
+- **The refusal text of `async_sign` says "call the key pair's synchronous signing function for
+  the others"**, not the plan's "call the key pair's sign": secp256k1's key pair has no `sign`,
+  only `sign_ecdsa` and `sign_schnorr`. `async_make` and `async_generate` have refusals of their
+  own ("call the synchronous make" and "call the synchronous generate"), which the plan did not
+  give; `async_seal` and `async_open` keep the plan's texts.
+- **Two message tests more than planned**, `async_open_xchacha` and `async_make_xchacha`, each
+  with its MSVC fixture, beside `async_seal_xchacha` and `async_sign_secp256k1`.
+- **A const AES-GCM object** passed to `async_seal` or `async_open` reaches the non-const member's
+  own constness error, not the refusal for a non-GCM type.
+- **The capability table's asynchronous operations are split per family**: `async_gcm`,
+  `async_ed25519` and `async_x25519` in `doc/tables/crypto.json`, not the one operation `async`
+  of Task 4.A6's text, so that each generated backends page lists its own backends; the use cases
+  `async_seal` and `async_sign` answer them.
+- **The changelog line** for the family was folded into the first Unreleased line (version 0.1's
+  entry is at the ten-line cap), as the earlier changes did.
+- **The test's counter** `async_gcm_completion` became the generic `async_completion_counter`.
+- **Emscripten builds run with `EM_CACHE` unset**: the read-only emsdk cache lacks the
+  multi-threaded `libc++` variant and cannot build it, so the build uses the writable default
+  cache.
+- **The superproject's fixture** `heavy_without_threads_on_emscripten` names `run_on_work`,
+  matching the library's message tests.
+
+**What the tests pin beyond the plan's list:** `async_destroyed` in `async_gcm_test.cpp` and
+`async_25519_test.cpp` (the object, the key pair and the spans destroyed after the initiating
+call and before the completion: the results are right); the allocation counts of the cheap
+functions' handlers; `use_future` where exceptions are on, `as_tuple` where they are off.
+
+**Follow-ups (R-A5 and the final review):**
+
+- Lift the heavy state, `heavy_state`, `heavy_job` and `heavy_initiation`, into webcpp::asio when
+  a third library needs it; crypto and webcpp::hash each hold a port now.
+- webcpp::hash's `heavy_job` could take the work executor's allocator, as crypto's does.
+- Task 4.A5, P-256's asynchronous functions, needs increment 3's P-256 on `main`; the refusal
+  texts of the four functions already name P-256 and stay true then.
+
+**Task 4.A5 is recorded when P-256's forms land.** (Placeholder: a later commit replaces this
+sentence with the task's "As built".)
+
 ## Increment 5: libsodium completed (a stream after 1)
 
 1. `ristretto255` and `edwards25519` points and scalars; RFC 9496's vectors.

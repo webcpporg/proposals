@@ -1,11 +1,18 @@
 # Status of the foundation change
 
-**Date:** 2026-11-19 (accepted by the owner on 2026-11-14; revised on 2026-11-17; increment 2
-recorded as built on 2026-11-19).
+**Date:** 2026-11-21 (accepted by the owner on 2026-11-14; revised on 2026-11-17; increment 2
+recorded as built on 2026-11-19; increment 4, part A built on 2026-11-21 but for Task 4.A5).
 
 ## Where things stand
 
-- **Increment 4, part A (2026-11-20) is written in full** in `plan.md` ("Increment 4, part
+- **Increment 4, part A is built, except Task 4.A5 (2026-11-21).** Tasks 4.A1 to 4.A4 and 4.A6 are
+  on the branch `crypto/async` of the library and the superproject (nine commits from `f4db5b3`
+  to `68f2976`, each task reviewed, the whole branch reviewed and one fix wave done); `plan.md`'s
+  "Increment 4, part A: as built" records the API, the departures and the follow-ups, and
+  `../tasks.md` ticks them. Task 4.A5 (P-256's asynchronous functions) waits for increment 3's
+  P-256 on `main` and is recorded when it lands; the CI's first run of the family is at the end
+  of the owner's queue. Part B keeps its outline.
+- **Increment 4, part A (2026-11-20) was written in full** in `plan.md` ("Increment 4, part
   A", rulings R-A1 to R-A8) and `../tasks.md` (4.A1 to 4.A6): the asynchronous family over the
   synchronous backends and the heavy machinery on webcpp::hash's model, buildable without the
   browser backend; it starts after the change `../../api-gaps/` and increment 3's P-256. Part B

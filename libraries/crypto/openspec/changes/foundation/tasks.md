@@ -81,16 +81,16 @@ on the shape part A fixes.
 
 Part A:
 
-- [ ] 4.A1 The heavy machinery on webcpp::hash's model: cancellation, values that wipe
+- [x] 4.A1 The heavy machinery on webcpp::hash's model: cancellation, values that wipe
   themselves, webcpp::asio, natively and on Emscripten with `-pthread` (plan: Task 4.A1)
-- [ ] 4.A2 `async.hpp`'s base: `default_async_backend_t`, the post, the browser's seam (plan:
+- [x] 4.A2 `async.hpp`'s base: `default_async_backend_t`, the post, the browser's seam (plan:
   Task 4.A2)
-- [ ] 4.A3 AES-GCM's `async_make`, `async_seal`, `async_open` (plan: Task 4.A3)
-- [ ] 4.A4 Ed25519's `async_generate`, `async_make`, `async_sign`, `async_verify`; X25519's
+- [x] 4.A3 AES-GCM's `async_make`, `async_seal`, `async_open` (plan: Task 4.A3)
+- [x] 4.A4 Ed25519's `async_generate`, `async_make`, `async_sign`, `async_verify`; X25519's
   `async_agree` (plan: Task 4.A4)
 - [ ] 4.A5 P-256's asynchronous functions, once increment 3's P-256 is on `main` (plan: Task
   4.A5)
-- [ ] 4.A6 The page, the examples, the table; part A whole (plan: Task 4.A6)
+- [x] 4.A6 The page, the examples, the table; part A whole (plan: Task 4.A6)
 
 Part B:
 
