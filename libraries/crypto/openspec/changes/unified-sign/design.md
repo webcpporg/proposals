@@ -97,8 +97,9 @@ for a scheme.
 | `ecdsa_sha256_recoverable` | secp256k1: `basic_keypair<B>` (`recover` gives the key) | SHA-256 inside | 32 bytes |
 
 ECDSA's signing gives low S on both curves (s at most (n - 1) / 2): libsecp256k1 signs low S,
-and P-256's RFC 6979 signature is normalized after signing (its s is public once signed, and is
-declassified before the comparison for the constant-time lane). Verification differs on purpose:
+and P-256's RFC 6979 signature is normalized after signing, without a branch: n - s is always
+computed and selected by a mask from a constant-time comparison, so the constant-time lane still
+traces the secret through the signature. Verification differs on purpose:
 secp256k1 refuses a high S (libsecp256k1's rule, Bitcoin's policy), P-256 accepts both (FIPS
 186-5 and WebCrypto, whose own signatures may be high). A protocol that requires low S from a
 P-256 peer checks `is_low_s` before `verify`.
