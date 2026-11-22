@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-22
+webcpp:
+  library: crypto
+  title: "crypto: one encode and one decode for every key and signature format, JWK included"
+  kind: wrapper
+  port_of: null
+  status: proposed
+  release: null
+  implementation: null
+  decided: null
