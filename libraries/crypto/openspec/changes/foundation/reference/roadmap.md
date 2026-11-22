@@ -139,7 +139,8 @@ ChaCha20-Poly1305's case to `everything_test.cpp`, if M merges second its M2 add
 
 | Stream | Branch | Foundation increment | Notes |
 | --- | --- | --- | --- |
-| 3 | `crypto/bearssl-rest` | 3, without ChaCha20-Poly1305 (moved to 8b) | P-curves, DER, key forms, AES modes, RSA |
+| 3a | `crypto/p256` | 3, its P-256 part (Tasks 3.1 to 3.6, D36) | written in full on 2026-11-20; after the change data-independent-timing merges; merges on its own, first of stream 3, for webcpp::trystero's port of Trystero 0.27.0. **Delivered 2026-11-21, pending merge** (library head `9cc0060`, superproject `c228b06`, `main` merged into both; `STATUS.md`). Parked: memcheck and MemorySanitizer (below the table); sizes and throughput provisional until the final measurement pass; ACVP's vectors (Task 3.8) and the Chrome oracle (Task 4.4) deferred |
+| 3 | `crypto/bearssl-rest` | 3, the rest (Tasks 3.7 to 3.11), without ChaCha20-Poly1305 (moved to 8b) | next, after 3a merges: P-384 and P-521, X25519, the `acvp` pin, AES modes, RSA; each task written in full when it starts |
 | 4 | `crypto/browser` | 4 | absorbs genesis Task 23 (the oracle for every algorithm on `main`, the audio worklet, Chrome's throughput page from release builds) |
 | 5 | `crypto/sodium-rest` | 5 | |
 | 6 | `crypto/blst` | 6 | unblocks stream 9 |
@@ -147,6 +148,21 @@ ChaCha20-Poly1305's case to `everything_test.cpp`, if M merges second its M2 add
 | 8 | `crypto/openssl-rest` | 8, without ChaCha20-Poly1305 (moved to 8b) | changes the AES modes' native default to OpenSSL (D32); unblocks stream 12 |
 | 10 | `crypto/mcl` | 10 | starts with the spike |
 | 11 | `crypto/sss` | 11 | starts with the MSVC spike |
+
+Stream 3a's memcheck and MemorySanitizer: see Task 3.6's constant-time results (`plan.md`, Task
+3.6's "As built").
+On 2026-11-21, in the arm64 Linux container linux-lint:arm64 (Ubuntu 24.04, clang 18.1.3,
+Valgrind 3.22.0), the constant-time own lane ran as the CI runs it. memcheck and MemorySanitizer
+first found upstream BearSSL 7bea48e's ECDSA signing branching on the RFC 6979 nonce's bit
+length (br_ecdsa_i31_bits2int -> br_i31_rshift loops and stores by the decoded nonce's announced
+length: 8 words instead of 9 when k < 2^248, the Minerva class). webcpp's BearSSL now carries
+one fix, commit 32381d6 on webcpporg/bearssl's `webcpp` branch (ecdsa_i31_bits.c and
+ecdsa_i15_bits.c set x[0] to the full announced length before the shift; value-preserving), and
+the superproject pin moved to it (CODING-GUIDELINES chapter 5 rule 1's new exception: a minimal,
+value-preserving security fix upstream lacks, on a `webcpp` branch, reported upstream). After it
+ctgrind, ctgrind_space, msan, secp256k1_ctime (+msan) and the four dudect programs pass, and the
+four planted programs fail as required. webcpp::hash's BearSSL canary moves to 32381d6 in a
+separate small hash PR. Parked owner item: report the fix to BearSSL upstream.
 
 ### Wave 3: as dependencies merge
 
@@ -165,7 +181,7 @@ ChaCha20-Poly1305's case to `everything_test.cpp`, if M merges second its M2 add
 ### Merging
 
 A stream merges when it is green and reviewed. When two are ready at once, the value order
-decides (A, B, then 3, 4, 5, 6, 7, 8, 10, 11, then 9, 12); a ready stream never waits for an
+decides (A, B, then 3a, 3, 4, 5, 6, 7, 8, 10, 11, then 9, 12); a ready stream never waits for an
 earlier one unless its rebase conflicts. After every merge each open stream rebases, merges
 `crypto.json`'s rows as JSON, regenerates with `generate.py`, and runs its lanes again.
 Version 0.2 is A and B (and M if merged by then); after it, each merged increment is the next

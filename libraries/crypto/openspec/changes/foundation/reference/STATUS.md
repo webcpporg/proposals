@@ -1,9 +1,50 @@
 # Status of the foundation change
 
-**Date:** 2026-11-19 (accepted by the owner on 2026-11-14; revised on 2026-11-17; increment 2
-recorded as built on 2026-11-19).
+**Date:** 2026-11-21 (accepted by the owner on 2026-11-14; revised on 2026-11-17; increment 2
+recorded as built on 2026-11-19; increment 3's P-256 part recorded as built on 2026-11-21).
 
 ## Where things stand
+
+- **2026-11-21: increment 3's P-256 part (stream 3a, `../tasks.md` 3.1 to 3.6) is delivered
+  and awaits its merge.** The library's branch `crypto/p256` (head `9cc0060`, `main` `3f27988`
+  merged into it as `9121118`) and the superproject's branch of the same name (head `c228b06`,
+  `main` `8f38ac7` merged into it as `436dbe8`, its `libs/crypto` gitlink not yet moved) hold
+  Tasks 3.1 to 3.6; this proposals branch, `crypto/plans-p256-hash-dit`, holds their record as
+  built (`plan.md`'s "As built" per task, `../design.md` D36's "As built"). Every task was
+  reviewed and fixed in one round; the part ran the full local verification of `plan.md`'s
+  increment 3 "As built", the CI deferred to the coordinator's final run. Parked:
+  - memcheck and MemorySanitizer over P-256's paths and the planted scalar check, in the arm64
+    Linux container: see Task 3.6's constant-time results (`plan.md`).
+    On 2026-11-21, in the arm64 Linux container linux-lint:arm64 (Ubuntu 24.04, clang 18.1.3,
+    Valgrind 3.22.0), the constant-time own lane ran as the CI runs it. memcheck and
+    MemorySanitizer first found upstream BearSSL 7bea48e's ECDSA signing branching on the RFC
+    6979 nonce's bit length (br_ecdsa_i31_bits2int -> br_i31_rshift loops and stores by the
+    decoded nonce's announced length: 8 words instead of 9 when k < 2^248, the Minerva class).
+    webcpp's BearSSL now carries one fix, commit 32381d6 on webcpporg/bearssl's `webcpp` branch
+    (ecdsa_i31_bits.c and ecdsa_i15_bits.c set x[0] to the full announced length before the
+    shift; value-preserving), and the superproject pin moved to it (CODING-GUIDELINES chapter 5
+    rule 1's new exception: a minimal, value-preserving security fix upstream lacks, on a
+    `webcpp` branch, reported upstream). After it ctgrind, ctgrind_space, msan, secp256k1_ctime
+    (+msan) and the four dudect programs pass, and the four planted programs fail as required.
+    webcpp::hash's BearSSL canary moves to 32381d6 in a separate small hash PR. Parked owner
+    item: report the fix to BearSSL upstream.
+  - Sizes and throughput are provisional (a loaded machine) and are measured again in the
+    coordinator's final measurement pass.
+  - NIST ACVP's ECDSA SigVer and KeyVer for P-256 join with the `acvp` submodule (Task 3.8);
+    the WebCrypto oracle in Chrome joins with the browser lane (Task 4.4). Both are deferred,
+    as design D36 rules.
+  - Next: Tasks 3.7 to 3.11 on `crypto/bearssl-rest` from `main` once P-256 has merged, each
+    written in full when it starts.
+
+- **2026-11-20: increment 3's P-256 part is written in full** (`plan.md` Tasks 3.1 to 3.6,
+  `../design.md` D36, the spec's "P-256: a key pair from a raw scalar, raw ECDH and low S"),
+  after the owner approved on 2026-11-20 the scalar's import and export and ECDH's raw x for
+  webcpp::trystero's port of Trystero 0.27.0. It starts once the change
+  `../data-independent-timing/` has merged (every new public function holds its
+  `detail::timing_guard`), as stream 3a on `crypto/p256`, and merges on its own. By then
+  increment 2 is merged (`webcpporg/crypto#5`, `6fc9d7a`); the bullets below are this file's
+  record of 2026-11-19 and are brought up to date by the stream R task that records version
+  0.2.
 
 - **Increment 4, part A (2026-11-20) is written in full** in `plan.md` ("Increment 4, part
   A", rulings R-A1 to R-A8) and `../tasks.md` (4.A1 to 4.A6): the asynchronous family over the
@@ -73,6 +114,11 @@ Nothing of increment 2. What remains of it:
 ## How to resume
 
 1. Read `roadmap.md`: the overlaps resolved, the defaults, the waves and their streams.
+   Stream 3a (P-256): replace the TODO above with the memcheck and MemorySanitizer result, open
+   the pull requests of the library, the superproject (the gitlink and the guidelines) and this
+   proposals branch, merge, and run the CI and the final measurement pass; its ledger is the
+   untracked `.superpowers/sdd/plan/progress.md` of the library's worktree, with every task's
+   brief, report and review beside it.
 2. Increment 2: push the three branches and open the pull requests above; fix on the same
    branches whatever the CI or the review finds, with a failing test first, and record each
    difference from the plan in its task's "As built". Stream B's ledger is the untracked
