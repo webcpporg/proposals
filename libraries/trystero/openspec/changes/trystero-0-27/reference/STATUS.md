@@ -87,6 +87,13 @@ Dependencies outside trystero:
   crypto errors are gone, trystero's doc comments pass `doc_comments.py`, and the only failure
   left is webcpp::hash's. Once the hash fix lands, the doc target is run again before the merge.
 
+- **Merge blocker, owned by the crypto stream (R21):** the lint's clang-tidy fails on
+  webcpp::crypto's `backends/secp256k1.hpp:66` (`bugprone-dynamic-static-initializers` on the
+  secp256k1 canary) in every trystero translation unit that includes it, natively on the Linux
+  lint and with Emscripten's flags on crypto's own `secp256k1_keys_test.cpp`. main's lint does not
+  meet it only because no other library includes that header in a unit the lint analyses so. The
+  fix is crypto's; trystero's own sources pass the whole lint.
+
 Carries inside trystero:
 
 - **2.1** confirms or amends design D9 before the shared connection, its presence frames, room
