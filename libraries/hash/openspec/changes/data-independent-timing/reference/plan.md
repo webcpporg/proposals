@@ -444,8 +444,8 @@ builds).
   timing, coverage and asynchronous tests in the arm64 Linux container (the linux-lint image),
   where `cpu_has_dit` reads the real `HWCAP_DIT`.
 - [ ] **Step 2:** the full macOS lint; the Linux lint
-  (`/Users/rodrigo/dev/webcpporg/linux-lint/run.sh <superproject>`, exit 0); the MSVC lane
-  (`/Users/rodrigo/dev/webcpporg/msvc-lane`, 14.3 and 14.5, `summarize.sh`, no failure outside
+  (the owner's local Linux lint lane, `linux-lint/run.sh <superproject>`, exit 0); the MSVC lane
+  (the owner's local `msvc-lane`, 14.3 and 14.5, `summarize.sh`, no failure outside
   `known-failures.txt`); the superproject's tools tests that changed or whose inputs changed
   (`tools/test/hash_doc_tables_test.py`, `tools/test/hash_jamfiles_test.py`). Any failure or
   flake, ours or not, is fixed at its cause.
