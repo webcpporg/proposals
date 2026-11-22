@@ -72,7 +72,7 @@ The library SHALL accept exactly these pairs, synchronously and asynchronously, 
 - **THEN** the public key and the signature are the RFC's, and `crypto::verify(crypto::eddsa, signature, message, public_key)` accepts them
 
 #### Scenario: A small-order public key
-- **WHEN** `crypto::verify<curves::ed25519::strict, backends::sodium>(crypto::eddsa, ...)` is given a small-order public key from Wycheproof
+- **WHEN** `crypto::verify<curves::ed25519::strict, backends::sodium>(crypto::eddsa, ...)` is given a small-order public key (ed25519-speccheck's case 0)
 - **THEN** it returns `invalid_signature`
 
 ### Requirement: Ed25519ph: an incremental signer
