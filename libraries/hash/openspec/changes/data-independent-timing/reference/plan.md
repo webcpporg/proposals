@@ -104,6 +104,73 @@ Paths below are relative to the library, `libs/hash/` of the superproject (its o
   they start before, every mention of Botan and bcrypt below is skipped and the increment's
   stream adds them, its coverage file included.
 
+## Patch against main (controller, 2026-11-22, owner on autopilot)
+
+The plan was written on 2026-11-20, before two streams merged into hash's `main`: increment 6,
+Botan (`backends/botan.hpp`, `bcrypt.hpp`, the Botan forms of `async.hpp`), and P-256's BearSSL pin
+move (hash's BearSSL canary at the pin `32381d6`). The branches start from hash's `main` `24f2d63`
+and the superproject's `83755de`, both after increment 6, so H9's first case holds: every mention
+of Botan and bcrypt below is in scope. The pin move changes no keyed function and no task. The
+rulings H10 to H17 complete or override the plan where they say so; crypto's change is read as
+built (its design's section "As built").
+
+- **H10. Botan adds no public function but `bcrypt.hpp`'s.** Its hashes, MACs and KDFs are engines
+  under the templates `digest_of`, `hasher`, `mac`, `hkdf_extract`, `hkdf_expand`, `hkdf`,
+  `pbkdf2`, `kbkdf`, `sskdf`, `x963kdf`, `argon2id`, `argon2` and `scrypt` (H2): the template's
+  guard covers each. `detail::botan_boundary` (the backend's one seam where Botan's exceptions
+  become `error_code`s, `noexcept`) runs inside the public function's guard and holds none; since it
+  catches everything, the guard's scope always ends by a return, and the destructor restores the
+  thread's DIT on every path. No Botan header holds a guard.
+- **H11. Botan's keyed cells** (`doc/capabilities.json` at `24f2d63`, H6's rule), 41: `mac` over
+  `macs::siphash_2_4`, `macs::kmac_128`, `macs::kmac_256`, `macs::blake2b_mac` and
+  `macs::hmac<D>` for the 23 digests of Botan's cells (MD5, SHA-1, SHA-2 but the truncated
+  SHA-512/224, SHA-3, RIPEMD-160, BLAKE2b, BLAKE2s-256, Keccak-224 to 512, SM3, Streebog-256 and
+  512, Whirlpool, Skein-512); `hkdf_extract`, `hkdf_expand`, `hkdf`, `pbkdf2`, `kbkdf` over each
+  of the 14 hmacs the cells list; `sskdf`, `x963kdf`; `argon2id`, `argon2<kdfs::argon2d>`,
+  `argon2<kdfs::argon2i>`, `argon2<kdfs::argon2id>`; `scrypt`; `bcrypt`, `bcrypt_pbkdf`. Plus the
+  keyed digest `digests::blake2b` (Botan's `BLAKE2bMAC` when the options carry a key). The table
+  is the list: `timing_coverage_botan_test.cpp` reads it and fails on a cell it does not call.
+- **H12. `bcrypt_verify` is guarded and covered though it is no cell** (the table's `bcrypt` row
+  holds it): `timing_coverage_botan_test.cpp` names it as a keyed function of the test support
+  with D1 as the reason, as H6 names the keyed digests, so that `check_and_run` takes it as a
+  cell. The same support list names `blake3` (keyed modes) and `digests::blake2b` (keyed).
+- **H13. The asynchronous forms, Botan's included.** Every form of `async.hpp` computes by calling
+  its synchronous function (`async_bcrypt` calls `bcrypt<Backend>`, `async_bcrypt_verify`
+  `bcrypt_verify<Backend>`, `async_bcrypt_pbkdf` `bcrypt_pbkdf<Backend>`; the heavy
+  `async_pbkdf2`, `async_argon2id`, `async_argon2`, `async_scrypt` on `backends::botan` the same):
+  no initiating function holds a guard (D6), and Task 5's `timing_async_botan` proves each Botan
+  heavy form on the pool's thread. A form found computing outside its synchronous function is
+  fixed to call it, with Task 5's test failing first.
+- **H14. The guard follows crypto's as built, not crypto's plan.** crypto's constructor takes a
+  `std::source_location` only where a test defines the seam (clang on arm64 kept every guarded
+  function's name and header path in release otherwise). hash's: where
+  `WEBCPP_HASH_DETAIL_TIMING_ENTERED` is defined, `explicit timing_guard(bool engaged = true,
+  std::source_location where = std::source_location::current()) noexcept`; otherwise `explicit
+  timing_guard(bool engaged = true) noexcept`, and `<source_location>` is included only with the
+  seam. Task 1 also copies crypto's `timing_unseamed_test.cpp` (`hash-run timing_unseamed` and
+  `webcpp.run timing_unseamed_release : ... : <variant>release
+  <define>WEBCPP_TEST_TIMING_READ_SELF : native`), over `mac<macs::hmac<digests::sha2_256>>` on
+  `hash2`: without the seam the guard is not constructible from a `source_location`, and the
+  release program holds neither `webcpp::hash::mac` nor `mac.hpp`. crypto's header is not edited
+  (this stream owns one file of crypto, below): its comment names no other copy; hash's header,
+  the interop test and the guidelines name both. crypto's comment is a parked item for crypto's
+  next change of that header.
+- **H15. crypto: one file and its Jamfile line.** Task 6 adds
+  `libs/crypto/test/timing_hash_interop_test.cpp` and its line in `libs/crypto/test/Jamfile`,
+  nothing else of crypto (`libs/crypto/AGENTS.md` is not edited; hash's `AGENTS.md` and the
+  guidelines carry the caution). Another stream (crypto/async) edits crypto: whichever merges
+  second merges `origin/main` first.
+- **H16. Measurements: the guard's cost alone, provisional.** Task 7 measures `bench/timing` from
+  a release build on this Mac and renders it with `collect.py --timing`; the page marks the
+  figures provisional (measured on a loaded machine) for the coordinator's final quiet pass. The
+  throughput tables are not regenerated by this change: the guard adds a per-call constant that the
+  quiet pass's regeneration captures; `../tasks.md` lists the pass as open, as crypto's does.
+- **H17. Delivery** (owner, 2026-11-22): no CI until the coordinator's end; the pull requests are
+  merged with merge commits without waiting for CI, every run they start is cancelled, none is
+  watched. Task 8 Step 3's "one CI run ... watched to green" is replaced by this. Heavy lanes go
+  through `/Users/rodrigo/dev/webcpporg/heavy.sh hash-dit ...`; the Linux lint and the MSVC lane
+  run on a full-clone copy of the superproject (they cannot read a worktree's `.git` files).
+
 ## Review Focus
 
 1. **A keyed call on a thread whose program set DIT itself**: it stays set. Pinned by Task 1's
@@ -133,6 +200,7 @@ On hash's `main` after increment 6; the implementer finds each by name.
 - `argon2.hpp`: `argon2id`, `argon2`.
 - `scrypt.hpp`: `scrypt`.
 - `bcrypt.hpp` (increment 6): `bcrypt`, `bcrypt_verify`, `bcrypt_pbkdf`.
+- Every backend's engine of these runs inside the template's guard, Botan's included (H10, H11).
 
 **Engaged by the arguments (H4):**
 - `digest.hpp`: `digest_of` (by its options), `hasher::make` (by its options), `hasher::update`,
@@ -145,8 +213,10 @@ On hash's `main` after increment 6; the implementer finds each by name.
 **Not guarded (checked boundary):** `digest_of` and `hasher` of every other tag, and of BLAKE2b
 without a key; `keccak_256` (all of it); `blake3()` and `blake3` in its plain mode; every Hash2
 alias (`algorithms.hpp`, `hmac.hpp`); everything `constexpr` (the options' checks, the traits);
-the guards' helpers (`mac_guards`, `hkdf_guards`, ... : they run inside the public function's
-guard); every move and destructor; `async.hpp`'s initiating functions (D6); `backends::webcrypto`.
+the guards' helpers (`mac_guards`, `hkdf_guards`, `bcrypt_guards`, ... : they run inside the
+public function's guard); `detail::botan_boundary` (H10); every move and destructor; `async.hpp`'s
+initiating functions (D6), Botan's `async_bcrypt`, `async_bcrypt_verify` and `async_bcrypt_pbkdf`
+included (H13); `backends::webcrypto`.
 
 ---
 
@@ -161,10 +231,13 @@ guard); every move and destructor; `async.hpp`'s initiating functions (D6); `bac
   the other `detail/` headers are listed).
 
 **Interfaces:**
+- Also (H14): Create `test/timing_unseamed_test.cpp`; `test/Jamfile` gains `timing_unseamed` and
+  `timing_unseamed_release`.
 - Produces, in `namespace webcpp::hash::detail`: `[[nodiscard]] bool cpu_has_dit() noexcept`,
-  `[[nodiscard]] bool dit_is_set() noexcept`, `class timing_guard` (`explicit
+  `[[nodiscard]] bool dit_is_set() noexcept`, `class timing_guard` (with the seam `explicit
   timing_guard(bool engaged = true, std::source_location where = std::source_location::current())
-  noexcept`, a `noexcept` destructor, copy and move deleted), the macros
+  noexcept`, without it `explicit timing_guard(bool engaged = true) noexcept` (H14), a `noexcept`
+  destructor, copy and move deleted), the macros
   `WEBCPP_HASH_DETAIL_TIMING_COVERED` and `WEBCPP_HASH_DETAIL_TIMING_ENTERED(where)` (defined as
   `static_cast<void>(where)` unless defined before the first include).
 - Produces, in `test/support/timing_seam.hpp` (included before any hash header; it `#error`s if
@@ -183,7 +256,7 @@ guard); every move and destructor; `async.hpp`'s initiating functions (D6); `bac
   crypto's test's.
 - [ ] **Step 2: Run them to see them fail:** `$B2 libs/hash/test//timing
   libs/hash/test//timing_threads`; expected: `detail/timing.hpp` missing.
-- [ ] **Step 3: Implement `detail/timing.hpp`.** Copy crypto's header, then: the namespace,
+- [ ] **Step 3: Implement `detail/timing.hpp`.** Copy crypto's header as built (H14), then: the namespace,
   include guard and macros renamed (`WEBCPP_HASH_DETAIL_TIMING_HPP`,
   `WEBCPP_HASH_DETAIL_TIMING_COVERED`, `WEBCPP_HASH_DETAIL_TIMING_ENTERED`); `#include
   <webcpp/hash/config.hpp>` first; the constructor:
@@ -330,6 +403,9 @@ guard); every move and destructor; `async.hpp`'s initiating functions (D6); `bac
     `calls`, `"<name> on <backend> names no keyed cell"` for each call not in the cells, then
     runs every call.
 
+- Botan (H11, H12): `timing_coverage_botan` through `botan-run` (exceptions on, native and
+  Emscripten); its registry covers the 41 cells of H11 and `bcrypt_verify` and the keyed
+  `digests::blake2b`; its unkeyed boundary is every digest cell of `botan` in the table.
 - [ ] **Step 1: Write each backend's file:** its comment lists, as crypto's do, what it covers
   by family and states that the list is the table's (a new cell fails until its call is added);
   `main` builds the backend's `coverage_calls` from helpers (`cover_mac<Mac, Backend>(name)`,
@@ -383,7 +459,7 @@ builds).
 
 **Files (webcpp::crypto):** Create `libs/crypto/test/timing_hash_interop_test.cpp`. Modify
 `libs/crypto/test/Jamfile` (`crypto-run timing_hash_interop : timing_hash_interop_test.cpp :
-<library>/third_party//sodium ;`), `libs/crypto/AGENTS.md` (the caution names hash's copy).
+<library>/third_party//sodium ;`). Nothing else of crypto (H15).
 
 - [ ] **Step 1: Write the test.** It includes crypto's seam support first, then defines hash's
   seam macro to a second counter, then both `detail/timing.hpp` headers (crypto's
@@ -409,8 +485,9 @@ builds).
   `timing` at `<variant>release`, `explicit`), `bench/collect.py` (`--timing <exe>`, refusing a
   non-release build as for throughput, the `timing_guard` object in the data and its paragraph
   and table in the page) and its tests.
-- Regenerate: `doc/performance.adoc` and its data, `doc/measurements.throughput.json` and the
-  tables built from it (with `collect.py`, release builds of every target the data holds).
+- Regenerate: `doc/performance.adoc` and its data with the guard's cost (with `collect.py
+  --timing`, a release build on this Mac), marked provisional; the throughput tables are left to
+  the coordinator's quiet pass (H16).
 - Modify: `doc/backends.adoc` (a section "Data-independent timing"), `doc/macs.adoc`,
   `doc/kdfs.adoc`, `doc/password_hashing.adoc` (one paragraph each: the family sets DIT around
   each call), `doc/digests.adoc` (unkeyed digests do not, and why; the keyed BLAKE2b and BLAKE3
@@ -451,5 +528,4 @@ builds).
   flake, ours or not, is fixed at its cause.
 - [ ] **Step 3:** tick `../tasks.md`; pull requests in hash, crypto (Task 6), proposals and the
   superproject (the gitlinks and the guidelines), hash's merged before crypto's; merge commits,
-  branches deleted, intermediate CI runs cancelled, one CI run per touched repository on `main`
-  watched to green.
+  branches deleted, every CI run the merges start cancelled, none watched (H17).
