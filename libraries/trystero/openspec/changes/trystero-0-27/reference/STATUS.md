@@ -56,6 +56,8 @@ the recorder and `vectors/phase1.json` what it recorded.
   only); a `relay_connectivity` value outside the enum is taken as `online`, where 0.27.0 throws.
 - **R19** (supersedes R10). trystero calls no `webcpp::crypto::detail`: its own `detail::wipe`
   (`detail/wipe.hpp`) wipes every variable-size secret buffer.
+- **R20.** The doc reference's failure is a merge blocker owned by the hash stream; trystero
+  gives its reference BearSSL now, and the draft PRs' docs check is expected red until hash's fix.
 
 Each is a row of the differences page where it differs from 0.27.0.
 
@@ -71,14 +73,19 @@ Dependencies outside trystero:
 - A guard in webcpp::crypto's `random_device` on Emscripten against a missing or throwing
   `crypto.getRandomValues` (design Open Question 1): trystero 0.1.0's own guard went with
   `entropy.hpp`.
-- The reference of trystero's page (`b2 libs/trystero/doc`) does not build on the branch: it is
-  read for Emscripten's target with the native platform's dependencies, and webcpp::hash's MrDocs
-  configuration defines `WEBCPP_HASH_HAS_OPENSSL` (and its other backends) unconditionally, which
-  its own `#error` refuses on Emscripten, while webcpp::crypto refuses `WEBCPP_CRYPTO_HAS_OPENSSL`
-  there and needs BearSSL linked for its default AES-GCM. It needs webcpp::hash and
-  webcpp::crypto to accept a reference parse for Emscripten, then trystero's `doc/Jamfile` to give
-  the reference Emscripten's backends. The page itself, its doc-check and its rendered check pass
-  with a stub reference.
+- **Merge blocker, owned by the hash stream (R20):** the reference of trystero's page
+  (`b2 libs/trystero/doc`) does not build, so the CI's docs check of both draft PRs is red and
+  the spec's "One branch, merged once" cannot be met until it does. The reference is read for
+  Emscripten's target (`/webcpp//emscripten-reference`) with the native platform's dependencies;
+  under `__MRDOCS__` webcpp::hash's `config.hpp` defines `WEBCPP_HASH_HAS_OPENSSL` (and BLAKE3,
+  XKCP, sodium) unconditionally, so its own Emscripten `#error` fires and `<blake3.h>` is
+  missing. The fix is the hash stream's: keep each `WEBCPP_HASH_HAS_<NAME>` under `__MRDOCS__`
+  only when the build defines it, as webcpp::crypto does (or skip OpenSSL's on
+  `WEBCPP_TARGET_EMSCRIPTEN`). trystero's half is done: its reference gets BearSSL, Emscripten's
+  GCM default, rather than the native `gcm-default`'s OpenSSL, which webcpp::crypto refuses there
+  (`<webcpp-trystero-reference>on` in `doc/Jamfile`, `rooms-gcm` in `build.jam`); with it the
+  crypto errors are gone, trystero's doc comments pass `doc_comments.py`, and the only failure
+  left is webcpp::hash's. Once the hash fix lands, the doc target is run again before the merge.
 
 Carries inside trystero:
 
@@ -103,6 +110,12 @@ Carries inside trystero:
 - 2.6 pins the oracle to 0.27.0, rewrites every twin (`diff_peers.mjs` reads `PeerInfo`), records
   their outputs again, and retires `diff_relay_config` if 0.27.0's per-room configuration then
   prints what the C++ program prints; `diff_rooms_per_app` goes with the shared connection.
+- A test of a page whose `crypto.getRandomValues` is missing or throws (no JavaScript exception
+  enters WebAssembly) comes back with the guard in `random_device` above: the deleted
+  `platform_page_sealer` test covered it for 0.1.0's sealer, and nothing replaces it yet.
+- Commit subjects of the review-fix commits (`5c7f578`, `ea6f2d1`, `b4b87e9`, `487c99e`) are
+  paragraphs; Phase 2's commits take a one-sentence subject and the list in the body (no history
+  rewrite).
 - 2.7 writes the docs whole (README, every page, chapter 15), the changelog's entry, and merges.
 
 ## How to resume
