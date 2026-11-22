@@ -5708,9 +5708,21 @@ no "Use it to" line rather than a false one. `generate_test.py` has three new ca
 Minor ones (the coverage comment, the pointers in `doc/p256.adoc`, the seam's documentation of
 the message, the Wycheproof loop's bound), all fixed in `f89b0d9` and re-reviewed clean.
 
-**What is not done.** The superproject's gitlink, with P-256's superproject files and the
-BearSSL pin, arrives with `main`; the CI's first run of the family is at the end of the owner's
-queue.
+**After P-256 landed.** `main` (`dd176cf`) was merged into the branch (`7d92025`, no file
+changed) and into the superproject's; the next Linux lint found seven clang-tidy findings in
+`async_p256_test.cpp` and `timing_coverage_bearssl_test.cpp` (long functions, a trailing comma,
+a const), fixed in `900d455` by splitting the cases into helpers, every case and count kept.
+
+**Verification of the delivered tree** (library `900d455`, superproject with the gitlink at it):
+every lane in debug and release (native clang, GCC 15, wasip2, wasip3, Emscripten, the heavy
+machinery natively and on Emscripten with `-pthread`), `generate.py --check`, the doc build, the
+superproject's tools tests (`crypto_jamfiles`, `hash_jamfiles`, `third_party_test`,
+`crypto_collect_test`), the macOS full lint and the Linux lint: all clean. MSVC 14.3 (620
+passed) and 14.5 (511 passed) have one failure each outside the lane's list of known emulator
+failures: `async_p256_no_exceptions` stops compiling with no diagnostic, the emulator's known
+failure for a translation unit that includes `boost/json.hpp` without `/EH`, as the list already
+records for P-256's own Wycheproof tests; the lane's list is the owner's to extend, and the
+Windows CI decides. The CI's first run of the family is at the end of the owner's queue.
 
 ## Increment 5: libsodium completed (a stream after 1)
 
