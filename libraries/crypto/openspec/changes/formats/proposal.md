@@ -11,11 +11,12 @@ does not exist is a missing name rather than a diagnostic, and the PEM label is 
 compiler cannot check.
 
 The crypto/sign-unified change gave signing one name per operation with the scheme as a value
-(`key.sign(crypto::ecdsa_sha256, message)`), typed public keys and the `crypto::keypair`
-contract. On 2026-11-22 the owner decided that formats follow the same shape: the format is a
-value passed first, `crypto::encode(format, value)` and `crypto::decode<T>(format, input)` are
-the only names, every invalid pair stops the build with the formats the type does take, and
-JWK, which WebCrypto, JOSE and Trystero 0.27 use, joins the family.
+(`key.sign(crypto::ecdsa_sha256, message)`) and typed public keys; the uniform-types change gives
+every signature and X25519's keys a type of their own. On 2026-11-22 the owner decided that
+formats follow the same shape: the format is a value passed first, `crypto::encode(format, value)`
+and `crypto::decode<T>(format, input)` are the only names, every invalid pair stops the build with
+the formats the type does take, and JWK, which WebCrypto, JOSE and Trystero 0.27 use, joins the
+family, its private keys read in constant time.
 
 ## What Changes
 
@@ -27,42 +28,41 @@ JWK, which WebCrypto, JOSE and Trystero 0.27 use, joins the family.
   `detail::all_formats`, from which the concepts, the tests and the guide's table derive.
 - **Four mirrored forms, one implementation**: `crypto::encode(format, value)`,
   `crypto::decode<T>(format, input)`, `value.encode(format)` and `T::decode(format, input)`;
-  plus `crypto::encode(format, value, output)` into a caller's span.
+  plus `crypto::encode(format, value, output)` into a caller's span. The generic header includes no
+  backend; each curve's `curves/<curve>/formats.hpp` holds its codecs and defines its members.
 - **No heap**: `encode` returns `result<crypto::encoded<N, Form>>`, a fixed buffer whose `N` is
   the format's maximum for that type at compile time, with its length, `bytes()` and, for PEM
   and JWK, `text()`; a private key's encoding wipes itself as `secret<N>` does.
   `crypto::max_encoded_size<Format, T>` replaces every `max_*_size` constant.
 - **Concepts** `crypto::encodes<Format, T>` and `crypto::decodes<Format, T>` gate every pair;
   a refused pair stops the build with a message and the type's list of formats.
-- **The valid pairs**: public keys take `raw`, `spki`, `pem(spki)` and `jwk`; key pairs take
-  `pkcs8`, `pem(pkcs8)` and `jwk` (private, with `d`), and `raw`, which is `secret()` and
-  `make` under the format's name; ECDSA signatures take `raw` and `der`; Ed25519, Schnorr and
-  recoverable signatures take `raw` only.
-- **Typed signatures**: `sign` returns `p256::ecdsa_signature`, `secp256k1::ecdsa_signature`,
-  `secp256k1::recoverable_signature`, `secp256k1::schnorr_signature` or `ed25519::signature`,
-  each holding its bytes and converting to the fixed-size span `crypto::verify` takes, so that
-  `der` knows the curve and Ed25519 refuses it by type.
-- **JWK** (RFC 7517, 7518, 8037, 8812): EC P-256 and secp256k1 (`x`, `y`, `d`), OKP Ed25519
-  (`x`, `d`), base64url without padding, in its own header `<webcpp/crypto/jwk.hpp>` and Jamfile
-  target `/webcpp/crypto//jwk`, which brings webcpp::document; the core of crypto never depends on
-  document. Encoding writes RFC 7638's canonical member order with no white space into a fixed
-  buffer (P-256's private JWK is 176 bytes); `crypto::encode<Document>(crypto::jwk, value)`
-  builds a document in the storage the program picks. Decoding a text runs document's streaming
-  parser over a fixed working buffer, never the heap; decoding a document's value (a JWK Set's
-  element, a JWT header's member) allocates nothing. `crypto::thumbprint(key)` is RFC 7638's
-  SHA-256 thumbprint, on webcpp::hash.
+- **The valid pairs**, on Ed25519, X25519, P-256 and secp256k1: public keys take `raw`, `spki`,
+  `pem(spki)` and `jwk`; key pairs take `pkcs8`, `pem(pkcs8)` and `jwk` (private, with `d`), and
+  `raw`, which is `secret()` and `make` under the format's name; ECDSA signatures take `raw` and
+  `der`; Ed25519, Schnorr and recoverable signatures take `raw` only. The uncompressed point is
+  the default of `raw` and `spki` on every EC curve (secp256k1's SPKI default changes), the
+  compressed point always available by name, on every backend.
+- **JWK** (RFC 7517, 7518, 8037, 8812): EC P-256 and secp256k1 (`x`, `y`, `d`), OKP Ed25519 and
+  X25519 (`x`, `d`), base64url without padding, in its own header `<webcpp/crypto/jwk.hpp>` and
+  Jamfile target `/webcpp/crypto//jwk`, which brings webcpp::document; the core of crypto never
+  depends on document. Encoding writes RFC 7638's canonical member order with no white space into
+  a fixed buffer (P-256's private JWK is 176 bytes). A private JWK's text is read by a small
+  reader of crypto's own that handles `d` in constant time, in constant memory, traced by the
+  constant-time lane as PKCS#8 is; a public JWK's text is read by document's bounded-memory parse
+  mode (a change to document merged first), which skips unselected members without buffering them
+  and reports exhaustion as an error; `crypto::encode<Document>(crypto::jwk, value)` and decoding
+  an existing document value (a JWK Set's element, a JWT header's member) use document directly.
+  `crypto::thumbprint(key)` is RFC 7638's SHA-256 thumbprint, on webcpp::hash.
 - **Removed, with no alias** (crypto has no release): `encode_spki`, `decode_spki`,
-  `encode_pkcs8`, `decode_pkcs8` on every curve that joins, `to_der`, `from_der`,
+  `encode_pkcs8`, `decode_pkcs8` on every curve, X25519's included, `to_der`, `from_der`,
   `max_spki_size`, `max_pkcs8_size`, `max_der_size`, `spki_compressed_size`,
   `spki_uncompressed_size`, and the namespace `crypto::pem` (`armour`, `unarmour`, its labels
   and `armoured_size`), whose name the PEM format takes. Every caller in libs/crypto moves.
 - **The foundation's "JWK MUST NOT be offered" is withdrawn** by the owner's decision.
-- **X25519 stays out** until its keys are typed (an open owner question); its four format
-  functions keep their names until then, the one exception to the removal.
 
-Not changed: what each format's bytes are (every SPKI, PKCS#8, DER and PEM is byte for byte the
-foundation's), strict decoding (only what encoding gives again is accepted), the backends, the
-timing guard rule, `normalize_low_s` and `is_low_s` (which take the typed ECDSA signature).
+Not changed: what each format's bytes are (every SPKI, PKCS#8, DER and PEM of an uncompressed key
+is byte for byte the foundation's), strict decoding (only what encoding gives again is accepted),
+the backends, the timing guard rule.
 
 ## Capabilities
 
@@ -73,17 +73,18 @@ None.
 ### Modified Capabilities
 
 - `crypto`: keys and signatures are written and read by one pair of names with the format as a
-  value, every invalid pair refused at compile time; JWK is offered, in a target of its own.
+  value, every invalid pair refused at compile time; JWK is offered, in a target of its own, its
+  private keys read in constant time.
 
 ## Impact
 
 - **Kind:** a wrapper (`"port-of": null`), as the genesis.
-- **Breaking:** yes, before the first release; it builds on crypto/sign-unified and is
-  implemented after that change merges and before phase 3 of webcpp::trystero's port of
-  Trystero 0.27 (stream trystero-027), which adapts to it.
+- **Breaking:** yes, before the first release. Order: crypto/sign-unified merges; then
+  crypto's uniform-types and document's bounded-parse, in parallel; then this change; then phase 3
+  of webcpp::trystero's port of Trystero 0.27 (stream trystero-027), which adapts to it.
 - **Implementation:** webcpporg/crypto (`include/webcpp/crypto/formats.hpp`, `jwk.hpp`, each
-  curve's `formats.hpp`, `curves/*.hpp` for the typed signatures and the members,
-  `build.jam` for the target `jwk`, tests, fuzz targets, examples, benches, the constant-time
-  lane, `doc/`, `doc/tables/crypto.json` and the generated files), the superproject's pointer.
-- **Status:** proposed: the owner's decisions are recorded in `design.md`; its rulings and open
-  questions await the owner's review before the change is accepted.
+  curve's `formats.hpp`, `build.jam` for the target `jwk`, tests, fuzz targets, examples,
+  benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and the generated files), the
+  superproject's pointer.
+- **Status:** proposed: the owner's decisions of 2026-11-22 are recorded in `design.md`; its
+  rulings await the owner's review before the change is accepted.
