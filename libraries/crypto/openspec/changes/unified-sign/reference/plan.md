@@ -220,6 +220,17 @@ Brief: `.superpowers/sdd/plan/task-5b-brief.md` in the superproject worktree (wr
 - [ ] **Step 3: Run** as Task 5b's Step 3, with secp256k1's targets.
 - [ ] **Step 4: Commit** `crypto: the key pair contract, typed public keys and agree on secp256k1`.
 
+### Task 6b: One list of schemes (owner decision R20)
+
+**Files:** `include/webcpp/crypto/signing.hpp`, `keypair.hpp`, `test/signing_test.cpp`, `test/keypair_test.cpp`, and any hand enumeration of the four tags (grep `eddsa_t.*ecdsa_sha256_t\|schnorr_t.*eddsa_t` and similar) in headers, tests and `doc/tables/generate.py`.
+
+**Interfaces (Produces):** `template <class... Schemes> struct detail::scheme_list {};` and `using detail::all_schemes = scheme_list<eddsa_t, ecdsa_sha256_t, ecdsa_sha256_recoverable_t, schnorr_t>;` beside the tags; `detail::is_scheme_v<T>` derived from it; `crypto::keypair`'s "signs at least one scheme" and "signs as declared for each scheme" checks fold over a `scheme_list` parameter defaulted to `all_schemes` (e.g. a `detail::keypair_over<K, List>` concept with `keypair<K> = keypair_over<K, all_schemes>`), so a test can pass a list with a test-only scheme.
+
+- [ ] **Step 1: Test**: a test-only scheme tag and a stand-in key pair that declares it (`signs_with_v`) but lacks its `sign` overload fail `keypair_over<K, scheme_list<..., test_scheme>>`, and pass when the overload exists; `is_scheme_v` true for each member of `all_schemes`.
+- [ ] **Step 2: Implement**; no enumeration of the four tags by hand remains where it can derive from the list (record any that cannot, e.g. a generator that reads the header's text).
+- [ ] **Step 3: Run** signing, keypair, the curves' tests and message tests on clang and gcc-15; `generate.py --check`.
+- [ ] **Step 4: Commit** `crypto: one list of schemes, which the key pair concept folds over`.
+
 ### Task 6: The page, the generated files and the changelog
 
 **Files:**

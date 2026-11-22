@@ -285,6 +285,11 @@ secp256k1's `ecdh_x` become `agree`; secp256k1's other forms keep explicit names
   matches P-256's `agree` and WebCrypto; the hashed default and the point keep explicit names.
 - **R19: the concept lives in `<webcpp/crypto/keypair.hpp>`**, beside `signing.hpp`, which it
   includes; the MrDocs refusal fix of the coordinator's item is its own commit in this change.
+- **R20 (owner, 2026-11-22): one list of schemes.** `signing.hpp` declares the library's only
+  list of schemes beside the tags (`detail::scheme_list<...>`, `detail::all_schemes`); the
+  `crypto::keypair` concept folds over it, and every other enumeration (`is_scheme_v`, the tests,
+  the generators where they can) derives from it, so that a new scheme is one line in the list and
+  the concept checks it on every key pair.
 
 ## Risks / Trade-offs
 
