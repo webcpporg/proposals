@@ -112,11 +112,15 @@ The library SHALL offer `hybrid::box` (X25519, XSalsa20-Poly1305) and `hybrid::b
 - **THEN** it opens, and a sealed box changed in one byte returns `authentication_failed` with `data` zeroed
 
 ### Requirement: Key exchange: crypto_kx
-`curves::x25519::kx_keypair<Backend>` SHALL be made from an `x25519::basic_keypair<Backend>`, by `generate()`, or from a 32-byte seed by libsodium's `crypto_kx_seed_keypair`, give its `x25519::public_key`, and compute `client_session_keys(server_public_key)` and `server_session_keys(client_public_key)`, each peer an `x25519::public_key`, each returning a receive key and a transmit key as `secret<32>`, through libsodium's `crypto_kx`, and return `weak_public_key` where libsodium refuses the peer's key.
+`curves::x25519::kx_keypair<Backend>` SHALL be made from an `x25519::basic_keypair<Backend>` by `make`, by `generate()`, or from a 32-byte seed by `derive_from_seed(seed)`, libsodium's `crypto_kx_seed_keypair` (the secret is BLAKE2b-256 of the seed), no `make` taking a seed, give its `x25519::public_key`, and compute `client_session_keys(server_public_key)` and `server_session_keys(client_public_key)`, each peer an `x25519::public_key`, each returning a receive key and a transmit key as `secret<32>`, through libsodium's `crypto_kx`, and return `weak_public_key` where libsodium refuses the peer's key.
 
 #### Scenario: Client and server agree
 - **WHEN** a client and a server compute their session keys from each other's public keys
 - **THEN** the client's transmit key is the server's receive key and the reverse
+
+#### Scenario: A seed is not a secret
+- **WHEN** the same 32 bytes are given to `kx_keypair::derive_from_seed` and, as an X25519 secret, to `kx_keypair::make(x25519::keypair::make(bytes))`
+- **THEN** `derive_from_seed` gives the keys of libsodium's `crypto_kx_seed_keypair` for that seed, and its public key differs from `make`'s
 
 ### Requirement: Interface: one AEAD template for the one-shot AEADs
 `ciphers::aead<Family, Backend>` SHALL implement the guards, the in-place `seal` and `open`, the tag apart, the zeroing of `data` after a failed `open` and the move rules of the genesis's `ciphers::chacha20_poly1305` for every one-shot AEAD with additional data, its family tag giving `key_size`, `iv_size`, `tag_size` and `max_message_size`, and every instance MUST satisfy `crypto::aead`. `ciphers::chacha20_poly1305` (12-byte nonce), `ciphers::chacha20_poly1305_original` (8-byte nonce) and `ciphers::xchacha20_poly1305` (24-byte nonce) MUST be its aliases; secretbox is not, being an `authenticated_box`; `ciphers::gcm<Cipher>` keeps its own class and its incremental seal and open, a `streaming_aead`.

@@ -67,6 +67,15 @@ new algorithms; the browser backend itself (part B of the asynchronous family).
    backends, the browser staying WebCrypto-only and refusing with a clear message.
 5. **Four mirrored forms apply to everything new.**
 
+Second round, the same day, answering the first draft's rulings:
+
+6. **`verify` takes only the typed signature**, with no bytes overload; a signature from the wire
+   goes through `make` first (R1 confirmed).
+7. **libsodium's seeded kx derivation keeps a distinct name**, option (b):
+   `x25519::kx_keypair::derive_from_seed(seed)` (`crypto_kx_seed_keypair`: the secret is
+   BLAKE2b-256 of the seed), beside `make(x25519_keypair)` and `generate()`; `make` keeps its
+   library-wide meaning, "these bytes, or this key, are the secret" (R5 replaced).
+
 ## Approaches
 
 **Signatures.** (a) Keep bytes and add a scheme check at run time: a P-256 signature given to
@@ -133,8 +142,12 @@ false for a signature of another curve or scheme, with a message naming the type
 ### D3. crypto_kx, the boxes and Ed25519's conversion on typed keys
 
 - `curves::x25519::kx_keypair<Backend>` holds an `x25519::basic_keypair<Backend>`: made from one
-  (`make(x25519_keypair)`), by `generate()`, or by `make(seed)`, libsodium's seeded derivation
-  (`crypto_kx_seed_keypair`), kept because programs store kx seeds; `public_key()` returns
+  (`make(x25519_keypair)`), by `generate()`, or by `derive_from_seed(seed)`, libsodium's seeded
+  derivation (`crypto_kx_seed_keypair`: the secret is BLAKE2b-256 of the 32-byte seed), kept under
+  its own name because programs store kx seeds (owner decision 7). The two differ on the same 32
+  bytes: `make(x25519::keypair::make(bytes))` takes them as the secret, `derive_from_seed(bytes)`
+  hashes them first; the guide says so, and a test checks that `derive_from_seed` gives
+  `crypto_kx_seed_keypair`'s keys and differs from `make` on the same bytes; `public_key()` returns
   `x25519::public_key`; `client_session_keys(server)` and `server_session_keys(client)` take an
   `x25519::public_key` and return `session_keys` as today. Its seed and secret are the inner key
   pair's (`keypair()` gives it by reference).
@@ -226,7 +239,8 @@ these concepts cover.
 
 Removed with no alias: the span `verify` and `recover` overloads of crypto/sign-unified; `sign`'s
 array results; `curves::x25519::public_key(secret)`, `curves::x25519::agree(secret, peer)`;
-`ed25519::basic_keypair::x25519_secret()`, `curves::ed25519::to_x25519_public`; the boxes'
+`ed25519::basic_keypair::x25519_secret()`, `curves::ed25519::to_x25519_public`;
+`kx_keypair::make(seed)` (now `derive_from_seed`); the boxes'
 byte-key `make`, `seal` and `open`; secretbox's additional data. Every caller in libs/crypto moves
 in the same change: tests, examples, the page, the constant-time harnesses and suppressions, the
 benches, the message tests, the MSVC tests, `doc/tables/crypto.json` and its generated files
@@ -235,7 +249,7 @@ formats change, which gives them the typed keys' formats.
 
 ## Rulings
 
-- **R1: `verify` takes the typed signature only; no bytes overload.** A signature from the wire is
+- **R1 (owner decision 6): `verify` takes the typed signature only; no bytes overload.** A signature from the wire is
   made first (`p256::ecdsa_signature::make(bytes)` or `crypto::make<T>(bytes)`), where its size is
   checked; then the type says its curve and scheme, and a mismatch is a compile-time error rather
   than an `invalid_signature` at run time. One form keeps the four mirrored forms one, and matches
@@ -251,8 +265,8 @@ formats change, which gives them the typed keys' formats.
   converts nothing between Ed25519 and X25519), so "four mirrored forms" applies to the operations
   that call a backend (`make` and `generate` of a key pair, `sign`, `verify`, `agree`, `seal`,
   `open`), as crypto/sign-unified's D9 table lists them.
-- **R5: `kx_keypair::make(seed)` stays** beside `make(x25519_keypair)`, the two told apart by type,
-  because libsodium's seeded kx derivation (BLAKE2b of the seed) is a stored format of its own.
+- **R5 (owner decision 7): the seeded derivation is `kx_keypair::derive_from_seed(seed)`**, never a
+  `make`, so that `make` means "the secret" everywhere in the library (D3).
 - **R6: sealed boxes stay out of the concepts** (Non-goals) but take typed keys (D3).
 - **R7: the concepts live in `<webcpp/crypto/aead.hpp>`**, beside `keypair.hpp` and `signing.hpp`,
   which every cipher header includes; it includes no backend.
@@ -272,4 +286,4 @@ superproject; local verification on every lane; merged by the controller; one CI
 
 ## Open Questions
 
-None: the owner's decisions cover the change; R1 to R7 await review with it.
+None: the owner's decisions 1 to 7 settle the change.

@@ -13,7 +13,7 @@ accepted.
 ## 2. X25519 typed
 
 - [ ] 2.1 `x25519::public_key` and `x25519::basic_keypair<B>` with `make`, `generate`, `public_key()`, `secret()`, `agree`, the asynchronous members and the free forms; the free `public_key(secret)` and `agree(secret, peer)` removed; RFC 7748's vectors (D2)
-- [ ] 2.2 `kx_keypair` on the typed key pair, both `make`s; the boxes and the sealed box on typed keys (D3, R5, R6)
+- [ ] 2.2 `kx_keypair` on the typed key pair, `make`, `generate` and `derive_from_seed`, tested against `crypto_kx_seed_keypair` and against `make` on the same bytes; the boxes and the sealed box on typed keys (D3, R5, R6, owner decision 7)
 - [ ] 2.3 Ed25519's `to_x25519()` on the key pair and the public key, the free `crypto::to_x25519`; `x25519_secret()` and `to_x25519_public` removed (D3, R4)
 
 ## 3. Concepts

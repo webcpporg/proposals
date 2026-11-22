@@ -70,5 +70,6 @@ None.
   `curves/x25519/kx.hpp`, `ciphers/*.hpp`, `hybrid/*.hpp`, `async.hpp`, a new `aead.hpp` concept
   header, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
   the generated files), the superproject's pointer.
-- **Status:** proposed: the owner's decisions of 2026-11-22 are recorded in `design.md`; its
-  rulings await the owner's review.
+- **Status:** approved by the owner on 2026-11-22 (`decided`); it stays `proposed` in the
+  metadata until `reference/plan.md` carries the plan's code, which `tools/proposals.py` requires
+  of an `accepted` proposal, and then becomes `accepted`.

@@ -145,6 +145,13 @@ Change of plan, the same day:
     that document applies while parsing (the chain is in "Deferred: JWK"). The document
     bounded-parse change is not written.
 
+Third round, the same day:
+
+15. **The deferred JWK keeps crypto's own constant-time reader for a private JWK's `d`**: the
+    JSON Schema that json_schema on document applies handles a JWK's shape and limits only
+    (members, constants, sizes, unknown members), never `d`'s secret bytes, which crypto's small
+    reader reads in constant time as "Deferred: JWK" describes.
+
 ## Decisions
 
 ### D1. The header, the tags and the one list
@@ -442,7 +449,9 @@ designed, so that the later change starts from it, and the chain it waits for.
    than its `maxLength`, a value of the wrong type or constant) is refused as it streams, before it
    is buffered, and what the schema does not need is skipped. This schema-driven, bounded parsing
    replaces the bounded-parse mode the second draft asked of document.
-3. **crypto's JWK**: each key type's JWK is a JSON Schema (required `kty`, `crv`, `x`, `y` and,
+3. **crypto's JWK** (owner decision 15 divides the work: the schema checks shape and limits,
+   crypto's own small reader reads a private key's `d` in constant time): each key type's JWK is a
+   JSON Schema (required `kty`, `crv`, `x`, `y` and,
    for a private key, `d`; `kty` and `crv` as `const`; `x`, `y` and `d` with `minLength` and
    `maxLength` 43 and a base64url `pattern` or a custom `format`; `additionalProperties` true, or
    bounded by `maxProperties` and a `maxLength` on unknown members; possibly a small vocabulary or
@@ -469,8 +478,7 @@ on branch `crypto/formats`):
 - A private JWK's `d` read in constant time (owner decision 8): after `"d":"`, 43 bytes copied
   without a branch on them, the next byte required to be `"`, decoded by the constant-time
   base64url, an escape in `d` refused; traced by the constant-time lane as PKCS#8 is; every byte
-  that held `d` wiped. Whether a schema-driven document parse can give that guarantee, or a small
-  reader of crypto's own stays for private keys, is the later change's first question.
+  that held `d` wiped. Owner decision 15 settles who does it: crypto's own small reader.
 - Decoding from an existing document value (a JWK Set's element, a JWT header's member) with no
   allocation (`contains` before `operator[]`, since a handle of a missing member holds its key);
   the rule that a private JWK read out of a program's document had its `d` through document's
@@ -509,4 +517,4 @@ verification on every lane, merged by the controller, one CI run at the end by t
 
 ## Open Questions
 
-None for this change; the deferred JWK's first question is recorded in its section.
+None: the owner's decisions 1 to 15 settle the change and the deferred JWK's division of work.
