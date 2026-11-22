@@ -168,7 +168,7 @@ built (its design's section "As built").
 - **H17. Delivery** (owner, 2026-11-22): no CI until the coordinator's end; the pull requests are
   merged with merge commits without waiting for CI, every run they start is cancelled, none is
   watched. Task 8 Step 3's "one CI run ... watched to green" is replaced by this. Heavy lanes go
-  through `/Users/rodrigo/dev/webcpporg/heavy.sh hash-dit ...`; the Linux lint and the MSVC lane
+  through the machine's heavy-lane queue (`heavy.sh hash-dit ...`); the Linux lint and the MSVC lane
   run on a full-clone copy of the superproject (they cannot read a worktree's `.git` files).
 
 ## Review Focus

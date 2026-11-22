@@ -55,9 +55,12 @@ None.
 ## Impact
 
 - **Kind:** a wrapper (`"port-of": null`), as the genesis.
-- **Implementation:** none yet; the tasks of `reference/plan.md` are open.
-- **Status:** proposed: the owner decided DIT for crypto on 2026-11-20 and named hash as the
-  follow-up, which awaits its own decision.
+- **Implementation:** merged into webcpporg/hash's `main` (pull request 11, 2026-11-22), with
+  crypto's interop test (webcpporg/crypto pull request 16); the reference code is the guard as
+  built, `reference/timing.hpp`, and the tasks of `reference/plan.md`.
+- **Status:** implementing until the release that carries it: the controller decided it on
+  2026-11-20 with the owner on autopilot (design.md, Context); the final quiet measurement pass
+  of `design.md`'s open item follows.
 
 `libs/hash/include/webcpp/hash/` (the new header and the headers of the keyed functions),
 `libs/hash/test/` (the guard's tests, the coverage tests, the asynchronous test), `libs/hash/bench/`

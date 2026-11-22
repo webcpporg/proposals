@@ -197,3 +197,56 @@ not decided.
   as crypto's GCM `update`; measured (D7).
 - [A worker thread of a pool keeps DIT] -> it does not: the guard restores the state the thread
   had, on that thread, when the synchronous function returns.
+
+## As built (2026-11-22)
+
+The change was built on the branches `hash/dit` of the library and the superproject (and
+`hash/dit-interop` of crypto for its one test), by `reference/plan.md`, whose rulings H1 to H17
+stand; H10 to H17 patched the plan against `main` after increment 6 (Botan) and P-256's BearSSL
+pin move. What differs from the decisions above, or adds to them:
+
+- **D1, `hkdf` holds one guard.** It calls `hkdf_guards` and its backend's `extract_and_expand`,
+  not the public `hkdf_extract` and `hkdf_expand`: a call to `hkdf` enters one guard, its own.
+  Each of the three holds its guard as its first statement. Botan's engines run inside the
+  templates' guards; `detail::botan_boundary` holds none (H10). `bcrypt_verify` is guarded,
+  though the capability table holds it in `bcrypt`'s row (H12).
+- **D1, the `blake3` class keeps a `keyed_` flag:** its object grew from 1,920 to 1,928 bytes,
+  which its documentation states and a `static_assert` pins.
+- **D4, the guard is crypto's as built.** Its constructor takes a `std::source_location` only
+  where a test defines the seam (H14), and `timing_unseamed_release` reads its own release
+  program for `mac`'s name and header path. A disengaged guard does nothing and fires no seam.
+  crypto's header does not yet name hash's copy (this change owned one file of crypto, its test):
+  hash's header, crypto's `test/timing_hash_interop_test.cpp` and `CODING-GUIDELINES.md` name
+  both. **Open item:** crypto's header names the other copy at crypto's next change of it.
+- **D4, the interop test pins exact counts:** an `hkdf` beside an Ed25519 signature enters one
+  guard of each library, each the function's own; Ed25519ph over hash's SHA-512 enters crypto's
+  alone.
+- **D5, the coverage calls come from the code's table.** Each backend's test builds its calls for
+  the families the test support knows from `backend_has_v`, which `capabilities_test` keeps equal
+  to `doc/capabilities.json`; a cell of a family or function the support does not know fails
+  until its call is written, and a call naming no cell fails. Each call runs with valid input and
+  with input its guard refuses (the refusal's own error checked). The support names three keyed
+  functions beside the table's cells: keyed `digests::blake2b`, `blake3`'s keyed modes and
+  `bcrypt_verify`.
+- **D5, DIT is observed during the computation,** not only on the way out: `timing_during` runs
+  `hkdf_extract`, `hkdf_expand`, `hkdf`, `pbkdf2` and `mac` over a probe hash whose `update`
+  records DIT, and `timing_during_async` runs `async_pbkdf2` on a pool; a guard moved after the
+  engine call, or written as a temporary, failed them while the coverage tests still passed.
+  `timing_botan_failure` runs Botan's exception path inside a guard.
+- **D6** held as decided: every asynchronous form computes by calling its synchronous function
+  (`timing_async`, `timing_async_botan`).
+- **D7, the guard's cost only** (H16): 45.4 ns per call where DIT was clear, 0.7 ns where it was
+  set, 0.0 ns for a disengaged guard (Apple M5 Max, release, 2026-11-22 UTC, load averages
+  61/271/333). **Open item:** these figures are provisional, measured on a loaded machine; the
+  final quiet measurement pass measures them again and regenerates the throughput tables, which
+  this change did not.
+- **Verification:** an arm64 Linux container (the Linux lint's image) reports HWCAP_DIT, and the
+  timing, coverage and asynchronous tests pass there on clang 18 and gcc 14. On MSVC 14.3 and
+  14.5 under Wine, seven no-exceptions builds that include Boost.JSON (`timing_keyed`, the
+  coverage tests) stop with no diagnostic, the lane's documented class; their twins with
+  exceptions pass. **Open item:** the lane's known-failures list gains them (the owner's tool).
+- **Found on the way:** a reference (MrDocs) that includes hash now reads only the backends its
+  build links, and the refusal of OpenSSL on Emscripten never stops a reference (trystero's
+  reference targets Emscripten); crypto's `config.hpp` has the same exposure (its
+  `WEBCPP_CRYPTO_OPENSSL_MEMORY_RESOURCE` refusal), crypto's to fix. `async_heavy`'s cancellation
+  case was made deterministic.
