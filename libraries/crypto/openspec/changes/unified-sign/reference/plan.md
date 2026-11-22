@@ -149,6 +149,19 @@
 - [ ] **Step 6: Run** `grep -rn 'sign_ecdsa\|verify_ecdsa\|sign_schnorr\|verify_schnorr\|sign_recoverable\|normalize_ecdsa\|check_low_s' libs/crypto --include=*.hpp --include=*.cpp --include=*.supp --include=Jamfile` - Expected: nothing. Then all of `libs/crypto/test libs/crypto/example libs/crypto/bench` on clang, through `heavy.sh crypto-sign` - Expected: all pass.
 - [ ] **Step 7: Commit** `crypto: secp256k1 signs with ecdsa_sha256, ecdsa_sha256_recoverable and schnorr`.
 
+### Task 4b: The backend first, Ed25519's policy as an argument (owner decision R14)
+
+**Files:**
+- Modify: `include/webcpp/crypto/curves/p256.hpp`, `curves/ed25519.hpp`, `curves/secp256k1.hpp`, `async.hpp` (internal calls only), the tests, message tests (`ed25519_unknown_policy` and its MSVC twin), examples, benches and superproject fixtures that name a policy or a backend in a `crypto::verify` or `recover` call.
+
+**Interfaces (Produces):**
+- Every `crypto::verify` overload has `Backend` as its first template parameter: P-256 `template <class Backend, class Input> verify(ecdsa_sha256_t, std::span<std::uint8_t const, 64>, Input const&, curves::p256::basic_public_key<Backend> const&)` (deduced; an explicit other backend does not compile); Ed25519 `template <class Backend = default_backend_t<families::ed25519>, class Input, class Policy = curves::ed25519::strict_t> verify(eddsa_t, std::span<std::uint8_t const> signature, Input const& message, std::span<std::uint8_t const> public_key, Policy policy = {})`; secp256k1 `template <class Backend = backends::secp256k1, class Input> verify(ecdsa_sha256_t, ...)` and `verify(schnorr_t, ...)`, each `static_assert(detail::secp256k1_refuses_others<families::secp256k1, Backend>)` as the old free functions did; `template <class Backend = backends::secp256k1, class Input> recover(ecdsa_sha256_recoverable_t, ...)`.
+- Ed25519's policy is a tag object: `struct strict_t { explicit strict_t() = default; }; inline constexpr strict_t strict{};` in `curves::ed25519`; the policy `static_assert` keeps its text, naming `curves::ed25519::strict`. `ph` keeps its own strict verification.
+- [ ] **Step 1: Tests**: `crypto::verify<backends::sodium>(crypto::eddsa, sig, msg, key)` and the same with `curves::ed25519::strict` as fifth argument pass; `crypto::verify<backends::secp256k1>(crypto::schnorr, ...)` and `(crypto::ecdsa_sha256, ...)` pass; `crypto::verify<backends::bearssl>(crypto::ecdsa_sha256, sig, msg, p256_key)` passes; a `static_assert` through a dependent requires-expression that `crypto::verify<backends::openssl>(ecdsa_sha256, sig, msg, basic_public_key<backends::bearssl>)` is not callable; `recover<backends::secp256k1>(...)` passes; the message test `ed25519_unknown_policy` passes an unknown policy object as the fifth argument and keeps its expected text.
+- [ ] **Step 2: Implement**, migrate every call that passed `<strict, ...>` or `<Policy, Backend>`; grep `verify<` across libs/crypto and the superproject's fixtures.
+- [ ] **Step 3: Run** the touched tests on clang and gcc-15, the message tests, timing coverage of all three backends, `generate.py --check`, and one whole clang build of `libs/crypto/test libs/crypto/example libs/crypto/bench` through `heavy.sh crypto-sign`.
+- [ ] **Step 4: Commit** `crypto: crypto::verify takes the backend first on every curve, and Ed25519's policy as an argument`.
+
 ### Task 5: `async_sign` and `async_verify` take the scheme
 
 **Files:**
@@ -159,7 +172,7 @@
 - Consumes: Tasks 1-4.
 - Produces:
   - `template <class Keypair, class Executor, class Scheme, class Input, class CompletionToken> auto async_sign(Executor const& executor, Keypair const& key_pair, Scheme scheme, Input const& input, CompletionToken&& token);` - guard; the existing WebCrypto refusal (`is_webcrypto_keypair_v`) first, unchanged text; then `static_assert` on `can_sign<Keypair, Scheme, Input>` after `detail::check_input` for the input reasons (one diagnostic); synchronous backends post `key_pair.sign(scheme, input)`; asynchronous backends call `async_engine<backend>::sign(executor, key_pair, scheme, input, token)`.
-  - `template <class Policy = curves::ed25519::strict, class Backend = default_async_backend_t<families::ed25519>, class Executor, class Input, class CompletionToken> auto async_verify(Executor const&, eddsa_t, std::span<std::uint8_t const> signature, Input const& message, std::span<std::uint8_t const> public_key, CompletionToken&&);`
+  - `template <class Backend = default_async_backend_t<families::ed25519>, class Executor, class Input, class CompletionToken> auto async_verify(Executor const&, eddsa_t, std::span<std::uint8_t const> signature, Input const& message, std::span<std::uint8_t const> public_key, CompletionToken&&);` and the same with a `curves::ed25519::strict_t` policy argument before the token (Task 4b's policy tag).
   - `template <class Backend, class Executor, class Input, class CompletionToken> auto async_verify(Executor const&, ecdsa_sha256_t, std::span<std::uint8_t const> signature, Input const& input, curves::p256::basic_public_key<Backend> const& public_key, CompletionToken&&);` - a signature of another size completes with `invalid_signature`, as today.
   - A catch-all `async_verify` constrained like Task 1's `crypto::verify`, `static_assert` text: `"webcpp::crypto: async_verify takes crypto::eddsa with Ed25519's 32-byte key or crypto::ecdsa_sha256 with a curves::p256::basic_public_key, the algorithms WebCrypto has: call crypto::verify for the others."`
   - The `async_engine` comment block names the new shapes (`sign(executor, key_pair, scheme, input, token)`, `verify(executor, scheme, signature, input, public_key, token)`).
