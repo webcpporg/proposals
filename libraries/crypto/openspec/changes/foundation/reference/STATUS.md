@@ -5,6 +5,12 @@ recorded as built on 2026-11-19).
 
 ## Where things stand
 
+- **Increment 4, part A (2026-11-20) is written in full** in `plan.md` ("Increment 4, part
+  A", rulings R-A1 to R-A8) and `../tasks.md` (4.A1 to 4.A6): the asynchronous family over the
+  synchronous backends and the heavy machinery on webcpp::hash's model, buildable without the
+  browser backend; it starts after the change `../../api-gaps/` and increment 3's P-256. Part B
+  (tasks 4.1 to 4.5) keeps its outline. `../design.md` D13 and D23, `../specs/crypto/spec.md`
+  and `roadmap.md`'s asynchronous row are amended the same day.
 - **Increment 2 (stream B, `../tasks.md` group 2) is built and awaits its pull requests.** The
   library's branch `crypto/secp256k1-modules` (head `e7c71db`, 54 commits on `1fc5140`) and the
   superproject's branch of the same name (head `d25b22f`, 22 commits on `c00bf7a`: the code's

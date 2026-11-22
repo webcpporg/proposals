@@ -90,7 +90,7 @@ is reached by naming it in the type.
 | KZG | c-kzg-4844 | the only backend |
 | BN254 | mcl | the only backend |
 | Shamir | sss | the only backend |
-| The asynchronous family | on Emscripten, the browser for what WebCrypto serves; elsewhere the family's default, posted | D13, as hash's `default_async_backend` |
+| The asynchronous family | the family's synchronous default on every target, posted; `backends::browser` only where the type names it (amended 2026-11-20, increment 4 part A's ruling R-A4) | D13, as hash's `default_async_backend` (hash's decision O2) |
 
 The owner approved this table as proposed (Q4).
 
