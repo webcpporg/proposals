@@ -231,6 +231,22 @@ Brief: `.superpowers/sdd/plan/task-5b-brief.md` in the superproject worktree (wr
 - [ ] **Step 3: Run** signing, keypair, the curves' tests and message tests on clang and gcc-15; `generate.py --check`.
 - [ ] **Step 4: Commit** `crypto: one list of schemes, which the key pair concept folds over`.
 
+### Task 5d-1: Member verify and the free synchronous forms (owner decision R21)
+
+**Interfaces (Produces):** `pub.verify(scheme, signature, input[, policy])` on `ed25519::public_key` (Backend a defaulted member template parameter first, policy trailing), `p256::basic_public_key<B>` and `secp256k1::public_key` (`ecdsa_sha256` and `schnorr`, R22), each forwarding to the same worker as `crypto::verify` (one implementation; `crypto::verify` may forward to the member); `crypto::sign(key, scheme, input[, extra])`, `crypto::make<A>(bytes)`, `crypto::generate<K>()`, `crypto::agree(key, peer)`, `crypto::seal(aead, iv, ad, data)`, `crypto::open(aead, iv, ad, data, tag)` as one-line wrappers (R23); on a backend with `detail::asynchronous_backend_v`, every synchronous form refuses with "webcpp::crypto: <name> on this backend completes asynchronously: call async_<name>." (members and free forms; test with a stand-in only where it does not instantiate a refusing engine, else record it for part B).
+- [ ] Tests: each operation in its member and free synchronous forms gives equal results on every curve and AES-GCM; message tests for misuse of the new forms (wrong scheme through `crypto::sign`, `pub.verify` with a marker under `eddsa`).
+- [ ] Commit `crypto: every typed public key verifies, and each operation has its free synchronous form`.
+
+### Task 5d-2: The asynchronous members (owner decision R21)
+
+**Interfaces (Produces):** `K::async_make(ex, bytes, token)`, `K::async_generate(ex, token)`, `key.async_sign(ex, scheme, input, token)`, `key.async_agree(ex, peer, token)` (P-256), `pub.async_verify(ex, scheme, signature, input[, policy], token)` (Ed25519, P-256), `aead.async_seal(ex, iv, ad, data, token)`, `aead.async_open(ex, iv, ad, data, tag, token)` (AES-GCM): declared in the classes as member templates with `auto` return type and defined out of class in `async.hpp`; the free `async_*` functions and the members share one initiation each. secp256k1 has none (R8).
+- [ ] Tests: each operation in all four forms gives equal results (`async_p256`, `async_25519`, `async_gcm`); a message test calling a member `async_` function without including `async.hpp` pins the compiler's diagnostic on clang (record gcc's and MSVC's wording in the report).
+- [ ] Commit `crypto: the asynchronous member functions, defined in async.hpp`.
+
+### Task 6c: The page shows the four forms (amends Task 6)
+
+- [ ] Each curve's and AES-GCM's chapter shows the synchronous and asynchronous members side by side; the guide (`curves.adoc` or `async.adoc`) shows the free forms and D9's table; `crypto.json` rows and the changelog name what changed (within the 10-line, 30-word rules); `-a libs/crypto/doc` passes.
+
 ### Task 6: The page, the generated files and the changelog
 
 **Files:**

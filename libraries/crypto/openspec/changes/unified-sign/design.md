@@ -230,6 +230,24 @@ secp256k1's `ecdh_x` become `agree`; secp256k1's other forms keep explicit names
 `agree_point(peer)` (the 65-byte point, was `ecdh_point`). `async_agree` mirrors it. Ed25519's
 `x25519_secret()` stays: it is a conversion, not an agreement.
 
+### D9. Four mirrored forms per operation (owner, 2026-11-22)
+
+Every operation has four forms with one implementation:
+
+| | Synchronous | Asynchronous |
+|---|---|---|
+| Member | `K::make(bytes)`, `K::generate()`, `key.sign(scheme, input)`, `key.agree(peer)`, `pub.verify(scheme, signature, input)`, `aead.seal(...)`, `aead.open(...)` | `K::async_make(ex, bytes, token)`, `K::async_generate(ex, token)`, `key.async_sign(ex, scheme, input, token)`, `key.async_agree(ex, peer, token)`, `pub.async_verify(ex, scheme, signature, input, token)`, `aead.async_seal(ex, iv, ad, data, token)`, `aead.async_open(ex, iv, ad, data, tag, token)` |
+| Free | `crypto::make<A>(bytes)`, `crypto::generate<K>()`, `crypto::sign(key, scheme, input)`, `crypto::verify(scheme, signature, input, key)`, `crypto::agree(key, peer)`, `crypto::seal(aead, ...)`, `crypto::open(aead, ...)` | `async_make`, `async_generate`, `async_sign`, `async_verify`, `async_agree`, `async_seal`, `async_open` (as before: the free synchronous arguments with the executor first and the token last) |
+
+The free synchronous forms are one-line wrappers over the members; the member and free
+asynchronous forms share one initiation, which on a synchronous backend runs the synchronous
+member, so the timing guard, the refusals and the errors are the same by construction; one set of
+concepts gates all four. The asynchronous members are declared in the classes as member templates
+with a deduced return type and defined in `async.hpp`, so a curve's or a cipher's header never
+includes Asio and a synchronous program pays nothing; calling one without `async.hpp` is the
+compiler's "deduced return type used before it is defined". On a backend that completes by itself
+(the browser's, part B), every synchronous form refuses with a message naming its `async_` form.
+
 ## Rulings
 
 - **R1 (owner, 2026-11-22): secp256k1 is in this change.** It supersedes the coordinator's first
@@ -290,6 +308,14 @@ secp256k1's `ecdh_x` become `agree`; secp256k1's other forms keep explicit names
   `crypto::keypair` concept folds over it, and every other enumeration (`is_scheme_v`, the tests,
   the generators where they can) derives from it, so that a new scheme is one line in the list and
   the concept checks it on every key pair.
+- **R21 (owner, 2026-11-22): four mirrored forms per operation** (D9).
+- **R22: `secp256k1::public_key::verify` takes both its schemes**, `ecdsa_sha256` and `schnorr`
+  (the typed key gives its x-only form); BIP340's x-only bytes keep the free form only.
+- **R23: each free synchronous form lives in the header of what it gates**: `crypto::sign` beside
+  `crypto::verify` in `signing.hpp`, `crypto::make`, `crypto::generate` and `crypto::agree` in
+  `keypair.hpp` (`make` also serves AES-GCM's `make`), `crypto::seal` and `crypto::open` in the
+  AEAD header; each is generic over the member, constrained by the member's existence and the same
+  concepts.
 
 ## Risks / Trade-offs
 
