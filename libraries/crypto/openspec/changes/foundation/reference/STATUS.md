@@ -1,10 +1,20 @@
 # Status of the foundation change
 
-**Date:** 2026-11-21 (accepted by the owner on 2026-11-14; revised on 2026-11-17; increment 2
-recorded as built on 2026-11-19; increment 3's P-256 part recorded as built on 2026-11-21).
+**Date:** 2026-11-22 (accepted by the owner on 2026-11-14; revised on 2026-11-17; increment 2
+recorded as built on 2026-11-19; increment 3's P-256 part recorded as built on 2026-11-21;
+increment 4, part A built on 2026-11-22).
 
 ## Where things stand
 
+- **Increment 4, part A is built (2026-11-22).** Tasks 4.A1 to 4.A6 are on the branch
+  `crypto/async` of the library and the superproject (`f4db5b3` to `f89b0d9`, each task reviewed,
+  the whole branch reviewed and one fix wave done, then the Linux lint and GCC 15 release fixes);
+  `plan.md`'s "Increment 4, part A: as built" records the API, the departures, Task 4.A5 and the
+  follow-ups, and `../tasks.md` ticks them. Task 4.A5 (P-256's asynchronous functions, taking the
+  message and hashing it with SHA-256 as WebCrypto's ECDSA does) was built on a merge of P-256's
+  branch ahead of its landing, and `main` was merged into the branch once more when P-256 landed;
+  every lane was green before 4.A5 and the CI's first run of the family is at the end of the
+  owner's queue. Part B keeps its outline.
 - **2026-11-21: increment 3's P-256 part (stream 3a, `../tasks.md` 3.1 to 3.6) is delivered
   and awaits its merge.** The library's branch `crypto/p256` (head `9cc0060`, `main` `3f27988`
   merged into it as `9121118`) and the superproject's branch of the same name (head `c228b06`,
@@ -46,7 +56,7 @@ recorded as built on 2026-11-19; increment 3's P-256 part recorded as built on 2
   record of 2026-11-19 and are brought up to date by the stream R task that records version
   0.2.
 
-- **Increment 4, part A (2026-11-20) is written in full** in `plan.md` ("Increment 4, part
+- **Increment 4, part A (2026-11-20) was written in full** in `plan.md` ("Increment 4, part
   A", rulings R-A1 to R-A8) and `../tasks.md` (4.A1 to 4.A6): the asynchronous family over the
   synchronous backends and the heavy machinery on webcpp::hash's model, buildable without the
   browser backend; it starts after the change `../../api-gaps/` and increment 3's P-256. Part B

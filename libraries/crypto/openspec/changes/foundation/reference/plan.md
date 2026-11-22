@@ -5490,6 +5490,240 @@ part starts, this task moves to increment 3's stream, which then adds it.
 - [ ] **Step 3:** commit `crypto: the asynchronous family's page and examples`; the pull
   requests, merged; the CI once at the end of the owner's queue.
 
+### Increment 4, part A: as built (2026-11-22)
+
+Part A was built on the branch `crypto/async` of the library and the superproject (the
+library's commits on its `main` at `e999052`, listed below), by the tasks above, each reviewed,
+with a final review of the branch and one fix wave, then the lint and GCC 15 release fixes and
+Task 4.A5. The code is the truth; where it differs from the text above, this subsection says so.
+
+**The commits** of the library, oldest first:
+
+- `f4db5b3` crypto: the heavy operations' machinery on webcpp::hash's model, with cancellation before and during the work and values that wipe themselves
+- `9da0387` crypto: the heavy job's allocator is chosen lazily, with a type-erased work executor tested, and a heavy operation's value must move without throwing
+- `4a7450b` crypto: async.hpp's base, completions posted on every target, and the seam the browser backend fills
+- `8240676` crypto: AES-GCM's asynchronous make, seal and open, posted on every target
+- `4828b3d` crypto: Ed25519's and X25519's asynchronous functions, posted on every target
+- `f7c314d` crypto: refusal texts name the synchronous function to call, the coverage counter is generic, and the review's minors of 4.A3 and 4.A4 are closed
+- `27d53a5` crypto: the asynchronous family's page and examples
+- `3d567f5` crypto: the asynchronous family's tables list each backend's own functions, with use cases, and the sign example reports a missing public key
+- `68f2976` crypto: the asynchronous family's remaining wording matches its behavior, a const AES-GCM object gets the constness error, and crypto.hpp names the header it leaves out
+- `0ba6463` crypto: the asynchronous family's lint findings are fixed at their cause, and the changelog's first line fits its word limit
+- `ee0747e` crypto: the asynchronous tests and the sign example build warning-free on GCC 15 release, with the counting operators never inlined and each awaited result named before it is bound
+- `a3710d3` crypto: merge P-256's branch into the asynchronous family, ahead of its landing on main
+- `973913b` crypto: P-256's asynchronous functions, posted on every target
+- `f89b0d9` crypto: llms.txt gives P-256's asynchronous functions their own briefs and use cases, and the P-256 chapter and the seam name the message the async functions hash
+
+**The public API** (`include/webcpp/crypto/async.hpp`; every function takes the executor its
+completion is posted to first and the completion token last; a failure is a value of the
+completion, never a throw; the spans and the objects are the caller's until the completion):
+
+| Function | Completion signature |
+|---|---|
+| `async_make<Algorithm>(executor, key_bytes, token)`, AES-GCM or an Ed25519 key pair | `void(error_code, Algorithm)`; on an error the empty object, every member of which answers `invalid_state` |
+| `async_generate<Keypair = curves::ed25519::keypair>(executor, token)` | `void(error_code, Keypair)`; empty on an error |
+| `async_seal(executor, aead, iv, additional_data, data, token)` | `void(error_code, Gcm::result_type)`, the tag; zeroed on an error |
+| `async_open(executor, aead, iv, additional_data, data, tag, token)` | `void(error_code)`; the plaintext in `data` on success, zeroed on `authentication_failed` or a backend's failure, untouched on a guard's refusal |
+| `async_sign(executor, key_pair, message, token)`, an Ed25519 key pair | `void(error_code, std::array<std::uint8_t, 64>)`; zeros on an error |
+| `async_verify<Policy = curves::ed25519::strict, Backend = default_async_backend_t<families::ed25519>>(executor, public_key, message, signature, token)` | `void(error_code)` |
+| `async_agree<Backend = default_async_backend_t<families::x25519>>(executor, secret_key, peer_public_key, token)` | `void(error_code, secret<32>)`; zeros on an error |
+
+`default_async_backend_t<Family>` is `default_backend_t<Family>` on every target (R-A4). The seam
+for part B is `detail::asynchronous_backend_v<Backend>` (false for every backend now) and the
+declared-only `detail::async_engine<Backend>`, whose member functions and their argument order
+`async.hpp` documents. The heavy machinery is `detail/heavy.hpp`'s `detail::run_on_work` with
+`WEBCPP_CRYPTO_DETAIL_REQUIRE_THREADS`; no heavy operation exists yet, so only the test-only
+operation in `test/heavy_test.cpp` uses it (R-A6). `detail/async_access.hpp` holds
+`async_access`, the friend that builds the empty objects.
+
+**Departures from the plan's text:**
+
+- **The heavy job's allocator is the work executor's, else `std::allocator<void>`** (Task 4.A1),
+  where webcpp::hash's `heavy_job` always uses `std::allocator<void>`. The choice is lazy
+  (`heavy_job_allocator_of<WorkExecutor>`), so that an executor that cannot answer the allocator
+  query, such as a type-erased `asio::any_io_executor`, names nothing ill-formed; the test
+  `heavy_allocator` pins that the completed path calls no `operator new` (the cases with a
+  connected cancellation slot do not, since Asio's own signal storage allocates).
+- **A heavy operation's value must move without throwing** (a `static_assert`), so that the
+  state moves it into the completion on every path; a `secret<N>` or a key pair does.
+- **`async_gcm` is two targets, `async_gcm` (BearSSL) and `async_gcm_openssl`**, running the same
+  test: one target cannot link OpenSSL on Emscripten, where only BearSSL is built.
+- **The refusal text of `async_sign` says "call the key pair's synchronous signing function for
+  the others"**, not the plan's "call the key pair's sign": secp256k1's key pair has no `sign`,
+  only `sign_ecdsa` and `sign_schnorr`. `async_make` and `async_generate` have refusals of their
+  own ("call the synchronous make" and "call the synchronous generate"), which the plan did not
+  give; `async_seal` and `async_open` keep the plan's texts.
+- **Two message tests more than planned**, `async_open_xchacha` and `async_make_xchacha`, each
+  with its MSVC fixture, beside `async_seal_xchacha` and `async_sign_secp256k1`.
+- **A const AES-GCM object** passed to `async_seal` or `async_open` reaches the non-const member's
+  own constness error, not the refusal for a non-GCM type.
+- **The capability table's asynchronous operations are split per family**: `async_gcm`,
+  `async_ed25519` and `async_x25519` in `doc/tables/crypto.json`, not the one operation `async`
+  of Task 4.A6's text, so that each generated backends page lists its own backends; the use cases
+  `async_seal` and `async_sign` answer them.
+- **The changelog line** for the family was folded into the first Unreleased line (version 0.1's
+  entry is at the ten-line cap), as the earlier changes did.
+- **The test's counter** `async_gcm_completion` became the generic `async_completion_counter`.
+- **Emscripten builds run with `EM_CACHE` unset**: the read-only emsdk cache lacks the
+  multi-threaded `libc++` variant and cannot build it, so the build uses the writable default
+  cache.
+- **The superproject's fixture** `heavy_without_threads_on_emscripten` names `run_on_work`,
+  matching the library's message tests.
+
+**What the tests pin beyond the plan's list:** `async_destroyed` in `async_gcm_test.cpp` and
+`async_25519_test.cpp` (the object, the key pair and the spans destroyed after the initiating
+call and before the completion: the results are right); the allocation counts of the cheap
+functions' handlers; `use_future` where exceptions are on, `as_tuple` where they are off.
+
+**Follow-ups (R-A5 and the final review):**
+
+- Lift the heavy state, `heavy_state`, `heavy_job` and `heavy_initiation`, into webcpp::asio when
+  a third library needs it; crypto and webcpp::hash each hold a port now.
+- webcpp::hash's `heavy_job` could take the work executor's allocator, as crypto's does.
+- When increment 3's P-256 lands on `main`, merge `main` into `crypto/async` once more and
+  regenerate the generated files (never keep the auto-merge's). The branch carries P-256's
+  library branch as merged before its landing (see Task 4.A5 below).
+
+**The final review's fixes** (`68f2976`; seven Minor findings, six fixed and one left to Task
+4.A5): the file comment of `async.hpp` and the `@tparam` of `async_sign` point to the key pair's
+own signing function (`sign_ecdsa`, `sign_schnorr`); the page says the synchronous call runs when
+the operation is initiated (the call, the `co_await` or the launch of a deferred operation); the
+page no longer quotes a refusal text; `crypto.hpp` says it leaves out `async.hpp` and why
+(webcpp::asio); `async_seal` and `async_open` test `is_gcm_v` of the type without its
+cv-qualifiers, so a const object reaches the non-const member's own error; the allocation pitfall
+adds the OpenSSL qualifier of `make` with a link to the memory guide.
+
+**The lint fixes** (`0ba6463`, from the CI's Linux lint of `3d567f5`: 36 clang-tidy lines, a
+fluent chain and a changelog line over its word limit), each at its cause: `post_initiation`'s
+delivery is two `deliver` overloads in `post_initiation` (a `result<void>` by const reference, a
+`result<T>` by rvalue), so no variable is left that could be const; the tests that covered every
+token kind in one function are split per kind (`post_tokens` and `post_gcm_tokens` into future,
+deferred, tuple and awaitable tests); `timing_coverage.hpp`'s `completions` has a default member
+initializer and designated initializers; `example/async_sign.cpp` binds the public key's error to
+a named variable; the sign example's hex digit is `std::uint32_t`; an unused alias is removed.
+The changelog's first Unreleased line was shortened to 30 words or fewer, which dropped its
+platform list and thread detail, the asynchronous functions joining it (ten lines is the cap);
+Task 4.A5 restored the platform list within the limit. The clang-tidy run of the fixes used the
+lint's own options on just the touched units, the next full Linux lint of the tree was clean,
+and so were the macOS lint, MSVC 14.3 and 14.5 (no new failures) and every lane in debug and
+release but one, the next item.
+
+**The GCC 15 release fixes** (`ee0747e`; `-Wall -Wextra -Werror`, which no release GCC build had
+run over the asynchronous tests):
+
+- `-Werror=mismatched-new-delete` in `test/support/counting.hpp`: at `-O3` GCC 15 inlines the
+  header's replaced `operator delete` (`free`) into a caller that has inlined a library's
+  `operator new`, and pairs them wrongly. The replaced operators are now `BOOST_NOINLINE`, as
+  `libs/pratt` and `libs/idna` mark theirs for the same warning; no pragma, the counts are
+  unchanged.
+- `-Werror=maybe-uninitialized` in `async_gcm_test`, `async_25519_test`, `async_post_test` and
+  `example/async_sign`: a structured binding that initializes from a `co_await` of a
+  value-carrying completion makes the hidden tuple a coroutine-frame temporary that GCC reports
+  as possibly uninitialized, for the types whose move leaves a wiped object. This is a GCC
+  coroutine false positive. Each awaited result is named first and bound by reference after
+  (`auto made_result = co_await ...; auto& [code, key] = made_result;`), with no suppression.
+
+#### Task 4.A5 as built: P-256's asynchronous functions
+
+**The merge.** P-256's library branch was not on `main` when the task ran, and its pull request
+was final-gated, so the branch was merged into `crypto/async` as it stood (`a3710d3`, the merge
+of the P-256 pull request's branch after its own merge of `main`), and `main` is merged again
+once P-256 lands. Two conflicts, both sides kept: `test/Jamfile`'s `headers-alone` lists
+(`detail/heavy.hpp` moved to the Asio list with `async.hpp`, `detail/async_access.hpp` added,
+and P-256's `detail/p_curves.hpp` in the first list) and `convenience_header_test.cpp` (the
+header comment merged into one paragraph, both blocks kept). The generated files were
+regenerated after the merge and equalled the auto-merged ones. P-256's superproject files and
+its BearSSL pin are not in this stream: they arrive with `main`.
+
+**The functions** (`973913b`, in `async.hpp`; P-256's key pair is `curves::p256::basic_keypair`):
+
+| Function | Completion signature |
+|---|---|
+| `async_make<p256::basic_keypair<B>>(executor, secret_scalar, token)` and `async_generate<p256::basic_keypair<B>>(executor, token)`, through the existing templates | `void(error_code, p256::basic_keypair<B>)`; empty on an error (`invalid_key_size` for a scalar of another size, `invalid_secret_key` for zero or the group order) |
+| `async_sign(executor, p256_key_pair, message, token)`, through the existing template | `void(error_code, std::array<std::uint8_t, 64>)`, the signature as `r \|\| s`; zeros on an error |
+| `async_verify<Backend>(executor, p256::basic_public_key<Backend> const&, message, signature, token)`, an overload | `void(error_code)`; a signature of another size than 64 bytes completes with `invalid_signature` |
+| `async_agree<Backend>(executor, p256::basic_keypair<Backend> const&, p256::basic_public_key<Backend> const&, token)`, an overload | `void(error_code, secret<32>)`, the raw x coordinate; zeros on an error |
+
+`async_verify` and `async_agree` are overloads taking P-256's key types because those types
+cannot pass through the span-based Ed25519 and X25519 templates; an explicit
+`async_verify<Backend>` or `async_agree<Backend>` still works. Each function holds
+`detail::timing_guard const timing;` first, then the seam's dispatch, else `complete_by_post`, as
+the others do. `curves/p256.hpp`'s `basic_keypair` has `friend struct detail::async_access;`, so
+an error completion's key pair is the empty one (every member answers `invalid_state`). The trait
+`detail::is_p256_keypair_v` and `is_webcrypto_keypair_v` (Ed25519 or P-256) route the templates.
+The refusal texts that name "(Ed25519, P-256)" are now true.
+
+**The message, not the digest (the controller's ruling).** P-256's `async_sign` and
+`async_verify` take the message and hash it with SHA-256, as WebCrypto's ECDSA with SHA-256
+does, where the synchronous `sign_ecdsa` and `verify_ecdsa` take the digest. The reason: WebCrypto
+can neither sign nor verify a prehashed digest, so a digest-taking asynchronous function could
+never be served by part B's `backends::browser`; the asynchronous family's contract is
+WebCrypto's shape. The hash is `detail::p256_digest`, webcpp::hash's `sha2_256` through
+Boost.Hash2 (`<webcpp/hash/algorithms.hpp>` and `<boost/hash2/digest.hpp>`, header-only;
+`<webcpp/hash/digest.hpp>` pulled backend headers into the doc build's aggregate translation
+unit and was not used). `async_engine`'s documentation says that P-256's sign and verify hand the
+engine the message, which it hashes with SHA-256, and lists the P-256 shapes of `verify` and
+`agree`; the P-256 chapter says the same. If the owner prefers the digest, the change is local to
+two lambdas and the documentation.
+
+**The tests** (`test/async_p256_test.cpp`, target `async_p256`, every target; the helpers are
+P-256's own): `async_rfc6979` (RFC 6979 A.2.5, "sample" and "test", through `async_make` and
+`async_sign`, equal to the RFC and to `sign_ecdsa` of the digest; `async_verify` accepts);
+`async_wycheproof_ecdsa` (the first 50 valid cases of `ecdsa_secp256r1_sha256_p1363_test`, the
+`r || s` form that WebCrypto takes, `async_verify` against `verify_ecdsa`, a changed message
+refused by both; the loop stops reading groups once 50 cases ran); `async_wycheproof_ecdh` (the
+first 50 valid cases of `ecdh_secp256r1_ecpoint_test` through `async_make` and `async_agree`,
+equal to the file's shared x and to `ecdh_x`); `async_verify_refused` (a changed byte, 63 bytes,
+`r` = 0); `async_generate` (the default and a named backend); `async_make_refused` (31 bytes, the
+order, the empty key pair's members and the functions on it); `async_destroyed`;
+`async_coroutine`. The task started red (three `static_assert` refusals and no matching
+function) and ended with 50 verified and 50 agreed.
+
+**Coverage on BearSSL.** `cover_async_p256` in `timing_coverage_bearssl_test.cpp` runs
+`async_make` (valid, a 31-byte scalar), `async_generate`, `async_sign` (valid, moved-from),
+`async_verify` (valid, 63 bytes) and `async_agree` (valid, moved-from), nine completions; the
+comment says `async_generate`, which has no input, is not refused. A mutation check removed the
+guard of `async_agree`, and the test failed naming `ecdh_x`'s guard as the first entered.
+
+**The page and the table.** `doc/async.adoc` has a P-256 row in the functions table, a paragraph
+(the message hashed with SHA-256 as WebCrypto does, `r || s`, P-256's types, the raw x) and
+`backends-async_p256.adoc`; `doc/p256.adoc`'s ECDSA and ECDH sections point to the asynchronous
+functions. `doc/tables/crypto.json` has the operation `async_p256` (BearSSL, test `async_p256`),
+beside `async_gcm`, `async_ed25519` and `async_x25519`; the message of `async_sign_secp256k1`
+says only Ed25519's and P-256's key pairs have `async_sign`. Examples are unchanged.
+
+**The generator change** (`f89b0d9`, `doc/tables/generate.py`, which the review found necessary:
+`llms.txt` told a reader P-256's entry could "sign and verify with Ed25519"). Two optional
+fields of `crypto.json`: a use case's `operations` lists the operation ids it answers, so the
+asynchronous AES-GCM and Ed25519 use cases name `async_gcm` and `async_ed25519` and P-256's entry
+no longer gets theirs (an unknown id is a fault); an operation's `overloads` maps a function to
+the text its declaration must hold, so that the brief comes from the overload's own Doc Comment
+(`async_p256` names `p256::basic_public_key` for `async_verify` and `p256::basic_keypair` for
+`async_agree`; a selector no declaration matches is a fault naming it). `llms.txt` now shows
+P-256's own briefs. No P-256 use case was added: the decision table requires every row a program
+can follow to link an example, and there is no asynchronous P-256 example, so the P-256 entry has
+no "Use it to" line rather than a false one. `generate_test.py` has three new cases for these.
+
+**The review of the task** found one Important finding (the `llms.txt` one above) and four
+Minor ones (the coverage comment, the pointers in `doc/p256.adoc`, the seam's documentation of
+the message, the Wycheproof loop's bound), all fixed in `f89b0d9` and re-reviewed clean.
+
+**After P-256 landed.** `main` (`dd176cf`) was merged into the branch (`7d92025`, no file
+changed) and into the superproject's; the next Linux lint found seven clang-tidy findings in
+`async_p256_test.cpp` and `timing_coverage_bearssl_test.cpp` (long functions, a trailing comma,
+a const), fixed in `900d455` by splitting the cases into helpers, every case and count kept.
+
+**Verification of the delivered tree** (library `900d455`, superproject with the gitlink at it):
+every lane in debug and release (native clang, GCC 15, wasip2, wasip3, Emscripten, the heavy
+machinery natively and on Emscripten with `-pthread`), `generate.py --check`, the doc build, the
+superproject's tools tests (`crypto_jamfiles`, `hash_jamfiles`, `third_party_test`,
+`crypto_collect_test`), the macOS full lint and the Linux lint: all clean. MSVC 14.3 (620
+passed) and 14.5 (511 passed) have one failure each outside the lane's list of known emulator
+failures: `async_p256_no_exceptions` stops compiling with no diagnostic, the emulator's known
+failure for a translation unit that includes `boost/json.hpp` without `/EH`, as the list already
+records for P-256's own Wycheproof tests; the lane's list is the owner's to extend, and the
+Windows CI decides. The CI's first run of the family is at the end of the owner's queue.
+
 ## Increment 5: libsodium completed (a stream after 1)
 
 1. `ristretto255` and `edwards25519` points and scalars; RFC 9496's vectors.
