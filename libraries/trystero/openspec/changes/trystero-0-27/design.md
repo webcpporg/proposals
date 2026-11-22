@@ -117,15 +117,22 @@ Before P-256, a room's peer id is 20 base62 characters drawn at random and its u
 The values have 0.27.0's form, the rooms meet each other over the memory backend and local
 relays, and nothing claims interoperability until Phase 2.
 
-### D9. One connection per room and remote peer (default; confirmed by Task 2.1)
+### D9. One connection per room and remote peer (confirmed 2026-11-22, plan Task 2.1a)
 
-0.27.0 removed 0.26.0's `shared-peer.ts`: each room negotiates its own peer connection, and the
-handshake binds app and room. The default ruling is that the port follows: the app keeps one
-identity, its relays and its key cache, and each room its own connections; the archived
-`shared-connection` change's sharing of connections across rooms, its presence frames and
-`room_token` are retired. Phase 2's first task reads 0.27.0's peer and transport code and records
-a room's data-channel frames; if 0.27.0 shares after all, this decision is amended before any
-code is removed.
+0.27.0 removed 0.26.0's `shared-peer.ts`, and reading 0.27.0's `strategy.ts`, `signal-handler.ts`,
+`peer.ts`, `peer-transport.ts` and `room.ts` confirms it shares nothing: each room makes its own
+offers (`createOfferManager(() => initPeer(true, ...))`) and answers (`initPeerFn(false, ...)`),
+keeps one connected peer per remote id (`connectPeer` keeps a live one and replaces a stale
+one), writes its action frames bare on the channel (`sendFrame`), and binds its handshake to that
+connection's DTLS fingerprints and to its app and room. The port follows: the app keeps one
+identity, its relays and its key cache; each room its own connections, in the room's resource. The
+archived `shared-connection` change's sharing, its presence frames, `room_token`, rebinding, the
+idle time of a connection, the 64-room bound (`max_rooms`, `too_many_rooms`) and the password
+handshake (`__trystero_pw`, which 0.27.0 dropped: a password keys the signals only) are retired.
+A connection is bounded as `peer.ts` bounds it: 64 frames of at most 17 KiB kept for 10 s before
+the room takes them, 64 KiB after. Rejected: keeping the sharing as a C++ extension (a JS peer's
+connection belongs to one room: another room's frames on it would be read as this room's); keeping the
+64-room bound (it existed for 0.26.0's token limit).
 
 ### D10. Listeners return a subscription
 
@@ -174,7 +181,81 @@ Phase 1: everything without P-256 (this plan's Tasks 1 to 13). Phase 2: identity
 verified users, `max_users`, interop. Phase 3: `make_state` and `make_user_state` (core in
 0.27.0, but signed records need P-256 and the shared-state machinery is large), `roles()`, then
 `scale()`. Rough size: Phase 1 thirteen tasks, some 6,000 to 8,000 lines changed with tests;
-Phase 2 seven tasks, some 5,000 to 7,000; Phase 3 three changes, some 10,000 to 14,000.
+Phase 2 twelve tasks (plan 2.1a to 2.7), some 5,000 lines deleted with the shared connection and
+5,000 to 7,000 written; Phase 3 three changes, some 10,000 to 14,000.
+
+### D17. Identity belongs to the app
+
+0.27.0 caches one endpoint identity per app id and page (`getDefaultEndpointIdentity(appId,
+clientId)`) and resolves a user identity per app and page unless a room's configuration gives
+one. The port keeps both in the `app`: one endpoint key pair (`p256::keypair::generate`), whose
+compact key derives `self_id()`, and one user identity, `app_config::identity` or an ephemeral one
+made with the app. `user_identity` is a copyable handle to an immutable key, so that several apps
+(one process or several) are one user's endpoints; `create_user_identity`, `import_user_identity`
+and `export_user_identity` are 0.27.0's, with its `trystero_uk_` text and its JSON key form.
+Persistence is `ephemeral` (0.27.0's `'none'`) or `imported` (its `'custom'`); there is no
+`'local'` (D15). Rejected: an identity per room (0.27.0's per-room `identity` option exists, but a
+C++ program that wants two users makes two apps; listed as a difference); a process-wide cache of
+endpoints (state outside every app's resource).
+
+### D18. Signatures are synchronous, deterministic and checked as 0.27.0 checks them
+
+ECDSA P-256 is webcpp::crypto's on BearSSL on every target, synchronous like the rest of the crypto
+layer (D4): signing normalizes to low S (`normalize_ecdsa`), verification refuses a high S
+(`check_low_s`) before `verify_ecdsa`. BearSSL's nonces are RFC 6979's, so the port's signatures
+are deterministic where WebCrypto's are random; both verify alike, so the wire cannot tell. The
+key-record cache (4,096) and the verified-signature cache (8,192 entries, 2 MiB, payloads of at
+most 4,096 bytes) are 0.27.0's bounds, per app rather than per page. Signatures, compact keys and
+the user key's text are read as strict base64url, where 0.27.0's `Uint8Array.fromBase64` is loose:
+a JS peer always writes the canonical form, so only a forged text can tell, and it is refused; a
+difference. Rejected: webcpp::crypto's asynchronous family (nothing to gain off a page's thread
+for a few signatures per peer); a process-wide cache.
+
+### D19. One vectors file, its signatures kept, proven against the published packages too
+
+The recorder writes one file for both phases, `trystero-0.27.0.json` like the library's fixture
+(Phase 1's `phase1.json`, renamed). WebCrypto's ECDSA is random, so the recorder takes its
+previous output and keeps each signature recorded there that 0.27.0's own verification still
+accepts, signing only what is missing: a run over the fixture writes it again byte for byte, and
+every kept signature is verified again by 0.27.0's code on every run. With `--dist <node_modules>`
+the same recorder imports the published `@trystero-p2p/core` and `@trystero-p2p/nostr` 0.27.0
+instead of the checkout; the oracle lane runs it so, proving that what a JS peer installs equals
+the pinned source. JS verifies the C++ side's signatures in the interop lane. Rejected: a
+deterministic signer in the recorder (it would not be 0.27.0's code); vectors without signatures
+(the C++ side would never verify a JS signature outside the interop lane).
+
+### D20. The handshake reads its fingerprints from the descriptions the signaling handled
+
+0.27.0 reads `a=fingerprint:` lines from `localDescription.sdp` and `remoteDescription.sdp`. The
+port's signaling hands its room the last local description `set_local_description` gave and the
+last remote one it applied, and the room reads them with `protocol::dtls_fingerprints`; the
+backend is unchanged. The memory backend writes a fingerprint line of its own into each
+description. Rejected: a backend call returning fingerprints (two platform implementations for
+what the signaling already holds).
+
+### D21. The user-proof is protocol code only
+
+0.27.0's `identity.ts` defines `userEndpointProofPayload`, `signUserEndpointProof` and
+`verifyUserEndpointProof`, but its core neither sends nor checks one: the handshake's dual
+signatures over the transcript bind the user key to the endpoint. The port keeps the payload and
+proves it with the vectors, for Phase 3's plugins if they use it. Rejected: inventing a use 0.27.0
+does not make.
+
+### D22. Wide chunks follow the connection's largest message
+
+0.27.0 sends 64 KiB chunks to a peer whose `RTCPeerConnection.sctp.maxMessageSize` is at least
+65,536. `backend::peer_connection::max_message_size()` reports it (libdatachannel's
+`remoteMaxMessageSize()`, a page's `pc.sctp.maxMessageSize`), and the action wire offers wide
+transfers on such a connection. Rejected: always narrow (Phase 1's state, slower and not 0.27.0's
+frames).
+
+### D23. The error list loses what 0.27.0 lost before the merge
+
+`wrong_password`, `handshake_timed_out` and `too_many_rooms` name what 0.27.0 no longer has (the
+password handshake, its timeout as a code of its own, the 64-room bound): they are removed before
+the port merges, and the values after them move; nothing on `main` has seen the 0.27.0 values.
+`invalid_user_identity` and `invalid_max_users` are appended for what 0.27.0 throws. Rejected:
+keeping retired values reserved (R2 kept numbering stable within the branch only).
 
 ## Risks / Trade-offs
 
@@ -184,7 +265,9 @@ Phase 2 seven tasks, some 5,000 to 7,000; Phase 3 three changes, some 10,000 to 
   follow-up change, its vectors regenerated by the recorder.
 - [WebCrypto's PBKDF2 under node] Emscripten tests run under node, which has WebCrypto; the
   memory backend's synchronous PBKDF2 keeps unit tests independent of it.
-- [The retired shared connection] D9 removes 0.1.0 work; it is confirmed by reading 0.27.0 first.
+- [The retired shared connection] D9 removes 0.1.0 work; it was confirmed by reading 0.27.0 first.
+- [Interop timing] the handshake adds a round trip and two signatures per peer; Chrome's and the
+  native peer's scenarios are bounded and use completions, never margins.
 
 ## Migration Plan
 
@@ -195,7 +278,10 @@ README and the pages carry a migration section modelled on Trystero's `MIGRATION
 ## Open Questions
 
 1. Does webcpp::crypto's `random_device` on Emscripten keep a JavaScript exception out of
-   WebAssembly when the page has no `crypto` (0.1.0's entropy caught it)? Default: check in
-   Task 6 and keep a guard of trystero's if it does not.
+   WebAssembly when the page has no `crypto` (0.1.0's entropy caught it)? Phase 2's Task 2.6b
+   tests it (`platform_page_entropy`); if it does not, the guard is the crypto stream's and the
+   test stays explicit until it lands (it does not block the merge: Trystero JS cannot run in
+   such a page either).
 2. Is the action wire's request/response protocol carried in metadata or in frames of its own?
-   Task 8's recorded frames answer it.
+   Answered by Task 8's recorded frames: metadata (`{"r":<id>}`) and the internal action
+   `@_response`; 0.27.0's ping is such a request (`ping_frames`).

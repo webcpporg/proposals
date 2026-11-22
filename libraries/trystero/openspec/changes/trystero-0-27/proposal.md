@@ -54,8 +54,9 @@ None.
 ## Impact
 
 - **Kind:** port, of Trystero 0.27.0 (`port_of`), from 0.26.0.
-- **Implementation:** none yet; `reference/plan.md` is the plan (Phase 1 in full, Phases 2 and 3
-  outlined), `reference/vectors/` the recorder and the vectors it recorded from 0.27.0's code.
+- **Implementation:** Phase 1 built on the branches; `reference/plan.md` is the plan (Phases 1
+  and 2 in full, Phase 3 outlined), `reference/vectors/` the recorder and the vectors it recorded
+  from 0.27.0's code (`trystero-0.27.0.json`).
   Library branch `port/trystero-0.27`, superproject branch `trystero/port-0.27`.
 - **Dependencies:** webcpp::hash and webcpp::crypto (new); libsecp256k1 through webcpp::crypto
   instead of directly; Phase 2 waits on webcpp::crypto's P-256 (foundation increment 3, Tasks
@@ -64,4 +65,4 @@ None.
 - **Other proposals:** supersedes the part of webcpp::crypto's genesis D23 that kept trystero off
   webcpp::crypto; `bounded-json-parse` (draft) applies to the same parser and is rebased on this
   branch if it is accepted first; the archived `shared-connection`'s app-level sharing is retired
-  by design D9 unless Phase 2's Task 2.1 finds 0.27.0 shares connections.
+  by design D9, which Phase 2's reading of 0.27.0 confirmed.

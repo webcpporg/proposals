@@ -1,14 +1,18 @@
 ## ADDED Requirements
 
 ### Requirement: Port: Trystero pinned at 0.27.0 and proven by its own code
-The library SHALL port Trystero 0.27.0 (`dmotz/trystero` commit `8d3f57e`), Nostr strategy only. Every value a peer exchanges MUST equal what 0.27.0's own code computes for the same inputs, as recorded in `test/fixtures/expected/trystero-0.27.0.json` by `test/oracle/record_0_27.mjs`, which imports 0.27.0's `packages/core/src` and `packages/nostr/src` unchanged and pins randomness only around the calls whose output it decides.
+The library SHALL port Trystero 0.27.0 (`dmotz/trystero` commit `8d3f57e`), Nostr strategy only. Every value a peer exchanges MUST equal what 0.27.0's own code computes for the same inputs, as recorded in `test/fixtures/expected/trystero-0.27.0.json` by `test/oracle/record_0_27.mjs`, which imports 0.27.0's `packages/core/src` and `packages/nostr/src` unchanged (or, with `--dist`, the published `@trystero-p2p/core` and `@trystero-p2p/nostr` 0.27.0) and pins randomness only around the calls whose output it decides. WebCrypto's P-256 signatures being random, the recorder MUST keep each signature of its previous output that 0.27.0's verification still accepts, and sign only those missing.
 
 #### Scenario: The fixture names its version
 - **WHEN** the `crypto_layer` test reads the fixture
 - **THEN** its `trystero` member is `0.27.0`
 
 #### Scenario: The recorder reproduces the fixture
-- **WHEN** `node test/oracle/record_0_27.mjs` runs against a checkout of the pinned commit
+- **WHEN** `node test/oracle/record_0_27.mjs` runs against a checkout of the pinned commit, with the fixture as its previous output
+- **THEN** its output equals the fixture byte for byte
+
+#### Scenario: The published packages are the pinned source
+- **WHEN** the oracle lane runs the recorder with `--dist` over its installed `@trystero-p2p/core` and `@trystero-p2p/nostr` 0.27.0, with the fixture as its previous output
 - **THEN** its output equals the fixture byte for byte
 
 ### Requirement: Port: One branch, merged once
@@ -138,26 +142,56 @@ A room SHALL keep its users and their peers: `on_user_join` fires after the `on_
 - **WHEN** an app joins `lobby` twice without leaving
 - **THEN** the second join fails with `already_joined`
 
+### Requirement: Room: One connection per room and remote peer (Phase 2)
+Each room SHALL negotiate its own connection with each remote peer, in the room's resource, and write its action frames bare on the data channel, as 0.27.0 does (design D9): no connection is shared by two rooms, and there are no presence frames, room tokens, rebinding, idle time of a connection or bound on the rooms of an app. A room MUST keep one connection per peer, closing a second one while the first is live. Before the room takes a connection's frames it MUST keep at most 64 frames of at most 17,408 bytes for at most 10 s, and after it at most 65,536 bytes a frame, ending the connection otherwise.
+
+#### Scenario: Two rooms of one app
+- **WHEN** apps A and B both join rooms `r1` and `r2`, and A leaves `r1`
+- **THEN** A and B made two connections, and `r2`'s keeps working with no departure reported in it
+
+#### Scenario: Many rooms
+- **WHEN** an app joins 65 rooms
+- **THEN** every join succeeds
+
 ### Requirement: Identity: Endpoint and user keys (Phase 2)
-Each app SHALL hold an endpoint key pair and a user key pair on ECDSA P-256 (webcpp::crypto's `curves::p256`), its peer id derived from the endpoint key's compact form and its user id from the user key's, the user key binding the endpoint key by a `trystero:user-proof:v3` signature; an identity is ephemeral by default, and `create_user_identity`, `export_user_identity` (0.27.0's text form) and `import_user_identity` let a program keep a user across apps and runs. Signatures MUST be normalized to low S before they are sent and refused when their S is high.
+Each app SHALL hold an endpoint key pair and a user identity on ECDSA P-256 (webcpp::crypto's `curves::p256`, BearSSL), its peer id derived from the endpoint key's compact form and its user id from the user key's (design D17). The user identity MUST be `app_config::identity` when given (`identity_persistence::imported`, 0.27.0's `'custom'`) and an ephemeral one made with the app otherwise; `create_user_identity`, `export_user_identity` (0.27.0's `trystero_uk_` text) and `import_user_identity` (that text or its JSON key, trimmed, checked as 0.27.0's `importUserIdentity` checks it, refused with `error::invalid_user_identity`) let a program keep a user across apps and runs. A key that cannot be made MUST make every room of the app report `identity_failed` and end without announcing. Signatures MUST be normalized to low S before they are sent and refused when their S is high, and verified keys and signatures are cached per app within 0.27.0's bounds (4,096 key records; 8,192 signatures, 2 MiB, payloads of at most 4,096 bytes). The user-proof payload is ported as protocol code, which 0.27.0's core never sends (design D21).
 
 #### Scenario: Two apps of one user
 - **WHEN** two apps import one user identity and join one room with a third peer
 - **THEN** the third peer sees two peers and one user
 
+#### Scenario: The exported text
+- **WHEN** the fixture's `user-export` key is imported and exported again
+- **THEN** the text equals the fixture's, and every refused import of `user_identity_imports` is refused
+
 ### Requirement: Identity: The dual-signature handshake (Phase 2)
-A room SHALL admit a peer only after 0.27.0's handshake: nonces, endpoint and user signatures over a payload binding the app, the room and both connection's DTLS fingerprints, each verified; any failure MUST be reported as `handshake_failed` and the connection closed. `max_users` MUST refuse a user beyond the limit with `room_full`, counting users, not peers.
+A room SHALL admit a peer only after 0.27.0's handshake over `@_hsdata` and `@_hsready`: the lower peer id initiates; each side claims its UUID nonce, its DTLS fingerprints (read from the descriptions the room's negotiation set), its user id and both compact keys; both sides sign the transcript `["trystero:id-hs:v2", app, room, initiator, responder, nonces, both fingerprint lists, both user ids]` with the endpoint and the user key, and each verifies the other's ids against its keys and both signatures. Any failure, and a handshake not complete after 10 s or with more than 16 messages pending, MUST be reported as `handshake_failed` with 0.27.0's reason and the connection closed. `max_users` MUST refuse a user beyond the limit with `room_full`, counting verified users (the room's own included), not peers, and admitting another peer of a user already present.
 
 #### Scenario: A forged user signature
 - **WHEN** a peer presents a user id whose signature does not verify
 - **THEN** the room reports `handshake_failed` and the peer never joins
 
+#### Scenario: A man in the middle with the password
+- **WHEN** a peer's step claims DTLS fingerprints other than those of the description the room applied
+- **THEN** the room reports `handshake_failed` with "DTLS fingerprint mismatch"
+
+#### Scenario: A full room
+- **WHEN** a room with `max_users` 2 holds two users and a third user's peer completes its handshake
+- **THEN** that peer gets `{"ok":false,"err":"room full"}` and reports `room_full`, and the room reports no join
+
+### Requirement: Room: The emitters and internal actions of Phase 2
+A room SHALL report `peer_error` when the action wire drops a peer for a protocol violation, `banned` when a peer answers its handshake with `{"ok":false,"err":"peer banned"}` (with the reason of at most 512 units), and `relay_failed` once when no relay's first announcement succeeded and every relay failed to boot or to announce; `plugin_failed` waits for Phase 3. A ping MUST be the internal request action `@_ping`, answered through `@_response`, and an `@_response` offer that answers no request MUST be rejected with "unexpected response". A transfer MUST be sent in 64 KiB chunks to a peer whose connection takes 64 KiB messages (`peer_connection::max_message_size`).
+
+#### Scenario: Recorded frames
+- **WHEN** the port pings, sends a ready frame, a room-full frame and a ban frame
+- **THEN** its frames equal the fixture's `ping_frames` and `handshake_frames`
+
 ### Requirement: Tests: Interop with Trystero 0.27.0 (Phase 2)
-The oracle lane SHALL pin Trystero 0.27.0 and the interop lane MUST meet Trystero 0.27.0 JS peers in headless Chrome over a local relay, on both lanes, before the branch merges.
+The oracle lane SHALL pin Trystero 0.27.0 (its packages `trystero`, `@trystero-p2p/core` and `@trystero-p2p/nostr` 0.27.0, werift as their WebRTC in Node) and the interop lane MUST meet Trystero 0.27.0 JS peers in headless Chrome over a local relay, on both lanes (the browser's C++ peer and the native one), before the branch merges: ids, messages, wide transfers, passwords, imported identities, one user with two C++ peers, `max_users` both ways, requests and pings, leaves, a forged user signature, a mesh and relay connectivity.
 
 #### Scenario: A C++ peer and a JS peer
 - **WHEN** a native peer and a Chrome page running Trystero 0.27.0 join one room
-- **THEN** each sees the other's user and peer ids and they exchange messages both ways
+- **THEN** each sees the other's user and peer ids, each having verified the other's signatures, and they exchange messages both ways
 
 ### Requirement: Plugins: State, roles and scale (Phase 3)
 After the port merges, separate changes SHALL add signed shared and per-user state (`make_state`, `make_user_state`), roles and moderation (`roles` with admins, role certificates, ban), and `scale()` with its pairwise ECDH keys, each against vectors and interop with 0.27.0.
@@ -165,6 +199,36 @@ After the port merges, separate changes SHALL add signed shared and per-user sta
 #### Scenario: Phase 3 waits for the merge
 - **WHEN** the port has not merged
 - **THEN** no plugin is on the branch
+
+## MODIFIED Requirements
+
+### Requirement: App: The app is the unit of sharing
+The library SHALL offer `class app` (`<webcpp/trystero/app.hpp>`, in `webcpp::trystero`): this program in one application and immutable password domain, with one endpoint key and peer id, one user identity, the relays' configuration, the derived room keys' cache, the identity caches and the registry of its rooms; each room negotiates its own connections (design D9). The app and every room of it MUST run on one executor, the app's; nothing is keyed by the backend or kept in static storage, and two `app` objects with the same app id in one process are two peers. `app` is non-copyable and non-copy-assignable, `noexcept` move-constructible and move-assignable, and its state is shared with its rooms: destroying the `app` while rooms remain changes nothing for them.
+
+#### Scenario: Two apps of one id
+- **WHEN** a process makes two apps with the same app id and both join one room
+- **THEN** each sees the other as a peer, with two peer ids
+
+### Requirement: App: app_config members and defaults
+The library SHALL define `struct app_config` with these members and defaults, in this order: `std::pmr::string app_id` (empty), `std::pmr::string password` (empty: a passwordless app; immutable for this app and shared by every room), `std::pmr::vector<std::pmr::string> relay_urls` (empty: Trystero's defaults derived from the app id), `std::size_t relay_redundancy = 5`, `std::pmr::vector<backend::ice_server> ice_servers` (empty: `default_ice_servers()`), `std::optional<user_identity> identity` (empty: an ephemeral user identity made with the app), `detail::logger::sink log` (the sentences of the app and of every room, composed in the app's resource; empty means no text is composed) and `std::pmr::memory_resource* memory = std::pmr::get_default_resource()`. It is an aggregate built with designated initializers and move-only because its `log` is a move-only `handler`. The app copies every part of it into `memory`. Different passwords MUST use separate app objects.
+
+#### Scenario: A configuration in place
+- **WHEN** a program writes `trystero::app_config c{.app_id = "webcpp-trystero-tests"};` and passes it moved to an `app`
+- **THEN** `app_id()` is `webcpp-trystero-tests`, `self_id()` is 20 base62 characters derived from the endpoint key, `relay_urls()` lists five derived relays, and every other member has the default above
+
+### Requirement: App: room_options members and defaults
+The library SHALL define `struct room_options` with the members a room adds to its app's configuration, in this order: `std::size_t max_receive_bytes = std::size_t{256} * 1024 * 1024` (Trystero's `maxReceiveBytes`, across peers), `std::uint64_t max_json_document_bytes` (webcpp::document's default), `std::optional<std::size_t> max_users` (empty: unbounded; 0 or above 2^53 - 1 refused by `join` with `error::invalid_max_users`) and `std::pmr::memory_resource* memory = nullptr` (null: the app's resource). It is an aggregate built with designated initializers. It MUST NOT contain a password or allow a per-room password override; every room reads its app's immutable password.
+
+#### Scenario: One app password for every room
+- **WHEN** a program constructs an app with `{.app_id = "a", .password = "p"}` and joins `lobby` and `elsewhere` with default room options
+- **THEN** both rooms use password `p`, no user bound and a receive bound of 256 MiB, and a room option naming `password` does not compile
+
+### Requirement: App: One peer id per app
+The app SHALL announce, signal, tie-break and handshake in every room of the app with its one `self_id`, derived from its endpoint key (`derive_peer_id` of the key's compact form), so that a peer meeting the app in several rooms sees one id, as 0.27.0's endpoint identity per app does. `room::self()` reports it with the user id. Rooms that must stay unlinkable on the relays and to peers are joined through separate `app` objects, which have two endpoint keys and nothing shared.
+
+#### Scenario: The id is the key's
+- **WHEN** an app is made with a known endpoint scalar (the test seam)
+- **THEN** `self_id()` is `derive_peer_id` of that key's compact form
 
 ## REMOVED Requirements
 
@@ -215,3 +279,151 @@ After the port merges, separate changes SHALL add signed shared and per-user sta
 ### Requirement: Oracle: Trystero pinned at 0.26.0
 **Reason**: the port follows 0.27.0.
 **Migration**: "Port: Trystero pinned at 0.27.0 and proven by its own code".
+
+### Requirement: App: At most 64 rooms
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: App: The idle time of a connection
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Ownership of a connection
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: One connection per remote peer per app
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Adoption of a negotiated connection
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Crossed connections recover
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Presence frames
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Routing by room token
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Frames kept for a room not bound yet
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: The drain order
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: A binding's end is its room's alone
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: A connection's end
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: A connection with no binding left
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Relays and configuration stay per room, configured once
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Failure scopes
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Shared: Bounds
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Binding: The three paths and the conditions
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Binding: The steps of a binding
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Binding: Signaling reuse on the first meeting
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Binding: Unbinding and the announcements that follow
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Rebinding: The schedule after a kick
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Rebinding: Only the lower id refuses
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Rebinding: The initiator accepts any of its last 8 challenges
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Rebinding: A transient failure converges
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Rebinding: Correcting room proofs and changing password domains
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Rebinding: Reports are bounded
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Security: A passwordless room is open to the app's other rooms
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Security: Password domains preserve the upstream wire
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Security: A forged announcement binds nothing
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Security: What sharing reveals and every existing protection holds
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Protocol: Room token
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Tests: The shared connection and the app are tested over the memory backend
+**Reason**: 0.27.0 shares no connection between rooms (design D9).
+**Migration**: "Room: One connection per room and remote peer (Phase 2)".
+
+### Requirement: Room: The handshake
+**Reason**: 0.27.0 dropped the password handshake; its handshake is the dual-signature one.
+**Migration**: "Identity: The dual-signature handshake (Phase 2)".
+
+### Requirement: Room: A peer with another password never joins
+**Reason**: another password is refused by the sealed signals, as `decrypt_failed`; `wrong_password` is gone (design D23).
+**Migration**: "Room: 0.27.0's room errors".
+
+### Requirement: Room: Handshake timeout
+**Reason**: 0.27.0's handshake times out after a fixed 10 s, reported as `handshake_failed`.
+**Migration**: "Identity: The dual-signature handshake (Phase 2)".
+
+### Requirement: Errors: handshake_failed is reserved
+**Reason**: `handshake_failed` has its emitter, and the values after the removed errors move (design D23).
+**Migration**: "Room: 0.27.0's room errors", "Identity: The dual-signature handshake (Phase 2)".
+
+### Requirement: Tests: Interop with Trystero JS on both lanes
+**Reason**: its scenarios are 0.26.0's sharing ones.
+**Migration**: "Tests: Interop with Trystero 0.27.0 (Phase 2)".

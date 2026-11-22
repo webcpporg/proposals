@@ -1,7 +1,7 @@
 # Tasks
 
-`reference/plan.md` is the plan: Phase 1 in full (its Tasks 1 to 13), Phases 2 and 3 outlined.
-Nothing is implemented yet. The library branch is `port/trystero-0.27`, the superproject's
+`reference/plan.md` is the plan: Phase 1 in full (its Tasks 1 to 13, built), Phase 2 in full
+(its Tasks 2.1a to 2.7), Phase 3 outlined. The library branch is `port/trystero-0.27`, the superproject's
 `trystero/port-0.27`; neither merges before group 5 (design D1).
 
 ## 1. Phase 1: the crypto layer (plan Tasks 1 to 6)
@@ -23,21 +23,26 @@ Nothing is implemented yet. The library branch is `port/trystero-0.27`, the supe
 - [ ] 2.6 Options, joins and relay connectivity (Task 12)
 - [ ] 2.7 Phase 1's pages, its gate, the draft pull requests (Task 13)
 
-## 3. Phase 2: identity and the handshake (after webcpp::crypto's P-256 merges)
+## 3. Phase 2: connections, identity and the handshake (webcpp::crypto's P-256 is on main)
 
-- [ ] 3.1 The connection model confirmed or amended (design D9) (Task 2.1)
-- [ ] 3.2 Endpoint and user keys, import and export (Task 2.2)
-- [ ] 3.3 Signed key records, low S, the signature cache (Task 2.3)
-- [ ] 3.4 The dual-signature handshake (Task 2.4)
-- [ ] 3.5 Verified users, `max_users` (Task 2.5)
+- [ ] 3.1 One connection per room and remote peer, design D9 confirmed (Task 2.1a)
+- [ ] 3.2 The handshake's frame without the password challenge; the signer's `keypair::generate` (Task 2.1b)
+- [ ] 3.3 Wide bulk chunks sent (Task 2.1c)
+- [ ] 3.4 Endpoint and user keys, import and export, `identity_failed` (Task 2.2)
+- [ ] 3.5 Key records, low S, the verification caches (Task 2.3)
+- [ ] 3.6 The dual-signature handshake's messages and one side's run (Task 2.4a)
+- [ ] 3.7 The handshake in the room, verified users (Task 2.4b)
+- [ ] 3.8 `max_users` and `room_full` (Task 2.5a)
+- [ ] 3.9 `peer_error`, `banned`, `relay_failed`'s announcement path, `@_ping` as a request (Task 2.5b)
 
 ## 4. Phase 2: interop
 
-- [ ] 4.1 The oracle and interop lanes on 0.27.0, the twins rewritten (Task 2.6)
+- [ ] 4.1 The oracle on 0.27.0, the recorder over the published packages, the twins (Task 2.6a)
+- [ ] 4.2 Interop with Trystero 0.27.0 on both lanes, the lanes on (Task 2.6b)
 
 ## 5. The merge
 
-- [ ] 5.1 The pages whole, the changelog, chapter 15, one merge of each branch, both CIs green (Task 2.7)
+- [ ] 5.1 The pages whole, the changelog's lines, chapter 15, one merge of each branch, both CIs green (Task 2.7)
 
 ## 6. Phase 3: plugins (separate changes after the merge)
 

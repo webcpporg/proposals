@@ -3,7 +3,8 @@
 Written 2026-11-22. Phase 1 (plan Tasks 1 to 13) is built on its branches, not interoperable
 before Phase 2, and merged nowhere (design D1). Phase 2 waits for webcpp::crypto's P-256
 (foundation increment 3, its plan's Tasks 3.1 to 3.3). `plan.md` is the plan, `vectors/record.mjs`
-the recorder and `vectors/phase1.json` what it recorded.
+the recorder and `vectors/trystero-0.27.0.json` what it recorded (named `phase1.json` until
+Phase 2 was written in full, 2026-11-22, with Phase 2's vectors added).
 
 ## Where it stands
 
@@ -11,7 +12,7 @@ the recorder and `vectors/phase1.json` what it recorded.
 | --- | --- |
 | The library | `webcpporg/trystero`, branch `port/trystero-0.27`, from `main` `0f7e6f4` |
 | The superproject | `webcpporg/webcpp`, branch `trystero/port-0.27`, from `main` `4c5cfcc`: chapter 15's trystero section and the library's pointer |
-| The vectors | `vectors/phase1.json`, recorded 2026-11-20 with node v26.13.0 from Trystero 0.27.0 at `8d3f57e`, with the action frames since Task 8 (`49ecd70` here); the library's copy is `test/fixtures/expected/trystero-0.27.0.json`, written only by `test/oracle/record_0_27.mjs` |
+| The vectors | `vectors/trystero-0.27.0.json` (was `phase1.json`), recorded 2026-11-20 with node v26.13.0 from Trystero 0.27.0 at `8d3f57e`, with the action frames since Task 8 (`49ecd70` here); the library's copy is `test/fixtures/expected/trystero-0.27.0.json`, written only by `test/oracle/record_0_27.mjs` |
 | The lanes | the oracle and interop lanes are `explicit` on the branch (their Trystero is 0.26.0); every other test and example passes natively and on emscripten |
 | Blocking Phase 2 | webcpp::crypto's `curves::p256` |
 
@@ -129,7 +130,9 @@ Carries inside trystero:
 
 ## How to resume
 
-Phase 2 is written in full, task by task, when webcpp::crypto's P-256 part merges; its first task
+Phase 2 is written in full in `plan.md` (2026-11-22, Tasks 2.1a to 2.7, every carry above placed
+there or marked for after the merge; Phase 2's vectors recorded with node v26.13.0). Before that:
+Phase 2 was to be written in full, task by task, when webcpp::crypto's P-256 part merged; its first task
 (2.1) confirms or amends design D9 before any code of the shared connection is removed. Each task
 records its vectors in `vectors/record.mjs` first (P-256 signatures are random in WebCrypto:
 vectors fix keys and check each side verifies the other's signatures).
