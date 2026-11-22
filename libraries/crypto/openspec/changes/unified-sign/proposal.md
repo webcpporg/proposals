@@ -62,6 +62,12 @@ form: the scheme is always named, by a tag that names its hash where it has one.
   `sign(schnorr, message, aux_random)`; `recover(ecdsa_sha256_recoverable, signature, input)`.
   secp256k1 stays out of the asynchronous family, whose rule is WebCrypto's algorithms.
 
+- **One key pair contract** (owner, 2026-11-22): every key pair meets the concept
+  `crypto::keypair` (`make`, `generate`, a typed `public_key()` that goes straight into
+  `crypto::verify`, `secret()`, `sign(scheme, input)`); ECDH is `agree(peer)` on every curve
+  (P-256's `ecdh_x`, secp256k1's `ecdh_x`), with secp256k1's `agree_hashed` and `agree_point`;
+  P-256's `secret_scalar` is `secret`; a new `ed25519::public_key`.
+
 Not changed: DER, key formats, ECDH, MuSig2's session
 functions and silent payments, Ed25519ph's incremental signer (except its `verify`'s argument
 order), any backend's library.

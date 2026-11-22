@@ -183,6 +183,43 @@
 - [ ] **Step 5: Run** the async tests on clang, the message tests, `example/async_sign`, and `b2 ... toolset=emscripten libs/crypto/test//async_p256 libs/crypto/test//async_25519` - Expected: all pass.
 - [ ] **Step 6: Commit** `crypto: async_sign and async_verify take the scheme and the same inputs`.
 
+### Task 5a: crypto's refusals never stop a dependent's reference (coordinator item)
+
+Brief: `.superpowers/sdd/plan/task-5b-brief.md` in the superproject worktree (written before the key pair contract took the name 5b). Done in commits faa04b0, f876418, ef32cab.
+
+### Task 5b: The key pair contract on Ed25519 and P-256 (owner decision R15)
+
+**Files:**
+- Create: `libs/crypto/include/webcpp/crypto/keypair.hpp`, `libs/crypto/test/keypair_test.cpp` (stand-in types that pass and fail the concept).
+- Modify: `curves/ed25519.hpp` (new `ed25519::public_key`, `secret()`, the typed key in `crypto::verify` and `async_verify`, the `static_assert`), `curves/p256.hpp` (`secret_scalar` -> `secret`, `ecdh_x` -> `agree`, the `static_assert`), `curves/ed25519/formats.hpp`, `curves/p256/formats.hpp`, `async.hpp` (`async_agree` for P-256 calls `agree`; Ed25519's `async_verify` takes the typed key), every caller in libs/crypto (tests, examples, bench, constant-time harnesses, MSVC and message tests, `doc/tables/crypto.json` where it names functions) and the superproject's `tools/test/fixtures/crypto_jamfiles/` (edited, committed by the controller).
+
+**Interfaces (Produces):**
+- `template <class K> concept crypto::keypair` (design D8): `K::make(std::span<std::uint8_t const>)` and `K::generate()` give `result<K>`; `k.public_key()` gives `result<typename K::public_key_type>`; `k.secret()` gives `result<secret<K::secret_key_size>>`; for each scheme tag `S` with `detail::signs_with_v<K, S>`, `k.sign(S{}, std::span<std::uint8_t const>{})` is valid; at least one such `S`.
+- `curves::ed25519::public_key`: `static result<public_key> make(std::span<std::uint8_t const>)` (`invalid_public_key` for a size other than 32, nothing else checked: design R16), `std::array<std::uint8_t, 32> bytes() const noexcept`, equality; `basic_keypair::public_key_type`, `secret_key_size` (32), `secret()` (the seed; the engine gets a `seed` function: libsodium's `crypto_sign_ed25519_sk_to_seed`). `crypto::verify(eddsa, signature, message, ed25519::public_key const&[, policy])`: the byte-key form goes (R17), `verifies_with_v`/`has_verifier_v` for byte keys under `eddsa` removed.
+- P-256: `public_key_type = basic_public_key<Backend>`; `secret()` (was `secret_scalar`); `agree(basic_public_key<Backend> const&)` (was `ecdh_x`), `async_agree` calls it.
+- In each curve header: `static_assert(crypto::keypair<basic_keypair<backends::...default...>>)` for the family's default where it is available, or a static_assert in the test per backend where a header cannot name one.
+- Timing guards: `secret()` on Ed25519 calls the backend, so it holds the guard and joins `timing_coverage_sodium_test.cpp`; renamed functions keep their guards and coverage entries.
+- [ ] **Step 1: Tests first**: `keypair_test.cpp` (the concept on both curves' key pairs, and false for a stand-in missing `secret()`); in `ed25519_sodium_test.cpp`: `make(secret())` round trip gives the same public key; RFC 8032 test 1 through `crypto::verify(eddsa, sig, msg, *key.public_key())`; `public_key::make` of 31 bytes is `invalid_public_key`; in `p256_*`: `agree` equals the old ECDH vectors, `secret()` round trip.
+- [ ] **Step 2: Implement**, remove old names with no aliases, migrate every caller; grep `secret_scalar\|ecdh_x\|\.public_key()` uses that expected bytes.
+- [ ] **Step 3: Run** touched tests on clang and gcc-15, Emscripten's `p256_webcrypto_oracle` and `formats_25519_webcrypto_oracle`, message tests, timing coverage, `generate.py --check`, and the whole clang build of `libs/crypto/test libs/crypto/example libs/crypto/bench` through `heavy.sh crypto-sign`.
+- [ ] **Step 4: Commit** `crypto: the key pair contract, typed public keys and agree on Ed25519 and P-256`.
+
+### Task 5c: The key pair contract on secp256k1 (owner decision R15)
+
+**Files:**
+- Modify: `curves/secp256k1.hpp` and its group headers (`musig.hpp`, `silent_payments.hpp`, `ellswift.hpp`, `formats.hpp`, `tweak.hpp`) where they take or give public keys as bytes from the key pair, every secp256k1 caller (tests, examples including `musig_network.cpp` and `musig_taproot.cpp`, bench, MSVC and message tests, fixtures).
+
+**Interfaces (Produces):**
+- `secp256k1::public_key`: `static result<public_key> make(std::span<std::uint8_t const>)` (33 or 65 bytes; was `parse_public_key`, with its `Backend` template parameter first if it had one), `compressed()` (33), `uncompressed()` (65), `xonly()` (32), equality and ordering as today. `parse_public_key` and `serialize_public_key` removed.
+- Key pair: `public_key_type = public_key`, `secret_key_size` (32), `public_key()` gives `result<public_key>`; `xonly_public_key()` and `public_key_uncompressed()` removed; `secret()` (libsecp256k1's `secp256k1_keypair_sec`, guarded); `agree(public_key const&)` (raw x, was `ecdh_x`), `agree_hashed(public_key const&)` (was `ecdh`), `agree_point(public_key const&)` (was `ecdh_point`); the private template that served them renamed so nothing public is called `agree` but these.
+- `crypto::verify(schnorr, signature, message, public_key const&)` added beside the 32-byte x-only form; `crypto::verify(ecdsa_sha256, ...)` unchanged.
+- `static_assert(crypto::keypair<basic_keypair<backends::secp256k1>>)`.
+- MuSig2 and silent payments keep their names; where they take a peer's key as bytes they may keep bytes (protocol wire forms) - record each choice in the report.
+- [ ] **Step 1: Tests first**: the concept; `make(secret())` round trip; `agree` symmetric between two key pairs and equal to the old `ecdh_x` vectors; `agree_hashed` equals libsecp256k1's `secp256k1_ecdh` default; `crypto::verify(schnorr, ...)` with the typed key and with `xonly()` both pass.
+- [ ] **Step 2: Implement**, remove old names with no aliases, migrate every caller.
+- [ ] **Step 3: Run** as Task 5b's Step 3, with secp256k1's targets.
+- [ ] **Step 4: Commit** `crypto: the key pair contract, typed public keys and agree on secp256k1`.
+
 ### Task 6: The page, the generated files and the changelog
 
 **Files:**

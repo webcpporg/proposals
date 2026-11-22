@@ -122,7 +122,7 @@ the recovery id).
 - **Free**: `crypto::verify(scheme, signature, input, public_key)`, in namespace
   `webcpp::crypto`, returning `result<void>`. The public key's type says the curve: Ed25519's is
   its 32 bytes, BIP340's the 32-byte x-only key, and ECDSA's a validated key object on both
-  curves (`p256::basic_public_key<B>`, `secp256k1::public_key` from `parse_public_key`), so that
+  curves (`p256::basic_public_key<B>`, `secp256k1::public_key` from its `make`), so that
   `ecdsa_sha256` never infers its curve from a number of bytes.
 - **The backend comes first.** `Backend` is the first template parameter of every `crypto::verify`
   overload on every curve, so that `crypto::verify<B>(scheme, signature, input, key)` reads the same
@@ -201,6 +201,35 @@ message tests and the MSVC tests. Measured data (`doc/tables/sizes.json`,
 names and measure the same operation (the digest form where they measured a digest), and their
 numbers are measured again in the final quiet pass the data-independent-timing change left open.
 
+### D8. One key pair contract (owner, 2026-11-22)
+
+Every `curves::<curve>::basic_keypair<Backend>` meets the concept `crypto::keypair`, declared in a
+new header `<webcpp/crypto/keypair.hpp>` and checked by a `static_assert` in each curve's header:
+
+- `static make(secret_bytes)` returning `result<K>` (secp256k1's trailing memory resource keeps its
+  default) and `static generate()` returning `result<K>`;
+- `public_key()` returning `result<typename K::public_key_type>`, the curve's typed public key,
+  which goes straight into `crypto::verify`: `p256::basic_public_key<Backend>`, a new
+  `ed25519::public_key`, and `secp256k1::public_key`;
+- `secret()` returning `result<secret<K::secret_key_size>>`, the bytes `make` takes back (Ed25519's
+  seed, P-256's scalar, secp256k1's secret key), the export for PKCS#8 and backups;
+- `sign(scheme, input)` for every scheme the curve has (`detail::signs_with_v`), at least one.
+
+Each public key type is made from bytes by its own `make` and gives its byte forms as members named
+after the encoding: `ed25519::public_key::bytes()` (32), `p256::basic_public_key::uncompressed()`
+(65), `secp256k1::public_key::compressed()` (33), `uncompressed()` (65) and `xonly()` (32).
+secp256k1's `parse_public_key` folds into `public_key::make`, and `serialize_public_key` and the key
+pair's `xonly_public_key()` and `public_key_uncompressed()` into those members, with no aliases.
+`crypto::verify` takes the typed key on every curve; `schnorr` also keeps the 32-byte x-only key,
+since BIP340's keys are bytes on the wire. Ed25519's verification takes the typed key only.
+
+ECDH is `agree(peer)` on every curve that has it, the peer a typed public key, giving the shared
+point's raw x coordinate as `secret<32>` (WebCrypto's `deriveBits`): P-256's `ecdh_x` and
+secp256k1's `ecdh_x` become `agree`; secp256k1's other forms keep explicit names,
+`agree_hashed(peer)` (libsecp256k1's default, the SHA-256 of the compressed point, was `ecdh`) and
+`agree_point(peer)` (the 65-byte point, was `ecdh_point`). `async_agree` mirrors it. Ed25519's
+`x25519_secret()` stays: it is a conversion, not an agreement.
+
 ## Rulings
 
 - **R1 (owner, 2026-11-22): secp256k1 is in this change.** It supersedes the coordinator's first
@@ -215,7 +244,7 @@ numbers are measured again in the final quiet pass the data-independent-timing c
   overloads per scheme and public key type, from each curve's header. Ed25519's free `verify`
   leaves `curves::ed25519`.
 - **R4: ECDSA's public key is a validated object on both curves.** secp256k1's ECDSA verification
-  took SEC 1 bytes; it now takes the `secp256k1::public_key` that `parse_public_key` makes, so that
+  took SEC 1 bytes; it now takes the `secp256k1::public_key` that `public_key::make` makes, so that
   raw bytes never decide between P-256 and secp256k1 under the one tag `ecdsa_sha256`.
 - **R5: secp256k1's Schnorr without auxiliary randomness draws it** from `random_device`, and an
   overload takes the caller's 32 bytes (test vectors, programs that draw their own); hedged ECDSA
@@ -244,6 +273,18 @@ numbers are measured again in the final quiet pass the data-independent-timing c
 - **R13: `to_der` keeps its output span** on both curves (`to_der(signature, output)`), the
   owner's `to_der(sig)` read as the name: it allocates nothing and both curves already had it.
   `is_low_s` returns `bool`, its name being a question; an r or an s out of range answers false.
+
+- **R15 (owner, 2026-11-22): one key pair contract** (D8): the concept, typed public keys, `agree`,
+  `secret()`; old names removed with no aliases.
+- **R16: `ed25519::public_key::make` checks the size only.** Whether a key is canonical and not of
+  small order is the verification policy's judgment (`strict` refuses both), so the type does not
+  prejudge it; P-256's and secp256k1's `make` check the point, which no policy relaxes.
+- **R17: Ed25519's `crypto::verify` takes the typed key only**, as every ECDSA key is typed, so
+  that every curve reads the same; `schnorr` keeps raw x-only bytes beside the typed key (D8).
+- **R18: secp256k1's agreements are `agree` (raw x), `agree_hashed` and `agree_point`**: the raw x
+  matches P-256's `agree` and WebCrypto; the hashed default and the point keep explicit names.
+- **R19: the concept lives in `<webcpp/crypto/keypair.hpp>`**, beside `signing.hpp`, which it
+  includes; the MrDocs refusal fix of the coordinator's item is its own commit in this change.
 
 ## Risks / Trade-offs
 

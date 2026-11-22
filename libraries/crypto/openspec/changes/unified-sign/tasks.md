@@ -16,6 +16,12 @@ Each task points to its section in `reference/plan.md`.
 
 - [ ] 3.1 `async_sign` and `async_verify` with the scheme and the concepts, the message tests (plan: Task 5)
 
+## 3b. The key pair contract and crypto's reference
+
+- [ ] 3.2 crypto's refusals never stop a dependent's reference (plan: Task 5a)
+- [ ] 3.3 `crypto::keypair`, typed public keys, `agree`, `secret()` on Ed25519 and P-256 (plan: Task 5b)
+- [ ] 3.4 The same on secp256k1 (plan: Task 5c)
+
 ## 4. The page, the generated files and the delivery
 
 - [ ] 4.1 The page, `crypto.json` and its generated files, the changelog line (plan: Task 6)
