@@ -422,6 +422,16 @@ is the only generator (the genesis's D10), and a deterministic stream for tests 
 
 ### D13. The browser backend and the asynchronous family (increment 4)
 
+> **Amended on 2026-11-20** (increment 4, part A, `reference/plan.md` rulings R-A1 to R-A8, the
+> owner on autopilot). Part A builds now what needs no browser: the family over the synchronous
+> backends, its completion shape and the seam `detail::async_engine` that part B's
+> `backends::browser` fills. As webcpp::hash's family: every cheap function takes the executor
+> its completion is posted to first; a value completes as `void(error_code, T)`, `T` the empty
+> object a move leaves on an error; the default backend of the family is the synchronous one on
+> every target, Emscripten included, and `backends::browser` is used only where a type names it
+> (hash's decision O2), which replaces "on Emscripten, the browser for what WebCrypto serves".
+> The rest of this decision holds for part B.
+
 `backends::browser` exists on Emscripten only; its header refuses another target with the fix.
 Its keys are WebCrypto `CryptoKey` objects, held in a JavaScript table and named in C++ by a
 handle, never by bytes once imported (an imported key may be non-extractable). Its operations
@@ -696,6 +706,15 @@ REMOVED: Botan found on the machine and its build stop, replaced by D15. Everyth
 the genesis stands.
 
 ### D23. Heavy operations on another thread, only in a build with threads
+
+> **Amended on 2026-11-20** (increment 4, part A, ruling R-A5). The machinery is webcpp::hash's
+> (`heavy_state`, ported, not shared): the guards on the caller's thread, the work on the work
+> executor, the completion `void(error_code, T)` on the handler's associated executor; a
+> cancellation before the work starts completes at once with `operation_aborted`, and after it
+> starts a `terminal` or `partial` one lets it end, destroys its value and completes with
+> `operation_aborted`. Natively the build has threads unless the program defines
+> `WEBCPP_CRYPTO_NO_THREADS`, whatever b2's `threading` says (`config.hpp`, as built in Task
+> 12), and the refusal's text says so.
 
 > **Amended on 2026-11-17 by D32.** Which operations are heavy is stated in D32, not generated
 > from measurements; the rest of this decision (threads detection, the executor, the refusal

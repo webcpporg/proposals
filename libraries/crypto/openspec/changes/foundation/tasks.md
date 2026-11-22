@@ -114,8 +114,28 @@ Open from 3.1 to 3.6 (design D36, "As built"):
 
 ## 4. Increment 4: the browser backend and the asynchronous family (wave 2, stream 4; the genesis's Task 23)
 
+Part A, the asynchronous family over the synchronous backends, needs no browser and is written in
+full in `reference/plan.md` ("Increment 4, part A", 2026-11-20, rulings R-A1 to R-A8); it starts
+after the change `api-gaps` merges and after increment 3's P-256. Part B is tasks 4.1 to 4.5,
+on the shape part A fixes.
+
+Part A:
+
+- [ ] 4.A1 The heavy machinery on webcpp::hash's model: cancellation, values that wipe
+  themselves, webcpp::asio, natively and on Emscripten with `-pthread` (plan: Task 4.A1)
+- [ ] 4.A2 `async.hpp`'s base: `default_async_backend_t`, the post, the browser's seam (plan:
+  Task 4.A2)
+- [ ] 4.A3 AES-GCM's `async_make`, `async_seal`, `async_open` (plan: Task 4.A3)
+- [ ] 4.A4 Ed25519's `async_generate`, `async_make`, `async_sign`, `async_verify`; X25519's
+  `async_agree` (plan: Task 4.A4)
+- [ ] 4.A5 P-256's asynchronous functions, once increment 3's P-256 is on `main` (plan: Task
+  4.A5)
+- [ ] 4.A6 The page, the examples, the table; part A whole (plan: Task 4.A6)
+
+Part B:
+
 - [ ] 4.1 `backends::browser`: the key table, `EM_JS` calls, the handle's lifetime (plan: Increment 4, step 1)
-- [ ] 4.2 `async.hpp` over the browser and posting over synchronous backends (plan: Increment 4, step 2)
+- [ ] 4.2 `async_engine<backends::browser>` under `async.hpp`'s functions; `async_encrypt`, `async_decrypt`, `async_wrap`, `async_unwrap`, `async_export` and `async_make` from SPKI or PKCS#8 on every backend (plan: Increment 4, step 2; the posting over synchronous backends is part A's)
 - [ ] 4.3 The errors of a rejected promise, cancellation, run-time availability (plan: Increment 4, step 3)
 - [ ] 4.4 The lane `browser`: the oracle in node and Chrome for every algorithm on `main`, the audio worklet's `not_supported`, Chrome's throughput page from release builds (plan: Increment 4, step 4; genesis plan: Task 23)
 - [ ] 4.5 Increment 4 whole (plan: Increment 4, step 5)

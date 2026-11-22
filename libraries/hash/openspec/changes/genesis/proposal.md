@@ -25,7 +25,8 @@ the same kind of rule (the first of hash2, XKCP, BLAKE3 and libsodium that offer
 design D34), made the asynchronous family's default the synchronous one (D35), and asked for
 measured tables from release builds only (D36). Increments 2 to 5 and 7 are built on local
 integration branches, and the spec records what building them decided (D37 to D41); increment 6
-waits for Botan (D42).
+provisions Botan itself and is built on the stream `botan-6` (D43 to D45, superseding D42's
+waiting).
 
 ## What Changes
 
@@ -95,7 +96,7 @@ waits for Botan (D42).
   TurboSHAKE); 4, OpenSSL's (every EVP digest including KECCAK-256, KMAC, BLAKE2 MACs, scrypt,
   Argon2d/i/id with every RFC 9106 parameter, KBKDF, SSKDF, X9.63); 5, BearSSL's hashes and HMAC;
   6, Botan 3's (PBKDF2, Argon2, bcrypt, BLAKE2b, Keccak, cSHAKE, KMAC, Skein, SM3, Streebog,
-  Whirlpool), after webcpp::crypto provisions Botan, not built (design D42); 7, the browser
+  Whirlpool), Botan provisioned by the increment itself, built (designs D43 to D45); 7, the browser
   backend. A capability table
   says which backend provides each function, and every refusal names the backends that have it.
   From increment 2, `digest_of`, `hasher`, `mac`, `argon2` and the KDF functions (`blake2b_subkey`,
@@ -147,8 +148,9 @@ None.
   native, wasip2, wasip3, Emscripten and gcc-15 locally; MSVC and Apple clang wait for the CI after
   the owner's gates. Increments 2, 3, 4, 5 and 7 (Tasks 25 to 40 and 44 to 47) are built, each task
   reviewed, on the library's branch `increments-2-7` and the superproject's `hash/increments-2-7`
-  (local), increment 4 merging into them when this was written; increment 6 (Tasks 41 to 43) is not
-  started, blocked by Botan's provisioning (design D42). **The reference code is the code written in
+  (local), increment 4 merging into them when this was written; increment 6 (Tasks 40b to 43 and
+  47) is built on the branches `hash/botan-6`, Botan provisioned by its first task (design D43).
+  **The reference code is the code written in
   the tasks of `reference/plan.md`:** Task 1 (`build.jam`, `config.hpp`, the test Jamfile's
   `hash-run`), Task 2 (`error.hpp`), Task 3 (`algorithms.hpp`, `hmac.hpp`), Task 4 (the XKCP target,
   `xkcp_adapter.c`, `canary.h`, `canary_xkcp.c`), Task 5 (`keccak.hpp`), Tasks 6 and 7 (the BLAKE3
@@ -172,15 +174,15 @@ None.
   `third_party/Jamfile`, `webcpp.same-program` and asio's test support
   (`webcpp::test::exit_status`).
 - **Status:** accepted on 2026-11-14 (the owner decided the shape and approved it); increments 1
-  to 5 and 7 built locally, not published, no release; increment 6 waits for Botan. It becomes `implementing` at the owner's gates.
+  to 7 built locally, not published, no release. It becomes `implementing` at the owner's gates.
 - **Other proposals:** `libraries/crypto` is changed later: it depends on webcpp::hash for HKDF
   (replacing its spec 1.2's "written on Hash2's hmac when needed"), its libsodium backend
   (version 0.2) uses `/third_party//sodium` as built here, and `/third_party//bearssl`, which its
   plan adds, gains webcpp::hash's canary here (the BearSSL task waits for that target on `main`).
   webcpp::hash reads no profile, webcpp's umbrella `WEBCPP_PROFILE_*` included (design D33);
   whether webcpp::crypto takes a profile for its own defaults is that library's own later change.
-  webcpp::crypto's Botan provisioning (its increment 5, built by its foundation change's increment
-  7) is what increment 6 waits for; hash's Botan modules are to be in that one list (design D42).
+  Increment 6 provisions Botan for both libraries (`/third_party//botan`, one module list with
+  webcpp::crypto's needs, design D43); crypto's increment 7 reuses it and adds its own canary.
   `libraries/asio` supplies the completion-token model and `browser::async_await` the
   asynchronous family uses. `organization` carries the rulebook this plan extends (chapter 10's
   rows, chapter 17's entry).
