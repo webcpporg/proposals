@@ -5,7 +5,7 @@ webcpp:
   title: "hash: the library sets arm64's DIT around every computation on a secret"
   kind: wrapper
   port_of: null
-  status: proposed
+  status: implementing
   release: null
-  implementation: null
-  decided: null
+  implementation: https://github.com/webcpporg/hash
+  decided: 2026-11-20
