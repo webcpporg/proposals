@@ -41,7 +41,23 @@ Not changed: the public interface (no signature changes; `hasher` and `blake3` g
 member), the errors, any C library, webcpp::crypto's guard (crypto gains one test that the two
 guards agree).
 
+## Capabilities
+
+### New Capabilities
+
+None.
+
+### Modified Capabilities
+
+- `hash`: every public function that computes on a secret runs with arm64's DIT set where the
+  CPU has FEAT_DIT, and restores the thread's state; a test proves each enters its own guard.
+
 ## Impact
+
+- **Kind:** a wrapper (`"port-of": null`), as the genesis.
+- **Implementation:** none yet; the tasks of `reference/plan.md` are open.
+- **Status:** proposed: the owner decided DIT for crypto on 2026-11-20 and named hash as the
+  follow-up, which awaits its own decision.
 
 `libs/hash/include/webcpp/hash/` (the new header and the headers of the keyed functions),
 `libs/hash/test/` (the guard's tests, the coverage tests, the asynchronous test), `libs/hash/bench/`
