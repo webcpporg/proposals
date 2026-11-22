@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-20
+webcpp:
+  library: hash
+  title: "hash: the library sets arm64's DIT around every computation on a secret"
+  kind: wrapper
+  port_of: null
+  status: proposed
+  release: null
+  implementation: null
+  decided: null

@@ -8,8 +8,8 @@ BearSSL, OpenSSL) with `backends::hash2` as the default on every target, and Arg
 from libsodium; from increment 2, the families `digest_of`, `hasher`, `mac` and `argon2` over every
 backend's hashes, MACs and KDFs, and the asynchronous family with the browser's WebCrypto. These
 requirements are the structured form of `reference/spec.md` and of the build, tests and tools of
-`reference/plan.md`; increments 1 to 5 and 7 are built in the library's repository, not yet
-published, and increment 6 waits for Botan.
+`reference/plan.md`; increments 1 to 7 are built in the library's repository, not yet published,
+increment 6 (Botan) with Botan provisioned by its own stream (designs D43 to D45).
 
 ## ADDED Requirements
 
@@ -325,7 +325,7 @@ The library's page SHALL open the chapter of each namespace (digests, MACs, key 
 - **THEN** each chapter has two tables led by `Name`, each of fewer than eight columns, the second with the measured columns only when there are measurements
 
 ### Requirement: Increments by value, and a capability table
-The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next (increment 6 waits for Botan's provisioning and is not built, design D42): 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the default backend, the measured table as dated reference), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, after webcpp::crypto provisions Botan), 7 (the browser backend). `doc/capabilities.json` (layout version 5) MUST hold spec 3.5's table and, for each function row, its `"default"` backend (`hash2`, `xkcp`, `blake3`, `sodium`, or `null` for a type and for a tag with no default), and a test MUST compare it with `backend_has_v` for every cell and with `default_backend` for every default, and each increment's first task MUST check its column against the library at its pin.
+The library SHALL be built in the seven increments of spec 1.5, each usable alone and merged before the next (increment 6 provisions Botan itself, design D43): 1 (Hash2, `keccak_256`, `blake3`, HKDF, PBKDF2, Argon2id, scrypt, the default backend, the measured table as dated reference), 2 (libsodium's whole hashing surface), 3 (XKCP's Keccak family), 4 (OpenSSL's), 5 (BearSSL's), 6 (Botan 3's, provisioned by the increment), 7 (the browser backend). `doc/capabilities.json` (layout version 5) MUST hold spec 3.5's table and, for each function row, its `"default"` backend (`hash2`, `xkcp`, `blake3`, `sodium`, or `null` for a type and for a tag with no default), and a test MUST compare it with `backend_has_v` for every cell and with `default_backend` for every default, and each increment's first task MUST check its column against the library at its pin.
 
 #### Scenario: The table and the code agree
 - **WHEN** `capabilities_test` reads `doc/capabilities.json` and evaluates `backend_has_v` for every function and backend
@@ -357,11 +357,19 @@ From increment 2 on, `digest_of<Digest, Backend>` (named so beside Boost.Hash2's
 - **THEN** every output matches
 
 ### Requirement: OpenSSL's, BearSSL's and Botan's surfaces (increments 4 to 6)
-`backends::openssl` SHALL provide every EVP digest of the default provider (KECCAK-224 to -512 included), KMAC, BLAKE2 MACs, scrypt, Argon2d/i/id with every RFC 9106 parameter, KBKDF, SSKDF and the X9.63 KDF on native, wasip2 and wasip3; `backends::bearssl` its MD5, SHA-1, SHA-224/256/384/512, MD5-SHA1, SHAKE and HMAC; `backends::botan` (native, exceptions only, after webcpp::crypto provisions Botan) the functions of spec 3.5's Botan column that its first task confirms at Botan's pin. Each MUST pass the official vectors of every function and agree with every other backend that has it.
+`backends::openssl` SHALL provide every EVP digest of the default provider (KECCAK-224 to -512 included), KMAC, BLAKE2 MACs, scrypt, Argon2d/i/id with every RFC 9106 parameter, KBKDF, SSKDF and the X9.63 KDF on native, wasip2 and wasip3; `backends::bearssl` its MD5, SHA-1, SHA-224/256/384/512, MD5-SHA1, SHAKE and HMAC; `backends::botan` (native and Emscripten, exceptions only) the functions of spec 3.5's Botan column, as read at Botan 3.14.1 (design D44), `bcrypt`, `bcrypt_verify` and `bcrypt_pbkdf` of `bcrypt.hpp` among them, with their heavy forms. Each MUST pass the official vectors of every function and agree with every other backend that has it. `backends::botan` MUST let no exception leave hash (each call inside one boundary: `errc::not_enough_memory` for an allocation, `backend_failure` otherwise), MUST NOT exist in a build without exceptions, where naming it stops the build with spec 5.7's "needs exceptions" text (design D45), and MUST draw no random byte (bcrypt's salt is the caller's, design D43).
 
 #### Scenario: RFC 9106 through the public interface
 - **WHEN** `argon2<kdfs::argon2id, backends::openssl>` runs RFC 9106 section 5.3's case
 - **THEN** the tag is the RFC's on native, wasip2 and wasip3
+
+#### Scenario: bcrypt refuses rather than cut
+- **WHEN** `bcrypt<backends::botan>` or `bcrypt_verify<backends::botan>` is given a password of 73 bytes, or one with a zero byte
+- **THEN** it returns `input_too_long` or `invalid_parameters`, the output untouched, natively and on Emscripten
+
+#### Scenario: Botan without exceptions
+- **WHEN** a program built with `WEBCPP_HASH_NO_EXCEPTIONS` names `backends::botan`
+- **THEN** the build stops with "webcpp::hash: backends::botan needs exceptions: ..."
 
 ### Requirement: The browser backend through a parallel asynchronous family (increment 7)
 `<webcpp/hash/async.hpp>` SHALL declare `async_digest`, `async_hmac`, `async_hkdf` and `async_pbkdf2`, each an Asio asynchronous operation in webcpp::asio's model (initiated through `async_initiate`, completion `void(boost::system::error_code)`, any completion token: callback, `use_awaitable`, Cobalt's, `use_future`), whose `default_async_backend<X>` is `default_backend<X>` on every target (design D35): on a synchronous backend the cheap functions MUST run it and complete through `asio::post`, never inside the initiating call. `backends::webcrypto`, named in the type on Emscripten, serves SHA-1/256/384/512, HMAC, HKDF and PBKDF2 over them, awaiting WebCrypto's promise through `webcpp::asio::browser::async_await`, with an executor whose context is an `io_context` (`invalid_parameters` otherwise) and WebCrypto's limits (spec 11.2); off Emscripten naming it MUST fail to compile. The synchronous functions MUST never use `backends::webcrypto`; naming it in one MUST fail to compile with spec 11.2's text, on every target.

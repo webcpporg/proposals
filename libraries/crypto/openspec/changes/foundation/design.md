@@ -101,7 +101,7 @@ Hash2's hmac when needed". hash never includes crypto's headers.
 | --- | --- | --- | --- |
 | `sodium` | libsodium 1.0.22 (`77e1ce5`) | Ed25519, Ed25519ph, X25519, the Ed25519 to X25519 conversion, `crypto_box` (XSalsa20 and XChaCha20 forms) with precomputation, sealed boxes, `crypto_secretbox` (both forms), ChaCha20-Poly1305 IETF and original, XChaCha20-Poly1305, AEGIS-128L, AEGIS-256, AES256-GCM (where the CPU has it), `ciphers::secretstream`, `crypto_kx`, `crypto_auth`, `crypto_onetimeauth`, the stream ciphers (ChaCha20 IETF and original, XChaCha20, Salsa20, XSalsa20, Salsa20/12, Salsa20/8) and the cores HChaCha20 and HSalsa20, ristretto255 and edwards25519 groups and scalars with their maps from hashes, ML-KEM-768, X-Wing, `randombytes_uniform` and `randombytes_buf_deterministic`, the memory utilities (`is_zero`, `compare`, `increment`, `add`, `sub`, `mlock`), ISO/IEC 7816-4 padding, constant-time hexadecimal and base64, IP address encryption (`crypto_ipcrypt`), guarded memory (`sodium_malloc`) | all four; AES256-GCM native only, guarded memory and `mlock` native only |
 | `secp256k1` | libsecp256k1 v0.8.0 (`6e2c8bc`) | the genesis's (with version 0.1's generic x-only tweak, D24), and recovery, raw ECDH, seckey and pubkey tweaks, negation, combination, uncompressed keys, ElligatorSwift (BIP324), MuSig2 (BIP327), silent payments (BIP352), hedged ECDSA | all four |
-| `bearssl` | BearSSL (`7bea48e`) | the genesis's, and P-256, P-384, P-521 ECDSA (RFC 6979, raw and DER) and ECDH, X25519, ChaCha20-Poly1305, AES-CTR, AES-CBC, AES-CCM, AES-EAX, RSA (PKCS #1 v1.5 and PSS signatures, OAEP, key generation) | all four |
+| `bearssl` | BearSSL (`32381d6`: upstream `7bea48e` plus one security fix, D36) | the genesis's, and P-256, P-384, P-521 ECDSA (RFC 6979, raw and DER) and ECDH, X25519, ChaCha20-Poly1305, AES-CTR, AES-CBC, AES-CCM, AES-EAX, RSA (PKCS #1 v1.5 and PSS signatures, OAEP, key generation) | all four |
 | `openssl` | OpenSSL 3.5.9 (`45e844f`), the superproject's provider | the genesis's, and P-256, P-384, P-521, Ed25519, Ed448, X25519, X448, ML-KEM, ML-DSA, SLH-DSA, RSA, AES-CTR, CBC, CCM, OCB, KW, KWP, SIV, GCM-SIV, CMAC, ChaCha20-Poly1305 | native, wasip2, wasip3 |
 | `ctaes` | ctaes of Bitcoin Core v31.1 (`9be056a`) | the genesis's block cipher; nothing else exists in it | all four |
 | `botan` | Botan 3.14.1 (`01af88c`) | Ed25519, Ed448, X25519, X448, P-curves, brainpool, ECDSA, ECDH, RSA, ML-KEM, ML-DSA, SLH-DSA, AES and its modes (GCM, SIV, GCM-SIV, CCM, OCB, EAX, KW, KWP, CMAC), ChaCha20-Poly1305, XChaCha20-Poly1305, the other block ciphers it ships (Camellia, ARIA, SM4, Serpent, Twofish), hash-to-curve on the P-curves | native, Emscripten; wasip2 and wasip3 as increment 7's spike finds (D15) |
@@ -380,6 +380,13 @@ tweak nor `from_lax_der`, which version 0.1 moves out.
 
 > **Amended on 2026-11-17 by D34.** BearSSL's ChaCha20-Poly1305 moves to increment 1 (Task 8b,
 > the genesis's Task 35); the rest of this decision holds.
+>
+> **Amended on 2026-11-20 by D36.** P-256 comes first, in full, for webcpp::trystero's port of
+> Trystero 0.27.0: its key pair is made from a raw scalar and exports it, its ECDH returns the
+> shared point's raw x coordinate, its names are secp256k1's (`sign_ecdsa`, `verify_ecdsa`,
+> `ecdh_x`, `normalize_ecdsa`), low-S is offered as two primitives and never imposed, its SPKI
+> and PKCS#8 are fixed layouts present on BearSSL too, and its PEM is the `pem` family's. The
+> rest of this decision holds; P-384 and P-521 follow by the same code.
 
 BearSSL brings P-256, P-384 and P-521 through `br_ec_all_m31` (`br_ec_p256_m62` natively where
 64-bit multiplication is constant time, chosen as the genesis chose its AES code), ECDSA with
@@ -414,6 +421,16 @@ is the only generator (the genesis's D10), and a deterministic stream for tests 
 `random_bytes_deterministic` (libsodium's, a keyed ChaCha20 stream).
 
 ### D13. The browser backend and the asynchronous family (increment 4)
+
+> **Amended on 2026-11-20** (increment 4, part A, `reference/plan.md` rulings R-A1 to R-A8, the
+> owner on autopilot). Part A builds now what needs no browser: the family over the synchronous
+> backends, its completion shape and the seam `detail::async_engine` that part B's
+> `backends::browser` fills. As webcpp::hash's family: every cheap function takes the executor
+> its completion is posted to first; a value completes as `void(error_code, T)`, `T` the empty
+> object a move leaves on an error; the default backend of the family is the synchronous one on
+> every target, Emscripten included, and `backends::browser` is used only where a type names it
+> (hash's decision O2), which replaces "on Emscripten, the browser for what WebCrypto serves".
+> The rest of this decision holds for part B.
 
 `backends::browser` exists on Emscripten only; its header refuses another target with the fix.
 Its keys are WebCrypto `CryptoKey` objects, held in a JavaScript table and named in C++ by a
@@ -690,6 +707,15 @@ the genesis stands.
 
 ### D23. Heavy operations on another thread, only in a build with threads
 
+> **Amended on 2026-11-20** (increment 4, part A, ruling R-A5). The machinery is webcpp::hash's
+> (`heavy_state`, ported, not shared): the guards on the caller's thread, the work on the work
+> executor, the completion `void(error_code, T)` on the handler's associated executor; a
+> cancellation before the work starts completes at once with `operation_aborted`, and after it
+> starts a `terminal` or `partial` one lets it end, destroys its value and completes with
+> `operation_aborted`. Natively the build has threads unless the program defines
+> `WEBCPP_CRYPTO_NO_THREADS`, whatever b2's `threading` says (`config.hpp`, as built in Task
+> 12), and the refusal's text says so.
+
 > **Amended on 2026-11-17 by D32.** Which operations are heavy is stated in D32, not generated
 > from measurements; the rest of this decision (threads detection, the executor, the refusal
 > without threads) holds.
@@ -897,7 +923,7 @@ encoding (no protocol layout, D24):
 | --- | --- | --- | --- |
 | Ed25519, X25519 | RFC 8410 SPKI and PKCS#8 (version 1, the seed or secret alone), PEM | 1 | `sodium` (the fixed DER prefix of RFC 8410 and the 32 key bytes); `openssl` and `botan` when they land |
 | secp256k1 | RFC 5480 SPKI with the secp256k1 OID (compressed and uncompressed points), PKCS#8 with RFC 5915's `ECPrivateKey`, PEM | 2 | `secp256k1` (fixed layouts around the key bytes, as for RFC 8410); `openssl` and `botan` when they land |
-| P-256, P-384, P-521 | RFC 5480 SPKI, PKCS#8 with RFC 5915's `ECPrivateKey`, PEM | 3, beside the DER signatures | `bearssl` for PKCS#8 (`br_skey_decoder`, `br_encode_ec_pkcs8_der`) and PEM (`br_pem_decoder`, `br_pem_encode`); SPKI where a backend encodes it (`openssl`, `botan`); BearSSL's SPKI cells absent |
+| P-256, P-384, P-521 | RFC 5480 SPKI (the uncompressed point), PKCS#8 with RFC 5915's `ECPrivateKey` (version 1, no `parameters`, the `publicKey` present), PEM | 3, beside the DER signatures | every backend of the curve, `bearssl` included, by fixed layouts around the key bytes as for secp256k1 (D36, which amends this row: BearSSL's `br_encode_ec_pkcs8_der` writes the same bytes and is the tests' oracle); PEM through the `pem` family; the compressed point's SPKI on `openssl` and `botan` only |
 | RSA | PKCS #1 inside SPKI and PKCS#8, PEM | 3 (RSA) | `bearssl` (`br_skey_decoder`, `br_encode_rsa_pkcs8_der`), `openssl`, `botan` |
 
 - **The interface:** in each curve's namespace `encode_spki`, `decode_spki`, `encode_pkcs8`,
@@ -1073,6 +1099,244 @@ are independent. A stream merges when green and reviewed; two ready at once foll
 order; after every merge the others rebase, merge `crypto.json` by rows and regenerate. Version
 0.2 is A and B, with M if merged by then.
 
+### D36. P-256 first, for webcpp::trystero's port of Trystero 0.27.0 (2026-11-20)
+
+Trystero 0.27.0's core signs every handshake with ECDSA P-256 through WebCrypto: SHA-256 of the
+message, the signature in WebCrypto's form (IEEE P1363, `r || s`, 64 bytes), normalized to a low
+S before it is sent and refused when its S is high; peers exchange the 65-byte uncompressed
+public key, and a peer's key pair may be kept as its 32-byte secret scalar. webcpp::trystero's
+port needs all of that from webcpp::crypto on every target, with no browser. On 2026-11-20 the
+owner approved two additions to the P-curves of D12: a key pair made from a raw 32-byte secret
+scalar (refused unless 0 < d < n; the public key computed) with the export of that scalar as a
+`secret<32>` (D9), and an ECDH whose output is the shared point's raw x coordinate, WebCrypto's
+`deriveBits` form. The rulings below, the controller's of 2026-11-20 with the owner on autopilot,
+complete them.
+
+- **P-256 first, P-384 and P-521 after it by the same code.** Increment 3's first step is cut in
+  two: P-256 whole (key pairs, ECDSA, ECDH, the key and signature forms, SPKI and PKCS#8, the
+  tests, the constant-time paths, the documentation) as Tasks 3.1 to 3.6 of `reference/plan.md`,
+  then P-384 and P-521 as instances of the same engine with their own traits, tests and pages
+  (Task 3.7, outlined). P-256 merges on its own when green, so that webcpp::trystero does not
+  wait for RSA or the AES modes.
+- **The names are secp256k1's**, the other ECDSA curve, so that one program reads the same on
+  both: in `curves::p256`, `basic_keypair<Backend>` (`make` from the scalar, `generate`,
+  `public_key`, `secret_scalar`, `sign_ecdsa`, `ecdh_x`), `basic_public_key<Backend>` (`make`
+  from the uncompressed point or from `x` and `y`, `uncompressed`), the aliases `keypair` and
+  `public_key`, and the free `verify_ecdsa`, `to_der`, `from_der`, `normalize_ecdsa` and
+  `check_low_s`. The spec's earlier `curves::p256::ecdsa` and `curves::p256::ecdh` types are
+  these functions. One family, `families::p256`, as `families::secp256k1` is one, with BearSSL
+  its default on all four targets (D32).
+- **A validated public key is a type.** `verify_ecdsa` and `ecdh_x` take a
+  `basic_public_key<Backend>`, made once from 65 bytes (`0x04 || x || y`) or from `x` and `y`,
+  so that a peer's key is checked once and used for every handshake. BearSSL has no function
+  that only decodes a point; its multiplication does (`p256_decode` checks that the
+  coordinates are below p and on the curve, and the identity has no uncompressed encoding), so
+  `make` multiplies a copy of the point by 1 and requires success and the same 65 bytes back.
+  A compressed point (33 bytes) is `invalid_public_key` on BearSSL, which decodes the
+  uncompressed form alone (D12).
+- **The secret scalar.** `make(std::span<std::uint8_t const>)` takes exactly 32 bytes
+  (`invalid_key_size`) and refuses d = 0 and d >= n with `invalid_secret_key`, the word
+  secp256k1's `make` uses for the same refusal (not `invalid_scalar`, which names a scalar
+  type's encoding, D10). The range check is webcpp's code, constant time (the borrow of d - n
+  and the OR of d's bytes over all 32 bytes, as BearSSL's own `br_ec_keygen` loop computes it),
+  its verdict alone declassified; BearSSL's multiplication functions state that an
+  out-of-range scalar gives indeterminate results, so the check comes first. The public point
+  is computed once by `mulgen` and kept in the key pair. `generate()` draws 32 bytes from
+  `random_device` until they pass the same check (a rejection has probability below 2^-32);
+  no BearSSL DRBG is used (D12). `secret_scalar()` returns the scalar as `secret<32>`.
+- **ECDSA over a SHA-256 digest, RFC 6979's nonce.** `sign_ecdsa` takes the 32-byte SHA-256
+  digest of the message (the caller hashes, with webcpp::hash; ES256 and Trystero's
+  `{name: "ECDSA", hash: "SHA-256"}` are this pairing) and calls `br_ecdsa_i31_sign_raw` with
+  `br_sha256_vtable`, whose nonce is RFC 6979's with SHA-256, so its output equals RFC 6979
+  section A.2.5's P-256/SHA-256 signatures and OpenSSL's deterministic ones byte for byte.
+  WebCrypto verifies these signatures as it verifies any: a verifier cannot tell how a nonce was
+  made, and the WebCrypto oracle test proves it both ways. Other hashes over P-256 are not
+  offered. Signatures are raw `r || s` (P1363, what WebCrypto signs and verifies); DER is
+  `to_der` and `from_der` (D12).
+- **Low S is offered, never imposed.** `sign_ecdsa` returns RFC 6979's signature as the standard
+  defines it, whose S may be high, and `verify_ecdsa` accepts both S as FIPS 186-5, WebCrypto
+  and Wycheproof's valid cases require. Two primitives serve a protocol that wants low S:
+  `normalize_ecdsa(signature)` returns `r || n - s` when s > (n - 1) / 2 and the signature
+  unchanged otherwise, and `check_low_s(signature)` succeeds when 0 < r < n and
+  0 < s <= (n - 1) / 2 and returns `invalid_signature` otherwise. Trystero's policy
+  (normalize after signing, `check_low_s` before `verify_ecdsa`) is webcpp::trystero's, a
+  protocol's rule (D24). Both are 256-bit arithmetic on public values against the group order,
+  call no backend, take no backend parameter and hold no timing guard (the
+  data-independent-timing change's ruling R4).
+- **ECDH's raw x.** `ecdh_x(peer)` multiplies the peer's validated point by the scalar
+  (`impl->mul`) and returns the x coordinate as `secret<32>`, what WebCrypto's `deriveBits` of
+  256 bits returns. No hashed form is offered (secp256k1's `ecdh` is libsecp256k1's own
+  construction); a protocol derives its keys from x (webcpp::hash's HKDF).
+- **BearSSL's code per target.** Natively `br_ec_p256_m62_get()` when it is not null (64-bit
+  multiplication by `__int128` or MSVC's `_umul128`, constant time), else `br_ec_p256_m31`; on
+  wasip2, wasip3 and Emscripten `br_ec_p256_m31` always, since wasm32's 128-bit product is a
+  compiler-rt call whose timing nobody states. ECDSA is `br_ecdsa_i31_sign_raw` and
+  `br_ecdsa_i31_vrfy_raw` over that implementation.
+- **Formats by fixed layouts, on BearSSL too.** SPKI is RFC 5480's 26-byte prefix and the
+  uncompressed point (91 bytes); PKCS#8 is version 0 with RFC 5915's `ECPrivateKey` version 1,
+  no `parameters`, the `publicKey` present (138 bytes), the form WebCrypto, OpenSSL and
+  BearSSL's `br_encode_ec_pkcs8_der` write. As for secp256k1 (D30's "fixed prefixes are
+  constants, not cryptography"), the backend-independent code writes and compares the layout,
+  the backend validates the point or recomputes the public key from the scalar, and
+  `decode_pkcs8` refuses a `publicKey` that is not the scalar's. Anything else, a compressed
+  SPKI on BearSSL included, is `invalid_encoding`. This amends D30's row: BearSSL's SPKI cell is
+  present, and BearSSL's own decoder and PEM code are not used (the `pem` family, libsodium's
+  constant-time base64, armours every key type). A PKCS#8 without `publicKey` is refused (its
+  re-encoding differs), as the strict rule requires.
+- **Tests.** Wycheproof at `12fd3aa`, already a submodule: `ecdsa_secp256r1_sha256_p1363_test.json`
+  (262 cases) through `verify_ecdsa` and `check_low_s`, `ecdsa_secp256r1_sha256_test.json` (484,
+  DER) through `from_der` and `verify_ecdsa`, `ecdh_secp256r1_ecpoint_test.json` (355) through
+  `basic_public_key::make` and `ecdh_x`, and `ecdh_secp256r1_test.json` (612, SPKI) through
+  `decode_spki` and `ecdh_x`, each case a backend refuses that Wycheproof accepts listed with its
+  reason (a compressed point on BearSSL). RFC 6979 section A.2.5. OpenSSL natively as an oracle
+  through its C API, with its deterministic nonces (`nonce-type` 1, OpenSSL 3.2 and later), so
+  that signatures agree byte for byte, and its SPKI and PKCS#8 exports decoded strictly. node's
+  WebCrypto on Emscripten: each side verifies the other's signatures, `deriveBits` equals
+  `ecdh_x`, `spki`, `pkcs8` and `raw` exports decode and re-encode to the same bytes. NIST
+  ACVP's ECDSA SigVer and KeyVer files join when increment 3's AES step pins the `acvp`
+  submodule (Task 3.8): P-256 does not wait for a new submodule.
+- **Timing and constant time.** Every new public function that calls BearSSL holds
+  `detail::timing_guard` first and joins `test/timing_coverage_bearssl_test.cpp`; those that call
+  none (the encoders, `uncompressed`, `public_key`, `secret_scalar`, `normalize_ecdsa`,
+  `check_low_s`) hold none and the coverage test checks that they enter none. The constant-time
+  lane covers the scalar's range check and `mulgen` in `make`, `sign_ecdsa`, `ecdh_x` and
+  `decode_pkcs8`, under memcheck, MemorySanitizer and dudect, with a planted leak in the range
+  check that must fail.
+- **Not heavy.** No P-256 operation is in D32's heavy list; none has an `async_` variant here
+  (the browser's are increment 4's).
+- **Alternatives:** WebCrypto's names (`sign`, `deriveBits`) or the spec's earlier `ecdsa` and
+  `ecdh` types (two shapes for two ECDSA curves); imposing low S in `sign_ecdsa` (its output
+  would no longer be RFC 6979's or OpenSSL's, and the policy is a protocol's); a key pair kept
+  only by BearSSL's `br_ec_private_key` (the public point would be recomputed on every call);
+  BearSSL's `br_skey_decoder` and PEM code (a second ASN.1 path whose accepted forms differ from
+  the fixed layouts the other backends use, and a base64 decoder whose constant time BearSSL
+  does not state).
+
+**As built (2026-11-21).** P-256 (Tasks 3.1 to 3.6) is built on the branches `crypto/p256` of
+the library (head `9cc0060`) and the superproject (head `c228b06`), each with `main` merged
+into it after the change data-independent-timing merged (library `3f27988`, superproject
+`8f38ac7`), not rebased: the owner's direction, no rebase of published work. Where the code
+differs from the rulings above, or adds to them:
+
+- **The API is the one ruled above.** In `curves::p256` (`curves/p256.hpp`): the constants
+  `secret_key_size` 32, `coordinate_size` 32, `public_key_size` 65, `digest_size` 32,
+  `signature_size` 64, `max_der_size` 72; `basic_public_key<Backend =
+  default_backend_t<families::p256>>` with `static result<basic_public_key>
+  make(std::span<std::uint8_t const> uncompressed_point)`, `static result<basic_public_key>
+  make(std::span<std::uint8_t const, 32> x, std::span<std::uint8_t const, 32> y)` and
+  `std::array<std::uint8_t, 65> uncompressed() const`, copyable, its default constructor
+  private (a test requires `!std::is_default_constructible_v<public_key>`); `basic_keypair<Backend
+  = default_backend_t<families::p256>>`, move-only, with `static result<basic_keypair>
+  make(std::span<std::uint8_t const> secret_scalar)`, `static result<basic_keypair> generate()`,
+  `result<basic_public_key<Backend>> public_key() const`, `result<secret<32>> secret_scalar()
+  const`, `result<std::array<std::uint8_t, 64>> sign_ecdsa(std::span<std::uint8_t const, 32>
+  digest) const` and `result<secret<32>> ecdh_x(basic_public_key<Backend> const& peer) const`;
+  the aliases `public_key` and `keypair`; the free `template <class Backend> result<void>
+  verify_ecdsa(std::span<std::uint8_t const, 64> signature, std::span<std::uint8_t const, 32>
+  digest, basic_public_key<Backend> const& key)`, `result<std::size_t> to_der<Backend>(std::span<std::uint8_t
+  const, 64> signature, std::span<std::uint8_t> output)`, `result<std::array<std::uint8_t, 64>>
+  from_der<Backend>(std::span<std::uint8_t const> der_signature)`, and the inline, backend-free
+  `result<std::array<std::uint8_t, 64>> normalize_ecdsa(std::span<std::uint8_t const, 64>)` and
+  `result<void> check_low_s(std::span<std::uint8_t const, 64>)`. In `curves/p256/formats.hpp`:
+  `max_spki_size` 91, `max_pkcs8_size` 138, `result<std::size_t> encode_spki(basic_public_key<Backend>
+  const&, std::span<std::uint8_t>)`, `result<basic_public_key<Backend>> decode_spki<Backend>(std::span<std::uint8_t
+  const>)`, `result<std::size_t> encode_pkcs8(basic_keypair<Backend> const&,
+  std::span<std::uint8_t>)` and `result<basic_keypair<Backend>> decode_pkcs8<Backend>(std::span<std::uint8_t
+  const>)`, the decoders' `Backend` defaulting to `default_backend_t<families::p256>`. Every
+  function is `[[nodiscard]]` and `noexcept`; `result` is `boost::system::result`. The family
+  is `families::p256`, BearSSL its default on all four targets, `/webcpp/crypto//p256-default`
+  its alias.
+- **The engine per target is as ruled:** natively `br_ec_p256_m62_get()` where it is not null,
+  else `br_ec_p256_m31`; on wasip2, wasip3 and Emscripten `br_ec_p256_m31`; ECDSA
+  `br_ecdsa_i31_sign_raw` and `br_ecdsa_i31_vrfy_raw`. A test (`backend_choice`) pins the
+  choice on every target.
+- **The engine's structure.** `detail/p_curves.hpp` declares the primaries `p_curve_state` and
+  `p_curve_engine` and holds `p_curve_traits<families::p256>`, the constant-time
+  `p_curve_scalar_valid`, `p_curve_low_s`, `p_curve_negate_scalar` and
+  `p_curve_signature_in_range`; `curves/p256.hpp` defines the partial specialisation
+  `p_curve_engine<families::p256, Backend>` (the family's refusal and fail-closed members), so
+  that P-384 and P-521 (Task 3.7) add their own without touching a primary; BearSSL's full
+  specialisation is in `backends/bearssl.hpp`. `detail::p_curve_access`, the one door into
+  `basic_public_key`'s private constructor and point for the family's own functions, comes
+  with Task 3.1 (the plan brought it in Task 3.2), and the engine's test counter is the seam
+  macro `WEBCPP_CRYPTO_DETAIL_P_CURVE_ENGINE_ENTERED()`, empty unless a test defines it, as
+  the timing seam is, not test state in a library header.
+- **The tests' support.** `uncovered` is in `test/support/timing_seam.hpp` beside
+  `require_enters` (it reads only the seam's count, and `test/timing_test.cpp` includes that
+  header alone), not in `timing_coverage.hpp`; `test/support/hex.hpp` gains the compile-time
+  `hex<N>` the vectors use, with `test/hex_test.cpp`. A fourth example, `example/p256_keys.cpp`,
+  joins the three of the plan, since `generate.py` refuses a use case without an example (D19).
+- **`verify_ecdsa` and a digest that is 0 modulo n.** `verify_ecdsa` checks 0 < r < n and
+  0 < s < n itself before BearSSL (`invalid_signature`), so the error rule holds by webcpp's
+  check. It refuses a valid signature over a digest whose value modulo n is 0 (32 zero bytes,
+  or n itself), which `sign_ecdsa` signs: BearSSL's `muladd` refuses a zero multiplier, and no
+  SHA-256 of a message reaches that value in practice. The limit is accepted rather than
+  BearSSL patched, stated in the function's Doc Comment and pinned by the test `zero_digest`.
+- **What BearSSL leaves on its stack is documented, not patched.** BearSSL zeroes nothing it
+  computes on the stack: `br_ecdsa_i31_sign_raw` leaves the scalar, the nonce and its DRBG
+  state in its frame (`src/ec/ecdsa_i31_sign_raw.c`, lines 45 to 51 and 115 to 135, at the pin
+  `7bea48e`), and the multiplications leave values derived from the scalar
+  (`ec_p256_m62.c`'s `point_mul_inner`, `ec_p256_m31.c`'s `p256_mul`). webcpp wipes what it
+  holds (the `secret<32>`, its copy of a point); `doc/p256.adoc` and `doc/backends.adoc` state
+  the limit with those sources. The stack residue is not patched; the pin carries one other fix,
+  the nonce's (below).
+- **PKCS#8 is strict, and the browsers' and tools' form is the 138 bytes.** `decode_pkcs8`
+  accepts exactly the layout webcpp writes. node 26.13.0's WebCrypto (`exportKey("pkcs8")`, for
+  ECDSA and ECDH keys) and OpenSSL 3.5.9's `PrivateKeyInfo` encoder were observed writing
+  exactly webcpp's 138-byte layout, with no `[0] parameters`, and BearSSL's
+  `br_encode_ec_pkcs8_der` writes it too (a test). The W3C text's literal export, with the
+  curve in the `ECPrivateKey`'s `[0] parameters` (150 bytes), is refused and documented as a
+  pitfall, with `openssl pkey` as the way to rewrite it. A PKCS#8 without `publicKey`, as
+  BearSSL writes it with no public key, is 67 bytes, and refused.
+- **ECDH's motivation is cited at its source.** Trystero 0.27.0 (tag commit `8d3f57e`) derives
+  its pairwise keys with `deriveBits` of ECDH over 256 bits into HKDF-SHA-256
+  (`packages/core/src/crypto.ts`, lines 303 to 304) and generates ECDH P-256 key pairs in its
+  scale manager (`packages/core/src/scale/manager.ts`, line 306); the ECDH use case and
+  `doc/p256.adoc` cite those lines. No claim is made about Trystero and SPKI or PKCS#8: its
+  0.27.0 sources import keys `raw` alone.
+- **Constant time: the declassifications and BearSSL's verdicts.** Each verdict webcpp branches
+  on is declassified where it is made, alone: the scalar's range check
+  (`p_curve_scalar_valid`); the low-S verdict in `p_curve_low_s`, since a signature is public
+  once made but a fresh one carries the scalar's mark under the checkers, so that a program
+  normalizing a fresh signature under memcheck reports nothing; the verdict of BearSSL's
+  `api_mul` in the engine's `ecdh_x` (on `m62` its decoding of the point, its own range check
+  of the scalar and whether the product is the point at infinity; on `m31` the decoding
+  alone), on which the engine branches; and `decode_pkcs8`'s comparison of the recomputed point
+  with the file's. BearSSL's `br_ecdsa_i31_sign_raw` branches on its own verdicts (the
+  scalar's decoding, RFC 6979's nonce retry), each computed without a branch elsewhere: they
+  are suppressed for memcheck by `test/constant_time/bearssl_verdicts.supp` (innermost frame
+  `br_ecdsa_i31_sign_raw`, re-read when the pin moves), as libsodium's are, and these verdicts
+  are not patched; MemorySanitizer needs no suppression. Under MemorySanitizer the public point's and
+  ECDH's x traces run only where the checker's subtraction is exact (memcheck), as X25519's
+  public key already does. The planted scalar check (an early return in a copy of
+  `p_curve_scalar_valid`) has its own programs, `ctgrind_planted_scalar` and
+  `msan_planted_scalar`, each passing only when its checker's report names the planted
+  function. dudect reads |t| 2.29 (signing) and 1.84 (ECDH) natively on macOS arm64, 2.51 and
+  2.08 on wasip2, below the threshold 10. memcheck and MemorySanitizer: `reference/plan.md`
+  Task 3.6's constant-time results.
+- **BearSSL carries one fix of webcpp's, for a leak memcheck and MemorySanitizer found
+  (2026-11-21).** In the arm64 Linux container the lane found upstream `7bea48e`'s ECDSA
+  signing branching on the nonce's bit length: `br_ecdsa_i31_bits2int` reads RFC 6979's nonce
+  with `br_i31_decode`, which announces its actual length, and `br_i31_rshift` loops and stores
+  by it (8 words instead of 9 when k < 2^248, one signature in about 256: the Minerva class;
+  dudect does not see it). Commit `32381d6` on `webcpporg/bearssl`'s branch `webcpp` sets the
+  full announced length before the shift in `ecdsa_i31_bits.c` and `ecdsa_i15_bits.c`, which
+  preserves every value; the superproject's pin is `32381d6`, and webcpp::hash's canary moves
+  to it in a separate PR. This is the exception chapter 5 rule 1 now states (a minimal,
+  value-preserving security fix upstream lacks, on a `webcpp` branch, carried to each pin and
+  reported upstream; the report is a parked owner item), and "never patched" elsewhere in this
+  change means no other edits. After it ctgrind, ctgrind_space, msan, secp256k1_ctime (with
+  msan) and the four dudect programs pass and the four planted programs fail as required;
+  `doc/backends.adoc`'s `crypto-backends-bearssl-fix` is the library's text.
+- **Sizes and throughput are provisional.** The size programs take `generate.py`'s names
+  (`p256_bearssl`, `p256_bearssl_verify_ecdsa`, `p256_bearssl_ecdh_x`), and `bench/collect.py`
+  measures a family's further operation by a third word, the `sized_operations` key. Both
+  tables were measured from release builds on a loaded machine and are taken again in the
+  coordinator's final measurement pass.
+- **Deferred.** NIST ACVP's ECDSA SigVer and KeyVer join with the `acvp` submodule (Task 3.8),
+  as ruled; the WebCrypto oracle ran in node alone, and Chrome joins with the browser lane
+  (Task 4.4). The CI is deferred to the coordinator's final run.
+
 ## Risks / Trade-offs
 
 - [The capability table grows to hundreds of cells] -> it is generated into the code and the
@@ -1122,6 +1386,10 @@ order; after every merge the others rebase, merge `crypto.json` by rows and rege
   and a pin move never adds or removes an `async_` variant (the owner's answer Q5).
 - [The new code's constant time] -> the harness runs on every increment's secret paths, with
   the planted leak that must fail.
+- [A protocol that requires low S, as Trystero does, signs with `sign_ecdsa` and forgets to
+  normalize] -> its peers refuse the signature about half the time, which its own tests see at
+  once; the P-256 page's pitfall says so, and `normalize_ecdsa` and `check_low_s` are next to
+  `sign_ecdsa` (D36).
 
 ## Migration Plan
 
