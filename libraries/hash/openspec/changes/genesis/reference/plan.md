@@ -34,6 +34,18 @@ created: 2026-11-14
 > (D42, which keeps the pre-flight's findings for them). The steps keep their boxes as written;
 > `../tasks.md` records what is done.
 
+> **Amended on 2026-11-20 (increment 6 brought to `main`; rulings P1 to P8 of the stream
+> `botan-6`).** webcpp::hash is published: `webcpporg/hash` exists, `libs/hash` is a submodule of
+> the superproject's `main`, and increments 1 to 5 and 7 are merged there (gates G1, G2 and G4
+> passed for them). Botan is still not provisioned on `main`; the owner's coordinator ruled on
+> 2026-11-20 that the stream `botan-6` provisions it itself, exactly as webcpp::crypto's spec
+> ("Backend Botan: a pinned submodule built by b2, with exceptions") and design D15 say, so that
+> crypto's increment 7 reuses that provisioning unchanged. What moved: the Global Constraints
+> (worktrees, delivery, lanes) are brought to `main`; a new Task 40b provisions Botan in the
+> superproject; Tasks 41 to 43 are rewritten against `main`'s files and Botan 3.14.1 as read at
+> its tag; Task 47 gains increment 6's steps. Each ruling is written where it binds, as "Ruling
+> P<n>".
+
 **Goal:** a new library, webcpp::hash, at `libs/hash`, in seven increments (spec 1.5). Increment 1: Boost.Hash2 1.92's algorithms and HMAC by
 alias; `keccak_256` over XKCP's Keccak-p[1600] and `blake3` over BLAKE3's C implementation, both
 in Hash2's HashAlgorithm form; HKDF and PBKDF2 over four backends (`backends::hash2`, `sodium`,
@@ -139,7 +151,7 @@ the integration branches and resolves those files.
 | 7 | `openssl-4` | 34 to 38 (increment 4) | 24, and Task 25 |
 | 7 | `bearssl-5` | 39, 40 (increment 5) | 24, and Task 25 |
 | 7 | `async-7` | 44 to 46 (increment 7; the heavy variants on threads in Task 44) | 24, and webcpp::asio's `browser::async_await` on `main` |
-| 8 | `botan-6` | 41 to 43 (increment 6) | Task 25, and webcpp::crypto's Botan provisioning on `main` |
+| 8 | `botan-6` | 40b, then 41 to 43 (increment 6) | Task 25 (on `main`); from 2026-11-20 nothing else: the stream provisions Botan itself (Task 40b) |
 | 9 | `whole-n` | 47 | each increment's stream: run once per increment as it merges |
 
 Increments 2 to 7 are independent of one another: each brings one backend's functions into the
@@ -151,6 +163,14 @@ same wave makes (a test helper, a list entry) carries a temporary copy, dropped 
 favour of the real one.
 
 ## Owner gates
+
+> **Note of 2026-11-20.** G1 and G2 are passed: `webcpporg/hash` exists and `libs/hash` is a
+> submodule of the superproject's `main`. For increment 6 the owner's coordinator replaced G4 for
+> the stream `botan-6`: the stream opens its pull requests and merges them itself, with merge
+> commits, cancels every CI run its pushes start, and the coordinator runs the CI once at the end
+> (Global Constraints, "Delivery"). Adding `third_party/libs/botan`, G3's kind of decision, was
+> taken by the coordinator's ruling P1 of 2026-11-20, under webcpp::crypto's accepted requirement
+> for Botan. G5 is unchanged.
 
 - **G1:** the owner creates `webcpporg/hash`, public, BSL-1.0.
 - **G2:** the owner adds the submodule (`git submodule add ../hash.git libs/hash`).
@@ -165,31 +185,55 @@ favour of the real one.
 
 ## Global Constraints
 
+> **Amended on 2026-11-20 (increment 6).** Brought to the superproject's `main`: until this date
+> this section placed the work in a worktree from `crypto/v0.1`, kept `libs/hash` out of the
+> superproject through `info/exclude`, and left MSVC and Apple clang to the CI. webcpp::hash is now
+> published and a submodule of `main`; MSVC runs locally on the owner's MSVC lane, and the CI's
+> Linux lint on the owner's Linux lint lane; Botan is provisioned by this stream (Task 40b). The
+> rules below that still held are kept as they were.
+
 **Repositories and paths:**
-- The superproject is `webcpporg/webcpp`, checked out with its submodules; the work happens in
-  a worktree of it on the branch `hash/genesis` from `crypto/v0.1` (Task 0), its `.local` a link
-  to the main checkout's. Paths below are relative to that worktree.
-- `libs/hash` is the library's own git repository, created in Task 1, branch `main`, whose
-  remote is `webcpporg/hash` once the owner creates it (G1). Until the submodule is added (G2),
-  the superproject ignores it through the common git directory's `info/exclude` (`/libs/hash/`),
-  never through a tracked line.
+- The superproject is `webcpporg/webcpp`, checked out with its submodules. Increment 6 works in a
+  worktree of it on the branch `hash/botan-6` from `main` (`4c5cfcc` when this was written), its
+  `.local` a link to the main checkout's (ignored by git). Paths below are relative to that
+  worktree.
+- `libs/hash` is the submodule of `webcpporg/hash`; in the worktree it is on the branch
+  `hash/botan-6` from the library's `main`. A library commit reaches the superproject as the
+  submodule's new commit (its gitlink), never as files.
+- The proposal is in `webcpporg/proposals`, this file's repository, in a worktree on the branch
+  `hash/botan-6` from its `main`. webcpp::crypto's proposal and `libs/crypto` are never changed
+  by this stream; nor is any checkout of crypto's own streams.
 - Every b2 command runs from the worktree's root as
   `env -u CPATH -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH b2 --user-config=.local/user-config.jam ...`,
   written `$B2` below. A verdict is `-a`. Each lane has its own `--build-dir`.
-- The lanes, as the CI runs them (`tools/ci/matrix.py`):
-  - native: `$B2 -a --build-dir=bin/lane-native libs/hash/test libs/hash/example`;
+- The lanes (ruling P8), each from scratch, at the CI's variant (debug, the Jamroot's
+  `default-build`; `tools/ci/matrix.py`'s `lane_command` adds none), and, where a task says so,
+  once more with `variant=release` in a `--build-dir` of its own (`bin/lane-<name>-release`):
+  - native clang: `$B2 -a --build-dir=bin/lane-native libs/hash/test libs/hash/example`;
+  - gcc-15: `$B2 -a --build-dir=bin/lane-gcc toolset=gcc-15 libs/hash/test libs/hash/example`;
   - wasip2: `$B2 -a --build-dir=bin/lane-wasip2 toolset=clang-wasip2 testing.launcher=tools/boost/asio-wasip2/run.sh libs/hash/test libs/hash/example`;
   - wasip3: the same with `clang-wasip3`, `tools/boost/asio-wasip3/run.sh` and `bin/lane-wasip3`;
   - emscripten: `$B2 -a --build-dir=bin/lane-emscripten toolset=emscripten libs/hash/test libs/hash/example`;
-  - gcc: `$B2 -a --build-dir=bin/lane-gcc toolset=gcc-15 libs/hash/test libs/hash/example`;
-  - MSVC and Apple clang in the CI only, at the end (G4);
+  - MSVC 14.3 and 14.5, locally, on the owner's MSVC lane (a personal tool outside webcpp: the
+    real `cl.exe` and `link.exe` under Wine, with the CI lane's command), run from the
+    superproject's worktree: `webcpp-msvc 14.3 -- libs/hash/test libs/hash/example` and
+    `webcpp-msvc 14.5 -- libs/hash/test libs/hash/example`, and its `run-lane.sh <v> --tree
+    <worktree> --fresh` for the verdict from scratch. A failure seen there alone is first
+    compared with the lane's `known-failures.txt` (Wine's silent `cl` stops), and is webcpp's
+    only when it is not one of them; Apple clang stays the CI's;
   - the own lane `c-suites` on target `<t>`: the target's command with
-    `libs/hash/test/c_suites//c-suites` in place of the two directories (the own lane `measure`,
-    `$B2 -a --build-dir=bin/lane-measure libs/hash/test/measure//measure`, Task 21's, is retired
-    on 2026-11-16 by design D33);
-  - the user's Jamfiles: `python3 tools/test/hash_jamfiles_test.py`.
-- The lint: `tools/lint/lint.sh --clang-format .local/wasi-sdk/bin/clang-format --clang-tidy .local/wasi-sdk/bin/clang-tidy`,
-  ending `lint: clean`.
+    `libs/hash/test/c_suites//c-suites` in place of the two directories (the own lane `measure` is
+    retired by design D33);
+  - the tools' tests a task touches, among them `python3 tools/test/third_party_test.py`,
+    `python3 tools/test/hash_jamfiles_test.py`, `python3 tools/test/hash_doc_tables_test.py` and
+    `python3 tools/botan/configure_test.py` (Task 40b).
+- The lint, both: on macOS
+  `tools/lint/lint.sh --clang-format .local/wasi-sdk/bin/clang-format --clang-tidy .local/wasi-sdk/bin/clang-tidy`,
+  ending `lint: clean`; and the CI's Lint job on the owner's Linux lint lane (a personal tool
+  outside webcpp, the CI's Ubuntu image in a container), `run.sh <the superproject's worktree>`
+  for a change and `run.sh --full <the superproject's worktree>` once before the pull requests,
+  each ending `run.sh: verdict: CLEAN: the CI lint would pass` (a source of `third_party/libs/`
+  or a jam file of `tools/`, which Task 40b changes, runs the whole lint by itself).
 
 **The library's rules (CODING-GUIDELINES.md chapters 2 to 9; the spec):**
 - Names: spec 2.1. `<webcpp/hash/config.hpp>` first in every public header; it includes
@@ -210,7 +254,8 @@ favour of the real one.
 - Tests use `<boost/core/lightweight_test.hpp>` and `test/require.hpp` (xactor's), end
   `return webcpp::test::exit_status(boost::report_errors());` with
   `#include <webcpp/test/exit_status.hpp>`, and are declared through `hash-run` (Task 1), on every
-  target their libraries have.
+  target their libraries have; a test of `backends::botan` through `botan-run` instead (Task 42,
+  ruling P4: exceptions on, no `_no_exceptions` twin, native and Emscripten).
 - A message's test is a `webcpp.compile-diagnostic` in a directory of its own under
   `test/messages/`, whose source states the whole text:
   `// expected-error@webcpp/hash/<header>:* {{<the text>}}`; on Emscripten the message is a
@@ -224,6 +269,13 @@ favour of the real one.
   `git log -1 --format=%B | git interpret-trailers --parse` prints nothing.
 - Stage by path: a new file is added first, `git add -- <new paths>`. Never `git add -A`,
   `git add .` or `git add libs`. A submodule's commit is recorded, never its files.
+- **Delivery (increment 6, from 2026-11-20; replaces G4 for the stream).** The stream opens its
+  pull requests and merges them itself, each with a merge commit, once its review and every lane
+  above pass: the library's on `webcpporg/hash` first, then the superproject's on
+  `webcpporg/webcpp` (Task 40b's provisioning and the gitlink of the library's merge commit),
+  then the proposal's on `webcpporg/proposals`. Every CI run a push starts is cancelled
+  (`gh run cancel <id>`); the coordinator runs the CI once, at the end. No force push; a
+  branch is deleted after its merge.
 - Subjects: `hash: <what>` in the library; `third_party: <what>`, `tools: <what>`,
   `guidelines: <what>` in the superproject.
 - A change a user can see adds its changelog line in the same commit: the library's
@@ -253,6 +305,14 @@ favour of the real one.
 | `tools/hash/measure.py` | the measured table and `detail/ranking.hpp` (Task 21); deleted by design D33, `tools/hash/doc_tables.py` renders the reference of 2026-11-16 |
 | own lane `c-suites` | `libs/hash/test/c_suites` (the lane `measure`, `libs/hash/test/measure`, retired by design D33) |
 | `.superpowers/sdd/WEBCPP_HASH_PLAN/progress.md` | the ledger, in the worktree, untracked |
+| `/third_party//botan` (also `/webcpp/third_party//botan`) | Botan 3.14.1, configured by upstream's `configure.py` per target and compiled by b2 one object per source (Task 40b); native and Emscripten, with exceptions |
+| `/third_party//botan_test` | Botan's own test program, `src/tests` of the same configuration, explicit (Task 40b) |
+| `tools/webcpp-botan.jam`, `tools/botan/` | the jam module that declares the two, and its helper, module list, pin and their test (Task 40b) |
+| `/third_party//botan_vectors` | test data: `WEBCPP_TEST_BOTAN_VECTORS`, the directory of Botan's `src/tests/data` (Task 42) |
+| `backends::botan`, `WEBCPP_HASH_HAS_BOTAN`, `WEBCPP_HASH_BOTAN_CANARY_COMMIT` | hash's Botan backend, its define and its canary's seam (Task 42) |
+| `WEBCPP_HASH_DETAIL_TEST_BOTAN_NAME` | the seam that replaces the algorithm name Botan is asked for, to provoke a backend failure (Task 42) |
+| `botan-run <name> : <sources> + : <requirements> *` | the test Jamfile's rule for Botan's tests: with exceptions alone, native and Emscripten (Task 42) |
+| `.superpowers/sdd/plan/progress.md` | increment 6's ledger, in the superproject's worktree, untracked |
 
 ## Review Focus
 
@@ -2458,42 +2518,800 @@ Stream `bearssl-5`.
 - [ ] Task 47 for increment 5: BearSSL's functions reached by naming `backends::bearssl` in the
   type, never a default (design D33). Commit (library) `"hash: increment 5 whole"`.
 
+## Task 40b: Botan provisioned in the superproject
+
+> **Note of 2026-11-20 (rulings P1 to P8).** This was webcpp::crypto's work (its foundation's
+> increment 7, step 2; its design D15). The owner's coordinator ruled on 2026-11-20 that the
+> stream `botan-6` does it, exactly as crypto's spec and D15 say, so that crypto's increment 7
+> reuses it unchanged and adds only its canary, its backend and its spike's wasip2 and wasip3
+> cells. The provisioning carries no library's canary (ruling P5): hash's is Task 42's.
+
+Stream `botan-6`, in the superproject alone: nothing of `libs/hash` (but reading it) and
+nothing of `libs/crypto`.
+
+**What was read at Botan's tag, 3.14.1, on 2026-11-20** (a shallow clone of
+`https://github.com/randombit/botan.git` at the tag, outside the worktree; upstream's
+`configure.py` run with `python3 -I` from outside its directory):
+- The tag `3.14.1` is the commit `01af88c039fcfaedc418b1af4d6d3a139674e591` (2026-11-06,
+  "Update for 3.14.1"); `src/build-data/version.txt` says 3, 14, 1. It is crypto's pin.
+- `--os=emscripten` exists (`src/build-data/os/emscripten.txt`, default compiler `emcc`, with
+  `atomics`, `filesystem`, `dev_random`, `system_clock`, `posix1`); `--os=macos`, `linux`,
+  `windows`; compilers `clang`, `gcc`, `msvc` (minimum 19.30, its language flags
+  `/Zc:preprocessor /Zc:inline /std:c++20 /EHs /GR`, and `/bigobj`), `emcc` (language flags
+  `-fwasm-exceptions -std=c++20`). `--cpu=wasm` requires `emcc`, so WASI is not reached by it
+  (crypto's spike, ruling P3).
+- `configure.py` writes, into `--with-build-dir`, `build/build.h` (the `BOTAN_HAS_*` of the
+  modules chosen, OS-independent), `build/target_info.h` (compiler, architecture and OS
+  macros), `build/version_info.h`, the public and internal headers copied into
+  `build/include/public/botan` and `build/include/internal/botan/internal`
+  (`--link-method=copy`), and `build/build_config.json`, whose `lib_srcs` and `test_srcs` are
+  the absolute paths of the library's and its test program's sources (with `lib_build_info`,
+  `{src, obj}` pairs and no per-source flags in this module set). Its compile rule adds
+  `-DBOTAN_IS_BEING_BUILT` and `-I` of the public and the internal include directories; its
+  link of the static library is `ar crs` of the objects. Nothing is written into the checkout.
+- The hidden option `--disable-cc-tests` stops `configure.py` from running the compiler (its
+  version and architecture probes); with `--cc-min-version=0.0` and `--cpu` given, its output
+  is a function of its arguments and of the environment variables `CXX`, `CXXFLAGS`, `AR`,
+  `AR_OPTIONS` and `LDFLAGS`, which it reads (`take_options_from_env`), and of the host's
+  certificate bundle, which it names in `target_info.h` as `BOTAN_SYSTEM_CERT_BUNDLE` and which
+  only the certificate-store modules read (none is built here). Without `--prefix`, a Windows
+  target refuses on a POSIX host ("The installation root must be an absolute path").
+- `--module-policy` takes only the names of `src/build-data/policy/` (`bsi`, `fips140`,
+  `modern`); `--enable-modules` refuses an internal module ("Module 'xmd' is meant for internal
+  use only"): `cshake_xof` and `xmd` are internal. `xmd`, which `ec_group`'s RFC 9380
+  hash-to-curve needs (`ec_inner_data.cpp`: "Hash to curve is not implemented due to XMD being
+  disabled"), is required by `bls12_381` alone.
+- With the module list below, `--minimized-build` loads 127 modules on every target, the same
+  208 library sources and 152 test sources for macOS clang arm64, Linux gcc x86-64, Windows
+  MSVC x86-64 and arm64, and Emscripten (`emcc`, `wasm`); `build.h` differs between them only in
+  `BOTAN_TARGET_OS_HAS_THREADS` (absent on Emscripten). No `system_rng`, `auto_rng`,
+  `entropy`, `chacha_rng`, `processor_rng` or `jitter_rng` is loaded; `rng`, `stateful_rng`,
+  `hmac_drbg` (by `rfc6979`) and `os_utils` are. No instruction-set module is loaded (they are
+  `load_on auto`, which `--minimized-build` leaves out): Botan's portable code on every target.
+- `configure.py` warns that `keccak`, `md5`, `siphash` and `streebog` are deprecated in 3.14.1
+  ("will be removed in a future release"): `--disable-deprecated-features` is never given.
+
+**Files:**
+- Create (superproject): the submodule `third_party/libs/botan`; `tools/webcpp-botan.jam`;
+  `tools/botan/configure.py`, `tools/botan/configure_test.py`, `tools/botan/modules.txt`,
+  `tools/botan/pin.json`, `tools/botan/source.py`.
+- Modify (superproject): `.gitmodules`; `third_party/Jamfile` (`import webcpp-botan ;` and its
+  declaration); `tools/test/third_party_test.py`; `AGENTS.md` (chapter 1, "Prerequisites");
+  `CODING-GUIDELINES.md` (chapter 5, a new rule 13; chapter 10's table, the row
+  `botan`); `doc/releases/0.1.0.adoc` ("Tools and build").
+
+**Interfaces:**
+- Produces: `/webcpp/third_party//botan` and `/third_party//botan` (the Jamroot's two ids): a
+  static library of Botan's library sources, each compiled by b2 as an object of its own with
+  the consumer's own properties (toolset, variant, `cxxstd`, runtime, threading, exceptions),
+  plus `-DBOTAN_IS_BEING_BUILT`, the configuration's public and internal include directories,
+  the sections flags of `.c-sections` and `<warnings>off`; its usage requirements: the
+  configuration's `build/include/public` directory as a system directory for every toolset (so
+  that Botan's headers' warnings are never webcpp's: `<include>` for the dependency scanner,
+  with `--system-header-prefix=botan/` on clang and emscripten, `-isystem <dir>` on gcc,
+  `/external:anglebrackets /external:W0` on MSVC), the linker's removal of unused sections
+  (`.gc`), and on Emscripten `-sALLOW_MEMORY_GROWTH=1` (Argon2, scrypt and RSA outgrow the fixed
+  16 MiB, as libsodium's do, hash's design D27). No define and no canary of any library
+  (ruling P5): each library adds them through `webcpp-botan.declare`'s requirements and usage
+  requirements.
+- Produces: `/third_party//botan_test`, explicit: Botan's own test program (`test_srcs`, one
+  object each, the same flags, linked with `botan`), run with `--data-dir=<checkout>/src/tests/data`
+  and the names of the tests to run (Botan's runner uses its own `Testsuite_RNG`, seeded from
+  `--drbg-seed`: no RNG module is needed).
+- Produces: `webcpp-botan.declare ( root : inputs * : requirements * : usage-requirements * )`,
+  which declares `botan` and `botan_test` in the current project. `inputs`, relative to `root`,
+  are the files whose bytes make a configuration what it is; `requirements` and
+  `usage-requirements` are added to the library's (a library's canary as a conditional
+  `<source>`, its define as a conditional usage requirement, Task 42).
+- Produces: `python3 tools/botan/configure.py --source <checkout> --modules <modules.txt>
+  --output <configuration directory> --os <os> --cc <cc> --cpu <cpu>`: runs upstream's
+  `configure.py` (below) into `<configuration directory>` unless its `webcpp-configure.json`
+  exists, writing everything into a temporary sibling first and renaming it into place, so that
+  an interrupted run leaves no half configuration; then prints one line per source,
+  `lib <path>` and `test <path>`, each path relative to `<checkout>`, sorted. Exit 1 with the
+  reason on standard output for a source outside the checkout, a module upstream does not know,
+  or a failed `configure.py` (its last lines printed).
+- Produces: `tools/botan/source.py`'s `check_checkout(checkout, pin)` (the checkout's `HEAD` is
+  `pin["commit"]` and `git status --porcelain --untracked-files=no` prints nothing), which
+  `tools/third_party_build.py key` applies, as OpenSSL's; `tools/botan/pin.json`:
+  `{"version": "3.14.1", "commit": "01af88c039fcfaedc418b1af4d6d3a139674e591", "repository":
+  "https://github.com/randombit/botan.git"}`.
+
+**The module list (ruling P2),** `tools/botan/modules.txt`, one module a line, each with who
+needs it and why, read by `tools/botan/configure.py` (a `#` starts a comment; the order is the
+file's). Every name below exists in 3.14.1's `src/lib/**/info.txt` and is public
+(`configure.py --list-modules`):
+
+```text
+# webcpp::hash (design D42's list, corrected at 3.14.1):
+md5 sha1 sha2_32 sha2_64        # digests::md5 to sha2_512_256, and their HMACs; D42 left them out
+sha3 shake shake_xof keccak     # SHA-3, SHAKE of any length (shake_xof, missing from D42), Keccak
+blake2 blake2s blake2mac        # BLAKE2b of 1 to 64 bytes and keyed, BLAKE2s-256
+rmd160 sm3 streebog whirlpool skein
+hmac kmac siphash               # kmac pulls the internal cshake_xof, which D42 named
+hkdf pbkdf2 scrypt argon2 bcrypt bcrypt_pbkdf
+sp800_108                       # kbkdf, SP800-108-Counter
+sp800_56a                       # sskdf, SP800-56A(<hash>): SP 800-56C's one-step KDF
+kdf2                            # x963kdf, KDF2(<hash>): ANSI X9.63's construction
+# webcpp::crypto (its design D2's Botan row, its spec's SPKI, PKCS#8 and PEM, hash-to-curve, HPKE):
+ed25519 ed448 x25519 x448
+ecdsa ecdh rfc6979              # rfc6979: deterministic ECDSA nonces, as crypto's ECDSA family has
+pcurves_secp256r1 pcurves_secp384r1 pcurves_secp521r1
+pcurves_brainpool256r1 pcurves_brainpool384r1 pcurves_brainpool512r1
+rsa emsa_pssr emsa_pkcs1 eme_oaep
+ml_kem ml_dsa slh_dsa_sha2 slh_dsa_shake
+aes gcm siv gcm_siv ccm ocb eax nist_keywrap cmac
+chacha20poly1305                # ChaCha20-Poly1305 and XChaCha20-Poly1305 (a 24-byte nonce)
+camellia aria sm4 serpent twofish
+bls12_381                       # only for the internal xmd that ec_group's RFC 9380 hash-to-curve
+                                # on the P-curves needs; crypto never exposes BLS12-381 (blst's)
+hpke
+pubkey pem                      # SPKI (x509_key.h), PKCS#8 (pkcs8.h) and PEM
+```
+
+D42's corrections, recorded: `cshake_xof` is internal (KMAC pulls it; Botan 3.14.1 has no
+public cSHAKE); `sp800_56c` is SP 800-56C's two-step KDF, which hash does not expose (its
+`sskdf` is the one-step KDF, in Botan's `sp800_56a`), so it is not listed; `md5`, `sha1`,
+`sha2_32`, `sha2_64` and `shake_xof` were missing. Randomness (ruling P6): no module of the list
+loads `system_rng` or `auto_rng`, by request or by dependency (`rng`, `stateful_rng` and
+`hmac_drbg` are loaded, none of which seeds itself from the system); `tools/botan/configure.py`
+refuses a configuration whose `build_config.json` `mod_list` holds `system_rng`, `auto_rng`,
+`entropy`, `jitter_rng`, `processor_rng` or `esdm_rng`, so a later list cannot pull one in
+unseen.
+
+**The command line, per target (ruling P1).** From `tools/botan/configure.py`, with an
+environment that has neither `CXX`, `CXXFLAGS`, `AR`, `AR_OPTIONS` nor `LDFLAGS`, its working
+directory the configuration directory's parent (never the checkout):
+
+```bash
+python3 -I <checkout>/configure.py --minimized-build \
+  --enable-modules=<modules.txt, comma-separated> \
+  --os=<os> --cc=<cc> --cpu=<cpu> --cc-min-version=0.0 --disable-cc-tests \
+  --disable-shared-library --without-documentation --link-method=copy --build-tool=ninja \
+  --prefix=<configuration directory>/prefix --with-build-dir=<configuration directory>
+```
+
+| b2's request | `--os` | `--cc` | `--cpu` |
+| --- | --- | --- | --- |
+| `clang`, `<target-os>darwin` | `macos` | `clang` | the architecture (below) |
+| `clang` or `gcc`, `<target-os>linux` | `linux` | `clang` or `gcc` | the architecture |
+| `msvc`, `<target-os>windows` | `windows` | `msvc` | the architecture |
+| `emscripten` | `emscripten` | `emcc` | `wasm` |
+| `clang-wasip2`, `clang-wasip3` | stops (ruling P3) | | |
+| any other | stops, naming the requests it knows | | |
+
+The architecture: `<architecture>` and `<address-model>` when the request names both (`x86`
+and 64 is `x86_64`, `arm` and 64 is `arm64`); else the compiler is asked through
+third_party/Jamfile's two probes, `/webcpp/third_party//blake3_probe_x86_64` and
+`blake3_probe_arm64` (`configure.builds`), which compile exactly when `__x86_64__`/`_M_X64` or
+`__aarch64__`/`_M_ARM64` hold; else `generic`. Ruling: the probes are reused by their ids rather
+than renamed, since they answer the same question with the same macros (cost if wrong: a rename
+later, in both blocks).
+
+**How b2 reads the configuration.** `configure.py` must have run before b2 can declare one
+object per source, so `tools/webcpp-botan.jam`'s target class runs the helper at b2's
+generation, through `SHELL`, as `tools/webcpp-third-party.jam`'s `inputs-key` runs
+`tools/third_party_build.py`: once per configuration directory and b2 run (cached in a module
+variable), a no-op when the directory is complete. The configuration directory is named as
+OpenSSL's: `bin/third_party/botan/config-<hash>`, `webcpp-third-party.directory` of the key of
+`inputs` (`webcpp-third-party.inputs-key root : botan : third_party/libs/botan : inputs`, which
+first applies `tools/botan/source.py` against `tools/botan/pin.json`) and of the values of the
+command line above (`--os`, `--cc`, `--cpu`). The objects are not in it: b2 compiles each source
+into its own variant directory, per property set, so every compiler flag and ABI choice of the
+consumer reaches Botan as it reaches any of the consumer's sources, and two consumers whose
+properties differ get two sets of objects from one configuration. Nothing of `configure.py`'s
+compile flags is used (`cc_compile_flags`, `cc_lang_flags`, `cxx_abi_flags`, `-O3`,
+`-fwasm-exceptions`, `/MD`), except, on MSVC, the three language flags that change no ABI,
+`/Zc:preprocessor /Zc:inline /bigobj`; `/EHs` and `/GR` come from b2's `exception-handling` and
+`rtti`. The configured headers exist when b2 scans the sources, so its header scanning sees them.
+
+**The stops (rulings P1, P3, P4),** each an `errors.user-error` of the target class at
+generation, before anything is configured:
+- the checkout missing (no `third_party/libs/botan/configure.py`): "third_party/libs/botan is not
+  checked out: it holds no configure.py. Check it out with `git submodule update --init
+  third_party/libs/botan`.";
+- wasip2 or wasip3: "/third_party//botan is built natively and for Emscripten. On
+  clang-wasip2 (or clang-wasip3) it is not built yet: webcpp::crypto's increment 7 decides it.
+  Remove /third_party//botan from this program's Jamfile, or build it natively or with
+  toolset=emscripten.";
+- `exception-handling=off`: "/third_party//botan needs exceptions: Botan reports its errors by
+  throwing. Build this program with exception-handling=on, or remove /third_party//botan from its
+  Jamfile.";
+- a toolset and OS the table does not name: "/third_party//botan: Botan's configuration is
+  known for clang on macOS and Linux, gcc on Linux, MSVC on Windows and Emscripten; this request
+  is <toolset> on <target-os>.".
+
+MSVC (ruling P8): Botan 3.14.1 supports MSVC 19.30 and later, so it is built on both MSVC lanes;
+nothing in crypto's spec or hash's allows Botan to be absent natively, and no "not on MSVC" is
+declared.
+
+- [ ] **Step 1: Add the submodule,** pinned:
+
+```bash
+git submodule add https://github.com/randombit/botan.git third_party/libs/botan
+git -C third_party/libs/botan checkout 01af88c039fcfaedc418b1af4d6d3a139674e591
+git -C third_party/libs/botan describe --tags --exact-match
+sed -n 1,3p third_party/libs/botan/src/build-data/version.txt
+```
+
+  Expected: `3.14.1`; `release_major = 3`, `release_minor = 14`, `release_patch = 1`.
+  `.gitmodules` gains `[submodule "third_party/libs/botan"]`, not shallow, as the other sources
+  b2 compiles (OpenSSL's, libsodium's); only test data is shallow.
+
+- [ ] **Step 2: Write the failing tests.** `tools/botan/configure_test.py` (unittest, run as
+  `python3 tools/botan/configure_test.py`), over the real checkout and a scratch output
+  directory: the five configurations of the table configure (macOS clang arm64, Linux gcc
+  x86-64, Linux clang arm64, Windows MSVC x86-64, Emscripten), each printing 208 `lib` and 152
+  `test` lines; the same lists on every target; every module of `modules.txt` in
+  `build_config.json`'s `mod_list`; none of the six RNG modules there; a second run that leaves
+  the directory as it was (its files' times unchanged); an interrupted run (the temporary
+  directory left behind) configured again; an unknown module refused with exit 1 and its name;
+  `CXX=false` in the environment changing nothing. `tools/test/third_party_test.py` gains, each
+  in a scratch superproject as its other cases: `test_botan_is_pinned` (the gitlink is
+  `01af88c039fcfaedc418b1af4d6d3a139674e591`); `test_botan_is_built_object_by_object` (b2
+  `-n` of a program naming `/third_party//botan` compiles 208 Botan sources, each to its own
+  object, with `-DBOTAN_IS_BEING_BUILT` and the configuration's include directories, archives
+  them, and writes nothing into the checkout: `git -C third_party/libs/botan status
+  --porcelain` prints nothing); `test_botan_runs_natively` and `test_botan_runs_on_emscripten`
+  (a program that hashes "abc" with `Botan::HashFunction::create_or_throw("SHA-256")` prints
+  `ba7816bf...15ad`); `test_botan_configuration_is_shared` (two consumers differing only in
+  `variant` use one `config-<hash>` and two sets of objects);
+  `test_botan_not_checked_out_is_refused`, `test_botan_on_wasip2_is_refused`,
+  `test_botan_on_wasip3_is_refused` and `test_botan_without_exceptions_is_refused` (each the
+  stop's text, exactly, and no other build stopped); `test_botan_test_program_runs` (natively,
+  `/third_party//botan_test` with `hash sha2_32` and `--data-dir` passes). Run:
+
+```bash
+python3 tools/botan/configure_test.py
+python3 tools/test/third_party_test.py test_botan_is_pinned test_botan_is_built_object_by_object
+```
+
+  Expected: FAIL (no helper, no target).
+
+- [ ] **Step 3: Write `tools/botan/`** (`pin.json`, `source.py`, `modules.txt`, `configure.py`
+  as the interfaces above; licence notices; Pyright-clean, as the lint's Python rule requires)
+  and **`tools/webcpp-botan.jam`**, OpenSSL's module's form: a `botan-target` class
+  (`basic-target`) whose `construct` runs the stops, the key, the helper, then declares a
+  virtual target per source (`virtual-target.from-file`, relative to `root`) and returns
+  `generators.construct ... : STATIC_LIB : <the properties above> : <the sources and the
+  requirements' sources>` with the usage requirements; a `botan-test-target` for `botan_test`,
+  an `EXE` of the test sources and the library; `toolset.uses-features` for nothing (b2 compiles,
+  not an action); `declare` as the interface. In `third_party/Jamfile`, after OpenSSL's block:
+
+```jam
+# Botan 3.14.1 (BSD-2-Clause), randombit/botan at 01af88c: upstream's configure.py chooses the
+# modules (tools/botan/modules.txt, webcpp::hash's and webcpp::crypto's) and writes build.h and
+# the list of sources for each target into bin/third_party/botan/config-<hash>; b2 compiles each
+# listed source as an object of its own, with the consumer's properties, never the amalgamation
+# and never a patch (CODING-GUIDELINES.md chapter 5, rule 13). Natively and on Emscripten, with
+# exceptions; each library adds its own canary and define below.
+import webcpp-botan ;
+webcpp-botan.declare $(WEBCPP_ROOT)
+    : tools/botan/configure.py tools/botan/source.py tools/botan/pin.json
+      tools/botan/modules.txt tools/webcpp-botan.jam ;
+explicit botan botan_test ;
+```
+
+  Run Step 2's commands, then the whole third-party test.
+
+```bash
+python3 tools/botan/configure_test.py
+python3 tools/test/third_party_test.py
+```
+
+  Expected: PASS, every case.
+- [ ] **Step 4: The lanes' build of the target alone,** each from scratch, a program of the
+  third-party test's fixture that names `/third_party//botan`: native clang, gcc-15, Emscripten,
+  and MSVC 14.3 and 14.5 on the owner's lane (`webcpp-msvc 14.3 -- <the fixture's target>`),
+  each at debug and `variant=release`. Expected: built and run, "abc"'s SHA-256 printed. A
+  failure of MSVC is investigated before anything else (crypto's increment 7 will rely on it).
+- [ ] **Step 5: The documentation (ruling P7).**
+  - `AGENTS.md` chapter 1, "Prerequisites", after crypto's item: "- for Botan
+    (`/third_party//botan`, webcpp::hash's `backends::botan` and later webcpp::crypto's):
+    nothing installed, with the pinned submodule initialised (`git submodule update --init
+    third_party/libs/botan`); b2 runs Botan's own `configure.py` with Python 3 once per target
+    and compiles its sources; native and Emscripten, with exceptions;".
+  - `CODING-GUIDELINES.md` chapter 5, a new rule 13 after rule 12 (appended, so that the rules
+    other files cite, 5, 7, 10 and 11, keep their numbers): "13. Botan is configured by upstream and compiled by b2, as
+    `tools/webcpp-botan.jam` does: Botan's own `configure.py` chooses the modules
+    (`tools/botan/modules.txt`, one list for every webcpp library, each module with who needs
+    it) and writes `build.h` and the list of sources for each target into the build directory,
+    `bin/third_party/botan/config-<hash>`, never into the checkout; b2 compiles each listed
+    source as an object of its own with the program's properties. This is rule 2's kind of
+    exception, as OpenSSL's rule 7 is: the selection is upstream's, the compilation b2's. Never
+    the amalgamation, never a patch, never a module that seeds a generator from the system
+    (`system_rng`, `auto_rng`), which the helper refuses. A library adds its own canary and
+    define to the target; the provisioning carries none." Rule 2's sentence "Three exceptions"
+    and rule 7's last sentence gain a pointer to rule 13.
+  - `CODING-GUIDELINES.md` chapter 10's table, in its order: "| `botan` | Botan 3.14.1 at
+    `01af88c`, the submodule `third_party/libs/botan`; configured by upstream's
+    `configure.py` per target (`--minimized-build`, the modules of `tools/botan/modules.txt`)
+    into `bin/third_party/botan/config-<hash>`, its 208 library sources compiled by b2 one object
+    each (chapter 5, rule 13), natively and on Emscripten, with exceptions; `botan_test`, Botan's
+    own test program; no canary of its own (each library's is added by its block) | BSD-2-Clause |".
+  - `doc/releases/0.1.0.adoc`, "Tools and build", one line in the chapter's form: "* Added
+    /third_party//botan, Botan 3.14.1 configured by upstream and compiled by b2, natively and on
+    Emscripten." (`tools/release/changelog.py`'s form, checked by the lint).
+- [ ] **Step 6: The lint, both lanes** (a source of `third_party/libs/` and a jam of `tools/` run
+  the whole Linux lint): macOS `lint: clean`; `run.sh --full <worktree>`: `run.sh: verdict:
+  CLEAN: the CI lint would pass`.
+- [ ] **Step 7: Commit** (superproject; the submodule's gitlink and the new files added by path
+  first): `"third_party: Botan 3.14.1, configured by upstream per target and compiled by b2 one
+  object per source, natively and on Emscripten, with exceptions"`.
+
 ## Task 41: Botan's column, at its pin
 
-> **Note of 2026-11-18 (design D42).** Not started, with Tasks 42 and 43: Botan is not provisioned
-> on webcpp's `main`. Before Step 1, read D42: hash's Botan modules must be in webcpp::crypto's one
-> module list; Botan's targets are crypto's (foundation D15); its tests are declared
-> `<exception-handling>on`, never through `hash-run`; the Botan column overstates at 3.14.1; and
-> Task 43's Step 2 adds `async_bcrypt` and `async_bcrypt_pbkdf` with their message tests.
+> **Note of 2026-11-20 (rulings P1 to P8).** Rewritten against `main` and Botan 3.14.1 as read at
+> its tag. The note of 2026-11-18 (design D42) stands but for its waiting: Botan is provisioned by
+> Task 40b, not by crypto; hash's modules are in the one module list (`tools/botan/modules.txt`,
+> D42's list corrected there); Botan's targets are native and Emscripten (wasip2 and wasip3
+> stop, crypto's spike decides them, ruling P3); its tests are `<exception-handling>on`, never
+> through `hash-run` (ruling P4); the column's corrections are below, verified at the tag; Task
+> 43 adds `async_bcrypt`, `async_bcrypt_pbkdf` and `async_bcrypt_verify`.
 
-Stream `botan-6`; waits for webcpp::crypto's Botan provisioning (its increment 5) on `main`.
+Stream `botan-6`; after Task 40b. This task changes the proposal alone: the column reaches
+`doc/capabilities.json` with each engine (Tasks 42 and 43), so that every commit of the library
+passes `capabilities_test`.
 
-- [ ] **Step 1: Read Botan at the pin** crypto provisions (3.13.0 measured by crypto; 3.14.1 at
-  `01af88c` the latest tag on 2026-11-14): its hash, MAC, KDF and password-hash modules
-  (`src/lib/hash/`, `src/lib/mac/`, `src/lib/kdf/`, `src/lib/pbkdf/`), and whether the build crypto
-  provisions enables each. Correct `doc/capabilities.json`'s Botan column and record the
-  difference from spec 3.5 in the ledger; a change of the spec's table is a change of this
-  proposal.
+**What Botan 3.14.1 has of hash's tags** (its `HashFunction::create`, `XOF::create`,
+`MessageAuthenticationCode::create`, `KDF::create`, `PasswordHashFamily::create` and the
+modules' sources, at `01af88c`):
+
+| hash's tag or function | Botan 3.14.1 | Cell |
+| --- | --- | --- |
+| `digests::md5`, `sha1`, `sha2_224`, `sha2_256`, `sha2_384`, `sha2_512`, `sha2_512_256` | `MD5`, `SHA-1`, `SHA-224`, `SHA-256`, `SHA-384`, `SHA-512`, `SHA-512-256` | yes |
+| `digests::sha2_512_224` | none: `sha2_64` has SHA-384, SHA-512 and SHA-512-256 alone | absent |
+| `digests::sha3_224` .. `sha3_512` | `SHA-3(224)` .. `SHA-3(512)` | yes |
+| `digests::shake_128`, `shake_256` | the XOFs `SHAKE-128`, `SHAKE-256` (`shake_xof`), any length | yes |
+| `digests::keccak_224` .. `keccak_512` | `Keccak-1600(224)` .. `Keccak-1600(512)` (deprecated in 3.14.1) | yes |
+| `digests::cshake_128`, `cshake_256` | none public: `cshake_xof` is an internal module (KMAC's) | absent |
+| `digests::tuplehash_*`, `parallelhash_*`, `kt128`, `kt256`, `turboshake_*`, `blake3`, `md5_sha1` | none | absent |
+| `digests::blake2b` | `BLAKE2b(<bits>)`, 8 to 512 bits; keyed through `BLAKE2bMAC` (a key of 1 to 64 bytes); no salt, no personalisation | partial: "a salt or a personalisation: Botan's BLAKE2b takes neither (blake2b.h)" |
+| `digests::blake2s_256` | `BLAKE2s(256)`, unkeyed | yes |
+| `digests::ripemd_160`, `sm3`, `streebog_256`, `streebog_512`, `whirlpool`, `skein_512` | `RIPEMD-160`, `SM3`, `Streebog-256`, `Streebog-512` (deprecated in 3.14.1), `Whirlpool`, `Skein-512(512)` | yes |
+| `macs::hmac<D>` | `HMAC(<D's name>)` over every fixed-size digest above: MD5, SHA-1, the SHA-2 but SHA-512/224, SHA-3, Keccak, BLAKE2b, BLAKE2s-256, RIPEMD-160, SM3, Streebog, Whirlpool, Skein-512 | yes, over those |
+| `macs::kmac_128`, `kmac_256` | `KMAC-128(<bits>)`, `KMAC-256(<bits>)`: a key of 0 to 192 bytes (`KMAC::key_spec`), the customisation as `start(nonce)`, no KMACXOF (the output length is always encoded) | partial: "a key over 192 bytes, or the XOF form (xof): Botan's KMAC limits its key to 192 bytes and has no KMACXOF (kmac.cpp)" |
+| `macs::siphash_2_4` | `SipHash(2,4)`, 8 bytes (deprecated in 3.14.1) | yes |
+| `macs::siphash_2_4x` | none: `SipHash::output_length()` is 8 | absent |
+| `macs::blake2b_mac` | `BLAKE2b(<bits>)` as a MAC, a key of 1 to 64 bytes, a tag of 1 to 64 | yes |
+| `macs::blake2s_mac` | none: `blake2mac` is BLAKE2b's alone | absent |
+| `hkdf`, `hkdf_extract`, `hkdf_expand` | `HKDF(HMAC(<h>))`, `HKDF-Extract(HMAC(<h>))`, `HKDF-Expand(HMAC(<h>))` | yes, over every hmac of `hmac.hpp` but `hmac_ripemd_128` and `hmac_sha2_512_224` |
+| `pbkdf2` | `PBKDF2(HMAC(<h>))`, the count a `size_t` | yes, over the same hmacs; partial on Emscripten: "an iteration count above 2^32 - 1 on wasm32: Botan counts iterations in a size_t (pbkdf2.cpp)" (`backend_limits<botan>::pbkdf2_iterations`, `invalid_iterations`) |
+| `argon2id` (the function) | `Argon2id`, one lane | yes |
+| `kdfs::argon2d`, `argon2i`, `argon2id` (`argon2`) | `Argon2d`, `Argon2i`, `Argon2id` with secret and associated data (`Argon2::derive_key` with `ad` and `key`); 1 to 128 lanes; m up to 8 GiB, 2 GiB on wasm32 (`MAX_ARGON_MEMORY_GB`); the lanes computed in turn (no `thread_utils` module) | partial: "more than 128 lanes, or m above 8 GiB (2 GiB on wasm32): Botan's Argon2 limits (argon2pwhash.cpp)" |
+| `scrypt` | `Scrypt(N, r, p)`: N a power of two up to 2^22, r up to 256, p up to 1,024, a memory need up to 8 GiB plus 2 MiB (2 GiB plus 2 MiB on wasm32) | partial: "N above 2^22, r above 256, p above 1,024, or more than 8 GiB of memory (2 GiB on wasm32): Botan's scrypt limits (scrypt.cpp)" |
+| `kdfs::bcrypt` | `generate_bcrypt(password, rng, work_factor, version)` and `check_bcrypt`: the salt is 16 bytes drawn from the `rng` given, a cost of 4 to 18 (`make_bcrypt`), versions `a`, `b`, `y`, the password with its terminating zero, cut at 72 bytes | partial: "a cost above 18: Botan's limit (bcrypt.cpp), where bcrypt's format allows 31" |
+| `kdfs::bcrypt_pbkdf` | `Bcrypt-PBKDF` (`PasswordHashFamily`), rounds of 1 or more, an output of at most 10 MiB | yes (hash's guards are OpenBSD's, below them) |
+| `kbkdf` (`kdfs::kbkdf_hmac`) | `SP800-108-Counter(HMAC(<h>),<r>,32)`: counter, label, 0x00, context, L, always | partial: "the separator or L turned off: Botan's SP800-108-Counter always writes both (sp800_108.cpp)"; over the HKDF hmacs |
+| `sskdf` | `SP800-56A(<h>)`, the hash form of SP 800-56C's one-step KDF, the fixed info as its label and no salt | yes, over SP 800-56C's digests but `sha2_512_224` |
+| `x963kdf` | `KDF2(<h>)`: `h(secret || counter || label || salt)` from counter 1, the shared info as its salt | yes, over the five SEC 1 digests |
+| `blake2b_subkey` | none | absent |
+
+**Ruling (the backend's targets and exceptions in the table).** `doc/capabilities.json`'s backend
+`botan` has the targets `native` and `emscripten`, and a field `exceptions_only: true`, which
+`tools/hash/doc_tables.py` renders as "with exceptions only" beside the backend, as increment
+7's `asynchronous_only` (ruling R90) is rendered; like it, it raises no layout version (spec
+3.5's precedent). Why: a reader of the table must see that a program without exceptions has no
+`backends::botan`. Cost if wrong: one field renamed in the file, the tool and its test.
+
+- [ ] **Step 1: Check the column against the checkout** (the submodule of Task 40b; the commands
+  run from the worktree):
+
+```bash
+B=third_party/libs/botan/src/lib
+grep -c 'SHA-512-224\|SHA_512_224' $B/hash/sha2_64/sha2_64.h
+grep -n 'type -> "Internal"' $B/xof/cshake_xof/info.txt
+grep -n 'output_length() const override { return 8; }' $B/mac/siphash/siphash.h
+grep -n 'Key_Length_Specification(0, 192)' $B/mac/kmac/kmac.cpp
+grep -n 'm_p >= 1 && m_p <= 128' $B/pbkdf/argon2/argon2pwhash.cpp
+grep -n 'work_factor >= 4 && work_factor <= 18' $B/passhash/bcrypt/bcrypt.cpp
+grep -n 'MAX_SCRYPT_N = 4194304' $B/pbkdf/scrypt/scrypt.cpp
+grep -n 'm_prf->update(delim)' $B/kdf/sp800_108/sp800_108.cpp
+```
+
+  Expected: `0`, then one line each. A difference is a finding: the column is corrected before
+  Step 2, and recorded in the ledger.
+- [ ] **Step 2: Change the proposal** (a change of this proposal, spec 3.5's last paragraph):
+  - spec 1.5, increment 6's row: "Botan 3's: MD5, SHA-1, SHA-2 but SHA-512/224, SHA-3, SHAKE,
+    Keccak, BLAKE2b (no salt, no personalisation), BLAKE2s-256, RIPEMD-160, SM3, Streebog,
+    Whirlpool, Skein-512, HMAC, KMAC (a key of at most 192 bytes, no KMACXOF), SipHash-2-4,
+    keyed BLAKE2b; HKDF, PBKDF2, scrypt, Argon2d/i/id with lanes, secret and associated data,
+    bcrypt and bcrypt-pbkdf, KBKDF, SSKDF, X9.63 KDF" and the last column "the long tail;
+    Botan provisioned by this increment (plan Task 40b): native and Emscripten, exceptions only";
+  - spec 3.1, Botan's row: "Botan 3.14.1, tag `3.14.1`, commit
+    `01af88c039fcfaedc418b1af4d6d3a139674e591`, provisioned by `/third_party//botan` (plan Task
+    40b)", targets "native, Emscripten (wasip2 and wasip3 as webcpp::crypto's increment 7
+    finds), with exceptions only";
+  - spec 3.5's Botan cells, which change: "MD5, SHA-1, SHA-2 (six)" `6` becomes `6 (no
+    SHA-512/224)`; "cSHAKE, KMAC, TupleHash, ParallelHash" `cSHAKE, KMAC: 6` becomes `KMAC: 6 (a
+    key of at most 192 bytes; no KMACXOF)`; "BLAKE2b (key, salt, personalisation, length)" `6`
+    becomes `1 to 64 bytes, keyed: 6 (no salt, no personalisation); keyed (macs::blake2b_mac):
+    6`; "BLAKE2s-256" `6` becomes `6 (unkeyed: no macs::blake2s_mac)`; "HMAC" `6` becomes `6
+    (each fixed-size digest it has)`; "SipHash-2-4, SipHash-2-4x" `6` becomes `SipHash-2-4: 6`;
+    "PBKDF2" `6` becomes `6 (on wasm32 at most 2^32 - 1 iterations)`; "scrypt" `6` becomes `6 (N
+    of at most 2^22, r of at most 256, p of at most 1,024, at most 8 GiB, 2 GiB on wasm32)`;
+    "Argon2d; Argon2 with lanes, secret, associated data" `6` becomes `6 (at most 128 lanes; m
+    of at most 8 GiB, 2 GiB on wasm32)`; "bcrypt, bcrypt-pbkdf" `6` becomes `6 (bcrypt: a cost
+    of at most 18)`; "KBKDF (SP 800-108), SSKDF (SP 800-56C), X9.63 KDF" `6 (where it has them)`
+    becomes `6 (KBKDF with the separator and L; SSKDF without SHA-512/224)`; the async row's
+    Botan cell gains `async_argon2`, `async_argon2id`, `async_scrypt`, `async_pbkdf2`,
+    `async_bcrypt`, `async_bcrypt_pbkdf`, `async_bcrypt_verify` (Task 43); unchanged: SHA-3 and
+    SHAKE, Keccak-256 and Keccak-224/384/512, RIPEMD-160, "SM3, Streebog, Whirlpool, Skein-512",
+    HKDF, Argon2id one lane, Argon2i; the paragraph under the table loses "Increment 6 is not
+    built ... (no SipHash-2-4x, ...)" and says the column is Botan 3.14.1's as read by Task 41;
+  - spec 2.15: the sentence "`backends::botan` is increment 6's, not built (design D42)" becomes
+    "increment 6 adds `backends::botan` (design D43)"; the tags of increment 6's functions are
+    served by `backends::botan` (the last paragraph); spec 3.3's "a tag no backend has yet"
+    loses its examples, since no tag remains in that state after increment 6 (Task 42, Step 2);
+  - design: D43, "Botan provisioned by the stream, one module list, its targets, exceptions,
+    canaries and randomness" (rulings P1 to P6), D44, "Botan's column at 3.14.1" (this task's
+    table and the `exceptions_only` field), and a note on D42 that D43 and D44 supersede its
+    waiting and its list.
+- [ ] **Step 3: Commit** (proposal) `"hash: Botan's column read at 3.14.1, and Botan provisioned
+  by the increment itself"`.
 
 ## Task 42: Botan's hashes and MACs
 
-- [ ] **Step 1: Write `backends/botan.hpp`** (exceptions only, as webcpp::crypto's D19: the header
-  declares nothing under `WEBCPP_HASH_NO_EXCEPTIONS`; every Botan exception is caught at the
-  boundary and mapped), and the failing tests: every digest of the column (BLAKE2b variable,
-  Keccak, SHA-3, SHAKE, cSHAKE, Skein-512, SM3, Streebog-256/512, Whirlpool, ...) against its
-  official vectors or another backend; KMAC and HMAC. Expected: FAIL.
-- [ ] **Step 2: Write the engines** over `Botan::HashFunction::create_or_throw` and
-  `Botan::MessageAuthenticationCode`. Run natively. Expected: PASS.
-- [ ] **Step 3: Commit** (library) `"hash: Botan's hashes and MACs (native, with exceptions)"`.
+> **Note of 2026-11-20.** Rewritten against `main`: the real files, the canary's pattern, the
+> test rule for Botan, the tags that refuse today and Botan now serves.
+
+**Files:**
+- Create (library): `include/webcpp/hash/backends/botan.hpp`, `src/canary_botan.cpp`,
+  `test/digests_botan_test.cpp`, `test/macs_botan_test.cpp`, `test/botan_canary_test.cpp`,
+  `test/botan_failure_test.cpp`, `test/botan_no_exceptions_test.cpp`,
+  `test/allocation_botan_test.cpp`, `test/messages/botan_not_linked/`,
+  `test/messages/botan_without_exceptions/`, `test/msvc/botan_not_linked/`,
+  `test/msvc/botan_without_exceptions/`, `test/msvc/canary_botan_missing/`,
+  `test/msvc/canary_botan_other_commit/`, `test/link/botan.cpp`.
+- Modify (library): `include/webcpp/hash/config.hpp` (`struct botan;` in
+  `webcpp::hash::backends`, with `// NOLINT(bugprone-forward-declaration-namespace)` as
+  `sodium`, `bearssl` and `openssl` have, since crypto declares its own; `WEBCPP_HASH_HAS_BOTAN`
+  in the `__MRDOCS__` block); `include/webcpp/hash/detail/canary.h`
+  (`WEBCPP_HASH_BOTAN_COMMIT 01af88c` behind `WEBCPP_HASH_BOTAN_CANARY_COMMIT`);
+  `include/webcpp/hash/detail/engines.hpp` (`missing_library_v<backends::botan>`,
+  `needs_library`'s Botan texts, each refusal text of a tag Botan gains);
+  `include/webcpp/hash/hash.hpp` (a branch for Botan); `doc/capabilities.json` (the backend
+  `botan` and its digest and MAC cells); `test/Jamfile` (`botan-run`, the headers-alone entry,
+  the tests below); `test/capabilities_test.cpp`; `test/agreement_families_test.cpp`;
+  `test/messages/Jamfile`, `test/msvc/Jamfile`, `test/link/Jamfile`, `test/unused/Jamfile`,
+  `test/c_suites/Jamfile`; `meta/include-boundaries.json`; `NOTICE.md` (Botan's BSD-2-Clause
+  notice where the documentation adapts its text, else unchanged).
+- Modify (superproject): `third_party/Jamfile` (hash's canary and define on `botan`;
+  `botan_vectors`); `tools/test/third_party_test.py`; `tools/test/hash_jamfiles_test.py` and its
+  fixtures; `tools/lint/lint_test.py` (the rule "canary pins" of `tools/lint/lint.sh` needs no
+  change, since `botan` is its submodule's own name: its case gains a wrong Botan pin, which
+  must fail); `tools/hash/doc_tables.py`
+  (`exceptions_only`) and `tools/test/hash_doc_tables_test.py`; `CODING-GUIDELINES.md`
+  chapter 10's rows `botan` (hash's canary) and `botan_vectors`; `doc/releases/0.1.0.adoc`
+  ("Tools and build": `botan_vectors`).
+
+**Interfaces:**
+- Produces: `backends::botan`'s `digest_engine` and `mac_engine` specialisations for each cell
+  of Task 41's table that is a digest or a MAC; `backend_has_v<backends::botan, Tag, void>` for
+  them; `detail::backend_limits<backends::botan>` (Task 43 fills its KDF limits); the symbol
+  `webcpp_hash_botan_01af88c_configured__add_third_party_botan_to_your_link`;
+  `/third_party//botan_vectors` (`WEBCPP_TEST_BOTAN_VECTORS`, Botan's `src/tests/data`, read at
+  run time, `[ webcpp.data ... ]`, as `openssl_evp_data`).
+- The header (ruling P4): `backends/botan.hpp` opens with `<webcpp/hash/config.hpp>`; under
+  `WEBCPP_HASH_NO_EXCEPTIONS` it declares nothing; else it `#error`s without
+  `WEBCPP_HASH_HAS_BOTAN` ("webcpp::hash: backends::botan needs Botan. Add /third_party//botan to
+  the program's Jamfile (native and Emscripten, with exceptions): exe app : app.cpp
+  /webcpp/hash//hash /third_party//botan ;"), includes only Botan's generic headers
+  (`<botan/hash.h>`, `<botan/xof.h>`, `<botan/mac.h>`, later `<botan/kdf.h>`,
+  `<botan/pwdhash.h>`, `<botan/bcrypt.h>`, `<botan/rng.h>`), never a deprecated module's own
+  header, and carries the MSVC `#pragma detect_mismatch("webcpp_hash_backend_botan",
+  "botan-01af88c-configured")`. Every engine function reads the canary (`touch_botan_canary()`,
+  a volatile load) and runs every Botan call inside one `try` at its boundary
+  (`detail::botan_boundary`): `std::bad_alloc` is `errc::not_enough_memory`, any other exception
+  `error::backend_failure`, and the family then zeroes the output. A digest is
+  `Botan::HashFunction::create_or_throw(<name>)` (`final` into the output), SHAKE
+  `Botan::XOF::create_or_throw` (`output` of any length), a MAC
+  `Botan::MessageAuthenticationCode::create_or_throw` (`set_key`, `start(customisation)` for
+  KMAC, `update`, `final`); a keyed `digests::blake2b` is the MAC `BLAKE2b(<bits>)`. A `hasher`
+  owns its `std::unique_ptr<Botan::HashFunction>` (or `XOF`, or `MessageAuthenticationCode`),
+  `clear()`ed and released at `finish`, in its destructor and when moved from. The names go
+  through `WEBCPP_HASH_DETAIL_TEST_BOTAN_NAME` when a test defines it (OpenSSL's seam's form).
+  `accepts` refuses what the partial cells name (`unsupported_by_backend`), before Botan is
+  called.
+- `needs_library` (ruling P4): `missing_library_v<backends::botan>` is true without
+  `WEBCPP_HASH_HAS_BOTAN` or under `WEBCPP_HASH_NO_EXCEPTIONS`; the text is the header's when
+  Botan is not linked, and "webcpp::hash: backends::botan needs exceptions: Botan reports its
+  errors by throwing, and its header declares nothing without them. Build with
+  exception-handling=on, or name another backend." under `WEBCPP_HASH_NO_EXCEPTIONS`.
+- The canary (ruling P5), `src/canary_botan.cpp`, compiled into `/third_party//botan` with
+  Botan's own properties and `build.h`: `configured` when `BOTAN_VERSION_MAJOR` 3,
+  `BOTAN_VERSION_MINOR` 14, `BOTAN_VERSION_PATCH` 1, every `BOTAN_HAS_*` hash's modules give
+  (`MD5`, `SHA1`, `SHA2_32`, `SHA2_64`, `SHA3`, `SHAKE`, `SHAKE_XOF`, `KECCAK`, `BLAKE2B`,
+  `BLAKE2S`, `BLAKE2BMAC`, `RIPEMD_160`, `SM3`, `STREEBOG`, `WHIRLPOOL`, `SKEIN_512`, `HMAC`,
+  `KMAC`, `SIPHASH`, `HKDF`, `PBKDF2`, `SCRYPT`, `ARGON2`, `BCRYPT`, `PBKDF_BCRYPT`, `SP800_108`,
+  `SP800_56A`, `KDF2`), and neither `BOTAN_HAS_SYSTEM_RNG` nor `BOTAN_HAS_AUTO_SEEDING_RNG`;
+  else `unconfigured`, which no header expects. In `third_party/Jamfile`, as BearSSL's
+  `bearssl-hash-canary` and `bearssl-hash-usage`: `botan-hash-canary` gives
+  `<source>$(HASH)/src/canary_botan.cpp` and `botan-hash-usage` gives
+  `<define>WEBCPP_HASH_HAS_BOTAN=1`, each only when `libs/hash` holds the file, passed to
+  `webcpp-botan.declare` as its requirements and usage requirements.
+- The test rule (ruling P4), in `test/Jamfile`:
+
+```jam
+# Botan's tests (design D42, D43): Botan reports its errors by throwing, so a test of
+# backends::botan has exceptions on and no _no_exceptions twin, on the targets
+# /third_party//botan is built for.
+rule botan-run ( name : sources + : requirements * )
+{
+    webcpp.run $(name) : $(sources)
+      : $(requirements) <library>/third_party//botan <exception-handling>on
+      : native emscripten ;
+}
+```
+
+- [ ] **Step 1: Write the failing tests.**
+  - `digests_botan_test.cpp` (`botan-run`, with `xkcp_vectors`, `blake2_vectors`,
+    `openssl_evp_data` and `botan_vectors`): every digest of the column through `digest_of` and
+    `hasher` (in one call and in pieces): MD5, SHA-1 and the SHA-2 against Boost.Hash2 on 1,000
+    seeded random inputs and FIPS 180-4's "abc"; SHA-3 and Keccak against XKCP's
+    `ShortMsgKAT_SHA3-256.txt` and the Keccak team's digests (Task 5's values); SHAKE128/256 past
+    one rate block against OpenSSL's `evpmd_sha.txt` (FIPS 202's examples); BLAKE2b of 1 to 64
+    bytes, unkeyed and keyed, against BLAKE2's `blake2-kat.json` and `blake2b-kat.txt`; BLAKE2s
+    against `blake2-kat.json`; RIPEMD-160 against Hash2; SM3 against GB/T 32905's two examples
+    ("abc" and the 64-byte message, as `digests_openssl_test` has them); Streebog-256 and -512
+    against RFC 6986 section 10's two messages (M1 and M2, copied with the section cited);
+    Whirlpool against the ISO/IEC 10118-3 test vectors of the Whirlpool authors (the empty
+    string, "a", "abc", "message digest", the alphabet, copied with the source cited) and the
+    cases of `botan_vectors`' `hash/whirlpool.vec` after its line "Following generated by
+    OpenSSL"; Skein-512-512 against the Skein 1.3 paper's Appendix C examples (one byte 0xFF,
+    64 and 128 bytes, copied with the section cited) and `hash/skein.vec`'s `[Skein-512(512)]`
+    cases before its line "This was generated by Botan and has not been confirmed against
+    another impl"; a salt or a personalisation answering `unsupported_by_backend`, the output
+    untouched; `digests::sha2_512_224` and `cshake_128` not in `backends::botan`
+    (`backend_has_v` false). Expected: FAIL.
+  - `macs_botan_test.cpp` (`botan-run`, with `wycheproof`, `openssl_evp_data`,
+    `blake2_vectors`, `/third_party//sodium`): HMAC over every digest of the column against
+    Boost.Hash2's `hmac<H>` where Hash2 has the hash and RFC 4231; HMAC-Streebog-256 and -512
+    against RFC 7836 section 4.1.1's examples (copied with the section cited); KMAC128/256
+    against NIST's samples (`evpmac_common.txt`) and XKCP, a 193-byte key and `xof` answering
+    `unsupported_by_backend`; SipHash-2-4 against Wycheproof's `siphash_2_4_test.json` and
+    Hash2; keyed BLAKE2b against `blake2b-kat.txt` and libsodium. Expected: FAIL.
+  - `botan_canary_test.cpp` (`botan-run`, `<optimization>speed`) and its
+    `webcpp.link-fail botan_canary_other_commit` (`<define>WEBCPP_HASH_BOTAN_CANARY_COMMIT=0000000`);
+    `test/link/botan.cpp` (a call without `/third_party//botan`, which fails to link on the
+    canary's name, as the other libraries' cases); `test/msvc/canary_botan_missing` and
+    `canary_botan_other_commit` (LNK2001 and LNK2038).
+  - `botan_failure_test.cpp` (`botan-run`,
+    `<define>"\"WEBCPP_HASH_DETAIL_TEST_BOTAN_NAME=\\\"NO-SUCH-HASH\\\"\""`): `digest_of`, a
+    `hasher`'s `make` and `mac` answer `backend_failure` (Botan's `Lookup_Error`), the output
+    zeroed.
+  - `botan_no_exceptions_test.cpp`, `webcpp.compile` with `/third_party//botan`,
+    `<exception-handling>on` and `<define>WEBCPP_HASH_NO_EXCEPTIONS`: `backends/botan.hpp`
+    declares nothing (`backend_has_v<backends::botan, digests::sha2_256, void>` is false).
+  - The messages: `test/messages/botan_not_linked/` (`digest_of<digests::whirlpool,
+    backends::botan>` without the library: the header's text) and
+    `test/messages/botan_without_exceptions/` (the same call with Botan linked and
+    `WEBCPP_HASH_NO_EXCEPTIONS` defined: the exceptions text), each a
+    `webcpp.compile-diagnostic` whose source states the whole text; their twins under
+    `test/msvc/`.
+  - `capabilities_test.cpp`: a backend whose library the program does not link, or which the
+    build cannot have (Botan without exceptions), has `backend_has_v` false on every tag;
+    `capabilities_botan`, a `botan-run` of the same source with every library its target has and
+    `/third_party//botan`, checks Botan's cells against `backend_has_v` and its refusal texts
+    against the rows. `agreement_families_botan`, a `botan-run` of
+    `agreement_families_test.cpp` with the libraries the existing program links and Botan,
+    compares Botan with every backend of each of its tags (a partial cell held to what it
+    serves); the source adds Botan's pairs only where `WEBCPP_HASH_HAS_BOTAN` is defined and
+    `WEBCPP_HASH_NO_EXCEPTIONS` is not.
+  - `allocation_botan_test.cpp` (`botan-run`): `operator new` counted per call of every Botan
+    entry point and printed, never bounded (Botan allocates its objects and their state through
+    `operator new`; spec 6.2's departure, written by Task 47); a guard's refusal allocates
+    nothing.
+  - `test/unused/`: a program naming `/third_party//botan` without calling it is byte-identical
+    to one without it, natively; on Emscripten with `-sALLOW_MEMORY_GROWTH=1` given to the
+    other explicitly (`unused_botan_emscripten`, as `unused_sodium_emscripten`).
+  - `test/c_suites/Jamfile`: Botan's own tests of hash's modules on webcpp's build (CODING-
+    GUIDELINES.md chapter 5, rule 11), a run of `/third_party//botan_test` with
+    `--data-dir=<checkout>/src/tests/data` and the names its `--list-tests` gives for hash's
+    modules (the hashes, XOFs, MACs, KDFs, PBKDFs and password hashes; the list recorded in the
+    Jamfile's comment), natively and on Emscripten.
+  - `tools/test/hash_jamfiles_test.py`: a user's Jamfile `exe app : app.cpp /webcpp/hash//hash
+    /third_party//botan ;` builds and runs natively and on Emscripten; the same on wasip2 stops
+    with Task 40b's text.
+  Run `$B2 libs/hash/test//digests_botan libs/hash/test//macs_botan` and the others. Expected:
+  FAIL (no header).
+- [ ] **Step 2: Write `backends/botan.hpp`, the canary, the cells.** The interfaces above; in
+  `doc/capabilities.json`, the backend `botan` (`"tag": "backends::botan"`, `"macro": "BOTAN"`,
+  `"library": "Botan 3.14.1"`, `"licence": "BSD-2-Clause"`, `"jamfile": "/third_party//botan"`,
+  `"targets": ["native", "emscripten"]`, `"exceptions_only": true`, and `omitted`: the hashes
+  Botan has and hash does not expose, `Adler32`, `CRC24`, `CRC32`, `GOST-34.11`, `MD4`,
+  `Ascon-Hash256`, `Ascon-XOF128`, `SHAKE-128(<bits>)` as a fixed hash, `Comb4P`, `Parallel`,
+  `Truncated`, and the MACs `CMAC`, `GMAC`, `Poly1305`, `X9.19-MAC`, each with its reason, as
+  OpenSSL's), and its cells of Task 41's table that are digests and MACs, each `"since": 6` and
+  its `constant_time` from Botan's documentation at the pin ("not stated" where it states
+  nothing). The new rows `macs::hmac<digests::streebog_256>`, `<streebog_512>`,
+  `<whirlpool>` and `<skein_512>` (Botan alone, no default). Every default stays (design D34:
+  Botan is never one): `digests::streebog_256`, `streebog_512`, `whirlpool`, `skein_512` and the
+  four new HMAC rows keep `detail::no_default`. The refusal texts in `detail/engines.hpp` that
+  change, each to name `backends::botan` last of the synchronous backends (spec 3.3's order,
+  hash2, xkcp, blake3, sodium, bearssl, openssl, botan): every digest and MAC tag of the column,
+  and the four "is in no backend yet." texts of `digests::streebog_256`, `streebog_512`,
+  `whirlpool` and `skein_512`, which become "webcpp::hash: digests::<tag> is not in this
+  backend. Name one of: backends::botan." and "webcpp::hash: digests::<tag> has no default
+  backend. Name one of: backends::botan."; `macs::hmac`'s "in no backend yet" case loses its
+  last digest (capabilities_test's stand-in `macs::hmac<digests::whirlpool>` becomes a cell).
+  `test/Jamfile`'s headers-alone entry: `webcpp.headers-alone hash : ../include :
+  hash/backends/botan.hpp : <library>/third_party//botan <exception-handling>on : native
+  emscripten ;`, and `meta/include-boundaries.json` gains the header. `hash.hpp` includes
+  `backends/botan.hpp` when `WEBCPP_HASH_HAS_BOTAN` is defined. Run every test of Step 1 natively
+  and on Emscripten, at debug and `variant=release`, then `python3 tools/test/third_party_test.py`,
+  `python3 tools/test/hash_jamfiles_test.py` and `python3 tools/test/hash_doc_tables_test.py`.
+  Expected: PASS.
+- [ ] **Step 3: Commit** (library) `"hash: backends::botan's hashes and MACs, with exceptions,
+  natively and on Emscripten"`, then (superproject) `"third_party: hash's canary and test data of
+  Botan"` with the library's gitlink.
 
 ## Task 43: Botan's KDFs and password hashes
 
-- [ ] **Step 1: Write the failing tests:** PBKDF2 (RFC 6070), HKDF (RFC 5869), scrypt (RFC 7914),
-  Argon2d/i/id (RFC 9106, every parameter), bcrypt (the OpenBSD reference's test strings) and
-  bcrypt-pbkdf (OpenSSH's vectors), through `Botan::PasswordHashFamily` and `Botan::KDF`.
+> **Note of 2026-11-20.** Rewritten against `main`. Fact: on `main`, `kdfs::bcrypt` and
+> `kdfs::bcrypt_pbkdf` are declared in `config.hpp` with no function of their own and no refusal
+> text (`detail/engines.hpp` has none for them; spec 2.15 and 3.3 said they refuse with "... is in
+> no backend yet."): this task adds their functions, with their own refusals.
+
+**Ruling (the bcrypt functions' interface).** Spec 2.15 names the tags and no function; this
+task adds `include/webcpp/hash/bcrypt.hpp`:
+
+```cpp
+namespace webcpp::hash {
+
+inline constexpr std::size_t bcrypt_salt_size = 16;       // bcrypt's salt, 128 bits
+inline constexpr std::size_t bcrypt_hash_size = 60;       // "$2b$" cost "$" 22 + 31 characters
+inline constexpr std::size_t bcrypt_max_password_size = 72;
+
+/** bcrypt's cost (2^cost rounds, 4 to 31) and the version written, 'a', 'b' or 'y'. */
+struct bcrypt_parameters {
+    std::uint32_t cost = 12;
+    char version = 'b';
+};
+
+/** The modular crypt string of `password` under the caller's 16-byte `salt`, into 60 chars. */
+template <class Backend = default_backend<kdfs::bcrypt>>
+[[nodiscard]] boost::system::result<void> bcrypt(std::span<char> output,
+                                                 std::span<std::uint8_t const> password,
+                                                 std::span<std::uint8_t const> salt,
+                                                 bcrypt_parameters const& parameters = {});
+
+/** Whether `password` gives `hash`, a modular crypt string of bcrypt, compared in constant time. */
+template <class Backend = default_backend<kdfs::bcrypt>>
+[[nodiscard]] boost::system::result<bool> bcrypt_verify(std::span<std::uint8_t const> password,
+                                                        std::string_view hash);
+
+/** OpenBSD's bcrypt_pbkdf, as OpenSSH's keys use it. */
+template <class Backend = default_backend<kdfs::bcrypt_pbkdf>>
+[[nodiscard]] boost::system::result<void> bcrypt_pbkdf(std::span<std::uint8_t> output,
+                                                       std::span<std::uint8_t const> password,
+                                                       std::span<std::uint8_t const> salt,
+                                                       std::uint32_t rounds);
+
+}  // namespace webcpp::hash
+```
+
+Guards, in order. `bcrypt`: `output` of exactly 60 (`invalid_output_size`), `salt` of exactly 16
+(`invalid_salt_size`), the password of at most 72 bytes (`input_too_long`: bcrypt uses 72 bytes
+and every implementation silently drops the rest, so hash refuses rather than cut) and with no
+zero byte (`invalid_parameters`: OpenBSD's C stops at it, Botan does not, so the two would give
+different strings), a cost of 4 to 31 and a version of `a`, `b` or `y` (`invalid_parameters`),
+then the engine's limits (`unsupported_by_backend`: Botan's cost above 18). `bcrypt_verify`: a
+`hash` that is not 60 characters of bcrypt's form is `invalid_parameters`; otherwise `true` or
+`false`. `bcrypt_pbkdf`: OpenBSD's limits, which define the function: an output of 1 to 1,024
+bytes (`invalid_output_size`), a salt of 1 to 1,048,576 bytes (`invalid_salt_size`), a password
+of 1 byte or more (`invalid_key_size`), `rounds` of 1 or more (`invalid_iterations`). Neither tag
+has a default (design D34): a call names `backends::botan`. Randomness (ruling P6): hash draws no
+random byte from Botan; Botan's only bcrypt entry point, `generate_bcrypt`, takes its 16 salt
+bytes from a `Botan::RandomNumberGenerator`, so the engine gives it `detail::botan_salt`, a
+`RandomNumberGenerator` of webcpp's that yields exactly the caller's 16 bytes once
+(`accepts_input()` false, `is_seeded()` true; a second draw throws, which the boundary maps to
+`backend_failure`); no `Botan::System_RNG` or `AutoSeeded_RNG` exists in the program. Why: the
+spec's rule that the caller gives every input, with the families' guard order. Cost if wrong: the
+interface of three functions, before anything is published.
+
+**Ruling (`async_bcrypt_verify`).** Spec 11.5 gives a heavy variant to "every later memory-hard
+or deliberately slow function"; `bcrypt_verify` computes bcrypt in full, so it has one too,
+beside `async_bcrypt` and `async_bcrypt_pbkdf` (D42 named those two). Cost if wrong: one
+function and its message test removed.
+
+**Files:**
+- Create (library): `include/webcpp/hash/bcrypt.hpp`; `test/kdfs_botan_test.cpp`,
+  `test/argon2_botan_test.cpp`, `test/scrypt_botan_test.cpp`, `test/scrypt_botan_large_test.cpp`,
+  `test/bcrypt_botan_test.cpp`, `test/bcrypt_pbkdf_botan_test.cpp`,
+  `test/kdf_standards_botan_test.cpp`, `test/async_heavy_botan_test.cpp`; the message tests
+  `test/messages/bcrypt_on_hash2/`, `bcrypt_pbkdf_on_hash2/`, `bcrypt_no_default/`,
+  `bcrypt_pbkdf_no_default/`, `async_bcrypt_without_threads/`,
+  `async_bcrypt_pbkdf_without_threads/`, `async_bcrypt_verify_without_threads/`, and their
+  twins under `test/msvc/`.
+- Modify (library): `include/webcpp/hash/backends/botan.hpp` (the KDF engines),
+  `include/webcpp/hash/detail/engines.hpp` (`bcrypt_engine<Backend>`,
+  `bcrypt_pbkdf_engine<Backend>` with their refusals, and the texts that change),
+  `include/webcpp/hash/async.hpp` (the three heavy names), `include/webcpp/hash/hash.hpp`
+  (`bcrypt.hpp`), `doc/capabilities.json` (the KDF cells, the rows `bcrypt` and
+  `bcrypt_pbkdf` in the chapter `password_hashing`), `test/Jamfile`, `test/messages/Jamfile`,
+  `test/msvc/Jamfile`, `test/capabilities_test.cpp`, `test/agreement_hkdf_test.cpp` and
+  `test/agreement_pbkdf2_test.cpp` (Botan's pairs, in `botan-run` programs of the same sources),
+  `test/allocation_botan_test.cpp`, `meta/include-boundaries.json`.
+
+**Interfaces:**
+- Produces: `hkdf_engine<backends::botan, Hmac>` and `pbkdf2_engine<backends::botan, Hmac>` over
+  the hmacs of Task 41's table, `argon2id_engine<backends::botan>`,
+  `scrypt_engine<backends::botan>`, the `argon2` family's engines for the three variants,
+  `kbkdf`, `sskdf` and `x963kdf` engines, `bcrypt_engine<backends::botan>` and
+  `bcrypt_pbkdf_engine<backends::botan>`; `backend_limits<backends::botan>` (`pbkdf2_iterations`
+  `SIZE_MAX` on wasm32); `async_bcrypt`, `async_bcrypt_pbkdf` and `async_bcrypt_verify` (spec
+  11.5's form: a `WorkExecutor`, the spans and parameters, a completion token; `void(error_code)`,
+  and `void(error_code, bool)` for verify), on another thread where the build has threads, else a
+  template whose `static_assert` says "webcpp::hash: async_bcrypt runs on another thread and needs
+  a build with threads (natively, remove WEBCPP_HASH_NO_THREADS; on Emscripten, link with
+  -pthread). Without threads, call bcrypt." (and the same for the two others).
+- The texts that change, each naming `backends::botan`: spec 3.3's primary templates' "this
+  backend has no HKDF. The backends that have HKDF: ..." and "... PBKDF2 ..." (Botan: "every hmac
+  but hmac_ripemd_128 and hmac_sha2_512_224"); `argon2id` and `scrypt`'s "is in backends::sodium
+  and backends::openssl alone" (now the three, "add /third_party//sodium, /webcpp/hash//openssl or
+  /third_party//botan"); `kdfs::argon2d`'s "has no default backend. Name one of:
+  backends::openssl, backends::botan."; `kbkdf`'s "and no other backend has kbkdf" (now OpenSSL's
+  and Botan's, each over its hmacs); the kdf standards' no-default texts; `sskdf<digests::
+  sha2_512_224, backends::botan>`'s own refusal, "webcpp::hash: backends::botan has no
+  SHA-512/224 (Botan 3.14.1 lacks it): name backends::openssl."; and the new texts
+  "webcpp::hash: kdfs::bcrypt is not in this backend. Name one of: backends::botan.",
+  "webcpp::hash: kdfs::bcrypt has no default backend. Name one of: backends::botan." and the
+  same for `kdfs::bcrypt_pbkdf`.
+
+- [ ] **Step 1: Write the failing tests** (each `botan-run`, natively and on Emscripten):
+  - `kdfs_botan_test.cpp`: HKDF, RFC 5869's seven cases (PRK and OKM) through `hkdf_extract`,
+    `hkdf_expand` and `hkdf`; PBKDF2, RFC 6070's cases 1, 2, 3, 5 and 6 and RFC 7914 section
+    11's two; the guards of spec 2.8 and 2.9 at their limits; 1,000 seeded random cases each
+    against `backends::hash2` over every hmac Botan has.
+  - `argon2_botan_test.cpp`: RFC 9106 section 5's three cases (Argon2d, Argon2i, Argon2id: t 3, m
+    32 KiB, p 4, with secret and associated data) through `argon2<kdfs::argon2*,
+    backends::botan>`; `argon2id` against libsodium's three cases of Task 15; 129 lanes answering
+    `unsupported_by_backend`; agreement with libsodium at one lane (`/third_party//sodium`).
+  - `scrypt_botan_test.cpp`: RFC 7914 section 12's first three cases; r 257, p 1,025 and N 2^23
+    answering `unsupported_by_backend`; `scrypt_botan_large_test.cpp`: the fourth case (1 GiB),
+    natively and on Emscripten (Botan's memory growth, Task 40b).
+  - `bcrypt_botan_test.cpp` (with `botan_vectors`): the cases of `passhash/bcrypt.vec` whose
+    comment names a source other than Botan (jBCrypt 0.3, openwall's bcrypt-tester and
+    `crypt_blowfish`, OpenBSD's bcrypt code), each parsed for its salt and cost and recomputed
+    through `bcrypt`, and checked through `bcrypt_verify`; a wrong password `false`; the
+    guards (an output of 59 and 61, a salt of 15 and 17, a password of 73 bytes and one with a
+    zero byte, a cost of 3 and 32, a version `c`, a malformed hash) and a cost of 19
+    (`unsupported_by_backend`); the salt given is the one in the string.
+  - `bcrypt_pbkdf_botan_test.cpp` (with `botan_vectors`): the cases of `bcrypt_pbkdf.vec` from
+    OpenBSD's `bcrypt_pbkdf` and from dchest's Go package (the file's comments name them), and
+    the guards at OpenBSD's limits.
+  - `kdf_standards_botan_test.cpp` (with `openssl_evp_data`): the HMAC cases of
+    `evpkdf_kbkdf_counter.txt` whose separator and L are present, the hash-form cases of
+    `evpkdf_ss.txt` and the cases of `evpkdf_x963.txt`, as `kdf_standards_openssl_test` reads
+    them; separator or L off answering `unsupported_by_backend`; natively, 100 random cases each
+    against `backends::openssl` (`/webcpp/hash//openssl`).
+  - `async_heavy_botan_test.cpp` (`<library>/webcpp/asio//asio <threading>multi`, natively and
+    on Emscripten with `-sPTHREAD_POOL_SIZE=3`): `async_bcrypt`, `async_bcrypt_pbkdf`,
+    `async_bcrypt_verify`, `async_argon2<kdfs::argon2id, backends::botan>`,
+    `async_scrypt<backends::botan>` and `async_pbkdf2<hmac_sha2_256, backends::botan>` on a
+    `thread_pool` of two threads, the work's thread differing from the caller's, results equal
+    to the synchronous functions', a cancellation before the work starts.
+  - The messages above, each a `webcpp.compile-diagnostic` stating its whole text; the three
+    heavy names' built with `<define>WEBCPP_HASH_NO_THREADS` natively and on wasip2 (where no
+    Botan is needed: the refusal precedes any engine), as `async_argon2_without_threads` is.
+  - `capabilities_botan` and `agreement_*_botan` gain the KDF cells and pairs;
+    `allocation_botan_test` gains every KDF entry point.
   Expected: FAIL.
-- [ ] **Step 2: Write the engines.** Run natively. Task 47 for increment 6. Commit (library)
-  `"hash: Botan's KDFs and password hashes, and increment 6 whole"`.
+- [ ] **Step 2: Write the engines and `bcrypt.hpp`** (each Botan call in the boundary's `try`,
+  the canary read, the output zeroed on failure by the function): HKDF through
+  `Botan::KDF::create_or_throw("HKDF-Extract(HMAC(<h>))")`, `"HKDF-Expand(...)"`,
+  `"HKDF(...)"`; PBKDF2, Argon2, scrypt and Bcrypt-PBKDF through
+  `Botan::PasswordHashFamily::create_or_throw(...)->from_params(...)` and
+  `derive_key` (Argon2's with `ad` and `key`); bcrypt through `Botan::generate_bcrypt(password,
+  detail::botan_salt{salt}, cost, version)` and `Botan::check_bcrypt`; the standards through
+  `"SP800-108-Counter(HMAC(<h>),<r>,32)"` (the context as Botan's salt, the label as its label),
+  `"SP800-56A(<h>)"` (the fixed info as its label) and `"KDF2(<h>)"` (the shared info as its
+  salt). The cells in `doc/capabilities.json`; the async names in `async.hpp`. Run every test of
+  Step 1 and of Task 42 natively and on Emscripten, at debug and `variant=release`. Expected:
+  PASS.
+- [ ] **Step 3: Increment 6 whole: Task 47.** Commit (library) `"hash: Botan's key derivations,
+  bcrypt and bcrypt-pbkdf with their heavy variants, and increment 6 whole"`.
 
 ## Task 44: The asynchronous family, everywhere
 
@@ -2584,3 +3402,70 @@ Stream `async-7`.
 - [ ] **Step 4:** the documentation's sections of the increment (noble's manner; libsodium's
   adapted with attribution where used, `NOTICE.md` unchanged or extended), the changelog, chapter
   17's entry updated; the owner's gates (G4) for the increment's pull requests.
+
+**For increment 6 (added on 2026-11-20; rulings P7 and P8).** Steps 1 to 4 hold, made concrete
+here; they run after Task 43's Step 2, in this order.
+
+- [ ] **Step 6.1: The table.** `python3 tools/hash/doc_tables.py --write --library libs/hash`,
+  then `--check`; `capabilities_test` (every target) and `capabilities_botan` (native and
+  Emscripten) pass; `doc/backends.adoc` and `doc/generated/backends-*.adoc` show `backends::botan`
+  with "with exceptions only", its Jamfile line `/third_party//botan` and its targets. Expected:
+  `--check` silent, exit 0.
+- [ ] **Step 6.2: The defaults.** No default changed (design D34): Botan is no tag's default and
+  no function's; `doc_tables.py --check` refuses a default outside hash2, xkcp, blake3 and sodium,
+  and `default_backend_test` is unchanged. The tags only Botan serves keep `detail::no_default`
+  (`digests::streebog_256`, `streebog_512`, `whirlpool`, `skein_512`, the four new HMAC rows,
+  `kdfs::bcrypt`, `bcrypt_pbkdf`).
+- [ ] **Step 6.3: Every lane from scratch** (the Global Constraints' list), each recorded in the
+  ledger with its command and its last line: native clang, gcc-15, wasip2, wasip3 and Emscripten,
+  at debug, and native and Emscripten again at `variant=release` for `libs/hash/test`; the own
+  lane `c-suites` on native and Emscripten (Botan's own tests among them); MSVC 14.3 and 14.5
+  on the owner's lane (`run-lane.sh 14.3 --tree <worktree> --fresh`, then 14.5), each failure
+  read against `known-failures.txt` first; `python3 tools/test/third_party_test.py`,
+  `python3 tools/test/hash_jamfiles_test.py`, `python3 tools/test/hash_doc_tables_test.py`,
+  `python3 tools/botan/configure_test.py`, `python3 tools/lint/lint_test.py`; the macOS
+  lint (`lint: clean`) and the Linux lint, `run.sh <worktree>` and `run.sh --full <worktree>`
+  (`run.sh: verdict: CLEAN: the CI lint would pass`). Expected: every one passes. Then a review
+  of the whole increment, Task 40b included, by a reviewer who did not write it, against the
+  spec, crypto's requirement for Botan and the Review Focus.
+- [ ] **Step 6.4: The documentation** (noble's manner; Botan's text adapted with attribution
+  where used, `NOTICE.md` extended): `doc/digests.adoc` (Streebog, Whirlpool and Skein-512 each
+  a section: what it is, an example on `backends::botan`, its pitfalls; Botan as a backend of
+  the SHA-2, SHA-3, SHAKE, Keccak, BLAKE2, RIPEMD-160 and SM3 sections), `doc/macs.adoc` (HMAC
+  over Botan's digests, KMAC's 192-byte key), `doc/kdfs.adoc` (Botan's HKDF, PBKDF2 and the
+  standards, KBKDF's fixed separator and L), `doc/password_hashing.adoc` (bcrypt and
+  bcrypt-pbkdf: the 72-byte password and the zero byte refused, the cost, the caller's salt,
+  OpenSSH's keys; Botan's Argon2 lanes and scrypt limits), `doc/async.adoc` (`async_bcrypt`,
+  `async_bcrypt_pbkdf`, `async_bcrypt_verify`), `doc/choosing_backend.adoc` and
+  `doc/jamfile.adoc` (Botan: native and Emscripten, exceptions only, its allocations, its Jamfile
+  line and its two messages), `doc/allocation.adoc` and `doc/measurements.allocation.json`
+  regenerated from release builds alone (design D36: `bench/Jamfile`'s `allocation_botan_release`,
+  collected by `bench/allocation_collect.py`); `doc/changelog.adoc`, under "Unreleased", one line
+  in AGENTS.md chapter 5's form, "* Added backends::botan: Botan 3.14.1's hashes, MACs, key
+  derivations and bcrypt, with exceptions.", within the version's ten lines; CODING-GUIDELINES.md
+  chapter 17's entry of webcpp::hash updated (increment 6 built, the designs of Step 6.5).
+  `b2 libs/hash/doc` builds the page and `doc-check` passes.
+- [ ] **Step 6.5: The proposal's own updates** (in `webcpporg/proposals`): `design.md` D43 to
+  D45, one decision each with its alternatives, for the rulings: D43 "Botan provisioned by the
+  stream, as crypto's spec says" (P1: the submodule at `01af88c`, upstream's `configure.py` per
+  target into `config-<hash>`, b2's objects, `tools/webcpp-botan.jam`, the stops; P2: one module
+  list in `tools/botan/modules.txt`, hash's and crypto's, `bls12_381` for `xmd`; P3: native and
+  Emscripten, wasip2 and wasip3 crypto's spike's; P5: no canary in the provisioning, hash's in
+  `src/canary_botan.cpp`; P6: no RNG module loaded, refused by the helper, bcrypt's salt the
+  caller's through `detail::botan_salt`), D44 "Botan's column at 3.14.1" (Task 41's table and
+  the `exceptions_only` field), D45 "Exceptions only, and the lanes" (P4: `botan-run`, the
+  header empty without exceptions, the two messages; P7: the documentation of the provisioning;
+  P8: the lanes, MSVC on the owner's lane); D42 gains a note that D43 to D45 supersede its
+  waiting and its list; the spec's sections Task 41 names, and 2.15 (`bcrypt.hpp`), 3.3 (the
+  texts of Tasks 42 and 43), 5 (Botan's target and messages), 6.2 (Botan's allocations), 7
+  (Botan's vectors, its own tests in `c-suites`, `botan-run`), 11.5 (the three heavy names);
+  `specs/hash/spec.md`'s requirements for the same; `tasks.md` group 6: a new 6.0 "Botan
+  provisioned in the superproject (plan: Task 40b)" and 6.1 to 6.3 checked with what was built;
+  `reference/STATUS.md`: "Where it stands" (increment 6 built), "What it waits on" (crypto's
+  increment 7 reuses `/third_party//botan` and adds its canary and its wasip2 and wasip3 cells),
+  "How to resume".
+- [ ] **Step 6.6: Delivery** (Global Constraints, "Delivery"): the library's pull request
+  (`hash/botan-6` into `webcpporg/hash`'s `main`), merged with a merge commit; the superproject's
+  (`hash/botan-6`: Task 40b, the third-party and tools changes, the library's merge commit as the
+  gitlink), merged likewise; the proposal's, merged likewise; every CI run of these pushes
+  cancelled; the coordinator told that the CI may run.
