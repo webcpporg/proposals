@@ -88,8 +88,8 @@ Part A:
 - [x] 4.A3 AES-GCM's `async_make`, `async_seal`, `async_open` (plan: Task 4.A3)
 - [x] 4.A4 Ed25519's `async_generate`, `async_make`, `async_sign`, `async_verify`; X25519's
   `async_agree` (plan: Task 4.A4)
-- [ ] 4.A5 P-256's asynchronous functions, once increment 3's P-256 is on `main` (plan: Task
-  4.A5)
+- [x] 4.A5 P-256's asynchronous functions, built on a merge of increment 3's P-256 branch ahead
+  of its landing on `main` (plan: Task 4.A5)
 - [x] 4.A6 The page, the examples, the table; part A whole (plan: Task 4.A6)
 
 Part B:
