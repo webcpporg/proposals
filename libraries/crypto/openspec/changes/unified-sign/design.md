@@ -123,9 +123,18 @@ the recovery id).
   `webcpp::crypto`, returning `result<void>`. The public key's type says the curve: Ed25519's is
   its 32 bytes, BIP340's the 32-byte x-only key, and ECDSA's a validated key object on both
   curves (`p256::basic_public_key<B>`, `secp256k1::public_key` from `parse_public_key`), so that
-  `ecdsa_sha256` never infers its curve from a number of bytes. Ed25519's verification policy and
-  backend stay template parameters: `crypto::verify<curves::ed25519::strict, backends::sodium>
-  (eddsa, ...)`.
+  `ecdsa_sha256` never infers its curve from a number of bytes.
+- **The backend comes first.** `Backend` is the first template parameter of every `crypto::verify`
+  overload on every curve, so that `crypto::verify<B>(scheme, signature, input, key)` reads the same
+  everywhere: deduced from `p256::basic_public_key<Backend>` on P-256 (an explicit backend other
+  than the key's does not compile), defaulted to the family's default on Ed25519, and defaulted to
+  `backends::secp256k1` on secp256k1 (the only backend; another stops the build with secp256k1's
+  refusal). `recover` and `async_verify` take it first too.
+- **Ed25519's verification policy is a trailing argument**, strict by default:
+  `crypto::verify(crypto::eddsa, signature, message, public_key)` verifies under
+  `curves::ed25519::strict`, and `crypto::verify(crypto::eddsa, signature, message, public_key,
+  curves::ed25519::strict)` names it; the policy is a tag object (`strict_t`, `strict`) as the
+  schemes are, and an unknown policy stops the build with the existing message.
 - **Recovery**: `curves::secp256k1::recover(ecdsa_sha256_recoverable, signature, input)`, the same
   inputs as signing.
 - **Ed25519ph**: the incremental signer `ph` stays; its `verify(signature, public_key)` takes the
@@ -159,8 +168,8 @@ Schnorr side (a taproot sighash, a BIP340 tagged hash, passed as the message to 
 ### D5. The asynchronous family
 
 `async_sign(executor, key, scheme, input, token)` and `async_verify(executor, scheme, signature,
-input, public_key, token)`, for Ed25519 (`eddsa`, its key 32 bytes, its `Policy` and `Backend`
-template parameters kept) and P-256 (`ecdsa_sha256`, its key a `basic_public_key<Backend>`), with
+input, public_key, token)`, for Ed25519 (`eddsa`, its key 32 bytes, `Backend` its first template parameter, the policy an
+optional argument before the token) and P-256 (`ecdsa_sha256`, its key a `basic_public_key<Backend>`), with
 the synchronous call's inputs and its completion signatures. Each checks `can_sign` or
 `can_verify` in a `static_assert` before anything else, after the existing refusal of an
 algorithm WebCrypto lacks.
@@ -224,6 +233,10 @@ numbers are measured again in the final quiet pass the data-independent-timing c
   reads as it is meant; like every span, the marker refers to its digest and must not outlive it.
 - **R10: no browser backend exists yet** (part B); its refusal is the trait of D5, tested with a
   stand-in backend whose `asynchronous_backend_v` is true.
+- **R14 (owner, 2026-11-22): `Backend` is the first template parameter of every `crypto::verify`,
+  `recover` and `async_verify`, on every curve; Ed25519's policy is a trailing argument, strict by
+  default** (D4). secp256k1's free functions regain the `Backend` parameter they lost earlier in
+  this change.
 - **R11: Ed25519ph's `ph::verify` takes the signature first,** for the one order of D4; `ph` is
   not given a tag in this change.
 - **R12 (owner, 2026-11-22): ECDSA signs low S on both curves; verification keeps each curve's

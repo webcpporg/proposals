@@ -7,6 +7,10 @@
 - **WHEN** a P-256 key pair signs `std::array<std::uint8_t, 32>` with `sign(crypto::ecdsa_sha256, message)`
 - **THEN** the signature is that of the message's SHA-256, equal to `sign(crypto::ecdsa_sha256, crypto::prehashed{sha256_of_message})`, and `crypto::verify(crypto::ecdsa_sha256, signature, message, public_key)` accepts it
 
+#### Scenario: The backend named the same way on every curve
+- **WHEN** a program calls `crypto::verify<B>(scheme, signature, input, key)` with `B` the key's backend on P-256, `backends::sodium` on Ed25519 and `backends::secp256k1` on secp256k1
+- **THEN** each compiles and verifies, and on P-256 a `B` other than the key's backend does not compile
+
 #### Scenario: A call without a scheme
 - **WHEN** a program calls `key.sign(message)` on any key pair
 - **THEN** it does not compile
@@ -52,7 +56,7 @@ The library SHALL accept exactly these pairs, synchronously and asynchronously, 
 - **THEN** the result is r || n - s for that curve's n, `is_low_s` is false before and true after, and `to_der` then `from_der` gives the result back
 
 ### Requirement: Signatures: the asynchronous family takes the same forms
-`async_sign(executor, key, scheme, input, token)` and `async_verify(executor, scheme, signature, input, public_key, token)` SHALL take the inputs of the synchronous calls for Ed25519 (`eddsa`, `Policy` and `Backend` template parameters) and P-256 (`ecdsa_sha256`), complete with the synchronous result as before, and check `can_sign` or `can_verify` in a `static_assert`. secp256k1 MUST stay out of the asynchronous family. A backend that cannot sign a digest (WebCrypto's has no prehash mode) MUST refuse `prehashed` at compile time.
+`async_sign(executor, key, scheme, input, token)` and `async_verify(executor, scheme, signature, input, public_key, token)` SHALL take the inputs of the synchronous calls for Ed25519 (`eddsa`, `Backend` the first template parameter, the policy an optional argument before the token) and P-256 (`ecdsa_sha256`), complete with the synchronous result as before, and check `can_sign` or `can_verify` in a `static_assert`. secp256k1 MUST stay out of the asynchronous family. A backend that cannot sign a digest (WebCrypto's has no prehash mode) MUST refuse `prehashed` at compile time.
 
 #### Scenario: The same bytes, synchronously and asynchronously
 - **WHEN** a P-256 key pair signs a message with `sign(crypto::ecdsa_sha256, message)` and with `async_sign(executor, key, crypto::ecdsa_sha256, message, token)`
@@ -65,14 +69,14 @@ The library SHALL accept exactly these pairs, synchronously and asynchronously, 
 ## MODIFIED Requirements
 
 ### Requirement: Ed25519: key pairs, signatures and strict verification
-`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its 32-byte public key, sign a message into 64 bytes with `sign(crypto::eddsa, message)`, and give its X25519 secret key as `secret<32>`; `crypto::verify<Policy, Backend>(crypto::eddsa, signature, message, public_key)` MUST return nothing on success and `invalid_signature` otherwise, `invalid_public_key` for a key of another size. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
+`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its 32-byte public key, sign a message into 64 bytes with `sign(crypto::eddsa, message)`, and give its X25519 secret key as `secret<32>`; `crypto::verify<Backend>(crypto::eddsa, signature, message, public_key[, policy])`, the policy a trailing tag object, `curves::ed25519::strict` by default, MUST return nothing on success and `invalid_signature` otherwise, `invalid_public_key` for a key of another size. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
 
 #### Scenario: RFC 8032's test 1
 - **WHEN** the key pair is made from RFC 8032 section 7.1's first secret key and signs the empty message with `sign(crypto::eddsa, message)`
 - **THEN** the public key and the signature are the RFC's, and `crypto::verify(crypto::eddsa, signature, message, public_key)` accepts them
 
 #### Scenario: A small-order public key
-- **WHEN** `crypto::verify<curves::ed25519::strict, backends::sodium>(crypto::eddsa, ...)` is given a small-order public key (ed25519-speccheck's case 0)
+- **WHEN** `crypto::verify<backends::sodium>(crypto::eddsa, signature, message, public_key, curves::ed25519::strict)` is given a small-order public key (ed25519-speccheck's case 0)
 - **THEN** it returns `invalid_signature`
 
 ### Requirement: Ed25519ph: an incremental signer
