@@ -81,9 +81,11 @@ for a scheme.
 
 - A message is anything that converts to `std::span<std::uint8_t const>`: a span, a
   `std::array`, a `std::vector`, of any size, empty included.
-- `prehashed<N>` is an aggregate `{ std::span<std::uint8_t const, N> digest; }`, N never
-  `std::dynamic_extent`, deduced from a `std::array<std::uint8_t, N>`, a
-  `std::span<std::uint8_t (const), N>` or a `boost::hash2::digest<N>`. No conversion turns a
+- `prehashed<N>` holds `std::span<std::uint8_t const, N> digest`, N never
+  `std::dynamic_extent`, made by two explicit constructors (of a fixed-size span and of a
+  `boost::hash2::digest<N>`; as built, see below) and deduced from a
+  `std::array<std::uint8_t, N>`, a `std::span<std::uint8_t (const), N>` or a
+  `boost::hash2::digest<N>`. No conversion turns a
   span or an array into a marker, or a marker into a span; a dynamic span is refused at the
   marker, with the fixed-size span to make instead.
 
@@ -91,10 +93,11 @@ for a scheme.
 
 | Scheme | Key pair and public key | Message | `prehashed{digest}` |
 |---|---|---|---|
-| `eddsa` | Ed25519: `curves::ed25519::basic_keypair<B>`, 32 bytes | signed as given (PureEdDSA) | refused |
+| `eddsa` | Ed25519: `curves::ed25519::basic_keypair<B>`, `curves::ed25519::public_key` | signed as given (PureEdDSA) | refused |
 | `ecdsa_sha256` | P-256: `basic_keypair<B>`, `basic_public_key<B>` | SHA-256 inside | 32 bytes |
 | `ecdsa_sha256` | secp256k1: `basic_keypair<B>`, `public_key` | SHA-256 inside | 32 bytes |
 | `ecdsa_sha256_recoverable` | secp256k1: `basic_keypair<B>` (`recover` gives the key) | SHA-256 inside | 32 bytes |
+| `schnorr` | secp256k1: `basic_keypair<B>`, `public_key` or the 32-byte x-only key | signed as given (BIP340) | refused |
 
 ECDSA's signing gives low S on both curves (s at most (n - 1) / 2): libsecp256k1 signs low S,
 and P-256's RFC 6979 signature is normalized after signing, without a branch: n - s is always
@@ -103,13 +106,13 @@ traces the secret through the signature. Verification differs on purpose:
 secp256k1 refuses a high S (libsecp256k1's rule, Bitcoin's policy), P-256 accepts both (FIPS
 186-5 and WebCrypto, whose own signatures may be high). A protocol that requires low S from a
 P-256 peer checks `is_low_s` before `verify`.
-| `schnorr` | secp256k1: `basic_keypair<B>`, 32-byte x-only key | signed as given (BIP340) | refused |
 
 Every other pair stops the build: a scheme the key's curve does not have, `eddsa` or `schnorr`
 with a marker, a marker whose N is not 32, a marker on a backend that cannot sign a digest. The
 message form of ECDSA hashes with webcpp::hash's `sha2_256` inside the public function's timing
 guard. The signature is 64 bytes for every scheme, 65 for `ecdsa_sha256_recoverable` (r, s,
-the recovery id).
+the recovery id). Every `verify` and `recover` takes it as `std::span<std::uint8_t const>` and
+checks its size first (as built, below).
 
 ### D4. The synchronous calls
 
@@ -121,7 +124,7 @@ the recovery id).
   from `random_device`, as BIP340 recommends, and returns `entropy_unavailable` when it cannot.
 - **Free**: `crypto::verify(scheme, signature, input, public_key)`, in namespace
   `webcpp::crypto`, returning `result<void>`. The public key's type says the curve: Ed25519's is
-  its 32 bytes, BIP340's the 32-byte x-only key, and ECDSA's a validated key object on both
+  `curves::ed25519::public_key` (R17), BIP340's the typed key or the 32-byte x-only key, and ECDSA's a validated key object on both
   curves (`p256::basic_public_key<B>`, `secp256k1::public_key` from its `make`), so that
   `ecdsa_sha256` never infers its curve from a number of bytes.
 - **The backend comes first.** `Backend` is the first template parameter of every `crypto::verify`
@@ -168,7 +171,7 @@ Schnorr side (a taproot sighash, a BIP340 tagged hash, passed as the message to 
 ### D5. The asynchronous family
 
 `async_sign(executor, key, scheme, input, token)` and `async_verify(executor, scheme, signature,
-input, public_key, token)`, for Ed25519 (`eddsa`, its key 32 bytes, `Backend` its first template parameter, the policy an
+input, public_key, token)`, for Ed25519 (`eddsa`, its key a `curves::ed25519::public_key`, `Backend` its first template parameter, the policy an
 optional argument before the token) and P-256 (`ecdsa_sha256`, its key a `basic_public_key<Backend>`), with
 the synchronous call's inputs and its completion signatures. Each checks `can_sign` or
 `can_verify` in a `static_assert` before anything else, after the existing refusal of an
@@ -312,10 +315,30 @@ compiler's "deduced return type used before it is defined". On a backend that co
 - **R22: `secp256k1::public_key::verify` takes both its schemes**, `ecdsa_sha256` and `schnorr`
   (the typed key gives its x-only form); BIP340's x-only bytes keep the free form only.
 - **R23: each free synchronous form lives in the header of what it gates**: `crypto::sign` beside
-  `crypto::verify` in `signing.hpp`, `crypto::make`, `crypto::generate` and `crypto::agree` in
-  `keypair.hpp` (`make` also serves AES-GCM's `make`), `crypto::seal` and `crypto::open` in the
+  `crypto::verify` in `signing.hpp`, `crypto::agree` in `keypair.hpp`, `crypto::make` and
+  `crypto::generate` in `make.hpp`, which `keypair.hpp` and the AEAD headers include (`make`
+  also serves the AEADs' `make`), `crypto::seal` and `crypto::open` in the
   AEAD header; each is generic over the member, constrained by the member's existence and the same
   concepts.
+
+## As built
+
+- **D2, the marker:** `prehashed<N>` is not an aggregate. It has two explicit constructors, of a
+  `std::span<std::uint8_t const, N>` and of a `boost::hash2::digest<N>`, beside the deduction
+  guides (Task 1's ruling): an explicit constructor keeps a braced list of bytes or a span from
+  converting into a marker anywhere a marker is expected, which the aggregate allowed.
+- **D3/D4, Ed25519's key:** `crypto::verify(eddsa, ...)` takes `curves::ed25519::public_key`
+  only (R17); 32 bytes reach it through `public_key::make`, which refuses another size.
+- **D4/D9, the signature's type (final review, controller's ruling):** every `verify`, member
+  and free, synchronous and asynchronous, on every curve, and secp256k1's `recover` take the
+  signature as `std::span<std::uint8_t const>`. Its size is checked first, before the key and the
+  backend, and another size is `invalid_signature` (64 bytes, 65 for the recoverable form), so
+  the four forms take the same arguments and a signature received as a `std::vector` goes to every
+  form unchanged; the check before the key keeps the fail-closed refusal of R14's old argument
+  order.
+- **R23, the headers:** `crypto::make` and `crypto::generate` are in `<webcpp/crypto/make.hpp>`,
+  which `keypair.hpp`, `ciphers/aead.hpp` and `ciphers/gcm.hpp` include; `crypto::agree` is in
+  `keypair.hpp`.
 
 ## Risks / Trade-offs
 

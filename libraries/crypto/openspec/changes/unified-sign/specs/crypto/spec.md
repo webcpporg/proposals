@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Signatures: one name per operation, the scheme always named
-`<webcpp/crypto/signing.hpp>` SHALL declare, in namespace `webcpp::crypto`, the scheme tags `eddsa` (Ed25519, RFC 8032's pure form), `ecdsa_sha256` (ECDSA with SHA-256 on P-256 and secp256k1), `ecdsa_sha256_recoverable` (secp256k1, the signature with its recovery id) and `schnorr` (BIP340, secp256k1), constexpr objects of empty types whose default constructors are explicit; the marker `prehashed<N>`, an aggregate holding `std::span<std::uint8_t const, N> digest`, deduced from a `std::array<std::uint8_t, N>`, a fixed-size span or a `boost::hash2::digest<N>`, and refused for `std::dynamic_extent`; and the concepts `can_sign<Keypair, Scheme, Input>` and `can_verify<Scheme, Input, PublicKey>`. Every key pair SHALL sign with `key.sign(scheme, input)`, returning `boost::system::result<std::array<std::uint8_t, N>>`, and every signature SHALL be verified with the free `crypto::verify(scheme, signature, input, public_key)`, returning `boost::system::result<void>`, the input being a message (anything that converts to `std::span<std::uint8_t const>`) or a `prehashed` digest. No function MUST choose between a message and a digest by a span's extent or size, and no form without a scheme MUST exist.
+`<webcpp/crypto/signing.hpp>` SHALL declare, in namespace `webcpp::crypto`, the scheme tags `eddsa` (Ed25519, RFC 8032's pure form), `ecdsa_sha256` (ECDSA with SHA-256 on P-256 and secp256k1), `ecdsa_sha256_recoverable` (secp256k1, the signature with its recovery id) and `schnorr` (BIP340, secp256k1), constexpr objects of empty types whose default constructors are explicit; the marker `prehashed<N>`, holding `std::span<std::uint8_t const, N> digest` and made by explicit constructors only, deduced from a `std::array<std::uint8_t, N>`, a fixed-size span or a `boost::hash2::digest<N>`, and refused for `std::dynamic_extent`; and the concepts `can_sign<Keypair, Scheme, Input>` and `can_verify<Scheme, Input, PublicKey>`. Every key pair SHALL sign with `key.sign(scheme, input)`, returning `boost::system::result<std::array<std::uint8_t, N>>`, and every signature SHALL be verified with the free `crypto::verify(scheme, signature, input, public_key)`, returning `boost::system::result<void>`, the input being a message (anything that converts to `std::span<std::uint8_t const>`) or a `prehashed` digest. Every `verify`, member and free, synchronous and asynchronous, and `curves::secp256k1::recover` SHALL take the signature as `std::span<std::uint8_t const>`, check its size before the key and the backend, and return `invalid_signature` for another size. No function MUST choose between a message and a digest by a span's extent or size, and no form without a scheme MUST exist.
 
 #### Scenario: A 32-byte message is a message
 - **WHEN** a P-256 key pair signs `std::array<std::uint8_t, 32>` with `sign(crypto::ecdsa_sha256, message)`
@@ -10,6 +10,10 @@
 #### Scenario: The backend named the same way on every curve
 - **WHEN** a program calls `crypto::verify<B>(scheme, signature, input, key)` with `B` the key's backend on P-256, `backends::sodium` on Ed25519 and `backends::secp256k1` on secp256k1
 - **THEN** each compiles and verifies, and on P-256 a `B` other than the key's backend does not compile
+
+#### Scenario: A signature received as bytes
+- **WHEN** a signature arrives as a `std::vector<std::uint8_t>` and is given to `key.verify`, `crypto::verify`, `key.async_verify` and `crypto::async_verify`, and the same with 63 or 65 bytes
+- **THEN** every form compiles, the asynchronous ones on Ed25519 and P-256; the 64 bytes verify and the others give `invalid_signature`, on every curve
 
 #### Scenario: A call without a scheme
 - **WHEN** a program calls `key.sign(message)` on any key pair
@@ -20,7 +24,7 @@ The library SHALL accept exactly these pairs, synchronously and asynchronously, 
 
 | Scheme | Curve and public key | Message | `prehashed{digest}` | Signature |
 |---|---|---|---|---|
-| `eddsa` | Ed25519, its 32 bytes | signed as given | refused | 64 bytes |
+| `eddsa` | Ed25519, `curves::ed25519::public_key` | signed as given | refused | 64 bytes |
 | `ecdsa_sha256` | P-256, `basic_public_key<B>` | SHA-256 inside | N = 32 | 64 bytes, r then s; signs low S, verifies high and low S |
 | `ecdsa_sha256` | secp256k1, `public_key` | SHA-256 inside | N = 32 | 64 bytes, r then s; signs low S, refuses high S |
 | `ecdsa_sha256_recoverable` | secp256k1, the key `recover` gives | SHA-256 inside | N = 32 | 65 bytes, r, s (low), the id |
@@ -80,7 +84,7 @@ The library SHALL accept exactly these pairs, synchronously and asynchronously, 
 ## MODIFIED Requirements
 
 ### Requirement: Ed25519: key pairs, signatures and strict verification
-`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its public key as a `curves::ed25519::public_key` (`make` from 32 bytes, `bytes()` back), give its seed back with `secret()`, sign a message into 64 bytes with `sign(crypto::eddsa, message)`, and give its X25519 secret key as `secret<32>`; `crypto::verify<Backend>(crypto::eddsa, signature, message, public_key[, policy])`, `public_key` a `curves::ed25519::public_key`,, the policy a trailing tag object, `curves::ed25519::strict` by default, MUST return nothing on success and `invalid_signature` otherwise; a key of another size is refused earlier, by `curves::ed25519::public_key::make` with `invalid_public_key`. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
+`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its public key as a `curves::ed25519::public_key` (`make` from 32 bytes, `bytes()` back), give its seed back with `secret()`, sign a message into 64 bytes with `sign(crypto::eddsa, message)`, and give its X25519 secret key as `secret<32>`; `crypto::verify<Backend>(crypto::eddsa, signature, message, public_key[, policy])`, `public_key` a `curves::ed25519::public_key`, the policy a trailing tag object, `curves::ed25519::strict` by default, MUST return nothing on success and `invalid_signature` otherwise; a key of another size is refused earlier, by `curves::ed25519::public_key::make` with `invalid_public_key`. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
 
 #### Scenario: RFC 8032's test 1
 - **WHEN** the key pair is made from RFC 8032 section 7.1's first secret key and signs the empty message with `sign(crypto::eddsa, message)`
