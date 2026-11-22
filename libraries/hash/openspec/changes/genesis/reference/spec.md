@@ -141,18 +141,22 @@ grouped by them and, inside each, into streams by backend (plan, "The order of t
 | 3 | XKCP's Keccak family: Keccak-224/384/512, SHA-3 and SHAKE as XKCP computes them, cSHAKE, KMAC (and its XOF), TupleHash, ParallelHash (SP 800-185), KangarooTwelve (KT128, KT256), TurboSHAKE128/256 | xkcp | the Keccak team's reference for everything above Keccak-p; one library already linked |
 | 4 | OpenSSL's whole hashing and KDF surface: every EVP digest of the default provider (SHA-1/2/3, SHAKE, KECCAK-224 to -512, SM3, BLAKE2b-512, BLAKE2s-256, RIPEMD-160, MD5), KMAC, BLAKE2 MACs, scrypt, Argon2d/i/id with every RFC 9106 parameter (lanes, secret, associated data), KBKDF (SP 800-108), SSKDF (SP 800-56C), X9.63 KDF | openssl | full Argon2 on servers; KDFs of standards (ECIES, TLS-adjacent formats); native, wasip2, wasip3 |
 | 5 | BearSSL's hashes and HMAC: MD5, SHA-1, SHA-224/256/384/512, MD5-SHA1, SHAKE | bearssl | the smallest WebAssembly programs, where measured so |
-| 6 | Botan 3's: PBKDF2, Argon2d/i/id with any parameters, bcrypt and bcrypt-pbkdf, scrypt, HKDF, BLAKE2b variable, Keccak, SHAKE, cSHAKE, KMAC, Skein-512, SM3, Streebog, Whirlpool | botan | the long tail; waits for webcpp::crypto's Botan provisioning (its increment 5: native, exceptions only) |
+| 6 | Botan 3's: MD5, SHA-1, SHA-2 but SHA-512/224, SHA-3, SHAKE, Keccak, BLAKE2b (no salt, no personalisation), BLAKE2s-256, RIPEMD-160, SM3, Streebog, Whirlpool, Skein-512, HMAC, KMAC (a key of at most 192 bytes, no KMACXOF), SipHash-2-4, keyed BLAKE2b; HKDF, PBKDF2, scrypt, Argon2d/i/id with lanes, secret and associated data, bcrypt and bcrypt-pbkdf, KBKDF, SSKDF, X9.63 KDF | botan | the long tail; Botan provisioned by this increment (plan Task 40b): native and Emscripten, exceptions only |
 | 7 | the browser backend over WebCrypto (SHA-1/256/384/512, HMAC, HKDF, PBKDF2), reached through the parallel asynchronous family (`async_digest`, `async_hmac`, `async_hkdf`, `async_pbkdf2`) | webcrypto | the owner's answer to O1 (section 11): the smallest Emscripten programs and JavaScript's own behaviour |
 
-**As built (2026-11-18).** Increments 2, 3, 4, 5 and 7 are built, each reviewed, on the
-integration branches of the library and the superproject (`../tasks.md` groups 2 to 5 and 7).
+**As built (2026-11-21).** Increments 2 to 7 are built, each reviewed, on the integration
+branches of the library and the superproject (`../tasks.md` groups 2 to 7).
 Increment 2 also brought the families over increment 1's backends: Boost.Hash2's algorithms on
 `backends::hash2` (SHAKE128 and SHAKE256 whole, design D37; BLAKE2b with its 64-byte output and no
 option, keyed BLAKE2s with its 32-byte tag; SipHash-2-4), `digests::keccak_256` on `backends::xkcp`
 and `digests::blake3` on `backends::blake3`. Increment 4 also brought OpenSSL's SipHash-2-4 and
 -2-4x, keyed BLAKE2b and BLAKE2s, MD5-SHA1, HMAC over Keccak-224 to -512 and SM3, and Argon2id and
-scrypt for the functions `argon2id` and `scrypt`. Increment 6 is not built: Botan is not
-provisioned (design D42).
+scrypt for the functions `argon2id` and `scrypt`. Increment 6 provisioned Botan itself, as
+webcpp::crypto's specification says (`/third_party//botan`, plan Task 40b; design D43), read
+its column at 3.14.1 (design D44), and built `backends::botan` with exceptions alone, natively
+and on Emscripten (design D45): the families over its digests and MACs, `argon2id`, `argon2`,
+`scrypt`, HKDF, PBKDF2, the key derivations of standards, and `bcrypt.hpp`'s `bcrypt`,
+`bcrypt_verify` and `bcrypt_pbkdf` with their heavy forms (11.5).
 
 ## 2. Interface
 
@@ -875,6 +879,7 @@ OpenSSL a password, salt or output of more than `INT_MAX` bytes). On libsodium t
 | `<webcpp/hash/backends/sodium.hpp>` | `backends::sodium`: HKDF engines for `hmac_sha2_256` and `hmac_sha2_512`, the Argon2id and scrypt engines, the presets' checks; BLAKE2b with its options, SipHash-2-4 and -2-4x, `blake2b_subkey`, SHA-256, SHA-512, SHA3-256, SHA3-512, SHAKE, TurboSHAKE, HMAC-SHA-256 and -512, Argon2i and Argon2id of the family `argon2` (increment 2) | `/third_party//sodium` |
 | `<webcpp/hash/backends/bearssl.hpp>` | `backends::bearssl`: the `hkdf` engine for six hmacs; MD5, SHA-1, SHA-224 to SHA-512, MD5-SHA1, SHAKE and HMAC over the six (increment 5) | `/third_party//bearssl` |
 | `<webcpp/hash/backends/openssl.hpp>` | `backends::openssl`: HKDF and PBKDF2 engines; every digest of the default provider that has a tag, HMAC over them, KMAC, SipHash-2-4 and -2-4x, keyed BLAKE2b and BLAKE2s, scrypt, Argon2id and the family `argon2`, `kbkdf`, `sskdf` and `x963kdf` (increment 4) | `/webcpp/hash//openssl` |
+| `<webcpp/hash/backends/botan.hpp>` | `backends::botan`: the families over Botan's `HashFunction`, `XOF` and `MessageAuthenticationCode` (3.5's Botan column), HKDF and PBKDF2 engines, `argon2id`, the family `argon2`, `scrypt`, `kbkdf`, `sskdf`, `x963kdf`, `bcrypt` and `bcrypt_pbkdf` (increment 6); nothing under `WEBCPP_HASH_NO_EXCEPTIONS` | `/third_party//botan`, with exceptions |
 | `<webcpp/hash/backends/webcrypto.hpp>` | `backends::webcrypto`'s operations and `detail::backend_limits<backends::webcrypto>` (section 11; on Emscripten; elsewhere the limits alone) | webcpp::asio |
 
 A backend's header that needs a library checks its `WEBCPP_HASH_HAS_<NAME>` first and stops with
@@ -892,6 +897,8 @@ template <class Backend, class Variant> struct argon2_engine; // limits, derive
 template <class Backend, class Hmac> struct kbkdf_engine;     // limits, derive
 template <class Backend, class Digest> struct sskdf_engine;   // limits, derive
 template <class Backend, class Digest> struct x963kdf_engine; // limits, derive
+template <class Backend> struct bcrypt_engine;                // generate, verify, max_cost
+template <class Backend> struct bcrypt_pbkdf_engine;          // derive
 ```
 
 whose primary templates hold the `static_assert` that refuses a backend without the function
@@ -920,8 +927,9 @@ the output, and a `hasher` is spent.
 `kdf_standards.hpp` and `backends/hash2.hpp`, which need no C library (a function of `argon2.hpp`,
 `blake2b_subkey.hpp` or `kdf_standards.hpp` called without its library refuses at compile time with
 the Jamfile line to add), and `keccak.hpp` with `backends/xkcp.hpp`, `blake3.hpp` with
-`backends/blake3.hpp`, the other backends' headers, and `scrypt.hpp` (when libsodium or OpenSSL is
-linked) only when their `WEBCPP_HASH_HAS_<NAME>` is defined. It leaves out `async.hpp` and
+`backends/blake3.hpp`, the other backends' headers, `scrypt.hpp` (when libsodium, OpenSSL or
+Botan is linked) and `bcrypt.hpp` only when their `WEBCPP_HASH_HAS_<NAME>` is defined (Botan's
+header declares nothing under `WEBCPP_HASH_NO_EXCEPTIONS`). It leaves out `async.hpp` and
 `backends/webcrypto.hpp`, which bring webcpp::asio (section 11). It names in its comment what it
 leaves out and why (CODING-GUIDELINES.md chapter 3). A program that links no C library includes
 it and compiles.
@@ -934,8 +942,11 @@ and over a trivially copyable object), `detail/limits.hpp` (`exceeds`, `sp800_18
 `needs_library` and each tag's refusal of 3.3), `detail/xkcp.hpp` (the adapter's declarations),
 the families' `detail::digest_traits` and `detail::mac_traits` (each tag's guards, in one place),
 `detail::digest_tag_of<Hmac>` (the tag of `digests` of a Boost.Hash2 hmac) and the guards of each
-function (2.8). Until 2026-11-16 it also held the generated `detail/ranking.hpp` and
-`detail/overrides.hpp`, retired by design D33.
+function (2.8); in `backends/botan.hpp`, `detail::botan_boundary` (the one `try` of each call),
+`detail::botan_owned` (a Botan object owned, cleared and freed) and `detail::botan_salt` (the
+`RandomNumberGenerator` that gives Botan's bcrypt the caller's 16 bytes once, design D43). Until
+2026-11-16 it also held the generated `detail/ranking.hpp` and `detail/overrides.hpp`, retired by
+design D33.
 
 ### 2.15 The families of increments 2 to 7
 
@@ -945,8 +956,8 @@ four families, each a template over the algorithm's tag and the backend, with th
 in one place and the same engines-per-backend design (2.12), and, beside them, the key
 derivations of one backend each (`blake2b_subkey`, `kbkdf`, `sskdf`, `x963kdf`). The headers are
 `digest.hpp` (`digest_options`, `digest_of`, `hasher`), `mac.hpp` (`mac_options`, `mac`),
-`argon2.hpp` (`argon2_parameters`, `argon2`, beside `argon2id`), `blake2b_subkey.hpp` and
-`kdf_standards.hpp`; the tags are declared in `config.hpp`.
+`argon2.hpp` (`argon2_parameters`, `argon2`, beside `argon2id`), `blake2b_subkey.hpp`,
+`kdf_standards.hpp` and `bcrypt.hpp` (increment 6); the tags are declared in `config.hpp`.
 
 ```cpp
 namespace webcpp::hash {
@@ -1069,6 +1080,28 @@ template <class Digest, class Backend = default_backend<kdfs::x963kdf>>
                                                   std::span<std::uint8_t const> secret,
                                                   std::span<std::uint8_t const> shared_info = {});
 
+/** bcrypt.hpp (increment 6): OpenBSD's bcrypt and bcrypt_pbkdf, on backends::botan alone. */
+inline constexpr std::size_t bcrypt_salt_size = 16;
+inline constexpr std::size_t bcrypt_hash_size = 60;          // "$2b$", the cost, salt and hash
+inline constexpr std::size_t bcrypt_max_password_size = 72;
+struct bcrypt_parameters {
+    std::uint32_t cost = 12;                             // 4 to 31 (backends::botan: at most 18)
+    char version = 'b';                                  // 'a', 'b' or 'y'
+};
+template <class Backend = default_backend<kdfs::bcrypt>>
+[[nodiscard]] boost::system::result<void> bcrypt(std::span<char> output,
+                                                 std::span<std::uint8_t const> password,
+                                                 std::span<std::uint8_t const> salt,
+                                                 bcrypt_parameters const& parameters = {});
+template <class Backend = default_backend<kdfs::bcrypt>>
+[[nodiscard]] boost::system::result<bool> bcrypt_verify(std::span<std::uint8_t const> password,
+                                                        std::string_view hash);
+template <class Backend = default_backend<kdfs::bcrypt_pbkdf>>
+[[nodiscard]] boost::system::result<void> bcrypt_pbkdf(std::span<std::uint8_t> output,
+                                                       std::span<std::uint8_t const> password,
+                                                       std::span<std::uint8_t const> salt,
+                                                       std::uint32_t rounds);
+
 }  // namespace webcpp::hash
 ```
 
@@ -1076,7 +1109,7 @@ The one-shot hash is `digest_of`, not `digest`: `digest<N>` is Boost.Hash2's res
 2.4 re-exports by alias (ruling R10). Increment 2 adds to `config.hpp` the tags `backends::xkcp`
 and `backends::blake3` (the libraries behind `keccak_256` and `blake3`, now backends of the
 families) and every tag whose default 4.1 names; increment 7 adds `backends::webcrypto` (design
-D39). `backends::botan` is increment 6's, not built (design D42).
+D39). Increment 6 adds `backends::botan` (design D43).
 
 **The guards, in one place.** `detail::digest_traits<Digest>` and `detail::mac_traits<Mac>` hold
 each tag's guards; `digest_of` runs, in order: the output's size for the options
@@ -1140,7 +1173,8 @@ lanes and at least 8 KiB of memory per lane (`invalid_parameters`); then the eng
 `argon2_limits` (`unsupported_by_backend`): libsodium takes one lane, no secret and no associated
 data, a salt of 16 bytes, a tag of 16 bytes or more, and for Argon2i 3 passes or more (ruling
 R24); OpenSSL takes every value, but m of at most 4,194,303 KiB on wasm32, where it sizes the
-memory in a `size_t`. `argon2_parameters::memory_kib` counts KiB, RFC 9106's m;
+memory in a `size_t`; Botan (increment 6) takes at most 128 lanes and m of at most 8 GiB (2 GiB
+on wasm32). `argon2_parameters::memory_kib` counts KiB, RFC 9106's m;
 `argon2id_parameters::memory` (2.10) counts bytes (ruling R16).
 
 **`blake2b_subkey`** (ruling R22) is libsodium's `crypto_kdf_blake2b_derive_from_key`: BLAKE2b of
@@ -1150,22 +1184,44 @@ personalisation. Guards: a subkey of 16 to 64 bytes (`invalid_output_size`), a m
 bytes (`invalid_key_size`), a context of 8 bytes (`invalid_parameters`); the output must not
 overlap the inputs. Its one backend, and default, is `backends::sodium`.
 
-**`kbkdf`, `sskdf`, `x963kdf`** (`kdf_standards.hpp`; increment 4) have `backends::openssl` alone
-and no default (design D34): a call names it. `kbkdf` is SP 800-108r1's counter mode over a
-Boost.Hash2 hmac, which takes every hmac its backend has (MD5's, RIPEMD-160's and BLAKE2's
-included, for the protocols outside NIST's approval that use them); its guards: a counter width
-other than 8, 16, 24 or 32 bits (`invalid_parameters`), an output empty, longer than 2^r - 1
-digests, or, with L, than 536,870,911 bytes (`invalid_output_size`), an empty key
-(`invalid_key_size`), then the engine's limits (`unsupported_by_backend`). `sskdf` is SP 800-56C
+**`kbkdf`, `sskdf`, `x963kdf`** (`kdf_standards.hpp`; increment 4) have `backends::openssl` and,
+from increment 6, `backends::botan`, and no default (design D34): a call names one. `kbkdf` is SP
+800-108r1's counter mode over a Boost.Hash2 hmac, which takes every hmac its backend has (MD5's,
+RIPEMD-160's and BLAKE2's included, for the protocols outside NIST's approval that use them); its
+guards: a counter width other than 8, 16, 24 or 32 bits (`invalid_parameters`), an output empty,
+longer than 2^r - 1 digests, or, with L, than 536,870,911 bytes (`invalid_output_size`), an empty
+key (`invalid_key_size`), then the engine's limits (`unsupported_by_backend`). `sskdf` is SP 800-56C
 revision 2's one-step KDF over a digest, each block `Digest(counter || secret || fixed_info)`, and
 takes SP 800-56C's approved hashes, SHA-1, the six SHA-2 and the four SHA-3; `x963kdf` is ANSI
 X9.63's (SEC 1 v2 section 3.6.1), each block `Digest(secret || counter || shared_info)`, and takes
 the hash functions SEC 1 v2 section 3.5 lists and NIST SP 800-135r1 section 5.1 approves for it,
 SHA-1, SHA-224, SHA-256, SHA-384 and SHA-512; another digest refuses at compile time with 3.3's
 text. Their guards: an output empty or of 2^32 - 1 digests or more (`sskdf`: more than 2^32 - 1;
-`invalid_output_size`), an empty secret (`invalid_key_size`), a counter, secret and info longer
-than the digest hashes (`input_too_long`), then the engine's limits (`unsupported_by_backend`;
-OpenSSL's `SSKDF_MAX_INLEN`, 2^30 bytes).
+`invalid_output_size`), an empty secret (`invalid_key_size`), a counter, secret and info longer than
+the digest hashes (`input_too_long`), then the engine's limits (`unsupported_by_backend`; OpenSSL's
+`SSKDF_MAX_INLEN`, 2^30 bytes). On `backends::botan` (Botan's `SP800-108-Counter`, `SP800-56A` and
+`KDF2`): `kbkdf` over every hmac of `hmac.hpp` but `hmac_ripemd_128` and `hmac_sha2_512_224`, with
+the separator and a 32-bit L alone (`kbkdf_options` that leave either out are
+`unsupported_by_backend`, through the engine's `accepts`); `sskdf` over every digest of SP 800-56C
+but SHA-512/224, which refuses at compile time with 3.3's text; `x963kdf` of at most 2^32 - 2
+digests (`unsupported_by_backend` for the last, Botan's KDF2 stopping one short).
+
+**`bcrypt`, `bcrypt_verify`, `bcrypt_pbkdf`** (`bcrypt.hpp`; increment 6) have `backends::botan`
+alone and no default (design D34): a call names it. `bcrypt` writes the 60 characters of bcrypt's
+modular crypt string of `password` under the caller's 16-byte salt (hash draws no random byte:
+Botan's `generate_bcrypt` takes `detail::botan_salt`, which gives those bytes once; design D43);
+its guards in order: the output of 60 characters (`invalid_output_size`), the salt of 16 bytes
+(`invalid_salt_size`), the password of at most 72 bytes (`input_too_long`) and without a zero
+byte (`invalid_parameters`), since bcrypt reads no more and OpenBSD's C stops at a zero where
+Botan does not, so that no string differs from OpenBSD's (ruling of Task 43); the cost of 4 to 31
+and the version `a`, `b` or `y` (`invalid_parameters`); then the engine's `max_cost`, Botan's 18
+(`unsupported_by_backend`). `bcrypt_verify` applies the password's guards, then the string's form
+(60 characters, `$2`, a version, a two-digit cost, bcrypt's base 64; `invalid_parameters`), then
+Botan's cost, and answers whether the password gives the string (Botan's `check_bcrypt`, a
+comparison in constant time). `bcrypt_pbkdf` is OpenBSD's, as OpenSSH's keys use it (Botan's
+"Bcrypt-PBKDF"): an output of 1 to 1,024 bytes (`invalid_output_size`), a salt of 1 to 1,048,576
+bytes (`invalid_salt_size`), a password of 1 byte or more (`invalid_key_size`) and 1 round or
+more (`invalid_iterations`).
 
 `hasher` and `digest_of` are not Hash2's form: a result is final, and a second `finish`, or an
 `update` after it, returns `error::invalid_state`, the value 9, which increment 2 adds with the
@@ -1175,8 +1231,7 @@ algorithm, which the agreement tests compare on the first result. Each tag's per
 are specified by the increment's task in the plan, from the backend's own documentation at its pin;
 the capability table of 3.5 says which backend has each. The tags of increment 6's functions
 (`digests::streebog_256`, `streebog_512`, `whirlpool`, `skein_512`, `kdfs::bcrypt`,
-`bcrypt_pbkdf`) are declared with no backend: a call refuses with "... is in no backend yet."
-(3.3).
+`bcrypt_pbkdf`) are served by `backends::botan`, which has them (3.5's Botan column, design D44).
 
 ## 3. Backends
 
@@ -1191,7 +1246,7 @@ the capability table of 3.5 says which backend has each. The tags of increment 6
 | (none: `keccak_256`) | XKCP, `lib/low/KeccakP-1600/plain-64bits` | master at `d20c8fcaecc543f816a0721d0dfc13b4cf27c14d` (2026-11-10) | CC0 (`brg_endian.h`: Brian Gladman's BSD-style terms) | all | Keccak-p[1600] |
 | (none: `blake3`) | BLAKE3's C implementation, `c/` | 1.8.7 at `f3149ec5bb5449af877ba20377a11008ff499fa2` | CC0-1.0, Apache-2.0, or Apache-2.0 with LLVM exception | all | BLAKE3 |
 | `backends::xkcp` (`keccak_256` in increment 2, the rest in increment 3) | XKCP, more of it: `lib/high/Keccak/KeccakSponge.c`, `lib/high/Keccak/FIPS202/KeccakHash.c`, `lib/high/Keccak/SP800-185/SP800-185.c`, `lib/high/TurboSHAKE/TurboSHAKE.c`, `lib/high/KangarooTwelve/KangarooTwelve.c` (5.2) | as above | as above | all | 3.5's XKCP column |
-| `backends::botan` (increment 6, not built: design D42) | Botan 3, as webcpp::crypto's increment 5 provisions it | 3.13.0 measured by crypto; 3.14.1 the latest tag on 2026-11-14 (`01af88c`) | BSD-2-Clause | native, with exceptions only (crypto's D19) | 3.5's Botan column |
+| `backends::botan` (increment 6, design D43) | Botan 3, provisioned by this stream (plan Task 40b) | Botan 3.14.1, tag `3.14.1`, commit `01af88c039fcfaedc418b1af4d6d3a139674e591`, provisioned by `/third_party//botan` (plan Task 40b) | BSD-2-Clause | native, Emscripten (wasip2 and wasip3 as webcpp::crypto's increment 7 finds), with exceptions only | 3.5's Botan column |
 | `backends::webcrypto` (increment 7, section 11) | the browser's or node's WebCrypto | the engine's | - | Emscripten | SHA-1/256/384/512, HMAC, HKDF, PBKDF2 over them, through the asynchronous family alone |
 
 ### 3.2 What each backend has
@@ -1224,36 +1279,48 @@ The primary templates' `static_assert`s, and the specialisations for a backend t
 function or an hmac, state exactly one of these texts (each checked by a test of its own in a
 directory of its own, spec 7.6):
 
+Each list of backends follows the order hash2, xkcp, blake3, sodium, bearssl, openssl, botan
+(increment 6 added Botan last to every list that has it, plan Tasks 42 and 43):
+
 - `pbkdf2` on `backends::sodium`: "webcpp::hash: pbkdf2 is not in backends::sodium: libsodium
-  has no PBKDF2. The backends that have pbkdf2: backends::hash2 (every hmac) and
-  backends::openssl (every hmac but hmac_ripemd_128)."
+  has no PBKDF2. The backends that have pbkdf2: backends::hash2 (every hmac), backends::openssl
+  (every hmac but hmac_ripemd_128) and backends::botan (every hmac but hmac_ripemd_128 and
+  hmac_sha2_512_224)."
 - `pbkdf2` on `backends::bearssl`: the same with "backends::bearssl: BearSSL has no PBKDF2".
 - `hkdf_extract` or `hkdf_expand` on `backends::bearssl`: "webcpp::hash: hkdf_extract and
   hkdf_expand are not in backends::bearssl, whose HKDF does both steps together: call hkdf, or
-  name backends::hash2, backends::sodium or backends::openssl."
+  name backends::hash2, backends::sodium, backends::openssl or backends::botan."
 - an hmac `backends::sodium` lacks: "webcpp::hash: backends::sodium has HKDF over hmac_sha2_256
-  and hmac_sha2_512 alone. Over this hmac, name backends::hash2 (every hmac), backends::openssl
-  (every hmac but hmac_ripemd_128) or backends::bearssl (MD5, SHA-1, SHA-224, SHA-256, SHA-384,
-  SHA-512; hkdf alone)."
+  and hmac_sha2_512 alone. Over this hmac, name backends::hash2 (every hmac), backends::bearssl
+  (MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512; hkdf alone), backends::openssl (every hmac but
+  hmac_ripemd_128) or backends::botan (every hmac but hmac_ripemd_128 and hmac_sha2_512_224)."
 - an hmac `backends::bearssl` lacks: "webcpp::hash: backends::bearssl has HKDF over hmac_md5_128,
   hmac_sha1_160, hmac_sha2_224, hmac_sha2_256, hmac_sha2_384 and hmac_sha2_512 alone. Over this
-  hmac, name backends::hash2 (every hmac) or backends::openssl (every hmac but hmac_ripemd_128)."
+  hmac, name backends::hash2 (every hmac), backends::openssl (every hmac but hmac_ripemd_128) or
+  backends::botan (every hmac but hmac_ripemd_128 and hmac_sha2_512_224)."
 - an hmac `backends::openssl` lacks: "webcpp::hash: backends::openssl has no hmac_ripemd_128
   (OpenSSL 3.5 has no RIPEMD-128). Name backends::hash2."; any other hmac outside `hmac.hpp`'s
   aliases: "webcpp::hash: backends::openssl has HKDF and PBKDF2 over the hmacs of hmac.hpp alone,
   hmac_ripemd_128 excepted. Over this hmac, name backends::hash2."
+- an hmac `backends::botan` lacks (increment 6): "webcpp::hash: backends::botan has HKDF and PBKDF2
+  over every hmac of hmac.hpp but hmac_ripemd_128 and hmac_sha2_512_224 (Botan 3.14.1 lacks
+  RIPEMD-128 and SHA-512/224). Over this hmac, name backends::hash2 (every hmac) or
+  backends::openssl (every hmac but hmac_ripemd_128)."
 - `hkdf` or `pbkdf2` on a backend without the function, through the primary templates:
   "webcpp::hash: this backend has no HKDF. The backends that have HKDF: backends::hash2 (every
-  hmac), backends::openssl (every hmac but hmac_ripemd_128), backends::sodium (hmac_sha2_256,
-  hmac_sha2_512) and backends::bearssl (MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512; hkdf
-  alone)." and "webcpp::hash: this backend has no PBKDF2. The backends that have pbkdf2:
-  backends::hash2 (every hmac) and backends::openssl (every hmac but hmac_ripemd_128)."
+  hmac), backends::sodium (hmac_sha2_256, hmac_sha2_512), backends::bearssl (MD5, SHA-1, SHA-224,
+  SHA-256, SHA-384, SHA-512; hkdf alone), backends::openssl (every hmac but hmac_ripemd_128) and
+  backends::botan (every hmac but hmac_ripemd_128 and hmac_sha2_512_224)." and "webcpp::hash:
+  this backend has no PBKDF2. The backends that have pbkdf2: backends::hash2 (every hmac),
+  backends::openssl (every hmac but hmac_ripemd_128) and backends::botan (every hmac but
+  hmac_ripemd_128 and hmac_sha2_512_224)."
 - an `Hmac` that is not a Hash2 hmac over a `digest<N>` result, on any backend: "webcpp::hash:
   the key derivations take a Boost.Hash2 hmac whose result is a digest, as hmac_sha2_256."
-- `argon2id` or `scrypt` on another backend than `backends::sodium` and `backends::openssl`
-  (increment 4, ruling R43): "webcpp::hash: argon2id is in backends::sodium and
-  backends::openssl alone. Name one, and add /third_party//sodium or /webcpp/hash//openssl to the
-  program's Jamfile." (and the same for scrypt). `blake2b_subkey` on another backend than
+- `argon2id` or `scrypt` on another backend than `backends::sodium`, `backends::openssl` and
+  `backends::botan` (increment 4, ruling R43; increment 6): "webcpp::hash: argon2id is in
+  backends::sodium, backends::openssl and backends::botan alone. Name one, and add
+  /third_party//sodium, /webcpp/hash//openssl or /third_party//botan to the program's Jamfile."
+  (and the same for scrypt). `blake2b_subkey` on another backend than
   `backends::sodium`: "webcpp::hash: blake2b_subkey is in backends::sodium alone. Name
   backends::sodium and add /third_party//sodium to the program's Jamfile."
 
@@ -1268,31 +1335,42 @@ row:
   kdfs::argon2d, kdfs::argon2i or kdfs::argon2id.";
 - a tag on a backend without it: "webcpp::hash: <qualified tag> is not in this backend. Name one
   of: <the backends of its row>." (as "webcpp::hash: digests::sha2_256 is not in this backend.
-  Name one of: backends::hash2, backends::sodium, backends::bearssl, backends::openssl."); the
-  backends are listed in the order hash2, xkcp, blake3, sodium, bearssl, openssl, and a partial
+  Name one of: backends::hash2, backends::sodium, backends::bearssl, backends::openssl,
+  backends::botan."); the backends are listed in the order hash2, xkcp, blake3, sodium, bearssl,
+  openssl, botan, and a partial
   cell may carry its limit in brackets ("backends::xkcp (a block size that is a power of two of
   at least 8 bytes)" for ParallelHash);
-- a tag no backend has yet (increment 6's: Streebog, Whirlpool, Skein-512, bcrypt): "webcpp::hash:
-  <qualified tag> is in no backend yet."; HMAC over a digest no backend has it over
+- a tag no backend has yet (a tag declared before its backend is built; none remains after
+  increment 6): "webcpp::hash: <qualified tag> is in no backend yet."; HMAC over a digest no
+  backend has it over
   (`digests::md5_sha1` included, ruling R92, and every extendable-output digest, over which HMAC
   is not defined): "webcpp::hash: macs::hmac over this digest is in no backend.", without "yet",
   since no backend will have it;
 - a tag whose default is `detail::no_default` (design D34), called without a backend:
   "webcpp::hash: <qualified tag> has no default backend. Name one of: <the backends of its row>."
-  (as "webcpp::hash: kdfs::argon2d has no default backend. Name one of: backends::openssl."), or
+  (as "webcpp::hash: kdfs::argon2d has no default backend. Name one of: backends::openssl,
+  backends::botan." and "webcpp::hash: kdfs::bcrypt has no default backend. Name one of:
+  backends::botan."), or
   "webcpp::hash: <qualified tag> has no default backend, and no backend has it yet." for a tag no
   backend has (and "webcpp::hash: macs::hmac over this digest has no default backend: no backend
   has it.");
 - `kbkdf` over an hmac outside `hmac.hpp`'s aliases on `backends::openssl`: "webcpp::hash:
   backends::openssl has kbkdf over the hmacs of hmac.hpp alone, hmac_ripemd_128 excepted, and no
-  other backend has kbkdf."; `sskdf` and `x963kdf` over a digest their standard does not take
-  (design D41): "webcpp::hash: sskdf takes a digest of SP 800-56C: digests::sha1,
-  digests::sha2_224, sha2_256, sha2_384, sha2_512, sha2_512_224, sha2_512_256, sha3_224,
-  sha3_256, sha3_384 or sha3_512." and "webcpp::hash: x963kdf takes a hash function of SEC 1 v2,
-  section 3.5: digests::sha1, digests::sha2_224, sha2_256, sha2_384 or sha2_512.";
+  backend has kbkdf over this hmac."; on `backends::botan` (increment 6): "webcpp::hash:
+  backends::botan has kbkdf over the hmacs of hmac.hpp alone, hmac_ripemd_128 and hmac_sha2_512_224
+  excepted. Over hmac_sha2_512_224, name backends::openssl; no backend has kbkdf over
+  hmac_ripemd_128."; `sskdf` over SHA-512/224 on `backends::botan`: "webcpp::hash: backends::botan
+  has no SHA-512/224 (Botan 3.14.1 lacks it): name backends::openssl."; `sskdf` and `x963kdf` over a
+  digest their standard does not take (design D41): "webcpp::hash: sskdf takes a digest of SP
+  800-56C: digests::sha1, digests::sha2_224, sha2_256, sha2_384, sha2_512, sha2_512_224,
+  sha2_512_256, sha3_224, sha3_256, sha3_384 or sha3_512." and "webcpp::hash: x963kdf takes a hash
+  function of SEC 1 v2, section 3.5: digests::sha1, digests::sha2_224, sha2_256, sha2_384 or
+  sha2_512.";
 - a family's call on a C library's backend that the program does not link, named or by default:
   that library's text of 5.7 (`detail::needs_library`), so that a refused call shows one message;
-  and a synchronous function on `backends::webcrypto`: section 11.2's text.
+  `backends::botan` named in a program without exceptions: 5.7's "needs exceptions" text, which
+  wins over "needs Botan" (linking Botan would not help such a build); and a synchronous function
+  on `backends::webcrypto`: section 11.2's text.
 
 Between increments a default whose library is not linked may first say "add the library" and then
 name the backends that have the tag; once increments 2 to 5 and 7 have landed every default has its
@@ -1359,6 +1437,18 @@ link it.
   (SHA-256/192, the KMAC hashes, `NULL`, CMAC, GMAC, Poly1305), and Whirlpool, MD4 and MDC2, in
   the legacy provider that webcpp never loads, are listed with their reasons in
   `doc/capabilities.json` (ruling R42).
+- **`backends::botan`** (increment 6). Botan 3.14.1's C++ interface: the digests through
+  `HashFunction::create_or_throw` (SHAKE through `XOF`), the MACs through
+  `MessageAuthenticationCode` ("HMAC(<hash>)", "KMAC-128(<bits>)", "SipHash(2,4)",
+  "BLAKE2b(<bits>)"), HKDF, KBKDF, SSKDF and X9.63 through `KDF` ("HKDF", "HKDF-Extract",
+  "HKDF-Expand", "SP800-108-Counter", "SP800-56A", "KDF2"), PBKDF2, scrypt, Argon2 and
+  Bcrypt-PBKDF through `PasswordHashFamily`, bcrypt through `generate_bcrypt` and `check_bcrypt`.
+  Each call runs inside `detail::botan_boundary`, one `try`: `std::bad_alloc` is
+  `errc::not_enough_memory`, any other exception `backend_failure`, the output zeroed, so that no
+  exception leaves hash; a `hasher` owns its Botan object, cleared and freed when it finishes, is
+  destroyed or is moved from. A key over 8,192 bytes, Botan's HMAC limit, is hashed first with the
+  same digest, as RFC 2104 does for every key past the block, so that the tag is unchanged and the
+  cells whole. No random byte is drawn from Botan (design D43).
 
 ### 3.5 The capability table
 
@@ -1389,31 +1479,31 @@ every default with `default_backend`, and every refusal text of 3.3 with its row
 
 | Function | hash2 | xkcp | blake3 | sodium | bearssl | openssl | botan | webcrypto (async, 11) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| MD5, SHA-1, SHA-2 (six) | 1 (Hash2); family: 2 | - | - | SHA-256, SHA-512: 2 | 5 (no SHA-512/t) | 4 | 6 | SHA-1/256/384/512: 7 |
+| MD5, SHA-1, SHA-2 (six) | 1 (Hash2); family: 2 | - | - | SHA-256, SHA-512: 2 | 5 (no SHA-512/t) | 4 | 6 (no SHA-512/224) | SHA-1/256/384/512: 7 |
 | MD5-SHA1 (TLS 1.0's 36 bytes) | - | - | - | - | 5 | 4 | - | - |
 | SHA-3 (four), SHAKE128/256 | 1 (Hash2); family: 2, SHAKE of any length (design D37) | 3 | - | SHA3-256/512, SHAKE: 2 | SHAKE: 5 | 4 | 6 | - |
 | Keccak-256 | - | 1 (`keccak_256`); family: 2 | - | - | - | 4 (`KECCAK-256`) | 6 | - |
 | Keccak-224, -384, -512 | - | 3 | - | - | - | 4 | 6 | - |
-| cSHAKE, KMAC, TupleHash, ParallelHash | - | 3 (ParallelHash: a block size that is a power of two of at least 8 bytes) | - | - | - | KMAC: 4 (OpenSSL's limits: a key of 4 to 512 bytes, a customisation of at most 512, a tag of at most 2,097,151) | cSHAKE, KMAC: 6 | - |
+| cSHAKE, KMAC, TupleHash, ParallelHash | - | 3 (ParallelHash: a block size that is a power of two of at least 8 bytes) | - | - | - | KMAC: 4 (OpenSSL's limits: a key of 4 to 512 bytes, a customisation of at most 512, a tag of at most 2,097,151) | KMAC: 6 (a key of at most 192 bytes; no KMACXOF) | - |
 | KangarooTwelve (KT128, KT256) | - | 3 | - | - | - | - | - | - |
 | TurboSHAKE128/256 | - | 3 | - | 2 | - | - | - | - |
-| BLAKE2b (key, salt, personalisation, length) | 512 fixed: 1 (Hash2); family: 2 (64 bytes, no option) | - | - | 2; keyed (`macs::blake2b_mac`), a key and a tag of 1 to 64 bytes: 2 | - | unkeyed, 1 to 64 bytes: 4; keyed (`macs::blake2b_mac`): 4 | 6 | - |
-| BLAKE2s-256 | 1 (Hash2); family: 2; keyed (`macs::blake2s_mac`), a 32-byte tag: 2 | - | - | - | - | 4; keyed: 4 | 6 | - |
+| BLAKE2b (key, salt, personalisation, length) | 512 fixed: 1 (Hash2); family: 2 (64 bytes, no option) | - | - | 2; keyed (`macs::blake2b_mac`), a key and a tag of 1 to 64 bytes: 2 | - | unkeyed, 1 to 64 bytes: 4; keyed (`macs::blake2b_mac`): 4 | 1 to 64 bytes, keyed: 6 (no salt, no personalisation); keyed (`macs::blake2b_mac`): 6 | - |
+| BLAKE2s-256 | 1 (Hash2); family: 2; keyed (`macs::blake2s_mac`), a 32-byte tag: 2 | - | - | - | - | 4; keyed: 4 | 6 (unkeyed: no `macs::blake2s_mac`) | - |
 | BLAKE3 (hash, keyed, derive_key, XOF) | - | - | 1; family: 2 | - | - | - | - | - |
 | RIPEMD-128, RIPEMD-160 | 1 (Hash2); family, RIPEMD-160: 2 | - | - | - | - | RIPEMD-160: 4 | RIPEMD-160: 6 | - |
 | SM3, Streebog, Whirlpool, Skein-512 | - | - | - | - | - | SM3: 4 | 6 | - |
-| HMAC | 1 (Hash2, every hash); family: 2 | - | - | SHA-256/512: 2 | 5 (MD5, SHA-1, SHA-224 to SHA-512) | 4 (each fixed-size digest of its own but MD5-SHA1; a key of at most `INT_MAX` bytes) | 6 | 7 |
-| SipHash-2-4, SipHash-2-4x | SipHash-2-4 64: 1 (Hash2); family, SipHash-2-4: 2 | - | - | 2 | - | 4 | 6 | - |
+| HMAC | 1 (Hash2, every hash); family: 2 | - | - | SHA-256/512: 2 | 5 (MD5, SHA-1, SHA-224 to SHA-512) | 4 (each fixed-size digest of its own but MD5-SHA1; a key of at most `INT_MAX` bytes) | 6 (each fixed-size digest it has) | 7 |
+| SipHash-2-4, SipHash-2-4x | SipHash-2-4 64: 1 (Hash2); family, SipHash-2-4: 2 | - | - | 2 | - | 4 | SipHash-2-4: 6 | - |
 | HKDF | 1 | - | - | 1 (SHA-256/512) | 1 | 1 | 6 | 7 |
-| `async_argon2id`, `async_argon2`, `async_scrypt`, `async_pbkdf2` on another thread | every backend that has the function, only with threads (11.5): natively always (unless `WEBCPP_HASH_NO_THREADS`), Emscripten `-pthread`; never WASI | | | | | | | `async_pbkdf2` without threads too |
-| PBKDF2 | 1 | - | - | - | - | 1 | 6 | 7 |
-| scrypt | - | - | - | 1 | - | 4 (r p below 2^24) | 6 | - |
+| `async_argon2id`, `async_argon2`, `async_scrypt`, `async_pbkdf2` on another thread | every backend that has the function, only with threads (11.5): natively always (unless `WEBCPP_HASH_NO_THREADS`), Emscripten `-pthread`; never WASI | | | | | | `async_argon2`, `async_argon2id`, `async_scrypt`, `async_pbkdf2`, `async_bcrypt`, `async_bcrypt_pbkdf`, `async_bcrypt_verify` (Task 43) | `async_pbkdf2` without threads too |
+| PBKDF2 | 1 | - | - | - | - | 1 | 6 (on wasm32 at most 2^32 - 1 iterations) | 7 |
+| scrypt | - | - | - | 1 | - | 4 (r p below 2^24) | 6 (N of at most 2^22, r of at most 256, p of at most 1,024, at most 8 GiB, 2 GiB on wasm32) | - |
 | Argon2id, one lane | - | - | - | 1 | - | 4 | 6 | - |
 | Argon2i | - | - | - | 2 (one lane, 3 passes or more) | - | 4 | 6 | - |
-| Argon2d; Argon2 with lanes, secret, associated data | - | - | - | - | - | 4 (m of at most 4,194,303 KiB on wasm32) | 6 | - |
+| Argon2d; Argon2 with lanes, secret, associated data | - | - | - | - | - | 4 (m of at most 4,194,303 KiB on wasm32) | 6 (at most 128 lanes; m of at most 8 GiB, 2 GiB on wasm32) | - |
 | BLAKE2b subkeys (`crypto_kdf`) | - | - | - | 2 | - | - | - | - |
-| bcrypt, bcrypt-pbkdf | - | - | - | - | - | - | 6 | - |
-| KBKDF (SP 800-108), SSKDF (SP 800-56C), X9.63 KDF | - | - | - | - | - | 4 (SSKDF and X9.63: at most 2^30 bytes each) | 6 (where it has them) | - |
+| bcrypt, bcrypt-pbkdf | - | - | - | - | - | - | 6 (bcrypt: a cost of at most 18) | - |
+| KBKDF (SP 800-108), SSKDF (SP 800-56C), X9.63 KDF | - | - | - | - | - | 4 (SSKDF and X9.63: at most 2^30 bytes each) | 6 (KBKDF with the separator and L; SSKDF without SHA-512/224) | - |
 
 A cell with a limit in brackets is partial in `doc/capabilities.json`: the backend answers
 `unsupported_by_backend` (for the families) or the function's guard error (for increment 1's
@@ -1421,13 +1511,13 @@ functions) where it refuses a value the family accepts, which the row's `partial
 "family: 2" is the cell of the families (2.15) over increment 1's library, from increment 2. The
 webcrypto column is the asynchronous family's alone (section 11): no synchronous function takes
 `backends::webcrypto`, which `doc/capabilities.json` marks `asynchronous_only` (design D39).
-Increment 6 is not built (design D42): the botan column is the plan's, not a cell of
-`doc/capabilities.json`, and at Botan 3.14.1 it overstates (no SipHash-2-4x, BLAKE2b without salt
-or personalisation, no TupleHash or ParallelHash; X9.63 is Botan's `kdf2` and the one-step SSKDF
-its `sp800_56a`).
-
-A cell of 6 is checked against Botan's documentation at its pin by increment 6's first task,
-which corrects the table where Botan lacks a function; no cell is assumed.
+The botan column is Botan 3.14.1's, as read by plan Task 41 at its tag (design D44): X9.63 is
+Botan's `KDF2`, the one-step SSKDF its `SP800-56A`; no SipHash-2-4x, no cSHAKE, TupleHash or
+ParallelHash, no `macs::blake2s_mac`. The cells reach `doc/capabilities.json` with each engine
+(plan Tasks 42 and 43). `doc/capabilities.json`'s backend `botan` has the targets `native` and
+`emscripten` and a field `exceptions_only: true`, which `tools/hash/doc_tables.py` renders as
+"with exceptions only" beside the backend, as `asynchronous_only` is rendered; like it, it
+raises no layout version.
 
 ## 4. The default backend
 
@@ -1568,6 +1658,8 @@ exe b3 : b3.cpp /webcpp/hash//hash /third_party//blake3 ;           # blake3
 exe pw : pw.cpp /webcpp/hash//hash /third_party//sodium ;           # argon2id, scrypt, backends::sodium
 exe kdf : kdf.cpp /webcpp/hash//hash /webcpp/hash//openssl ;        # backends::openssl (native, wasip2, wasip3)
 exe kdf2 : kdf.cpp /webcpp/hash//hash /third_party//bearssl ;       # backends::bearssl
+exe gost : gost.cpp /webcpp/hash//hash /third_party//botan           # backends::botan (native,
+  : <exception-handling>on ;                                          # Emscripten), exceptions
 ```
 
 ### 5.2 The C libraries, file by file
@@ -1605,6 +1697,20 @@ written. libsodium's headers that a webcpp header includes (`sodium/core.h`,
 `sodium/crypto_pwhash_argon2id.h`, `sodium/crypto_pwhash_scryptsalsa208sha256.h`) do not include
 `version.h`.
 
+**Botan (increment 6, design D43).** `/third_party//botan` is not a C library of this table: the
+stream provisions it as webcpp::crypto's specification says (its design D15), from
+`tools/webcpp-botan.jam`: the submodule `third_party/libs/botan` at Botan 3.14.1 (`01af88c`),
+configured per target by upstream's `configure.py` (`--minimized-build`, the modules of
+`tools/botan/modules.txt`, hash's and webcpp::crypto's, one list for one copy per program) into
+the build directory, `bin/third_party/botan/config-<hash>`, whose key is every input's bytes, and
+each listed source compiled by b2 as its own object; never patched, never the amalgamation. It is
+built natively and for Emscripten (with `-sALLOW_MEMORY_GROWTH=1`, as libsodium); on wasip2 and
+wasip3, with `exception-handling=off`, and in a checkout without the submodule, it stops the
+build with 5.7's texts. Its usage requirements give Botan's configured headers, as system
+headers, `WEBCPP_HASH_HAS_BOTAN=1` and hash's canary (`botan-hash-canary`, `botan-hash-usage` in
+`third_party/Jamfile`, when `libs/hash` holds the canary). No module loads `system_rng`,
+`auto_rng` or an entropy source; the configuration step refuses a list that would.
+
 ### 5.3 libsodium's defines per target
 
 Derived from libsodium's own `configure`, run once per target at the pin (`--disable-asm
@@ -1633,6 +1739,7 @@ from the defines it is compiled with:
 | BLAKE3 | `portable` (all four `BLAKE3_NO_*`), `x86` (none of them, no `BLAKE3_USE_NEON`), `neon` (`BLAKE3_USE_NEON == 1`), else `unconfigured` | `webcpp_hash_blake3_f3149ec_<configuration>__add_third_party_blake3_to_your_link` |
 | libsodium | `configured` (`CONFIGURED == 1`, `SODIUM_STATIC == 1`, `NATIVE_LITTLE_ENDIAN == 1`, no `HAVE_AMD64_ASM`), else `unconfigured` | `webcpp_hash_sodium_77e1ce5_configured__add_third_party_sodium_to_your_link` |
 | BearSSL | `getentropy`, `noseeder`, as webcpp::crypto's canary decides them | `webcpp_hash_bearssl_7bea48e_<configuration>__add_third_party_bearssl_to_your_link` |
+| Botan (increment 6, `src/canary_botan.cpp`, {cpp} with C linkage) | `configured` (`build.h` is 3.14.1 with every `BOTAN_HAS_*` of hash's modules, and neither `BOTAN_HAS_SYSTEM_RNG` nor `BOTAN_HAS_AUTO_SEEDING_RNG`), else `unconfigured` | `webcpp_hash_botan_01af88c_configured__add_third_party_botan_to_your_link` |
 
 The three layers (CODING-GUIDELINES.md chapter 5 rule 6): the header's `#error` when
 `WEBCPP_HASH_HAS_<NAME>` is missing; the canary read by every function that calls the library
@@ -1650,7 +1757,9 @@ sources gain hash's canary file (an object of its own, whose unused section the 
 `/third_party//sodium` is introduced here and shared by webcpp::crypto's later libsodium
 backend, which adds its own canary to the same target. `/webcpp/hash//openssl` links the
 superproject's one provider, `/webcpp/third_party//openssl`, the same archives as
-`/webcpp/crypto//openssl` and `/webcpp/asio//openssl`.
+`/webcpp/crypto//openssl` and `/webcpp/asio//openssl`. `/third_party//botan` is the one Botan of
+the superproject, whose module list holds webcpp::crypto's needs too (design D43): crypto's Botan
+increment reuses it and adds its own canary beside hash's.
 
 ### 5.6 `/webcpp/hash//openssl`
 
@@ -1684,6 +1793,9 @@ whose `#error` is the first message of spec 2.2.
 | `backends/bearssl.hpp` without `WEBCPP_HASH_HAS_BEARSSL` | "webcpp::hash: backends::bearssl needs BearSSL. Add /third_party//bearssl to the program's Jamfile: exe app : app.cpp /webcpp/hash//hash /third_party//bearssl ;" |
 | `backends/openssl.hpp` without `WEBCPP_HASH_HAS_OPENSSL` | "webcpp::hash: backends::openssl needs OpenSSL. Add /webcpp/hash//openssl to the program's Jamfile (native, wasip2 and wasip3): exe app : app.cpp /webcpp/hash//hash /webcpp/hash//openssl ;" |
 | OpenSSL on Emscripten | spec 2.2's first `#error` |
+| `backends/botan.hpp` without `WEBCPP_HASH_HAS_BOTAN`, or `backends::botan` named in a call of a program that does not link Botan (increment 6) | "webcpp::hash: backends::botan needs Botan. Add /third_party//botan to the program's Jamfile (native and Emscripten, with exceptions): exe app : app.cpp /webcpp/hash//hash /third_party//botan ;" |
+| `backends::botan` named in a program without exceptions (`WEBCPP_HASH_NO_EXCEPTIONS`, under which `backends/botan.hpp` declares nothing; increment 6) | "webcpp::hash: backends::botan needs exceptions: Botan reports its errors by throwing, and its header declares nothing without them. Build with exception-handling=on, or name another backend." |
+| `/third_party//botan` with `exception-handling=off`, on wasip2 or wasip3, or without its submodule (b2, before anything is built) | "/third_party//botan needs exceptions: Botan reports its errors by throwing. Build this program with exception-handling=on, or remove /third_party//botan from its Jamfile.", "/third_party//botan is built natively and for Emscripten. On clang-<target> it is not built yet: webcpp::crypto's increment 7 decides it. ...", "third_party/libs/botan is not checked out: ... `git submodule update --init third_party/libs/botan`." |
 | a function of the families, `argon2id`, `scrypt`, `blake2b_subkey`, `kbkdf`, `sskdf` or `x963kdf` called on a C library's backend the program does not link, named or by default | that library's text above, raised by the engine's primary template or `detail::needs_library` (the header that holds the engines is included only when the library is linked), so that `argon2.hpp`, `blake2b_subkey.hpp` and `kdf_standards.hpp` need no library to be included; one message test per library and kind (`<library>_not_linked`, `<library>_default_not_linked`, `openssl_kdf_not_linked`) |
 | a link without the library | the canary's symbol, as undefined |
 | two TUs, two configurations, MSVC | LNK2038 on `webcpp_hash_backend_<name>` |
@@ -1732,6 +1844,13 @@ per awaited promise, which is webcpp::asio's, not hash's (flagged to the owner).
   finishes or is destroyed (the one OpenSSL object that outlives a call); a MAC fetches the MAC and
   allocates an `EVP_MAC_CTX` (`EVP_MAC_CTX_new`) and the MAC's context, which `mac` frees before it
   returns (ruling R44).
+- **Botan** (increment 6) makes its objects (a hash, a MAC, a KDF, a password hash) with the
+  global `operator new` in every call on `backends::botan`, and the buffers of their state and
+  secrets with the C library's `calloc` through its secure allocator, which overwrites each before
+  freeing it; Argon2's matrix and scrypt's buffer among them. webcpp keeps no Botan object between
+  calls but a `hasher`'s, its own, which it clears and frees when it finishes, is destroyed or is
+  moved from. `allocation_botan_test` counts each call of every entry point, prints it, never
+  bounds it, and asserts that a guard's refusal allocates nothing.
 - **libsodium's `sodium_init`** allocates nothing; it keeps libsodium's own process-wide state
   (its CPU features and chosen implementations), which is the C library's, not webcpp's.
 
@@ -1743,7 +1862,10 @@ C library's allocator can be counted.
 Every test uses Boost.Core's lightweight_test, ends
 `return webcpp::test::exit_status(boost::report_errors());`, and is declared by the test
 Jamfile's rule `hash-run`, which builds it twice, the second `<exception-handling>off` with the
-suffix `_no_exceptions`, on every target its libraries have.
+suffix `_no_exceptions`, on every target its libraries have. Botan's tests (increment 6) are
+declared by the rule `botan-run` instead: `<exception-handling>on`, `/third_party//botan`, native
+and Emscripten, and no `_no_exceptions` twin; `botan_no_exceptions` compiles `backends/botan.hpp`
+without exceptions and checks that it declares nothing.
 
 ### 7.1 Vectors
 
@@ -1756,6 +1878,7 @@ suffix `_no_exceptions`, on every target its libraries have.
 | `pbkdf2` | RFC 6070's six cases (SHA-1; the 16,777,216-iteration case in a program of its own, `pbkdf2_rfc6070_long`, on every target, its time recorded), RFC 7914 section 11's two (SHA-256), on every backend that has the hmac |
 | `argon2id` | RFC 9106 section 5.3's Argon2id case through libsodium's internal `argon2_ctx` (parallelism 4, secret and associated data, which the public function does not take), which proves libsodium's core is RFC 9106's; three cases of libsodium's `test/default/pwhash_argon2id.c` through `webcpp::hash::argon2id`; the public function against `argon2_ctx` with one lane on random inputs |
 | `scrypt` | RFC 7914 section 12's four cases; the fourth (N = 1,048,576, r = 8, 1 GiB) in a program of its own, native, and on each WebAssembly target where its run succeeds, measured by the plan |
+| `backends::botan` (increment 6) | Botan's own test data at its pin, read at run time through `/third_party//botan_vectors` (`hash/*.vec`, `mac/*.vec`, `passhash/bcrypt.vec`, `pbkdf/bcrypt_pbkdf.vec`, `kdf/sp800_108_ctr.vec`), each case whose comment names a source other than Botan computed and counted; RFC 6986's and RFC 7836's Streebog and HMAC examples; the vectors of the other rows on Botan's cells; NIST's KBKDF vectors, written without the separator and L, each refused on Botan (`unsupported_by_backend`) |
 
 | the families (increments 2 to 7) | each tag on each backend against its standard's or upstream's vectors where they exist: FIPS 202's (OpenSSL's `evpmd_sha.txt`) for Hash2's SHAKE past one block; Wycheproof's `siphash_2_4_test.json` and OpenSSL's `evpmac_blake.txt` for Hash2's SipHash and keyed BLAKE2s; BLAKE2's reference KAT (keyed and unkeyed, the submodule `third_party/libs/blake2` at `ed1974e`) and libsodium's `.exp` files (`generichash3`, `shorthash`, `siphashx24`, `kdf`, `pwhash_argon2i`) for libsodium; RFC 9861's TurboSHAKE and KangarooTwelve examples (the RFC's printed values, copied with the section cited); XKCP's `tests/TestVectors` (the byte-aligned entries, counted) and NIST's SP 800-185 samples for XKCP; OpenSSL's own `test/recipes/30-test_evp_data` files (`evpmac_common.txt`, `evpmac_siphash.txt`, `evpkdf_kbkdf_counter.txt`, `evpkdf_ss.txt`, ...) and RFC 9106 section 5's three cases through `argon2`; RFC 2202 for BearSSL's HMAC-MD5 and HMAC-SHA-1; RFC 4231, 5869, 6070 and 7914 section 11 for WebCrypto (section 11.4) |
 
@@ -1763,8 +1886,9 @@ Test data from a submodule is read at run time through a `third_party/Jamfile` t
 directory (`webcpp.data`, in wycheproof's quoting form, `[ webcpp.data <dir> ]` for WASI's preopen),
 as `/third_party//wycheproof` does, never copied (ruling R5): `/third_party//blake3_vectors`,
 `/third_party//blake2_vectors`, `/third_party//sodium_vectors` (libsodium's `.exp` files),
-`/third_party//xkcp_vectors` and `/third_party//openssl_evp_data` (OpenSSL's EVP test files at its
-pin). An RFC's or a NIST publication's printed example may be copied with its section cited.
+`/third_party//xkcp_vectors`, `/third_party//openssl_evp_data` (OpenSSL's EVP test files at its pin)
+and `/third_party//botan_vectors` (Botan's, increment 6). An RFC's or a NIST publication's printed
+example may be copied with its section cited.
 
 ### 7.2 Agreement between backends
 
@@ -1801,7 +1925,11 @@ no argument, with `--keyed <hex of the key>` and with `--derive-key <context>`, 
 on x86 alone. The library is built with `BLAKE3_TESTING` where `blake3_dispatch.c` reads it
 (`<webcpp-blake3-testing>on`, a build of its own). `blake3_c_suite_corrupted` changes one expected
 line and passes only when exactly that line is reported. These programs replaced the plan's
-`tools/test/blake3_c_suite.py`, a tools test that no lane and no CI job ran.
+`tools/test/blake3_c_suite.py`, a tools test that no lane and no CI job ran. Increment 6 adds
+`botan_c_suite`, natively and on Emscripten: Botan's own test program, `/third_party//botan_test`
+built from webcpp's build of Botan, run with `--data-dir` at the checkout's `src/tests/data` and the
+names its `--list-tests` gives for hash's modules (`hash_algos`, `mac_algos`, `kdf_kat`,
+`pbkdf_kat`, `pwdhash`, `scrypt`, `argon2`, `bcrypt`, `bcrypt_pbkdf`, ...), every test passing.
 
 ### 7.4 WebCrypto as an outside oracle
 
@@ -1835,7 +1963,11 @@ checked against `doc/capabilities.json` by `capabilities_test`, tag by tag; thei
 one per family's primary template, one per kind of default not linked, one per family's
 `no_default`, one per backend that lacks a whole function (`*_on_hash2`), and, for section 11, one
 per heavy name without threads, the synchronous refusal of `backends::webcrypto`, its refusal off
-Emscripten and the cheap functions' refusal of an algorithm WebCrypto lacks.
+Emscripten and the cheap functions' refusal of an algorithm WebCrypto lacks. Increment 6 adds
+`botan_not_linked` and `botan_without_exceptions` (with their MSVC twins), Botan's canary missing
+and of another commit (`webcpp.link-fail`), a message per Botan refusal of 3.3, bcrypt's and
+bcrypt_pbkdf's `no_default`, and the three heavy bcrypt names without threads; on Emscripten the
+same as fixtures of `hash_jamfiles_test.py`, with Botan's build stops on wasip2 and wasip3.
 
 ### 7.7 Allocation
 
@@ -1852,8 +1984,10 @@ asynchronous family (its storage the handler's, 6.1) and `backends::webcrypto`.
 
 The published counts (`doc/measurements.allocation.json`, `doc/allocation.adoc`) are built only
 from release builds (the owner's decision of 2026-11-17, design D36): `bench/Jamfile`'s
-`allocation_release` and `allocation_openssl_release`, the sources of the two tests at
-`variant=release`, collected by `bench/allocation_collect.py`, which reads the variant from b2's
+`allocation_release`, `allocation_openssl_release` and, from increment 6,
+`allocation_botan_release` (natively and on Emscripten), the sources of the three tests at
+`variant=release`, collected by `bench/allocation_collect.py`, which gives Botan one row per
+operation and target, the range over the algorithms it has, which reads the variant from b2's
 build directory (`bench/<name>.test/<toolset>/<variant>/`), records `"build": "variant=release"`
 and refuses data from another build, its `--check` and `--render-only` included. The lanes'
 allocation tests keep their variant and are never collected.
@@ -1867,12 +2001,14 @@ naming `/third_party//xkcp`, `//blake3`, `//sodium` or `//bearssl` without calli
 byte-identical to one without it. On Emscripten `/third_party//sodium` adds its link flag
 `-sALLOW_MEMORY_GROWTH=1` (5.2): `unused_sodium_emscripten` gives the program without libsodium
 that flag explicitly and requires the two to be identical, so the flag is shown to be the only
-difference.
+difference. Increment 6 adds `unused_botan` natively and `unused_botan_emscripten`, alike.
 
 ### 7.9 The lanes
 
 Native, wasip2, wasip3, Emscripten and gcc-15 locally, from scratch (`-a`); MSVC and Apple clang
-in the CI at the end. Own lane: `c-suites` (the lane `measure` is retired, design D33); the
+in the CI at the end, and, from increment 6, MSVC 14.3 and 14.5 on the owner's local lane, each
+failure read against its `known-failures.txt` first (design D45). Own lane: `c-suites`, Botan's
+own suite among them from increment 6 (the lane `measure` is retired, design D33); the
 throughput benchmark's times of 4.3 are measured by hand, and its correctness program runs in every
 lane.
 
@@ -1993,8 +2129,13 @@ library's plan, which changes nothing a crypto program links.
   handler's allocator (6.1, 11.5; D40); no HMAC over MD5-SHA1, and `sskdf` and `x963kdf` take
   their standard's hashes alone (2.15, 3.3; D41); `argon2id` and `scrypt` gain OpenSSL with 3.3's
   new texts (ruling R43); `doc/capabilities.json` is at layout version 5 (3.5).
-- Increment 6 (Botan) is not built: Botan is not provisioned on webcpp's `main` (design D42,
-  ruling R60).
+- Increment 6 (Botan) is built: the stream provisions Botan as webcpp::crypto's specification
+  says, one module list for both libraries, native and Emscripten, and no randomness drawn from
+  Botan (design D43, which supersedes D42's waiting); its column is Botan 3.14.1's (D44); it needs
+  exceptions, its tests run through `botan-run`, and its lanes include MSVC on the owner's lane
+  (D45). A key past Botan's HMAC limit is hashed first, the cells whole; `bcrypt_verify` refuses a
+  password bcrypt refuses; Botan's PBKDF2 and KDF2 stop at 2^32 - 2 blocks, their cells partial;
+  the HKDF refusals list their backends in 3.3's order (plan Tasks 42 and 43).
 
 ## 11. The browser backend and the asynchronous family (the owner's answer to O1)
 
@@ -2112,8 +2253,8 @@ never inline. A rejected promise is `error::backend_failure`; a cancelled operat
 The deliberately slow functions get asynchronous variants that truly run on another thread, and only
 when the build has threads: `async_argon2id`, `async_argon2` (increment 2 on), `async_scrypt` and
 `async_pbkdf2` (with a synchronous backend), and every later memory-hard or deliberately slow
-function (Botan's bcrypt and bcrypt-pbkdf, increment 6, not built: their `async_bcrypt` and
-`async_bcrypt_pbkdf` come with it, design D42). Separate from the browser's family, which exists on
+function (Botan's bcrypt and bcrypt-pbkdf, increment 6: their `async_bcrypt`, `async_bcrypt_pbkdf` and
+`async_bcrypt_verify` come with it, plan Task 43, design D44). Separate from the browser's family, which exists on
 Emscripten with or without threads.
 
 ```cpp
@@ -2134,6 +2275,20 @@ auto async_scrypt(WorkExecutor const& work, std::span<std::uint8_t> output,
                   std::span<std::uint8_t const> password, std::span<std::uint8_t const> salt,
                   scrypt_parameters const& parameters, CompletionToken&& token);
 // async_pbkdf2<Hmac, Backend> (above) with a synchronous backend runs on `executor`'s threads alike.
+/** bcrypt.hpp's functions on a thread of `work`'s context (increment 6, backends::botan alone). */
+template <class Backend = default_backend<kdfs::bcrypt>, class WorkExecutor, class CompletionToken>
+auto async_bcrypt(WorkExecutor const& work, std::span<char> output,
+                  std::span<std::uint8_t const> password, std::span<std::uint8_t const> salt,
+                  bcrypt_parameters const& parameters, CompletionToken&& token);
+template <class Backend = default_backend<kdfs::bcrypt_pbkdf>, class WorkExecutor,
+          class CompletionToken>
+auto async_bcrypt_pbkdf(WorkExecutor const& work, std::span<std::uint8_t> output,
+                        std::span<std::uint8_t const> password, std::span<std::uint8_t const> salt,
+                        std::uint32_t rounds, CompletionToken&& token);
+/** Completes with `void(boost::system::error_code, bool)`: whether the password gives it. */
+template <class Backend = default_backend<kdfs::bcrypt>, class WorkExecutor, class CompletionToken>
+auto async_bcrypt_verify(WorkExecutor const& work, std::span<std::uint8_t const> password,
+                         std::string_view hash, CompletionToken&& token);
 ```
 
 - **Threads detected by `config.hpp`.** webcpp's `<webcpp/config.hpp>` defines no threading macro
@@ -2165,7 +2320,9 @@ auto async_scrypt(WorkExecutor const& work, std::span<std::uint8_t> output,
 - **Without threads they do not exist:** each name is then a template whose `static_assert`
   says "webcpp::hash: async_argon2id runs on another thread and needs a build with threads
   (natively, remove WEBCPP_HASH_NO_THREADS; on Emscripten, link with -pthread). Without threads,
-  call argon2id." (and the same for `async_argon2`, `async_scrypt` and `async_pbkdf2`), so a call
+  call argon2id." (and the same for `async_argon2`, `async_scrypt`, `async_pbkdf2`,
+  `async_bcrypt`, `async_bcrypt_pbkdf` and `async_bcrypt_verify`, each naming its synchronous
+  function), so a call
   fails to compile with the instruction; `async_pbkdf2` with `backends::webcrypto` on Emscripten is
   not refused. The text replaced "natively b2 threading=multi; on Emscripten -pthread", since
   natively every build has threads and only `WEBCPP_HASH_NO_THREADS` takes them away (ruling R70,
