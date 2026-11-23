@@ -136,3 +136,37 @@ Phase 2 was to be written in full, task by task, when webcpp::crypto's P-256 par
 (2.1) confirms or amends design D9 before any code of the shared connection is removed. Each task
 records its vectors in `vectors/record.mjs` first (P-256 signatures are random in WebCrypto:
 vectors fix keys and check each side verifies the other's signatures).
+
+## Phase 2, as built (2026-11-23)
+
+Phase 2 (plan Tasks 2.1a to 2.7) is built on the branches, reviewed task by task and as a whole,
+interoperable with Trystero 0.27.0 (the interop lane: 19 native and 17 browser scenarios against
+0.27.0 JS, green), and merged nowhere: the owner holds the merge until webcpp::crypto's
+sign-unified, uniform-types, formats, backend-concepts and DIT on Windows ARM64 changes are on
+crypto's `main` (ruling P2-R33); the P-256 calls then migrate once, to the final crypto API.
+
+| Task | Library commits | What |
+| --- | --- | --- |
+| 2.1a | `11ed315..32a5ca2` | one connection per room and remote peer (D9 confirmed); the shared connection, presence frames, room tokens gone |
+| 2.1b | `32a5ca2..ef73e00` | 0.27.0's handshake frame and timer, no password challenge; the Nostr signer on secp256k1 `keypair::generate` (R11) |
+| 2.1c | `ef73e00..bd69bee` | wide bulk chunks, the size read through webcpp::webrtc's new `max_message_size()` (webrtc `8983e3b`, branch `trystero/max-message-size`) |
+| 2.2 | `bd69bee..a01ebfc` | endpoint and user keys, ids derived from P-256 keys, user identity create, import, export |
+| 2.3 | `a01ebfc..b77e7e7` | key records and the verification caches; tests on the virtual clock throughout |
+| 2.4a | `b77e7e7..3f6c5b0` | the dual-signature handshake's messages and each side's run, against recorded JS sides |
+| 2.4b | `3f6c5b0..c819ca3` | the handshake in the room; users are the ids it verified |
+| 2.5a | `c819ca3..8ea1c8e` | `max_users` and `room_full` |
+| 2.5b | `8ea1c8e..44da7af` | `peer_error`, `banned`, `relay_failed`'s announcement path, `@_ping` as a request |
+| 2.6a | `44da7af..3fdda0b` | the oracle on 0.27.0, the recorder over the published packages, the twins; signals refused as `parseSignalEnvelope` refuses |
+| 2.6b | `3fdda0b..09f45aa` | interop with 0.27.0 in Chrome and in a process, every lane on |
+| 2.7 | `09f45aa..0d1387e` | the pages whole, the changelog lines, the final review's fixes, webcpp's lint and MSVC clean |
+
+Lanes at `0d1387e` (superproject `4040794`): native clang, gcc-15 and Emscripten, the oracle and
+interop lanes, the Linux and macOS lint, MSVC 14.3 and 14.5 (one flaky webcpp::webrtc case on
+14.3, `native.run`'s `a_full_exchange`, predating the branch). The reference (`b2 libs/trystero/doc`)
+still stops on webcpp::crypto's `config.hpp:202` under MrDocs (crypto's fix); trystero's own doc
+comments pass.
+
+What remains: the migration of `protocol/ecdsa.hpp`, `identity.hpp` and the signer to the final
+crypto API (the call sites are listed in the ledger, ruling P2-R33), the interop rerun, the docs
+target, the PRs out of draft and the merge. Phase 3 inherits the items in the final reports
+(`p2-task-2.7-report.md`, "What Phase 3 inherits").
