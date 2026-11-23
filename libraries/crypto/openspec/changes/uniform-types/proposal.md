@@ -42,7 +42,7 @@ On 2026-11-22 the owner decided to type all three in one small change merged bef
 - **AEAD and box concepts**: `secret_key_encryption::aead::cipher` (sizes, `result_type`,
   `from_key(key)`, `seal(nonce, associated_data, data)`, `open(nonce, associated_data, data, tag)`),
   its refinement `secret_key_encryption::aead::streaming_cipher` (AES-GCM's incremental seal and
-  open), and the sibling `crypto::authenticated_box` (`seal(nonce, data)`, `open(nonce, data, tag)`)
+  open), and the sibling `secret_key_encryption::authenticated_box` (`seal(nonce, data)`, `open(nonce, data, tag)`)
   for secretbox and crypto_box, which lose the additional data they refused. The free
   `secret_key_encryption::aead::seal`, `open` and their asynchronous forms, and the box forms, are
   constrained by them, and `async_seal` and `async_open` extend to every AEAD and box on native
@@ -106,8 +106,7 @@ None.
 - **Implementation:** webcpporg/crypto (`signing.hpp`, `keypair.hpp`, `curves/*.hpp`,
   `key_exchange/kx.hpp` (was `curves/x25519/kx.hpp`), `ciphers/*.hpp`,
   `public_key_encryption/*.hpp` (was `hybrid/*.hpp`), `secret_key_encryption/aead.hpp` (new: the
-  AEAD contract) and `secret_key_encryption/secretbox.hpp` (was `ciphers/secretbox.hpp`), a new
-  `authenticated_box.hpp`, `async.hpp`, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
+  AEAD contract) and `secret_key_encryption/secretbox.hpp` (was `ciphers/secretbox.hpp`), `secret_key_encryption/authenticated_box.hpp` (new), `async.hpp`, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
   the generated files), webcpporg/hash (the callers of `crypto::equal` in its examples, headers'
   comments and pages), the superproject's pointers.
 - **Status:** approved by the owner on 2026-11-22 (`decided`); it stays `proposed` in the

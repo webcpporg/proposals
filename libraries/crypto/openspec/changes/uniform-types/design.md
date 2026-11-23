@@ -176,6 +176,8 @@ glossary):
       renames.
     Decision 4's names (`crypto::aead`, `crypto::streaming_aead`, `crypto::seal`, `crypto::open`,
     `iv`, `ad`) are superseded by these; D5, D6, D11, R7, R21 and R22 give the result.
+    The controller's ruling on how it is built (2026-11-23, R23): 3.2 and 3.3 are written with
+    decision 13's names; X4 covers the renames they do not touch.
 
 ## Approaches
 
@@ -340,12 +342,13 @@ The AEAD contract is `secret_key_encryption::aead`'s (owner decision 13, D11). A
   `result()`, `begin_open(nonce, associated_data)`, `authenticate(data)`, `decrypt(data)`,
   `verify(tag)` and `end_open()`, with AES-GCM's signatures.
 
-`<webcpp/crypto/authenticated_box.hpp>` (no backend) declares `crypto::authenticated_box<C>`:
+`<webcpp/crypto/secret_key_encryption/authenticated_box.hpp>` (no backend) declares
+`secret_key_encryption::authenticated_box<C>`:
 `C::key_size`, `C::nonce_size`, `C::tag_size`, `typename C::result_type`; `c.seal(nonce, data)`
 returning `result<result_type>`; `c.open(nonce, data, tag)` returning `result<void>`, `data`
 zeroed on failure. The factory is not part of it: a secretbox is made by `from_key`, a crypto_box
-by `from_keys` from two X25519 keys. The concept stays at the top of `webcpp::crypto`, since its
-types are in two namespaces (R21).
+by `from_keys` from two X25519 keys. The concept lives beside the secret box, in
+`secret_key_encryption`; crypto_box, in `public_key_encryption`, satisfies it too (R21).
 
 | Type | Concept |
 |---|---|
@@ -362,18 +365,18 @@ are removed.
 
 The free forms: `secret_key_encryption::aead::seal(c, nonce, associated_data, data)` and
 `secret_key_encryption::aead::open(c, nonce, associated_data, data, tag)` constrained by `cipher`;
-`secret_key_encryption::seal(c, nonce, data)` and `open(c, nonce, data, tag)`, and the same pair in
-`public_key_encryption`, constrained by `authenticated_box` (R21). No free `seal` or `open` exists
-in `crypto::`. A box given to `secret_key_encryption::aead::seal` or `open` stops the build with a
+`secret_key_encryption::seal(c, nonce, data)` and `secret_key_encryption::open(c, nonce, data, tag)`
+constrained by `authenticated_box`, for a secret box and a crypto_box alike (R21). No free `seal`
+or `open` exists in `crypto::` nor in `public_key_encryption`. A box given to `secret_key_encryption::aead::seal` or `open` stops the build with a
 message naming the box forms; the arities differ, so no call is ambiguous.
 
 ### D6. Asynchronous seal and open everywhere native
 
 `async_seal` and `async_open`, member (`c.async_seal(executor, ...)`) and free
 (`secret_key_encryption::aead::async_seal(executor, c, ...)` for a `cipher`;
-`secret_key_encryption::async_seal` and `public_key_encryption::async_seal` for an
-`authenticated_box`, R21), with the synchronous arguments between the executor and the token,
-exist for every `secret_key_encryption::aead::cipher` and every `authenticated_box`. On a synchronous backend they run
+`secret_key_encryption::async_seal` for an `authenticated_box`, R21), with the synchronous arguments between the executor and the token,
+exist for every `secret_key_encryption::aead::cipher` and every
+`secret_key_encryption::authenticated_box`. On a synchronous backend they run
 the synchronous member and complete through `asio::post`, never inline, as the family does today.
 On `backends::browser` (a backend whose `detail::asynchronous_backend_v` is true), only AES-GCM is
 offered, through WebCrypto; any other stops the build with "webcpp::crypto: WebCrypto has no
@@ -453,9 +456,9 @@ The namespaces by purpose, with D3b's:
 
 | Namespace | Holds |
 |---|---|
-| `crypto` | the root: `random_device`, `constant_time_equal`, `erase_secret`, `secret<N>`, `error`, the signing vocabulary, the key pair concepts, `authenticated_box`, the free factories |
+| `crypto` | the root: `random_device`, `constant_time_equal`, `erase_secret`, `secret<N>`, `error`, the signing vocabulary, the key pair concepts, the free factories |
 | `crypto::ciphers` | symmetric algorithms: AES, AES-GCM, ChaCha20-Poly1305 in three nonce sizes |
-| `crypto::secret_key_encryption` | constructions under one secret key: `secretbox`; `aead`, the AEAD contract over `ciphers`' AEADs |
+| `crypto::secret_key_encryption` | constructions under one secret key: `secretbox`, the concept `authenticated_box` and the box forms `seal`/`open`; `aead`, the AEAD contract over `ciphers`' AEADs |
 | `crypto::public_key_encryption` | constructions between key pairs: `box`, `sealed_box` |
 | `crypto::key_exchange` | crypto_kx: `kx_keypair`, `session_keys` |
 | `crypto::curves` | curve primitives |
@@ -552,21 +555,31 @@ formats change, which gives them the typed keys' formats.
 - **R7 (amended by owner decision 13): the AEAD concepts live in
   `<webcpp/crypto/secret_key_encryption/aead.hpp>`** (was `<webcpp/crypto/aead.hpp>`), beside the
   free AEAD forms, which `ciphers/aead.hpp` and `ciphers/gcm.hpp` include; it includes no backend.
-- **R21: `authenticated_box` stays at the top of `webcpp::crypto`**, in
-  `<webcpp/crypto/authenticated_box.hpp>` (no backend), since its types live in
-  `secret_key_encryption` (secretbox) and `public_key_encryption` (crypto_box); the box free forms
-  `seal(box, nonce, data)` and `open(box, nonce, data, tag)`, and their asynchronous forms, are
-  declared once and named in both namespaces (`secret_key_encryption::seal`,
-  `public_key_encryption::seal`), so that no free `seal` or `open` exists in `crypto::` and argument-dependent lookup
-  finds them. Decision 13 does not place the concept; this is the amendment's reading, for the
-  owner to confirm.
+- **R21 (the coordinator's refinement of decision 13, 2026-11-23): `authenticated_box` is
+  `crypto::secret_key_encryption::authenticated_box`**, beside the secret box, in
+  `<webcpp/crypto/secret_key_encryption/authenticated_box.hpp>` (no backend), which
+  `secret_key_encryption/secretbox.hpp` and `public_key_encryption/box.hpp` include; its box forms
+  follow it: `secret_key_encryption::seal(box, nonce, data)`, `open(box, nonce, data, tag)`,
+  `async_seal` and `async_open`, for a secret box and a crypto_box alike (argument-dependent lookup
+  finds them for a secret box; a crypto_box is sealed by `secret_key_encryption::seal` named in
+  full, or by its member). No free `seal` or `open` exists in `crypto::` nor in
+  `public_key_encryption`.
 - **R22: decision 13's rule covers every public name, not only parameters**: the members
   `iv_size`, `max_iv_size` and `max_additional_data_size`, which the concepts require, become
   `nonce_size`, `max_nonce_size` and `max_associated_data_size`, and the error
   `invalid_iv_size` becomes `invalid_nonce_size` (its value 2 kept), so that a nonce is never
   called an IV in one name and a nonce in the next; `max_` stays, the standard library's own word
-  (`std::numeric_limits<T>::max`, `max_size`). Both readings are the amendment's, for the owner to
-  confirm.
+  (`std::numeric_limits<T>::max`, `max_size`). Accepted by the coordinator on 2026-11-23; X4 does it.
+- **R23 (controller ruling, 2026-11-23): 3.2 and 3.3 are written with decision 13's names; X4
+  covers the renames they do not touch.** 3.2 creates `secret_key_encryption/aead.hpp` and
+  `secret_key_encryption/authenticated_box.hpp`, moves the free `crypto::seal`/`open` into
+  `secret_key_encryption::aead` and `ciphers::secretbox` into `secret_key_encryption` (header
+  `secret_key_encryption/secretbox.hpp`), and migrates their callers; 3.3 moves the free
+  `crypto::async_seal`/`async_open` into `secret_key_encryption::aead` and migrates theirs. X4,
+  which runs before 2.2, renames what stays where it is: `iv` and `additional_data` on the existing
+  members, free forms and engines, `nonce_size`, `max_nonce_size`, `max_associated_data_size`,
+  `error::invalid_nonce_size`, `aux_random`, any other abbreviation, every call site of those names,
+  and the CODING-GUIDELINES rule; so the names 3.2 and 3.3 move already carry the renames.
 
 ## Risks / Trade-offs
 
@@ -584,4 +597,4 @@ superproject; local verification on every lane; merged by the controller; one CI
 
 ## Open Questions
 
-None: the owner's decisions 1 to 13 settle the change (R21 and R22 read decision 13 where it is silent).
+None: the owner's decisions 1 to 13 settle the change (R21 to R23 settle how decision 13 is built).
