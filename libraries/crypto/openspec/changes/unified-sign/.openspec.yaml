@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-22
+webcpp:
+  library: crypto
+  title: "crypto: one sign and verify on every curve, the scheme always named, the key pair contract and four forms of each operation"
+  kind: wrapper
+  port_of: null
+  status: implementing
+  release: null
+  implementation: https://github.com/webcpporg/crypto
+  decided: 2026-11-22

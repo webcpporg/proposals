@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Worktree: `/Users/rodrigo/dev/webcpporg/crypto-sign/webcpp` (superproject, branch `crypto/sign-unified`); the library is `libs/crypto` (its own repository, branch `crypto/sign-unified`). Commit in `libs/crypto` only, unless a task says otherwise.
+- Worktree: `/Users/you/dev/webcpporg/crypto-sign/webcpp` (superproject, branch `crypto/sign-unified`); the library is `libs/crypto` (its own repository, branch `crypto/sign-unified`). Commit in `libs/crypto` only, unless a task says otherwise.
 - Read `libs/crypto/AGENTS.md`, the superproject's `CODING-GUIDELINES.md` and `AGENTS.md` first; follow them (doc comment style, names, `[[nodiscard]]`, `noexcept`, include order, the timing guard rule).
 - Everything in English. Never the em dash character; a plain "-". Commit messages: `crypto: <what>`, no trailer of any kind (no Co-Authored-By, no "Generated with").
 - Never edit a generated file (`doc/generated/*`, `doc/llms.txt`, `include/webcpp/crypto/detail/capabilities.hpp`, `detail/defaults.hpp`, `test/capabilities_test.cpp`, the defaults' aliases in `build.jam`): change `doc/tables/crypto.json` or the generator and run `python3 doc/tables/generate.py`. Never edit `doc/tables/sizes.json` or `doc/performance.json` by hand. `doc/changelog.adoc`'s unreleased lines are the changelog source (each line at most 30 words); no `CHANGELOG.md` is edited.
@@ -20,8 +20,8 @@
 - Every public function that calls a backend holds `detail::timing_guard const timing;` as its first statement and is called by its backend's `test/timing_coverage_<backend>_test.cpp`; a public overload that forwards calls a private worker that holds no guard, so the first guard the call enters is its own.
 - No overload ever picks message versus digest by a span's extent or size.
 - ECDSA signs low S on both curves (P-256 normalizes after signing); P-256's verification accepts high and low S, secp256k1's refuses high S (design D3). The format helpers are `to_der(signature, output)`, `from_der(der)`, `normalize_low_s(signature)`, `is_low_s(signature) -> bool` on both curves; `normalize_ecdsa` and `check_low_s` are removed (design D4b, R13).
-- Build commands run from the superproject: `b2 --user-config=/Users/rodrigo/dev/webcpporg/webcpp/.local/user-config.jam -j10 toolset=clang <targets>` (targets like `libs/crypto/test//p256_ecdsa_bearssl`). A build of all of `libs/crypto/test libs/crypto/example`, and any gcc/Emscripten whole-directory run, is heavy: prefix it with `/Users/rodrigo/dev/webcpporg/heavy.sh crypto-sign`. Never rename or delete a file in `/Users/rodrigo/dev/webcpporg/HEAVY.queue`.
-- Emscripten needs `EM_CACHE=/Users/rodrigo/dev/webcpp/.local/emscripten-cache`; gcc is `toolset=gcc-15`.
+- Build commands run from the superproject: `b2 --user-config=/Users/you/dev/webcpporg/webcpp/.local/user-config.jam -j10 toolset=clang <targets>` (targets like `libs/crypto/test//p256_ecdsa_bearssl`). A build of all of `libs/crypto/test libs/crypto/example`, and any gcc/Emscripten whole-directory run, is heavy: prefix it with `/Users/you/dev/webcpporg/heavy.sh crypto-sign`. Never rename or delete a file in `/Users/you/dev/webcpporg/HEAVY.queue`.
+- Emscripten needs `EM_CACHE=/Users/you/dev/webcpp/.local/emscripten-cache`; gcc is `toolset=gcc-15`.
 - A flaky or failing test, or a lint warning, seen on the way is a defect to fix or to report to the controller; never skip one.
 
 ## Review Focus
