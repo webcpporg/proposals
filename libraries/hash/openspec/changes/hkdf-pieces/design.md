@@ -298,8 +298,7 @@ to the owner.
   abbreviation and stays.
 - **B4: the KDF parameter fields.** `n`, `r` and `p` are RFC 7914's symbols, not words;
   `memory_kib` abbreviates kibibytes. They become `cost`, `block_size`, `parallelism` and
-  `memory_kibibytes`, each field's comment keeping the RFC's symbol. The owner may keep the RFC
-  symbols instead (Open question 1).
+  `memory_kibibytes`, each field's comment keeping the RFC's symbol. Owner decision 1.
 - **B5: the asynchronous Extract and Expand** join with both overloads, single-buffer and
   pieces, so that every synchronous HKDF function has its asynchronous form; on WebCrypto the
   single-buffer `async_hkdf_extract` and `async_hkdf_expand` run the pieces engine with one piece
@@ -327,12 +326,10 @@ Branches `hash/hkdf-pieces` of webcpporg/hash, webcpporg/proposals and the super
 pointer); local verification on every lane; merged by the controller before crypto's `hpke`
 starts; one CI at the end.
 
-## Open Questions
+## Owner Decisions on the Open Questions (2026-11-23)
 
-For the owner; each has the default this change takes until answered.
-
-1. **The KDF parameter fields (B4)**: `scrypt_parameters{cost, block_size, parallelism}` and
-   `argon2_parameters::memory_kibibytes`, or RFC 7914's and RFC 9106's symbols kept
-   (`n`, `r`, `p`, `memory_kib`) as proper names? Default: spelled out.
+1. **The KDF parameter fields (B4)**: spelled out, `scrypt_parameters{cost, block_size,
+   parallelism}` and `argon2_parameters::memory_kibibytes`, each field's comment keeping the
+   RFC's symbol.
 2. **`fixed_info`, `shared_info` and `subkey_id` (D7)**: kept as their standards name them.
-   Default: kept.
+3. **The change as written**: approved.
