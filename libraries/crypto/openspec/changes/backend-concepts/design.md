@@ -44,6 +44,19 @@ shaped as they would be published (names, minimal operations, error contract, no
 timing-guard expectations, allocation rules, thread safety, the opaque key), so that when the first
 external backend appears they become the public backend interface (1) without being redesigned.
 
+## Owner decisions (2026-11-22, binding)
+
+1. **Concepts internal now, shaped for publication**, promoted unchanged when the first external
+   backend appears ("2 built to become 1").
+2. **`supports_v` works without the backend's header**, reading the generated table, which is
+   checked against the concepts in both directions (R1 confirmed, D7).
+3. **secp256k1 moves behind engines like the other curves and is split into capabilities like
+   them** (import, generate, public, export, ECDSA, Schnorr, recoverable, ECDH, tweaks,
+   ElligatorSwift, MuSig2, silent payments), not one core concept; a hardware wallet is the
+   motivating second backend (D8).
+4. **`generate()` uses the backend's own generation when it has one**, mandatory for opaque keys;
+   `random_device` and import is the path for engines that can only import (R3 confirmed).
+
 ## Goals / Non-Goals
 
 **Goals:** one concept per capability, checked against every backend's engines; the opaque key as a
@@ -152,7 +165,11 @@ extractable one adds `*_export` through `exportKey`, which is asynchronous, henc
 
 A test-only stand-in opaque backend (`test/backends/opaque.hpp`) implements P-256 and X25519 with
 handles into a table of keys it owns, `*_generate`, `*_public` and the uses only, so that the opaque
-shape is proven before part B exists; part B's browser backend is its first real consumer.
+shape is proven before part B exists; it has a synchronous form and an asynchronous one
+(`opaque_async`, whose `asynchronous_backend_v` is true and whose `async_engine` completes through
+`asio::post`), so that the `async_*` concepts are tested in this change (a coordinator ruling, R9).
+It is a test tool, not a shipped backend: outside the table, `supports_v` and the two-way check
+(R6). Part B's browser backend is the first real consumer of both shapes.
 
 ### D4. The catalogue
 
@@ -170,7 +187,7 @@ shape is proven before part B exists; part B's browser backend is its first real
 | | `ed25519ph<E>` | `begin`, `update`, `sign`, `verify` | `ed25519ph_engine` on libsodium |
 | X25519 | `x25519_import`, `x25519_generate`, `x25519_public`, `x25519_agreement`, `x25519_export` | per D3; `agree` refuses an all-zero result | `x25519_engine` on libsodium |
 | P-256 | `p256_import`, `p256_generate`, `p256_public`, `p256_point` (validate, compress, decompress), `p256_ecdsa_signing`, `p256_ecdsa_verifying`, `p256_ecdh`, `p256_export`, `ecdsa_der` | per D3 | `p_curve_engine<families::p256, B>` on BearSSL (and OpenSSL where the table has it) |
-| secp256k1 | `secp256k1_core` (import, public, export, ECDSA, Schnorr), `secp256k1_recovery`, `secp256k1_ecdh`, `secp256k1_tweak`, `secp256k1_ellswift`, `secp256k1_musig`, `secp256k1_silent_payments` | one per libsecp256k1 module | `secp256k1_engine<Module, backends::secp256k1>` (D8) |
+| secp256k1 | `secp256k1_import`, `secp256k1_generate`, `secp256k1_public`, `secp256k1_export`, `secp256k1_ecdsa_signing`, `secp256k1_ecdsa_verifying`, `secp256k1_schnorr_signing`, `secp256k1_schnorr_verifying`, `secp256k1_recoverable` (sign and recover), `secp256k1_ecdh`, `secp256k1_tweak`, `secp256k1_ellswift`, `secp256k1_musig`, `secp256k1_silent_payments` | per D3 for the keys; one per protocol for the rest | `secp256k1_engine<Capability, backends::secp256k1>` (D8) |
 | Encoding | `base64<E>` | constant-time `encode` and `decode`, standard with padding and URL-safe without, into fixed spans | `pem_engine` on libsodium (renamed `base64_engine`) |
 | Entropy | `entropy_source<E>` | `fill(span)` returning `result<void>` (`entropy_unavailable`) | the platform sources of `detail/entropy.hpp` |
 | Asynchronous | `async_make<E, A>`, `async_generate<E, K>`, `async_seal<E, A>`, `async_open<E, A>`, `async_sign<E, K, S>`, `async_verify<E, S, P>`, `async_agree<E, K>`, `async_export<E, K>` | the shapes `async.hpp` documents: executor first, token last, completion signatures as the public functions' | `async_engine<backends::browser>` (part B), the stand-in |
@@ -186,8 +203,13 @@ Each backend header, after each specialization, asserts the concepts its table c
 families::chacha20_poly1305>)`, and so on. `generate.py` writes, beside each cell, the list of
 concepts the cell requires (from a map in `crypto.json`'s family rows: `"capabilities": ["aead"]`),
 and `capabilities_test` checks both directions on every target where the backend's library
-builds: a present cell's engine satisfies its concepts, and an engine that satisfies a family's
-concepts has its cell present. A missing operation is a diagnostic naming the concept and the
+builds: a present cell's engine satisfies its concepts, and an engine that satisfies a capability's
+concept has its cell present. The reverse direction runs over the fixed list of shipped backends
+(`detail::shipped_backends`, generated from the table) and counts only real specializations: each
+backend's specialization carries a marker (`static constexpr bool is_specialization = true`), which
+the refusing primary engines never have, so a primary whose body happens to satisfy a concept never
+counts as a capability (a coordinator ruling, R7). The test-only opaque backend is neither in the
+list nor in the table (R6). A missing operation is a diagnostic naming the concept and the
 operation (each concept is a conjunction of named sub-requirements, so compilers print which one
 failed).
 
@@ -220,15 +242,24 @@ when its engine satisfies the concept. The table stays, as the header-free decla
   as the foundation requires; the concept cannot express it, and a run-time test does.
 - **Targets without a backend's library**: the cell is absent for that target; the backend header's
   inclusion refusal is the check (a message test), since no engine exists there to test.
+- **Partial capability** (a coordinator ruling, R8): `supports_v<Algorithm, Backend>` is true when
+  the backend has the algorithm's use operations (sign and verify for a signature algorithm, agree
+  for an agreement, seal and open for an AEAD or a box, the operation of the rest), whatever it has
+  of import, generate and export; the finer `supports_capability_v<Capability, Backend>`, with a tag
+  per capability of the catalogue (`capabilities::p256_export`, ...), answers each capability, from
+  the table's one cell per capability. An opaque backend thus supports P-256 without export, and a
+  program asks `supports_capability_v<capabilities::p256_export, B>` before it calls `secret()`.
+  Both stay header-free and both are checked against the concepts.
 
 ### D8. secp256k1 behind an engine
 
 The curve's headers call libsecp256k1 directly today. Their calls move, unchanged, behind
-`detail::secp256k1_engine<Module, backends::secp256k1>`, one specialization per module (`core`,
-`recovery`, `ecdh`, `extrakeys`, `ellswift`, `musig`, `silentpayments`), in
-`backends/secp256k1.hpp`, so that the curve uses the seam every other curve uses, its modules have
-concepts, and an alternative secp256k1 implementation (a hardware wallet's) is a backend like any
-other. The static context, the self test, the canary and the no-allocation verification stay as they
+`detail::secp256k1_engine<Capability, backends::secp256k1>`, one specialization per capability of
+D4 (import, generate, public, export, ECDSA, Schnorr, recoverable, ECDH, tweaks, ElligatorSwift,
+MuSig2, silent payments), in `backends/secp256k1.hpp`, so that the curve uses the seam every other
+curve uses and is split as they are (owner decision 3). A hardware wallet, the motivating second
+backend, implements generate, public and the signing capabilities over keys that never leave it,
+and neither import nor export. The static context, the self test, the canary and the no-allocation verification stay as they
 are; the memory option's workspace for MuSig2 and silent payments is part of those concepts.
 
 ### D9. The public API's constraints
@@ -267,21 +298,25 @@ first, in `detail`, as an ordinary change.
 
 ## Rulings
 
-- **R1: the table is checked against the concepts, `supports_v` stays header-free** (D7). The owner
-  asked that `supports_v` and `detail::supported` derive from the concepts; deriving them literally
-  would require the backend's header to ask, which breaks asking about a backend the program does
-  not link and cannot work on targets where the backend's header refuses inclusion. The two-way
-  check makes the concepts the single source of truth while keeping the header-free answer.
-- **R2: secp256k1 moves behind an engine seam** (D8), the only structural change outside the
-  concepts themselves, so that "a backend implements only the concepts it has" holds for every
-  curve.
-- **R3: `generate()` uses the engine's `*_generate` when the backend has one**, else
-  `random_device` and `*_import` as today; on today's backends (none has `*_generate` but WebCrypto
-  and the stand-in) nothing changes.
+- **R1 (owner decision 2): the table is checked against the concepts, `supports_v` stays
+  header-free** (D7): deriving it from the concepts would require the backend's header to ask, which
+  breaks asking about a backend the program does not link and cannot work where the backend's
+  header refuses inclusion; the two-way check makes the concepts the single source of truth.
+- **R2 (owner decision 3): secp256k1 moves behind engines, split into capabilities** (D8).
+- **R3 (owner decision 4): `generate()` uses the engine's `*_generate` when the backend has one**,
+  mandatory for opaque keys; else `random_device` and `*_import`.
 - **R4: the formats engines dissolve** (D4) into key and encoding capabilities; the PEM family's
   engine becomes `base64_engine` under the family `families::pem`, which keeps its table row.
 - **R5: the concepts' headers live in `detail/backend/`**, not `detail/capabilities/`, which would
   sit beside the generated `detail/capabilities.hpp` and read as its part.
+- **R6 (coordinator): the test-only opaque backend lives outside the table and the two-way check**;
+  it is a test tool, not a shipped backend.
+- **R7 (coordinator): the reverse check counts only real specializations** of the shipped backends,
+  by a marker the refusing primaries never carry (D5).
+- **R8 (coordinator): partial capability**: `supports_v` means the algorithm's use operations;
+  `supports_capability_v<Capability, Backend>` answers each capability, one table cell each (D7).
+- **R9 (coordinator): the stand-in has an asynchronous form**, so the `async_*` concepts are tested
+  here (D3).
 
 ## Before and after
 
@@ -362,10 +397,4 @@ does not depend on it: no public name changes.
 
 ## Open Questions
 
-- **O1** (R1): keep `supports_v` header-free from the table, checked two ways against the concepts,
-  or make it concept-derived and require the backend's header to ask?
-- **O2** (R2): move secp256k1's direct calls behind `secp256k1_engine` in this change, or keep
-  secp256k1 outside the seam as a single-backend curve?
-- **O3** (R3): when a backend can both import and generate (OpenSSL), should `generate()` prefer the
-  backend's own generation, or keep crypto's `random_device` path for one behaviour on every
-  backend?
+None: the owner answered O1 to O3 on 2026-11-22 (owner decisions 2 to 4).

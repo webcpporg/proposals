@@ -25,8 +25,8 @@ the first external backend appears, with nothing redesigned then.
   cipher, GCM (one-shot and incremental), each AEAD family, the authenticated boxes (secretbox,
   crypto_box), the sealed box, crypto_kx, Ed25519 (import, generate, sign, verify, export, to
   X25519), Ed25519ph, X25519 (import, generate, agree, export), P-256 (import, generate, public
-  point, ECDSA sign and verify, ECDH, export, DER), secp256k1's modules (core keys and signatures,
-  recovery, ECDH, tweaks, ElligatorSwift, MuSig2, silent payments), constant-time base64, the
+  point, ECDSA sign and verify, ECDH, export, DER), secp256k1 (import, generate, public, export, ECDSA,
+  Schnorr, recoverable, ECDH, tweaks, ElligatorSwift, MuSig2, silent payments), constant-time base64, the
   entropy source, and the asynchronous engine's operations. Each names its operations, their
   results (`result<void>`, `result<T>` or `bool` for a public predicate, outputs into fixed spans),
   `noexcept`, and states the semantic contract the compiler cannot check: who holds the timing
@@ -46,8 +46,13 @@ the first external backend appears, with nothing redesigned then.
   `aead<F, B>` and the others check the capability each member needs, and an incomplete backend
   stops the build with a message naming the missing capability; the generated refusals for a
   backend without the algorithm, not linked, or whose header is missing stay as they are.
-- **secp256k1 behind an engine**: its direct libsecp256k1 calls move behind
-  `detail::secp256k1_engine<Module, backends::secp256k1>`, so that its modules have concepts too.
+- **secp256k1 behind engines, split into capabilities** like the other curves (import, public,
+  export, ECDSA, Schnorr, recoverable, ECDH, tweaks, ElligatorSwift, MuSig2, silent payments),
+  through `detail::secp256k1_engine<Capability, backends::secp256k1>`; a hardware wallet is the
+  motivating second backend.
+- **Partial support**: `supports_v` means the algorithm's use operations, and
+  `supports_capability_v<Capability, Backend>` answers each capability (import, export, ...), one
+  table cell each, so an opaque backend supports P-256 without export.
 - **The promotion criterion**, written down: when the first real external backend appears, the same
   concepts move to a public namespace (`crypto::backend`) with a stability policy, documentation and
   an example backend; nothing is redesigned then.
@@ -74,4 +79,6 @@ None.
   `backends/*.hpp`, every family header, `curves/secp256k1*.hpp`, `async.hpp`,
   `doc/tables/generate.py` and its generated files, `test/capabilities_test.cpp`, message tests,
   the stand-in opaque backend), the superproject's pointer.
-- **Status:** proposed.
+- **Status:** approved by the owner on 2026-11-22 (`decided`); it stays `proposed` in the
+  metadata until `reference/plan.md` carries the plan's code, which `tools/proposals.py` requires
+  of an `accepted` proposal, and then becomes `accepted`.

@@ -11,12 +11,12 @@ the end of every task. A plan with code goes in `reference/plan.md` when the pro
 ## 2. The engines checked
 
 - [ ] 2.1 Every backend header asserts its engines' concepts; the formats engines dissolve into key and encoding capabilities (D5, R4)
-- [ ] 2.2 secp256k1's calls behind `secp256k1_engine<Module, backends::secp256k1>`, its concepts asserted; its no-allocation and constant-time tests unchanged (D8, R2)
-- [ ] 2.3 The test-only opaque backend for P-256 and X25519, and `generate()` through a backend's own generation (D3, R3)
+- [ ] 2.2 secp256k1's calls behind `secp256k1_engine<Capability, backends::secp256k1>`, split into its capabilities, each concept asserted; its no-allocation and constant-time tests unchanged (D8, R2)
+- [ ] 2.3 The test-only opaque backend for P-256 and X25519, synchronous and asynchronous, outside the table; the `async_*` concepts tested on it; `generate()` through a backend's own generation (D3, R3, R6, R9)
 
 ## 3. The table and the public API
 
-- [ ] 3.1 `crypto.json`'s family rows list their capabilities; `generate.py` and `capabilities_test` check the cells against the concepts both ways on every target and lane; `supports_v` unchanged and header-free (D7, R1)
+- [ ] 3.1 `crypto.json`'s family rows list their capabilities, one cell per capability; `generate.py` writes `supports_capability_v`, `detail::shipped_backends` and the specialization marker's check; `capabilities_test` checks the cells against the concepts both ways on every target and lane; `supports_v` header-free, meaning the use operations (D5, D7, R1, R7, R8)
 - [ ] 3.2 Every public member asserts the capability it uses, after the primaries' generated refusals; message tests for each area (D9)
 
 ## 4. The page and the delivery
