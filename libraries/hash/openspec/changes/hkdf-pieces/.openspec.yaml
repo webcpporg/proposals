@@ -5,7 +5,7 @@ webcpp:
   title: "hash: HKDF over input pieces, no cap and no heap on every backend, spelled-out names"
   kind: wrapper
   port_of: null
-  status: proposed
+  status: accepted
   release: null
-  implementation: null
+  implementation: https://github.com/webcpporg/hash
   decided: 2026-11-23
