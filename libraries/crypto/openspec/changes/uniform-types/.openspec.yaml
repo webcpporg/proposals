@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-22
+webcpp:
+  library: crypto
+  title: "crypto: typed signatures, typed X25519 keys, and concepts for key pairs, AEADs and boxes"
+  kind: wrapper
+  port_of: null
+  status: proposed
+  release: null
+  implementation: null
+  decided: 2026-11-22
