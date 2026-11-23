@@ -39,32 +39,43 @@ the engines it describes (typed keys and signatures, X25519's key pair, the boxe
 ## Intent (owner, 2026-11-22)
 
 Put the library's capabilities into concepts; a backend implements only the concepts it has. The
-path is "2 built to become 1": internal concepts now (2), written against the real engines and
-shaped as they would be published (names, minimal operations, error contract, no exceptions,
-timing-guard expectations, allocation rules, thread safety, the opaque key), so that when the first
-external backend appears they become the public backend interface (1) without being redesigned.
+concepts are internal (`detail`), an implementation contract between crypto's public types and its
+own backends, written against the real engines (names, minimal operations, error contract, no
+exceptions, timing-guard expectations, allocation rules, thread safety, the opaque key). The first
+draft planned to publish them later ("2 built to become 1"); on 2026-11-23 the owner decided that
+there will be no public backend API (owner decision 5).
 
 ## Owner decisions (2026-11-22, binding)
 
-1. **Concepts internal now, shaped for publication**, promoted unchanged when the first external
-   backend appears ("2 built to become 1").
+1. *(Concepts internal now, shaped for publication and promoted when the first external backend
+   appears: superseded by decision 5.)*
 2. **`supports_v` works without the backend's header**, reading the generated table, which is
    checked against the concepts in both directions (R1 confirmed, D7).
 3. **secp256k1 moves behind engines like the other curves and is split into capabilities like
    them** (import, generate, public, export, ECDSA, Schnorr, recoverable, ECDH, tweaks,
-   ElligatorSwift, MuSig2, silent payments), not one core concept; a hardware wallet is the
-   motivating second backend (D8).
+   ElligatorSwift, MuSig2, silent payments), not one core concept (D8). (The hardware wallet named
+   then as the motivating second backend is no longer expected, decision 5; the split stays for
+   uniformity with the other curves.)
 4. **`generate()` uses the backend's own generation when it has one**, mandatory for opaque keys;
    `random_device` and import is the path for engines that can only import (R3 confirmed).
+
+2026-11-23:
+
+5. **There will be no public backend API**: the capability concepts stay in `detail` as an
+   implementation contract, with no promotion to `crypto::backend`, no stability policy, no
+   documentation for third parties and no example external backend. The reason: the owner sees no
+   external backend coming. The opaque-key shape stays, because the WebCrypto (browser) backend of
+   part B needs it, and so does the test-only opaque backend that proves it.
 
 ## Goals / Non-Goals
 
 **Goals:** one concept per capability, checked against every backend's engines; the opaque key as a
-first-class shape; one source of truth for what a backend implements, with the table checked
-against it; refusals that name the missing capability; secp256k1 behind the same engine seam; a
-written promotion criterion.
+first-class shape, for the browser backend; one source of truth for what a backend implements, with
+the table checked against it; refusals that name the missing capability; secp256k1 behind the same
+engine seam.
 
-**Non-goals:** publishing the concepts now; new backends (part B's browser backend is its own
+**Non-goals:** a public backend API, now or later (owner decision 5), and what only publication
+would need: a stability policy, documentation for third parties, an example external backend; new backends (part B's browser backend is its own
 change and the first real consumer of the opaque and asynchronous shapes); changing any public
 name, result or error; a run-time plugin or provider mechanism.
 
@@ -84,13 +95,12 @@ surface the project must carry for years. Rejected for now.
 an engine must provide, an incomplete engine fails inside a public function, and the opaque key has
 no shape. Rejected.
 
-**C. Internal concepts shaped for publication (chosen by the owner).** The concepts are real, checked
-against every engine on every lane, and used by the public API's constraints, but they stay in
-`detail`, free to change, until an external backend gives them a second implementor outside the
-library. RustCrypto's public traits (`aead::Aead`, `signature::Signer`, `digest::Digest`) show the
-benefit of a published capability interface with many implementors, and the cost of changing it
-once published (a trait change ripples through every implementor crate): publication waits for the
-second implementor, and the concepts are shaped for it from the start.
+**C. Internal concepts as an implementation contract (chosen by the owner).** The concepts are real,
+checked against every engine on every lane, and used by the public API's constraints, and they stay
+in `detail`, free to change with the backends crypto ships. The first draft shaped them for a later
+publication, as RustCrypto's public traits (`aead::Aead`, `signature::Signer`) serve many
+implementors at the cost of ecosystem-wide churn when one changes; owner decision 5 drops
+publication, so nothing is spent on it.
 
 ## Decisions
 
@@ -98,9 +108,8 @@ second implementor, and the concepts are shaped for it from the start.
 
 `<webcpp/crypto/detail/backend/*.hpp>`, namespace `webcpp::crypto::detail::backend`, one header
 per area (`symmetric.hpp`, `boxes.hpp`, `ed25519.hpp`, `x25519.hpp`, `p256.hpp`, `secp256k1.hpp`,
-`encoding.hpp`, `entropy.hpp`, `asynchronous.hpp`) and `concepts.hpp` including them all. The
-directory and namespace are the ones promotion turns into `<webcpp/crypto/backend/*.hpp>` and
-`crypto::backend` (D9). Each concept takes the engine type it checks and the parameters that select
+`encoding.hpp`, `entropy.hpp`, `asynchronous.hpp`) and `concepts.hpp` including them all. They are
+internal, as everything in `detail` is. Each concept takes the engine type it checks and the parameters that select
 it, and is named after the capability, never after a backend: `backend::aead<Engine, Family>`,
 `backend::p256_ecdsa_signing<Engine>`. Each family header includes its area's header, and no
 concept header includes a backend.
@@ -152,8 +161,8 @@ A key capability is split by what it does to the key:
 | use (`*_signing`, `*_agreement`, ...) | operate with the state | no |
 | `*_export` | give the secret bytes back | yes |
 
-A state may be an opaque handle (a WebCrypto `CryptoKey` reference, an HSM object id, a Secure
-Enclave or TPM handle); every use capability is written so that it reads the state only through
+A state may be an opaque handle (a WebCrypto `CryptoKey` reference, for part B's browser backend,
+or the test-only opaque backend's index); every use capability is written so that it reads the state only through
 the engine. Today's `p_curve_engine::scalar` and the Ed25519 seed copy become `*_export`, and
 today's `generate()`, which draws bytes with `random_device` then imports them, becomes: the
 engine's `*_generate` when it has one, else `random_device` and `*_import` (R3). A backend whose
@@ -257,9 +266,7 @@ The curve's headers call libsecp256k1 directly today. Their calls move, unchange
 `detail::secp256k1_engine<Capability, backends::secp256k1>`, one specialization per capability of
 D4 (import, generate, public, export, ECDSA, Schnorr, recoverable, ECDH, tweaks, ElligatorSwift,
 MuSig2, silent payments), in `backends/secp256k1.hpp`, so that the curve uses the seam every other
-curve uses and is split as they are (owner decision 3). A hardware wallet, the motivating second
-backend, implements generate, public and the signing capabilities over keys that never leave it,
-and neither import nor export. The static context, the self test, the canary and the no-allocation verification stay as they
+curve uses and is split as they are (owner decision 3). The static context, the self test, the canary and the no-allocation verification stay as they
 are; the memory option's workspace for MuSig2 and silent payments is part of those concepts.
 
 ### D9. The public API's constraints
@@ -277,24 +284,14 @@ uniform-types concepts (`crypto::keypair`, `crypto::aead`, ...) are the public a
 the backend concepts are what their members require of a backend, and the names never collide
 (`crypto::aead` versus `detail::backend::aead`).
 
-### D10. The promotion criterion (part 1)
+### D10. No public backend API (owner decision 5)
 
-The concepts move from `detail::backend` to a public namespace `crypto::backend` (headers
-`<webcpp/crypto/backend/*.hpp>`) when the first real external backend appears: an HSM, a Secure
-Enclave or TPM binding, or a company's own library implemented outside webcpporg/crypto. At that
-point, and not before:
-
-- the concepts, the engine-and-state seam and the families' tags become public, with their
-  documentation (each concept's semantic contract of D2 as text), unchanged in shape;
-- a stability policy: the backend interface is versioned on its own (a
-  `crypto::backend::interface_version`), additions are new concepts or optional operations, a
-  removal or a changed signature is a major version of the interface, announced a release ahead;
-- an example backend in the repository (`example/backend/`), built and tested on every lane,
-  implementing a subset (the opaque P-256 of D3) as an external backend would;
-- the table learns to take rows for backends it does not ship.
-
-Nothing is redesigned at promotion: if the external backend needs a change, that change is made
-first, in `detail`, as an ordinary change.
+The concepts, the engines and the states stay in `detail`; no `crypto::backend` namespace, no
+`<webcpp/crypto/backend/*.hpp>`, no stability policy, no third-party documentation and no example
+external backend are planned. The guide's chapter on backends describes the backends crypto ships
+and the opaque-key behaviour a program sees (which calls a key that never leaves its backend
+refuses), not how to write a backend. The concepts may change with any change to crypto's own
+backends.
 
 ## Rulings
 
@@ -343,7 +340,7 @@ struct aead_engine<families::chacha20_poly1305, backends::bearssl> { /* unchange
 static_assert(detail::backend::aead<aead_engine<families::chacha20_poly1305, backends::bearssl>,
                                     families::chacha20_poly1305>);
 
-// The concept, shaped for publication.
+// The concept, an internal contract.
 template <class Engine, class Family>
 concept aead = requires(typename Engine::state& s, typename Engine::state& other,
                         std::span<std::uint8_t const, Family::key_size> key,
@@ -382,8 +379,8 @@ struct opaque_p256_engine {
 
 ## Risks / Trade-offs
 
-- **Concepts too narrow or too wide** for an external backend: mitigated by the opaque stand-in now
-  and part B next, two shapes unlike today's engines, before anything is published.
+- **Concepts too narrow for the browser backend**: mitigated by the opaque stand-in now, synchronous
+  and asynchronous; being internal, a concept that part B finds wrong is changed with part B.
 - **Diagnostics**: a failed concept's message can be long; each concept is a conjunction of named
   sub-concepts so the first failing operation is named, and the public assertion's text names the
   capability in plain words.

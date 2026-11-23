@@ -21,5 +21,5 @@ the end of every task. A plan with code goes in `reference/plan.md` when the pro
 
 ## 4. The page and the delivery
 
-- [ ] 4.1 The guide's chapter on backends: the catalogue, the contract, the opaque key, the promotion criterion (D10); `crypto.json`'s generated files; the changelog line
+- [ ] 4.1 The guide's chapter on backends: the catalogue, the contract, the opaque key as a program sees it, no public backend API (D10); `crypto.json`'s generated files; the changelog line
 - [ ] 4.2 Full local verification on every lane, pull requests, merge, one CI at the end

@@ -9,14 +9,14 @@ specializes it (`detail::p_curve_engine<families::p256, backends::bearssl>`,
 only in the capability table, `doc/tables/crypto.json`, from which `detail::supported` and
 `supports_v` are generated. Nothing checks that a specialization has the operations its cell
 promises, an engine that lacks one fails deep inside a public function with the compiler's message,
-and a key that never leaves its backend (WebCrypto's non-extractable `CryptoKey` today; an HSM, a
-Secure Enclave or a TPM tomorrow) has no shape at all: the engines assume a key's bytes are in
+and a key that never leaves its backend (WebCrypto's non-extractable `CryptoKey`, which part B's browser
+backend holds) has no shape at all: the engines assume a key's bytes are in
 memory (`p_curve_engine::scalar` copies the secret out).
 
 On 2026-11-22 the owner decided to put the library's capabilities into concepts, one per
-capability, so that a backend implements only the concepts it has, by the path "2 built to become
-1": internal concepts now, shaped as they would be published, promoted to a public namespace when
-the first external backend appears, with nothing redesigned then.
+capability, so that a backend implements only the concepts it has; on 2026-11-23 the owner decided
+there will be no public backend API: the concepts stay internal, an implementation contract between
+crypto's public types and the backends it ships.
 
 ## What Changes
 
@@ -48,14 +48,13 @@ the first external backend appears, with nothing redesigned then.
   backend without the algorithm, not linked, or whose header is missing stay as they are.
 - **secp256k1 behind engines, split into capabilities** like the other curves (import, public,
   export, ECDSA, Schnorr, recoverable, ECDH, tweaks, ElligatorSwift, MuSig2, silent payments),
-  through `detail::secp256k1_engine<Capability, backends::secp256k1>`; a hardware wallet is the
-  motivating second backend.
+  through `detail::secp256k1_engine<Capability, backends::secp256k1>`.
 - **Partial support**: `supports_v` means the algorithm's use operations, and
   `supports_capability_v<Capability, Backend>` answers each capability (import, export, ...), one
   table cell each, so an opaque backend supports P-256 without export.
-- **The promotion criterion**, written down: when the first real external backend appears, the same
-  concepts move to a public namespace (`crypto::backend`) with a stability policy, documentation and
-  an example backend; nothing is redesigned then.
+- **No public backend API** (owner, 2026-11-23, "the owner sees no external backend coming"): the
+  concepts stay in `detail`; no stability policy, third-party documentation or example external
+  backend. The opaque-key shape stays for the browser backend.
 
 ## Capabilities
 

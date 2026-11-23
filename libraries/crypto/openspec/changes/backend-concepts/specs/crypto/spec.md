@@ -28,12 +28,12 @@ The calls of `curves::secp256k1` and its modules into libsecp256k1 SHALL go thro
 - **WHEN** the counting tests run secp256k1's verifications through the engine
 - **THEN** the counts are zero, as before
 
-### Requirement: Backend capabilities: the promotion criterion
-The documentation of `detail::backend` SHALL state that its concepts move unchanged to a public namespace `crypto::backend`, with a stability policy, documentation and an example backend, when the first real external backend appears, and not before.
+### Requirement: Backend capabilities: internal only
+The capability concepts, the engines and their states SHALL stay in `webcpp::crypto::detail`; no public backend namespace, header or interface MUST exist, and the guide MUST describe the shipped backends and the refusals a program sees for a key that never leaves its backend, not how to write a backend.
 
-#### Scenario: The criterion written down
-- **WHEN** the guide's chapter on backends is read
-- **THEN** it states the criterion, the namespace the concepts would take, and that nothing is redesigned at promotion
+#### Scenario: Nothing public to implement
+- **WHEN** the installed headers are listed
+- **THEN** no header outside `detail/` declares a backend capability concept, and no `crypto::backend` namespace exists
 
 ### Requirement: Backend capabilities: partial support
 `supports_v<Algorithm, Backend>` SHALL be true when the backend has the algorithm's use operations (sign and verify, agree, seal and open, or the algorithm's operation), whatever it has of import, generate and export, and `supports_capability_v<Capability, Backend>` SHALL answer each capability of the catalogue from the table's one cell per capability, needing no backend's header. The check of the table against the concepts MUST, in its reverse direction, count only real specializations of the shipped backends, marked as such, never a refusing primary engine.
