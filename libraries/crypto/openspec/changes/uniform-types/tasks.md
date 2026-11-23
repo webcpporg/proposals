@@ -25,12 +25,12 @@ accepted.
 ## 3. Concepts
 
 - [ ] 3.1 `keypair`, `signing_keypair`, `agreement_keypair` and each curve's `static_assert`s; `crypto::sign`, `crypto::agree` and their asynchronous forms constrained; message tests (D4)
-- [ ] 3.2 `<webcpp/crypto/aead.hpp>`: `aead`, `streaming_aead`, `authenticated_box`; secretbox out of the AEAD template without additional data; each cipher's `static_assert`; the free `seal` and `open` in both forms (D5, R7)
-- [ ] 3.3 `async_seal`, `async_open` and `async_from_key` for every AEAD and box on native backends, the browser stand-in's refusal (D6)
+- [ ] 3.2 `<webcpp/crypto/secret_key_encryption/aead.hpp>`: `secret_key_encryption::aead::cipher` and `streaming_cipher`; `<webcpp/crypto/authenticated_box.hpp>`: `authenticated_box`; secretbox out of the AEAD template as `secret_key_encryption::basic_secretbox`, without associated data; each cipher's `static_assert`; the free `secret_key_encryption::aead::seal` and `open` constrained, and the box forms in `secret_key_encryption` and `public_key_encryption` (D5, R7, R21, owner decision 13)
+- [ ] 3.3 `async_seal`, `async_open` and `async_from_key` for every AEAD and box on native backends (the free forms `secret_key_encryption::aead`'s, and the box forms `secret_key_encryption`'s and `public_key_encryption`'s), the browser stand-in's refusal (D6, R21)
 
 ## 4. The page, the generated files and the delivery
 
-- [ ] 4.1 The guide's chapters (signatures, X25519, AEADs), the section about protecting secrets outside the primitives (`constant_time_equal`, `erase_secret`, `secret<N>`, `random_device`; owner decision 11), `crypto.json` and its generated files, the changelog line
+- [ ] 4.1 The guide's chapters (signatures, X25519, AEADs and `secret_key_encryption`), the section about protecting secrets outside the primitives (`constant_time_equal`, `erase_secret`, `secret<N>`, `random_device`; owner decision 11), `crypto.json` and its generated files, the changelog line
 - [ ] 4.2 Full local verification on every lane (native, Emscripten, wasip2, wasip3, MSVC, gcc, the constant-time lane, the Linux lint), pull requests, merge, one CI at the end
 
 ## 5. Small fixes found along the way
@@ -39,3 +39,4 @@ accepted.
 - [ ] X1b libsodium's own randomness on Emscripten (its stir in `sodium_init`, the sealed box's ephemeral key) goes through crypto's entropy, so that a throwing `getRandomValues` is `entropy_unavailable` there too; reproduced first (controller ruling)
 - [ ] X2 A public `crypto::erase_secret` in `<webcpp/crypto/erase_secret.hpp>` for any non-const contiguous sized range of trivially copyable elements, over `detail::wipe`; `crypto::equal` renamed `crypto::constant_time_equal` (`<webcpp/crypto/constant_time_equal.hpp>`), no alias, every caller moved, webcpp::hash's and the superproject's fixtures included; tests, message tests, the pages and the namespace table's rows (controller ruling, owner decision 11, D10)
 - [ ] X3 No one-word local or parameter in a public header (MSVC C4459 at /W4 /WX): renamed, and a test whose globals carry every such name compiles warning-free on MSVC (controller ruling)
+- [ ] X4 The AEAD contract in `crypto::secret_key_encryption::aead`: the free `seal`, `open`, `async_seal` and `async_open` moved there from `crypto::` (`<webcpp/crypto/secret_key_encryption/aead.hpp>`, included by every AEAD's header); `ciphers::secretbox` and `secretbox_xchacha20poly1305` moved to `crypto::secret_key_encryption` (`secret_key_encryption/secretbox.hpp`), no alias; public names spelled out (`nonce`, `nonce_bytes`, `associated_data_bytes`, `auxiliary_random_bytes`, `nonce_size`, `max_nonce_size`, `max_associated_data_size`, `error::invalid_nonce_size`) and the rule in CODING-GUIDELINES.md; every caller moved, the superproject's fixtures included; message tests for the removed names; webcpp::trystero and hash's HKDF names out of scope; runs after 2.1, before 2.2 (controller ruling, owner decision 13, D11, R22)

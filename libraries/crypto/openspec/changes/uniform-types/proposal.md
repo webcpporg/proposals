@@ -39,13 +39,23 @@ On 2026-11-22 the owner decided to type all three in one small change merged bef
   `crypto::signing_keypair` (also `sign` for each scheme it declares, at least one) and
   `crypto::agreement_keypair` (also `agree`). Ed25519 signs; P-256 and secp256k1 sign and agree;
   X25519 agrees.
-- **AEAD and box concepts**: `crypto::aead` (sizes, `result_type`, `from_key(key)`,
-  `seal(iv, ad, data)`, `open(iv, ad, data, tag)`), its refinement `crypto::streaming_aead`
-  (AES-GCM's incremental seal and open), and the sibling `crypto::authenticated_box`
-  (`seal(iv, data)`, `open(iv, data, tag)`) for secretbox and crypto_box, which lose the additional
-  data they refused. `crypto::seal`, `crypto::open` and the asynchronous forms are constrained by
-  them, and `async_seal` and `async_open` extend to every AEAD and box on native backends; the
-  browser backend keeps WebCrypto's AES-GCM only, refusing the others with a clear message.
+- **AEAD and box concepts**: `secret_key_encryption::aead::cipher` (sizes, `result_type`,
+  `from_key(key)`, `seal(nonce, associated_data, data)`, `open(nonce, associated_data, data, tag)`),
+  its refinement `secret_key_encryption::aead::streaming_cipher` (AES-GCM's incremental seal and
+  open), and the sibling `crypto::authenticated_box` (`seal(nonce, data)`, `open(nonce, data, tag)`)
+  for secretbox and crypto_box, which lose the additional data they refused. The free
+  `secret_key_encryption::aead::seal`, `open` and their asynchronous forms, and the box forms, are
+  constrained by them, and `async_seal` and `async_open` extend to every AEAD and box on native
+  backends; the browser backend keeps WebCrypto's AES-GCM only, refusing the others with a clear
+  message.
+- **Secret-key encryption and spelled-out names** (owner decision 13, 2026-11-23): the AEAD
+  contract lives in `crypto::secret_key_encryption::aead`
+  (`<webcpp/crypto/secret_key_encryption/aead.hpp>`), and the free `seal`, `open`, `async_seal`
+  and `async_open` move there from `crypto::`; secretbox moves from `crypto::ciphers` to
+  `crypto::secret_key_encryption` (`<webcpp/crypto/secret_key_encryption/secretbox.hpp>`), beside
+  `public_key_encryption::box`; the algorithm types stay in `crypto::ciphers`; every public name is
+  spelled out, algorithm proper names excepted (`nonce`, `associated_data`, `nonce_size`,
+  `invalid_nonce_size`); no alias; webcpp::trystero migrates later.
 - **Constructions grouped by purpose**: the namespace `crypto::hybrid` is removed;
   `crypto::public_key_encryption` holds `basic_box`, `box`, `box_xchacha20poly1305`,
   `basic_sealed_box` and `sealed_box` (`<webcpp/crypto/public_key_encryption/box.hpp>`,
@@ -83,7 +93,8 @@ None.
 ### Modified Capabilities
 
 - `crypto`: every signature and every X25519 key has a type of its own; key pairs, AEADs and boxes
-  are checked by concepts; secretbox and crypto_box take no additional data; seal and open are
+  are checked by concepts; the AEAD contract and secretbox are `secret_key_encryption`'s; public
+  names are spelled out; secretbox and crypto_box take no associated data; seal and open are
   asynchronous on every native backend.
 
 ## Impact
@@ -94,8 +105,9 @@ None.
   webcpp::trystero's port of Trystero 0.27, which adapts to both.
 - **Implementation:** webcpporg/crypto (`signing.hpp`, `keypair.hpp`, `curves/*.hpp`,
   `key_exchange/kx.hpp` (was `curves/x25519/kx.hpp`), `ciphers/*.hpp`,
-  `public_key_encryption/*.hpp` (was `hybrid/*.hpp`), `async.hpp`, a new `aead.hpp` concept
-  header, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
+  `public_key_encryption/*.hpp` (was `hybrid/*.hpp`), `secret_key_encryption/aead.hpp` (new: the
+  AEAD contract) and `secret_key_encryption/secretbox.hpp` (was `ciphers/secretbox.hpp`), a new
+  `authenticated_box.hpp`, `async.hpp`, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
   the generated files), webcpporg/hash (the callers of `crypto::equal` in its examples, headers'
   comments and pages), the superproject's pointers.
 - **Status:** approved by the owner on 2026-11-22 (`decided`); it stays `proposed` in the

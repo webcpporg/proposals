@@ -146,6 +146,37 @@ Sixth round, 2026-11-23 (the owner's reason for both: readability):
     `sign(eddsa_prehashed, prehashed{sha512(message)})` give the same signature. Ruling R14 (a
     distinct `ph_signature`) is superseded: no such type exists.
 
+Seventh round, 2026-11-23 (the owner's reason: names that say what a thing is, read without a
+glossary):
+
+13. **The AEAD contract has a namespace of its own, secretbox joins it, and public names are spelled
+    out** (D11):
+    - the AEAD contract lives in namespace `webcpp::crypto::secret_key_encryption::aead`, in
+      `<webcpp/crypto/secret_key_encryption/aead.hpp>`: the concept decision 4 called
+      `crypto::aead` is `secret_key_encryption::aead::cipher`, its refinement `streaming_aead` is
+      `secret_key_encryption::aead::streaming_cipher`, and the free `seal`, `open`, `async_seal`
+      and `async_open` move there from `crypto::`, where no free AEAD `seal` or `open` remains; the
+      members (`cipher.seal`, `open`, `async_seal`, `async_open`) are unchanged;
+    - the algorithm types stay in `crypto::ciphers` with their names: `gcm<aes128>`,
+      `gcm<aes256>`, `chacha20_poly1305`, `xchacha20_poly1305`, `aes128`, `aes256`, and later
+      `chacha20`;
+    - secretbox moves from `crypto::ciphers` to `crypto::secret_key_encryption`, parallel to
+      `public_key_encryption::box`: `secret_key_encryption::secretbox` and
+      `secretbox_xchacha20poly1305` in `<webcpp/crypto/secret_key_encryption/secretbox.hpp>`, with
+      no alias, the library being before 1.0;
+    - parameter names are spelled out everywhere in crypto's public API: `iv` and `iv_bytes`
+      become `nonce` and `nonce_bytes`, `additional_data` becomes `associated_data`, `ctx` becomes
+      `context`, and any other abbreviation in a public parameter name gets its full name; only
+      algorithm proper names stay acronyms (`aes`, `gcm`, `hkdf`, `hmac`, `ecdsa`, `sha256`, ...).
+      CODING-GUIDELINES.md's crypto and hash rules gain the rule: public names spelled out,
+      algorithm proper names excepted;
+    - every call site moves: crypto's code, pages, examples and tests, and the superproject's
+      fixtures. Out of scope: webcpp::trystero's port of Trystero 0.27, not in the tree, which
+      migrates later; webcpp::hash's HKDF names (`ikm`, `prk`, `info`), which a change of hash's
+      renames.
+    Decision 4's names (`crypto::aead`, `crypto::streaming_aead`, `crypto::seal`, `crypto::open`,
+    `iv`, `ad`) are superseded by these; D5, D6, D11, R7, R21 and R22 give the result.
+
 ## Approaches
 
 **Signatures.** (a) Keep bytes and add a scheme check at run time: a P-256 signature given to
@@ -257,7 +288,7 @@ change, free for a later post-quantum hybrid (X25519MLKEM768, X-Wing).
 | every public key | `T::make(bytes)` | `T::from_bytes(bytes)` |
 | P-256's public key from raw coordinates | `make(x, y)` | `from_coordinates(x, y)` (R10) |
 | every signature type | `T::make(bytes)` | `T::from_bytes(bytes)` |
-| `ciphers::gcm`, `ciphers::aead`, `ciphers::basic_secretbox`, the block cipher | `C::make(key)` | `C::from_key(key)` |
+| `ciphers::gcm`, `ciphers::aead`, `secret_key_encryption::basic_secretbox` (decision 13), the block cipher | `C::make(key)` | `C::from_key(key)` |
 | `public_key_encryption::basic_box` | `make(own, peer)` | `from_keys(own, peer)` (R11) |
 | `key_exchange::kx_keypair` | `make(x25519_keypair)`, `make(seed)` | `from_keypair(x25519_keypair)` (R12), `derive_from_seed(seed)`, `generate()` |
 | free forms | `crypto::make<A>(...)` | `crypto::from_secret<K>`, `crypto::from_bytes<T>`, `crypto::from_key<C>`; `crypto::generate<K>` unchanged |
@@ -295,44 +326,54 @@ key pair does ("X25519 key pairs agree; they do not sign").
 
 ### D5. The AEAD and box concepts
 
-A new header `<webcpp/crypto/aead.hpp>` (the concepts only; `ciphers/aead.hpp` keeps the
-`ciphers::aead` template) declares:
+The AEAD contract is `secret_key_encryption::aead`'s (owner decision 13, D11). A new header
+`<webcpp/crypto/secret_key_encryption/aead.hpp>` (no backend; `ciphers/aead.hpp` keeps the
+`ciphers::aead` template and includes it) declares, in namespace
+`webcpp::crypto::secret_key_encryption::aead`:
 
-- `crypto::aead<C>`: `C::key_size`, `C::iv_size`, `C::tag_size` (`std::size_t` constants),
+- `cipher<C>`: `C::key_size`, `C::nonce_size`, `C::tag_size` (`std::size_t` constants),
   `typename C::result_type`; `C::from_key(std::span<std::uint8_t const>)` returning `result<C>`;
-  `c.seal(iv, additional_data, data)` returning `result<typename C::result_type>`, `data` sealed in
-  place; `c.open(iv, additional_data, data, tag)` returning `result<void>`, `data` opened in place
-  and zeroed on failure.
-- `crypto::streaming_aead<C>`: `aead<C>` and `begin_seal(iv, additional_data)`, `update(data)`,
-  `result()`, `begin_open(iv, additional_data)`, `authenticate(data)`, `decrypt(data)`,
+  `c.seal(nonce, associated_data, data)` returning `result<typename C::result_type>`, `data`
+  sealed in place; `c.open(nonce, associated_data, data, tag)` returning `result<void>`, `data`
+  opened in place and zeroed on failure.
+- `streaming_cipher<C>`: `cipher<C>` and `begin_seal(nonce, associated_data)`, `update(data)`,
+  `result()`, `begin_open(nonce, associated_data)`, `authenticate(data)`, `decrypt(data)`,
   `verify(tag)` and `end_open()`, with AES-GCM's signatures.
-- `crypto::authenticated_box<C>`: `C::key_size`, `C::iv_size`, `C::tag_size`,
-  `typename C::result_type`; `c.seal(iv, data)` returning `result<result_type>`;
-  `c.open(iv, data, tag)` returning `result<void>`, `data` zeroed on failure. The factory is not
-  part of it: a secretbox is made by `from_key`, a crypto_box by `from_keys` from two X25519 keys.
+
+`<webcpp/crypto/authenticated_box.hpp>` (no backend) declares `crypto::authenticated_box<C>`:
+`C::key_size`, `C::nonce_size`, `C::tag_size`, `typename C::result_type`; `c.seal(nonce, data)`
+returning `result<result_type>`; `c.open(nonce, data, tag)` returning `result<void>`, `data`
+zeroed on failure. The factory is not part of it: a secretbox is made by `from_key`, a crypto_box
+by `from_keys` from two X25519 keys. The concept stays at the top of `webcpp::crypto`, since its
+types are in two namespaces (R21).
 
 | Type | Concept |
 |---|---|
-| `ciphers::gcm<Cipher>` (`aes128_gcm`, `aes256_gcm`) | `streaming_aead` |
-| `ciphers::chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305` | `aead` |
-| `ciphers::secretbox`, `secretbox_xchacha20poly1305` | `authenticated_box` |
+| `ciphers::gcm<Cipher>` (`aes128_gcm`, `aes256_gcm`) | `secret_key_encryption::aead::streaming_cipher` |
+| `ciphers::chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305` | `secret_key_encryption::aead::cipher` |
+| `secret_key_encryption::secretbox`, `secretbox_xchacha20poly1305` | `authenticated_box` |
 | `public_key_encryption::box`, `box_xchacha20poly1305` | `authenticated_box` |
 
 Each header checks its row with a `static_assert`. secretbox leaves the `ciphers::aead` template:
-it becomes `ciphers::basic_secretbox<Family, B>` with `from_key(key)`, `seal(iv, data)` and
-`open(iv, data, tag)`, the guards and the zeroing of the AEAD template, and no additional data;
-`detail::aead_family<secretbox...>` and its `max_additional_data_size` 0 are removed.
+it becomes `secret_key_encryption::basic_secretbox<Family, B>` with `from_key(key)`,
+`seal(nonce, data)` and `open(nonce, data, tag)`, the guards and the zeroing of the AEAD template,
+and no associated data; `detail::aead_family<secretbox...>` and its `max_associated_data_size` 0
+are removed.
 
-The free forms: `crypto::seal(c, iv, additional_data, data)` and
-`crypto::open(c, iv, additional_data, data, tag)` constrained by `aead`, and `crypto::seal(c, iv,
-data)` and `crypto::open(c, iv, data, tag)` constrained by `authenticated_box`; the arities differ,
-so no call is ambiguous.
+The free forms: `secret_key_encryption::aead::seal(c, nonce, associated_data, data)` and
+`secret_key_encryption::aead::open(c, nonce, associated_data, data, tag)` constrained by `cipher`;
+`secret_key_encryption::seal(c, nonce, data)` and `open(c, nonce, data, tag)`, and the same pair in
+`public_key_encryption`, constrained by `authenticated_box` (R21). No free `seal` or `open` exists
+in `crypto::`. A box given to `secret_key_encryption::aead::seal` or `open` stops the build with a
+message naming the box forms; the arities differ, so no call is ambiguous.
 
 ### D6. Asynchronous seal and open everywhere native
 
 `async_seal` and `async_open`, member (`c.async_seal(executor, ...)`) and free
-(`crypto::async_seal(executor, c, ...)`), with the synchronous arguments between the executor and
-the token, exist for every `aead` and every `authenticated_box`. On a synchronous backend they run
+(`secret_key_encryption::aead::async_seal(executor, c, ...)` for a `cipher`;
+`secret_key_encryption::async_seal` and `public_key_encryption::async_seal` for an
+`authenticated_box`, R21), with the synchronous arguments between the executor and the token,
+exist for every `secret_key_encryption::aead::cipher` and every `authenticated_box`. On a synchronous backend they run
 the synchronous member and complete through `asio::post`, never inline, as the family does today.
 On `backends::browser` (a backend whose `detail::asynchronous_backend_v` is true), only AES-GCM is
 offered, through WebCrypto; any other stops the build with "webcpp::crypto: WebCrypto has no
@@ -398,6 +439,43 @@ Both stay at the top of `webcpp::crypto`, beside `secret<N>` and `random_device`
 section "Protecting secrets outside the primitives" groups the four (memory hygiene: `secret<N>`,
 `erase_secret`; timing hygiene: `constant_time_equal`; drawing: `random_device`).
 
+### D11. Secret-key encryption and spelled-out names (owner decision 13)
+
+| Before | After | Header |
+|---|---|---|
+| `crypto::seal`, `crypto::open` (the AEAD forms) | `secret_key_encryption::aead::seal`, `open` | `<webcpp/crypto/secret_key_encryption/aead.hpp>` (were in `ciphers/aead.hpp`), which every AEAD's header includes |
+| `crypto::async_seal`, `crypto::async_open` | `secret_key_encryption::aead::async_seal`, `async_open` | `<webcpp/crypto/async.hpp>`, which defines every asynchronous form |
+| `crypto::aead`, `crypto::streaming_aead` (planned, never built) | `secret_key_encryption::aead::cipher`, `streaming_cipher` | `<webcpp/crypto/secret_key_encryption/aead.hpp>` |
+| `ciphers::secretbox`, `ciphers::secretbox_xchacha20poly1305` (and the planned `ciphers::basic_secretbox`) | `secret_key_encryption::secretbox`, `secretbox_xchacha20poly1305`, `basic_secretbox` | `<webcpp/crypto/secret_key_encryption/secretbox.hpp>` (was `ciphers/secretbox.hpp`) |
+| `ciphers::gcm`, `aes128_gcm`, `aes256_gcm`, `chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305`, `aes128`, `aes192`, `aes256`, the template `ciphers::aead<Family, B>` | unchanged | unchanged |
+
+The namespaces by purpose, with D3b's:
+
+| Namespace | Holds |
+|---|---|
+| `crypto` | the root: `random_device`, `constant_time_equal`, `erase_secret`, `secret<N>`, `error`, the signing vocabulary, the key pair concepts, `authenticated_box`, the free factories |
+| `crypto::ciphers` | symmetric algorithms: AES, AES-GCM, ChaCha20-Poly1305 in three nonce sizes |
+| `crypto::secret_key_encryption` | constructions under one secret key: `secretbox`; `aead`, the AEAD contract over `ciphers`' AEADs |
+| `crypto::public_key_encryption` | constructions between key pairs: `box`, `sealed_box` |
+| `crypto::key_exchange` | crypto_kx: `kx_keypair`, `session_keys` |
+| `crypto::curves` | curve primitives |
+
+The naming rule: every public name of crypto is spelled out; algorithm and format proper names
+stay acronyms (`aes`, `gcm`, `chacha20`, `hmac`, `hkdf`, `ecdsa`, `eddsa`, `sha256`, `kx`, `der`,
+`pem`, `spki`, `pkcs8`, BIP340's `xonly`), and so do a standard's own variable names (ECDSA's `r` and
+`s`). The pages and doc comments say "nonce" and "associated data" (RFC 5116's term); a comment
+that quotes a backend or a standard in its own words (OpenSSL's IV, NIST SP 800-38D's IV and
+additional authenticated data) keeps them.
+
+| Before | After |
+|---|---|
+| parameters `iv`, `iv_bytes` | `nonce`, `nonce_bytes` |
+| parameters `additional_data`, `additional_data_bytes`, `ad` | `associated_data`, `associated_data_bytes` |
+| parameter `ctx` | `context` (none in crypto when decided) |
+| secp256k1's `sign(schnorr, message, aux_random)` | `auxiliary_random_bytes` |
+| member constants `iv_size`, `max_iv_size`, `max_additional_data_size` | `nonce_size`, `max_nonce_size`, `max_associated_data_size` (R22) |
+| `error::invalid_iv_size` (value 2) | `error::invalid_nonce_size` (value 2; "the nonce is not of a size the algorithm accepts") (R22) |
+
 ### D7. Removed, and callers
 
 Removed with no alias: the span `verify` and `recover` overloads of crypto/sign-unified; `sign`'s
@@ -406,12 +484,16 @@ array results; `curves::x25519::public_key(secret)`, `curves::x25519::agree(secr
 `kx_keypair::make(seed)` (now `derive_from_seed`); every `make` and `async_make` (D3c); the namespace `crypto::hybrid` and the headers
 `hybrid/box.hpp`, `hybrid/sealed_box.hpp` and `curves/x25519/kx.hpp` (D3b); the boxes'
 byte-key factories, `seal` and `open`; secretbox's additional data; `crypto::equal` and
-`<webcpp/crypto/equal.hpp>` (D10); `curves::ed25519::ph` (now `prehashed_signer`, D9). No public
+`<webcpp/crypto/equal.hpp>` (D10); `curves::ed25519::ph` (now `prehashed_signer`, D9); the
+free `crypto::seal`, `crypto::open`, `crypto::async_seal`, `crypto::async_open`,
+`ciphers::secretbox`, `ciphers::secretbox_xchacha20poly1305`, `<webcpp/crypto/ciphers/secretbox.hpp>`,
+`iv_size`, `max_iv_size`, `max_additional_data_size` and `error::invalid_iv_size` (D11). No public
 `crypto::wipe` ever exists (D10). Every caller in libs/crypto moves
 in the same change: tests, examples, fixtures, the page, the constant-time harnesses and suppressions, the
 benches, the message tests, the MSVC tests, `doc/tables/crypto.json` and its generated files
 (rerun, never edited); `crypto::equal`'s callers in other libraries (webcpp::hash) move in the
-same change, through the superproject's pointers. The X25519 format functions keep their names here and leave with the
+same change, through the superproject's pointers. webcpp::trystero's port of Trystero 0.27 moves
+later, by its own stream (decisions 11 and 13). The X25519 format functions keep their names here and leave with the
 formats change, which gives them the typed keys' formats.
 
 ## Rulings
@@ -467,8 +549,24 @@ formats change, which gives them the typed keys' formats.
 - **R20: both recoverable schemes give `secp256k1::recoverable_signature`** (the owner's
   ruling): a signature recovered under the other scheme gives another key, which the program's
   comparison of keys or addresses refuses.
-- **R7: the concepts live in `<webcpp/crypto/aead.hpp>`**, beside `keypair.hpp` and `signing.hpp`,
-  which every cipher header includes; it includes no backend.
+- **R7 (amended by owner decision 13): the AEAD concepts live in
+  `<webcpp/crypto/secret_key_encryption/aead.hpp>`** (was `<webcpp/crypto/aead.hpp>`), beside the
+  free AEAD forms, which `ciphers/aead.hpp` and `ciphers/gcm.hpp` include; it includes no backend.
+- **R21: `authenticated_box` stays at the top of `webcpp::crypto`**, in
+  `<webcpp/crypto/authenticated_box.hpp>` (no backend), since its types live in
+  `secret_key_encryption` (secretbox) and `public_key_encryption` (crypto_box); the box free forms
+  `seal(box, nonce, data)` and `open(box, nonce, data, tag)`, and their asynchronous forms, are
+  declared once and named in both namespaces (`secret_key_encryption::seal`,
+  `public_key_encryption::seal`), so that no free `seal` or `open` exists in `crypto::` and argument-dependent lookup
+  finds them. Decision 13 does not place the concept; this is the amendment's reading, for the
+  owner to confirm.
+- **R22: decision 13's rule covers every public name, not only parameters**: the members
+  `iv_size`, `max_iv_size` and `max_additional_data_size`, which the concepts require, become
+  `nonce_size`, `max_nonce_size` and `max_associated_data_size`, and the error
+  `invalid_iv_size` becomes `invalid_nonce_size` (its value 2 kept), so that a nonce is never
+  called an IV in one name and a nonce in the next; `max_` stays, the standard library's own word
+  (`std::numeric_limits<T>::max`, `max_size`). Both readings are the amendment's, for the owner to
+  confirm.
 
 ## Risks / Trade-offs
 
@@ -486,4 +584,4 @@ superproject; local verification on every lane; merged by the controller; one CI
 
 ## Open Questions
 
-None: the owner's decisions 1 to 12 settle the change.
+None: the owner's decisions 1 to 13 settle the change (R21 and R22 read decision 13 where it is silent).
