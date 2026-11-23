@@ -89,7 +89,12 @@ None.
 - **Kind:** a wrapper (`"port-of": null`), as the genesis.
 - **Breaking:** yes, before the first release; webcpp::trystero's port of Trystero 0.27
   (stream trystero-027) adapts after this change merges.
-- **Implementation:** webcpporg/crypto (`include/webcpp/crypto/signing.hpp`, `curves/p256.hpp`,
+- **Implementation:** merged into webcpporg/crypto's `main` (pull request 17, 2026-11-23); the
+  reference code is the shared vocabulary as built, `reference/signing.hpp` and
+  `reference/keypair.hpp`, and the tasks of `reference/plan.md`.
+- **Status:** implementing until the release that carries it; the final quiet measurement pass
+  of the size and throughput tables follows.
+- **Touched:** webcpporg/crypto (`include/webcpp/crypto/signing.hpp`, `curves/p256.hpp`,
   `curves/ed25519.hpp`, `curves/secp256k1.hpp`, `async.hpp`, tests, examples, benches, the
   constant-time lane, `doc/`, `doc/tables/crypto.json` and the generated files), the
   superproject's pointer.
