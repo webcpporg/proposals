@@ -105,6 +105,17 @@ Fourth round, the same day:
    secret comes from. The backends' internal capabilities keep their names (`*_import`,
    `*_generate`).
 
+Fifth round, 2026-11-23:
+
+10. **Ethereum's recoverable ECDSA is a scheme of this change**, `crypto::ecdsa_keccak256_recoverable`,
+    on secp256k1 alone: the input a message, hashed inside with Keccak-256 (the pre-NIST padding
+    Ethereum uses, never SHA3-256), or `crypto::prehashed{digest}` of 32 bytes for a digest the
+    program builds (EIP-191's `personal_sign`, EIP-712, a transaction's sighash: protocol work,
+    outside crypto); the output the typed `secp256k1::recoverable_signature` (r, s, the recovery id
+    0 to 3, always low S as EIP-2 requires); `recover(ecdsa_keccak256_recoverable, signature, input)`
+    gives the signer's `secp256k1::public_key`. Ethereum's `v` (27 or 28, or EIP-155's chain-id
+    form) and the address are protocol encodings: the guide shows them, crypto computes neither (D8).
+
 ## Approaches
 
 **Signatures.** (a) Keep bytes and add a scheme check at run time: a P-256 signature given to
@@ -128,7 +139,7 @@ construction, not libsodium's.
 | `curves::ed25519::signature` | 64 | `ed25519::basic_keypair<B>::sign(eddsa, ...)` | `eddsa` |
 | `curves::p256::ecdsa_signature` | 64, r then s | `p256::basic_keypair<B>::sign(ecdsa_sha256, ...)` | `ecdsa_sha256` |
 | `curves::secp256k1::ecdsa_signature` | 64, r then s | `secp256k1::basic_keypair<B>::sign(ecdsa_sha256, ...)` | `ecdsa_sha256` |
-| `curves::secp256k1::recoverable_signature` | 65, r, s, the id | `sign(ecdsa_sha256_recoverable, ...)` | `recover(ecdsa_sha256_recoverable, ...)` |
+| `curves::secp256k1::recoverable_signature` | 65, r, s, the id | `sign(ecdsa_sha256_recoverable, ...)`, `sign(ecdsa_keccak256_recoverable, ...)` (D8) | `recover(...)` under the same scheme |
 | `curves::secp256k1::schnorr_signature` | 64 | `sign(schnorr, ...)` | `schnorr` |
 
 Each is a regular value type (copyable, comparable with `==`; a signature is public), implemented
@@ -300,6 +311,30 @@ foundation's sentence that no `async_` variant of a cheap algorithm WebCrypto la
 seal and open only, by the owner's decision; `async_from_key` follows the same rule for the types
 these concepts cover.
 
+### D8. Ethereum's recoverable ECDSA (owner decision 10)
+
+- The tag `ecdsa_keccak256_recoverable_t` (explicit default constructor) and the value
+  `crypto::ecdsa_keccak256_recoverable` join `detail::all_schemes`; `scheme_traits` gives a 65-byte
+  signature and a 32-byte digest; `signs_with_v<secp256k1::basic_keypair<B>, ...>` is true, and
+  `signature_of` of it is `secp256k1::recoverable_signature`, the type `ecdsa_sha256_recoverable`
+  gives (the bytes are the same; the scheme is the input's hash).
+- `key.sign(ecdsa_keccak256_recoverable, input)` and `crypto::sign(key, ...)`: a message is hashed
+  with `webcpp::hash::keccak_256` (`<webcpp/hash/keccak.hpp>`, over XKCP), a marker's 32 bytes are
+  signed as they are; libsecp256k1's `secp256k1_ecdsa_sign_recoverable` with RFC 6979's nonce, low S.
+- `curves::secp256k1::recover(ecdsa_keccak256_recoverable, signature, input)`, member-free as
+  `ecdsa_sha256_recoverable`'s, with its checks (a recovery id above 3, r or s not below n, no key:
+  `invalid_signature`). No `crypto::verify` overload: `ecdsa_sha256_recoverable` has none (its
+  signature gives its key to `recover`), and Ethereum compares recovered keys or addresses (R18).
+- Forms: the synchronous member and free forms; no asynchronous form, as no secp256k1 operation has
+  one (crypto/sign-unified's R8).
+- Keccak-256 needs `/third_party//xkcp`, which builds on every target and toolset; secp256k1's
+  header includes `keccak.hpp` only where `WEBCPP_HASH_HAS_XKCP` is defined, and a message input
+  without it stops the build with the Jamfile line (R19). A marker needs no XKCP.
+- The guide: the digests a program builds (EIP-191 with an example program over `webcpp::hash`),
+  `recovery_id()` to `v` (27 + id for `personal_sign`, 35 + 2 x chain id + id for EIP-155, the
+  id itself as `yParity` for typed transactions), and the address (the last 20 bytes of the
+  Keccak-256 of the uncompressed key without its 0x04), in the example, not in crypto.
+
 ### D7. Removed, and callers
 
 Removed with no alias: the span `verify` and `recover` overloads of crypto/sign-unified; `sign`'s
@@ -343,6 +378,27 @@ formats change, which gives them the typed keys' formats.
   secret bytes, so `from_secret` would misname it; a kx key pair from raw secret bytes is
   `from_keypair(*x25519::keypair::from_secret(bytes))`.
 - **R13: the free factories' header is `<webcpp/crypto/factories.hpp>`** (was `make.hpp`).
+- R8 and R9 were not assigned; the numbers are kept so that R10 to R13 keep the names other
+  documents use.
+- **R14: Ed25519ph's signature is `curves::ed25519::ph_signature`**, a sixth type: D1's table
+  leaves Ed25519ph out, and "a type per curve and scheme" decides; a ph signature given to the pure
+  `verify` stops the build instead of failing at run time.
+- **R15: `to_der`, `from_der`, `normalize_low_s` and `is_low_s` take and give the curve's
+  `ecdsa_signature`** on P-256 and secp256k1, so that no function takes a signature as bytes; the
+  formats change builds on typed values.
+- **R16: X25519's `algorithm<B>` becomes `detail::x25519_operations<B>`**, the unguarded workers
+  (`base`, `agree`) the key pair and the asynchronous family share (D2).
+- **R17: no function is named `make`, a detail engine's included** (`import_secret`,
+  `seed_keypair`, `allocate`); decision 9's "internal capabilities keep their names" means the
+  capability table's rows (`*_import`, `*_generate`), which are not functions.
+- **R18: `ecdsa_keccak256_recoverable` has `recover` and no `verify`**, mirroring
+  `ecdsa_sha256_recoverable` (D8).
+- **R19: Keccak-256's message form needs XKCP linked**; without it, "webcpp::crypto:
+  crypto::ecdsa_keccak256_recoverable hashes a message with webcpp::hash's keccak_256, which needs
+  XKCP: add /third_party//xkcp to the program's Jamfile, or sign crypto::prehashed{digest}." (D8).
+- **R20: both recoverable schemes give `secp256k1::recoverable_signature`** (the owner's
+  ruling): a signature recovered under the other scheme gives another key, which the program's
+  comparison of keys or addresses refuses.
 - **R7: the concepts live in `<webcpp/crypto/aead.hpp>`**, beside `keypair.hpp` and `signing.hpp`,
   which every cipher header includes; it includes no backend.
 
@@ -362,4 +418,4 @@ superproject; local verification on every lane; merged by the controller; one CI
 
 ## Open Questions
 
-None: the owner's decisions 1 to 7 settle the change.
+None: the owner's decisions 1 to 10 settle the change.
