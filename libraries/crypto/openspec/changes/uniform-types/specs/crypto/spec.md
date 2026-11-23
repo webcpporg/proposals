@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Signatures: a type per curve and scheme
-The library SHALL offer `curves::ed25519::signature` (64 bytes), `curves::p256::ecdsa_signature` (64 bytes, r then s), `curves::secp256k1::ecdsa_signature` (64 bytes, r then s), `curves::secp256k1::recoverable_signature` (65 bytes, r, s and the recovery id, with `recovery_id()`) and `curves::secp256k1::schnorr_signature` (64 bytes), distinct regular value types, each with `static from_bytes(std::span<std::uint8_t const>)` returning `result<T>` (`invalid_signature` for another size, nothing else checked) and `bytes()`, and none converting implicitly to another type or to bytes. Every `sign` MUST return the type of its curve and scheme, and every `verify` and `recover`, member and free, synchronous and asynchronous, MUST take it; no overload taking a signature as bytes MUST exist, and a signature of another curve or scheme MUST stop the build with a message naming the type expected.
+The library SHALL offer `curves::ed25519::signature` (64 bytes), `curves::p256::ecdsa_signature` (64 bytes, r then s), `curves::secp256k1::ecdsa_signature` (64 bytes, r then s), `curves::secp256k1::recoverable_signature` (65 bytes, r, s and the recovery id, with `recovery_id()`) and `curves::secp256k1::schnorr_signature` (64 bytes), distinct regular value types, each with `static from_bytes(std::span<std::uint8_t const>)` returning `result<T>` (`invalid_signature` for another size, nothing else checked) and `bytes()`, and none converting implicitly to another type or to bytes. Every `sign` MUST return the type of its curve and scheme, and every `verify` and `recover`, member and free, synchronous and asynchronous, MUST take it; no overload taking a signature as bytes MUST exist, and a signature of another curve or scheme MUST stop the build with a message naming the type expected, except between the schemes that share a type: `eddsa` and `eddsa_prehashed` (`ed25519::signature`), and the two recoverable schemes (`recoverable_signature`).
 
 #### Scenario: A signature from the wire
 - **WHEN** 64 bytes received from a peer are made into a `p256::ecdsa_signature` with `from_bytes` and given to `crypto::verify(crypto::ecdsa_sha256, signature, message, public_key)`, and 63 bytes are given to `from_bytes`
@@ -79,10 +79,32 @@ The library SHALL name every fallible factory by what it takes: `K::from_secret(
 - **WHEN** a program signs `crypto::prehashed{std::array<std::uint8_t, 20>{}}` with `crypto::ecdsa_keccak256_recoverable`, or a P-256 or Ed25519 key pair signs with the scheme
 - **THEN** compilation stops with a message naming the 32-byte digest, or the schemes the key pair has
 
+### Requirement: Signatures: Ed25519ph as the scheme eddsa_prehashed
+`<webcpp/crypto/signing.hpp>` SHALL declare the scheme tag `eddsa_prehashed` (RFC 8032's Ed25519ph), in the library's one list of schemes, which `curves::ed25519::basic_keypair<Backend>` declares beside `eddsa`: `sign(crypto::eddsa_prehashed, crypto::prehashed{digest})`, `digest` the 64 bytes of the message's SHA-512, SHALL return a `curves::ed25519::signature`, and `crypto::verify(crypto::eddsa_prehashed, signature, crypto::prehashed{digest}, public_key)` and `public_key.verify(crypto::eddsa_prehashed, ...)` SHALL verify it, strictly as `eddsa` does. A message input MUST stop the build with a message naming `crypto::prehashed{digest}` of 64 bytes, a digest of another size with a message naming SHA-512's 64 bytes, and `eddsa` MUST keep refusing a marker with a message naming `eddsa_prehashed`. The asynchronous forms (`async_sign`, `async_verify`, member and free) SHALL exist on native backends, and MUST stop the build on a backend whose `detail::asynchronous_backend_v` is true with a message saying WebCrypto has no Ed25519ph. The streaming signer SHALL be `curves::ed25519::prehashed_signer<Hash, Backend>`, its `sign` and `verify` giving and taking `ed25519::signature`; `curves::ed25519::ph` and a distinct Ed25519ph signature type MUST NOT exist. The documentation MUST say that an `eddsa` signature and an `eddsa_prehashed` signature, of one type, are not interchangeable.
+
+#### Scenario: RFC 8032's Ed25519ph vector as a scheme
+- **WHEN** the key pair of RFC 8032 section 7.3 signs `crypto::prehashed{sha512("abc")}` with `crypto::eddsa_prehashed`
+- **THEN** the signature is the RFC's, `crypto::verify(crypto::eddsa_prehashed, signature, crypto::prehashed{digest}, public_key)` accepts it, and `crypto::verify(crypto::eddsa, signature, "abc", public_key)` returns `invalid_signature`
+
+#### Scenario: The streaming signer and the scheme agree
+- **WHEN** a message is given in pieces to `prehashed_signer<webcpp::hash::sha2_512>` and signed, and its SHA-512 is signed with `sign(crypto::eddsa_prehashed, crypto::prehashed{digest})`
+- **THEN** the two signatures are equal
+
+#### Scenario: A message under eddsa_prehashed
+- **WHEN** a program calls `key.sign(crypto::eddsa_prehashed, message)` with a message, or with `crypto::prehashed{std::array<std::uint8_t, 32>{}}`
+- **THEN** compilation stops with a message naming `crypto::prehashed{digest}` of 64 bytes, SHA-512's
+
+### Requirement: Secrets: erasing a buffer the program owns
+`<webcpp/crypto/erase_secret.hpp>` SHALL declare `crypto::erase_secret(range)`, `noexcept`, for any contiguous sized range of non-const trivially copyable elements, zeroing its `size() * sizeof(element)` bytes with stores the optimiser keeps (`detail::wipe`); a range of const or non-trivially-copyable elements MUST stop the build with a message naming the ranges it accepts, and no pointer and size overload MUST exist. No function named `crypto::wipe` MUST exist. The guide SHALL group `constant_time_equal`, `erase_secret`, `secret<N>` and `random_device` in one section about protecting secrets outside the primitives, all at the top of `webcpp::crypto`.
+
+#### Scenario: A password erased
+- **WHEN** `crypto::erase_secret(password)` is called on a `std::string`, and on a `std::string const&`
+- **THEN** the first zeroes its `size()` bytes, and the second does not compile, naming the ranges accepted
+
 ## MODIFIED Requirements
 
 ### Requirement: Signatures: one name per operation, the scheme always named
-`<webcpp/crypto/signing.hpp>` SHALL declare, in namespace `webcpp::crypto`, the scheme tags `eddsa` (Ed25519, RFC 8032's pure form), `ecdsa_sha256` (ECDSA with SHA-256 on P-256 and secp256k1), `ecdsa_sha256_recoverable` (secp256k1, the signature with its recovery id), `ecdsa_keccak256_recoverable` (secp256k1, Ethereum's recoverable ECDSA over Keccak-256) and `schnorr` (BIP340, secp256k1), constexpr objects of empty types whose default constructors are explicit; the marker `prehashed<N>`, holding `std::span<std::uint8_t const, N> digest` and made by explicit constructors only, deduced from a `std::array<std::uint8_t, N>`, a fixed-size span or a `boost::hash2::digest<N>`, and refused for `std::dynamic_extent`; and the concepts `can_sign<Keypair, Scheme, Input>` and `can_verify<Scheme, Input, PublicKey>`. Every key pair SHALL sign with `key.sign(scheme, input)`, returning `boost::system::result<T>`, `T` the signature type of the key's curve and scheme, and every signature SHALL be verified with the free `crypto::verify(scheme, signature, input, public_key)`, returning `boost::system::result<void>`, the input being a message (anything that converts to `std::span<std::uint8_t const>`) or a `prehashed` digest. Every `verify`, member and free, synchronous and asynchronous, and `curves::secp256k1::recover` SHALL take the signature as its typed value, made from bytes by the type's `from_bytes`, which returns `invalid_signature` for another size. No function MUST choose between a message and a digest by a span's extent or size, and no form without a scheme MUST exist.
+`<webcpp/crypto/signing.hpp>` SHALL declare, in namespace `webcpp::crypto`, the scheme tags `eddsa` (Ed25519, RFC 8032's pure form), `eddsa_prehashed` (Ed25519ph, RFC 8032's form over a SHA-512 digest), `ecdsa_sha256` (ECDSA with SHA-256 on P-256 and secp256k1), `ecdsa_sha256_recoverable` (secp256k1, the signature with its recovery id), `ecdsa_keccak256_recoverable` (secp256k1, Ethereum's recoverable ECDSA over Keccak-256) and `schnorr` (BIP340, secp256k1), constexpr objects of empty types whose default constructors are explicit; the marker `prehashed<N>`, holding `std::span<std::uint8_t const, N> digest` and made by explicit constructors only, deduced from a `std::array<std::uint8_t, N>`, a fixed-size span or a `boost::hash2::digest<N>`, and refused for `std::dynamic_extent`; and the concepts `can_sign<Keypair, Scheme, Input>` and `can_verify<Scheme, Input, PublicKey>`. Every key pair SHALL sign with `key.sign(scheme, input)`, returning `boost::system::result<T>`, `T` the signature type of the key's curve and scheme, and every signature SHALL be verified with the free `crypto::verify(scheme, signature, input, public_key)`, returning `boost::system::result<void>`, the input being a message (anything that converts to `std::span<std::uint8_t const>`) or a `prehashed` digest. Every `verify`, member and free, synchronous and asynchronous, and `curves::secp256k1::recover` SHALL take the signature as its typed value, made from bytes by the type's `from_bytes`, which returns `invalid_signature` for another size. No function MUST choose between a message and a digest by a span's extent or size, and no form without a scheme MUST exist.
 
 #### Scenario: A 32-byte message is a message
 - **WHEN** a P-256 key pair signs `std::array<std::uint8_t, 32>` with `sign(crypto::ecdsa_sha256, message)`
@@ -112,7 +134,7 @@ The library SHALL name every fallible factory by what it takes: `K::from_secret(
 - **THEN** the new key pair has the same public key
 
 ### Requirement: Ed25519: key pairs, signatures and strict verification
-`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its public key as a `curves::ed25519::public_key` (`from_bytes` from 32 bytes, `bytes()` back), give its seed back with `secret()`, sign a message into a `curves::ed25519::signature` with `sign(crypto::eddsa, message)`, and convert itself to an X25519 key pair with `to_x25519()`; `crypto::verify<Backend>(crypto::eddsa, signature, message, public_key[, policy])`, `public_key` a `curves::ed25519::public_key`, the policy a trailing tag object, `curves::ed25519::strict` by default, MUST return nothing on success and `invalid_signature` otherwise; a key of another size is refused earlier, by `curves::ed25519::public_key::from_bytes` with `invalid_public_key`. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
+`curves::ed25519::basic_keypair<Backend>` SHALL be made from a 32-byte seed (RFC 8032) or by `generate()`, give its public key as a `curves::ed25519::public_key` (`from_bytes` from 32 bytes, `bytes()` back), give its seed back with `secret()`, sign a message into a `curves::ed25519::signature` with `sign(crypto::eddsa, message)` and a message's SHA-512 with `sign(crypto::eddsa_prehashed, crypto::prehashed{digest})`, and convert itself to an X25519 key pair with `to_x25519()`; `crypto::verify<Backend>(crypto::eddsa, signature, message, public_key[, policy])`, `public_key` a `curves::ed25519::public_key`, the policy a trailing tag object, `curves::ed25519::strict` by default, MUST return nothing on success and `invalid_signature` otherwise; a key of another size is refused earlier, by `curves::ed25519::public_key::from_bytes` with `invalid_public_key`. On libsodium verification is strict (canonical encodings, no small-order key, `S` reduced); the documentation MUST say which inputs other backends accept that libsodium refuses, as Wycheproof's EdDSA file shows.
 
 #### Scenario: RFC 8032's test 1
 - **WHEN** the key pair is made from RFC 8032 section 7.1's first secret key and signs the empty message with `sign(crypto::eddsa, message)`
@@ -121,6 +143,27 @@ The library SHALL name every fallible factory by what it takes: `K::from_secret(
 #### Scenario: A small-order public key
 - **WHEN** `crypto::verify<backends::sodium>(crypto::eddsa, signature, message, public_key, curves::ed25519::strict)` is given a small-order public key (ed25519-speccheck's case 0)
 - **THEN** it returns `invalid_signature`
+
+### Requirement: Ed25519ph: an incremental signer
+`curves::ed25519::prehashed_signer<Hash, Backend>`, with `Hash` webcpp::hash's `sha2_512` as RFC 8032 requires, SHALL sign and verify a message given in pieces (`begin`, `update`, `sign(key)` giving a `curves::ed25519::signature`, or `verify(signature, public_key)` taking one) through libsodium's `crypto_sign_ed25519ph_*`, and refuse another hash at compile time with a message naming `curves::ed25519::prehashed_signer<webcpp::hash::sha2_512>`; its signature MUST equal `sign(crypto::eddsa_prehashed, crypto::prehashed{digest})` of the message's SHA-512. `curves::ed25519::ph` MUST NOT exist, with no alias.
+
+#### Scenario: RFC 8032's Ed25519ph vector
+- **WHEN** RFC 8032 section 7.3's message is given in two pieces
+- **THEN** the signature is the RFC's
+
+### Requirement: Equal: constant time on tags
+`constant_time_equal(digest<N> const&, digest<N> const&)`, in `<webcpp/crypto/constant_time_equal.hpp>`, SHALL be `noexcept`, read every byte, and neither branch nor index on one: it accumulates the XOR of every pair of bytes with OR in a `volatile` local read once after the loop, and reduces the result to one bit without a branch, as BearSSL's tag check does. It MUST serve Boost.Hash2's `hmac<H>::result()` as much as the library's tags. `crypto::equal` and `<webcpp/crypto/equal.hpp>` MUST NOT exist, with no alias.
+
+#### Scenario: Two 32-byte digests differing in the last byte
+- **WHEN** `constant_time_equal` compares them
+- **THEN** it returns false after reading all 32 bytes, and the deterministic check passes at -O2 and -Os
+
+### Requirement: Equal: spans of different sizes
+`constant_time_equal(std::span<std::uint8_t const>, std::span<std::uint8_t const>)` SHALL compare spans of different sizes as unequal without reading their contents, because a size is public, and MUST take a `digest<N>` against a `std::array` (a digest is a contiguous range of `unsigned char`); two empty spans are equal.
+
+#### Scenario: Empty spans
+- **WHEN** `constant_time_equal` compares two empty spans
+- **THEN** it returns true
 
 ### Requirement: X25519: agreement and the conversion
 `curves::x25519::basic_keypair<Backend>` SHALL give its `x25519::public_key` from its 32-byte secret, agree a `secret<32>` with a peer's `x25519::public_key` by `agree(peer)`, and return `weak_public_key` when the result is all zero on every backend. `curves::ed25519::public_key::to_x25519()` MUST return the birational map's result as an `x25519::public_key`, or `invalid_public_key` for a key that is not canonical or of small order.

@@ -7,9 +7,10 @@ accepted.
 
 ## 1. Typed signatures
 
-- [ ] 1.1 The signature class template in `detail` and its five types, `from_bytes`, `bytes()`, `recovery_id()`; the scheme traits gain the signature type; message tests for a signature of another curve or scheme (design D1)
-- [ ] 1.2 Every `sign` returns its type and every `verify` and `recover` takes it, the four forms, the asynchronous completions; the span overloads removed; `normalize_low_s` and `is_low_s` on the ECDSA types; callers moved (D1, R1)
+- [ ] 1.1 The signature class template in `detail` and its five types (no distinct Ed25519ph type: owner decision 12), `from_bytes`, `bytes()`, `recovery_id()`; the scheme traits gain the signature type; message tests for a signature of another curve or scheme (design D1)
+- [ ] 1.2 Every `sign` returns its type and every `verify` and `recover` takes it, the four forms, the asynchronous completions; the span overloads removed; `normalize_low_s` and `is_low_s` on the ECDSA types; Ed25519ph's streaming signer retyped onto `ed25519::signature`; callers moved (D1, R1)
 - [ ] 1.3 `crypto::ecdsa_keccak256_recoverable` on secp256k1: Keccak-256 inside or `prehashed`, the typed recoverable signature, `recover`, no `verify`; go-ethereum's vectors, an EIP-191 example, the refusal without XKCP (owner decision 10, D8)
+- [ ] 1.4 Ed25519ph as the scheme `crypto::eddsa_prehashed` on Ed25519's key pair: `crypto::prehashed{digest}` of 64 bytes only, a message refused at compile time, `ed25519::signature`, `verify` member and free, asynchronous on native backends only; `curves::ed25519::ph` renamed `prehashed_signer`, no alias; RFC 8032's Ed25519ph vectors and the streaming signer equal to the scheme (owner decision 12, D9)
 
 ## 2. X25519 typed
 
@@ -29,12 +30,12 @@ accepted.
 
 ## 4. The page, the generated files and the delivery
 
-- [ ] 4.1 The guide's chapters (signatures, X25519, AEADs), `crypto.json` and its generated files, the changelog line
+- [ ] 4.1 The guide's chapters (signatures, X25519, AEADs), the section about protecting secrets outside the primitives (`constant_time_equal`, `erase_secret`, `secret<N>`, `random_device`; owner decision 11), `crypto.json` and its generated files, the changelog line
 - [ ] 4.2 Full local verification on every lane (native, Emscripten, wasip2, wasip3, MSVC, gcc, the constant-time lane, the Linux lint), pull requests, merge, one CI at the end
 
 ## 5. Small fixes found along the way
 
 - [ ] X1 In the browser a throwing `crypto.getRandomValues` gives `entropy_unavailable` to `random_device` and every caller of `detail::read_entropy`, never a terminated page; reproduced first under node (controller ruling)
 - [ ] X1b libsodium's own randomness on Emscripten (its stir in `sodium_init`, the sealed box's ephemeral key) goes through crypto's entropy, so that a throwing `getRandomValues` is `entropy_unavailable` there too; reproduced first (controller ruling)
-- [ ] X2 A public `crypto::wipe` in `<webcpp/crypto/wipe.hpp>` for any non-const contiguous sized range of trivially copyable elements, over `detail::wipe`; tests, a message test, the page and the namespace table's row (controller ruling)
+- [ ] X2 A public `crypto::erase_secret` in `<webcpp/crypto/erase_secret.hpp>` for any non-const contiguous sized range of trivially copyable elements, over `detail::wipe`; `crypto::equal` renamed `crypto::constant_time_equal` (`<webcpp/crypto/constant_time_equal.hpp>`), no alias, every caller moved, webcpp::hash's and the superproject's fixtures included; tests, message tests, the pages and the namespace table's rows (controller ruling, owner decision 11, D10)
 - [ ] X3 No one-word local or parameter in a public header (MSVC C4459 at /W4 /WX): renamed, and a test whose globals carry every such name compiles warning-free on MSVC (controller ruling)

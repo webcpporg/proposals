@@ -60,6 +60,18 @@ On 2026-11-22 the owner decided to type all three in one small change merged bef
   `crypto::from_secret<K>`, `crypto::from_bytes<T>`, `crypto::from_key<C>`, `crypto::generate<K>`,
   and `async_from_secret`, `async_from_key`, `async_generate`. `make` read as "make a key": a
   caller who passed fixed bytes believing a key was drawn got a predictable private key.
+- **Ed25519ph as a scheme** (owner decision 12, 2026-11-23): `crypto::eddsa_prehashed` in the one
+  list of schemes, which Ed25519's signing key pair declares, taking `crypto::prehashed{digest}` of
+  64 bytes (the message's SHA-512) and refusing a message at compile time, giving
+  `ed25519::signature`, with `verify(eddsa_prehashed, signature, prehashed, public_key)` and the
+  member form, asynchronous on native backends only; the streaming `curves::ed25519::ph<Hash, B>`
+  is renamed `curves::ed25519::prehashed_signer<Hash, B>`, no alias, and no distinct Ed25519ph
+  signature type exists.
+- **Secret hygiene named by what it does** (owner decision 11, 2026-11-23): `crypto::equal` becomes
+  `crypto::constant_time_equal` (`<webcpp/crypto/constant_time_equal.hpp>`), no alias, every caller
+  moved, webcpp::hash's included; the public wipe is `crypto::erase_secret`
+  (`<webcpp/crypto/erase_secret.hpp>`); the guide groups them with `secret<N>` and
+  `random_device` in one section about protecting secrets outside the primitives.
 - **Four mirrored forms** for every new operation that calls a backend.
 
 ## Capabilities
@@ -84,7 +96,8 @@ None.
   `key_exchange/kx.hpp` (was `curves/x25519/kx.hpp`), `ciphers/*.hpp`,
   `public_key_encryption/*.hpp` (was `hybrid/*.hpp`), `async.hpp`, a new `aead.hpp` concept
   header, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
-  the generated files), the superproject's pointer.
+  the generated files), webcpporg/hash (the callers of `crypto::equal` in its examples, headers'
+  comments and pages), the superproject's pointers.
 - **Status:** approved by the owner on 2026-11-22 (`decided`); it stays `proposed` in the
   metadata until `reference/plan.md` carries the plan's code, which `tools/proposals.py` requires
   of an `accepted` proposal, and then becomes `accepted`.

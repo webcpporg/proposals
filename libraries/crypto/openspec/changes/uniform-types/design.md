@@ -116,6 +116,36 @@ Fifth round, 2026-11-23:
     gives the signer's `secp256k1::public_key`. Ethereum's `v` (27 or 28, or EIP-155's chain-id
     form) and the address are protocol encodings: the guide shows them, crypto computes neither (D8).
 
+Sixth round, 2026-11-23 (the owner's reason for both: readability):
+
+11. **The secret-hygiene utilities are named by what they do** (D10): the public wipe of the
+    controller's Task X2 is `crypto::erase_secret` in `<webcpp/crypto/erase_secret.hpp>` (never
+    `crypto::wipe`), with the plan's contract unchanged (a contiguous sized range of non-const
+    trivially copyable elements, `noexcept`, no pointer and size overload, a `static_assert` whose
+    message names the ranges it accepts), `detail::wipe` staying the internal primitive; and
+    `crypto::equal`, both overloads (spans, and `boost::hash2::digest<N>`), is renamed
+    `crypto::constant_time_equal` in `<webcpp/crypto/constant_time_equal.hpp>`, with no alias, every
+    caller moved (tests, examples, the page, `crypto.json`, the constant-time lane's paths and
+    suppressions, the message and MSVC tests, the superproject's fixtures, and other libraries'
+    callers such as webcpp::hash's, through the superproject's pointers). webcpp::trystero's
+    port of Trystero 0.27 is not touched; its call sites are listed in the stream's handback.
+    The guide gains one section about protecting secrets outside the primitives (memory and
+    timing hygiene) grouping `constant_time_equal`, `erase_secret`, `secret<N>` and
+    `random_device`; no new namespace: they stay at the top of `webcpp::crypto`.
+12. **Ed25519ph (RFC 8032) is a scheme, `crypto::eddsa_prehashed`**, in the one list of schemes,
+    which Ed25519's signing key pair declares (D9): its input is `crypto::prehashed{digest}` of 64
+    bytes only, the message's SHA-512 as RFC 8032's Ed25519ph defines it, a message being refused
+    at compile time with a clear message (the opposite of `eddsa`, which refuses a digest); its
+    result `ed25519::signature`, the same 64-byte type, an `eddsa` and an `eddsa_prehashed`
+    signature not being interchangeable (the page says so); `verify(eddsa_prehashed, signature,
+    prehashed, public_key)` and the member form; the asynchronous forms on native backends only,
+    refused on the browser's backend (WebCrypto has no Ed25519ph). The streaming signer
+    `curves::ed25519::ph<Hash, B>` is renamed `curves::ed25519::prehashed_signer<Hash, B>`
+    (`begin`, `update`, `sign`, `verify` unchanged), with no alias, its callers moved. RFC 8032's
+    Ed25519ph vectors stay, and a test checks that the streaming signer and
+    `sign(eddsa_prehashed, prehashed{sha512(message)})` give the same signature. Ruling R14 (a
+    distinct `ph_signature`) is superseded: no such type exists.
+
 ## Approaches
 
 **Signatures.** (a) Keep bytes and add a scheme check at run time: a P-256 signature given to
@@ -136,7 +166,7 @@ construction, not libsodium's.
 
 | Type | Bytes | `sign` of | `verify` / `recover` under |
 |---|---|---|---|
-| `curves::ed25519::signature` | 64 | `ed25519::basic_keypair<B>::sign(eddsa, ...)` | `eddsa` |
+| `curves::ed25519::signature` | 64 | `ed25519::basic_keypair<B>::sign(eddsa, ...)`, `sign(eddsa_prehashed, ...)` and `prehashed_signer::sign` (D9) | `eddsa`, `eddsa_prehashed` (not interchangeable: each verifies its own scheme's) |
 | `curves::p256::ecdsa_signature` | 64, r then s | `p256::basic_keypair<B>::sign(ecdsa_sha256, ...)` | `ecdsa_sha256` |
 | `curves::secp256k1::ecdsa_signature` | 64, r then s | `secp256k1::basic_keypair<B>::sign(ecdsa_sha256, ...)` | `ecdsa_sha256` |
 | `curves::secp256k1::recoverable_signature` | 65, r, s, the id | `sign(ecdsa_sha256_recoverable, ...)`, `sign(ecdsa_keccak256_recoverable, ...)` (D8) | `recover(...)` under the same scheme |
@@ -335,6 +365,39 @@ these concepts cover.
   id itself as `yParity` for typed transactions), and the address (the last 20 bytes of the
   Keccak-256 of the uncompressed key without its 0x04), in the example, not in crypto.
 
+### D9. Ed25519ph as the scheme `eddsa_prehashed` (owner decision 12)
+
+- The tag `eddsa_prehashed_t` (explicit default constructor) and the value
+  `crypto::eddsa_prehashed` join `detail::all_schemes` (after `eddsa_t`); `scheme_traits` gives a
+  64-byte signature and a 64-byte digest, SHA-512's; `signs_with_v<ed25519::basic_keypair<B>, ...>`
+  and `verifies_with_v<ed25519::public_key, ...>` are true, and `signature_of` of either is
+  `ed25519::signature`.
+- The input is `crypto::prehashed{digest}` of 64 bytes alone: a message stops the build with a
+  message naming the marker, `eddsa` and the streaming signer; a digest of another size with one
+  naming SHA-512's 64 bytes; `eddsa` keeps refusing a marker, its text now naming
+  `eddsa_prehashed`.
+- `key.sign(eddsa_prehashed, prehashed{digest})`, `crypto::sign`, `crypto::verify(eddsa_prehashed,
+  signature, prehashed{digest}, public_key[, policy])` and `public_key.verify(...)`, strict as
+  `eddsa` is; their asynchronous forms run on native backends and stop the build on a backend
+  whose `asynchronous_backend_v` is true, WebCrypto having no Ed25519ph.
+- `curves::ed25519::prehashed_signer<Hash, B>` (was `ph`) streams the message, SHA-512 inside, and
+  its `sign` and `verify` give and take `ed25519::signature`; over the same message it gives the
+  signature `sign(eddsa_prehashed, prehashed{sha512(message)})` gives.
+- An `eddsa` and an `eddsa_prehashed` signature have one type: one given to the other scheme's
+  `verify` is `invalid_signature` at run time, as RFC 8032's domain separation makes it; the page
+  says which a protocol uses is the protocol's choice.
+
+### D10. Protecting secrets: `constant_time_equal` and `erase_secret` (owner decision 11)
+
+| Before | After | Header |
+|---|---|---|
+| `crypto::equal(span, span)`, `crypto::equal(digest<N>, digest<N>)` | `crypto::constant_time_equal`, both overloads, the same work | `<webcpp/crypto/constant_time_equal.hpp>` (was `equal.hpp`) |
+| (none; the plan's `crypto::wipe`, never released) | `crypto::erase_secret(range)` over `detail::wipe` | `<webcpp/crypto/erase_secret.hpp>` |
+
+Both stay at the top of `webcpp::crypto`, beside `secret<N>` and `random_device`; the guide's
+section "Protecting secrets outside the primitives" groups the four (memory hygiene: `secret<N>`,
+`erase_secret`; timing hygiene: `constant_time_equal`; drawing: `random_device`).
+
 ### D7. Removed, and callers
 
 Removed with no alias: the span `verify` and `recover` overloads of crypto/sign-unified; `sign`'s
@@ -342,10 +405,13 @@ array results; `curves::x25519::public_key(secret)`, `curves::x25519::agree(secr
 `ed25519::basic_keypair::x25519_secret()`, `curves::ed25519::to_x25519_public`;
 `kx_keypair::make(seed)` (now `derive_from_seed`); every `make` and `async_make` (D3c); the namespace `crypto::hybrid` and the headers
 `hybrid/box.hpp`, `hybrid/sealed_box.hpp` and `curves/x25519/kx.hpp` (D3b); the boxes'
-byte-key factories, `seal` and `open`; secretbox's additional data. Every caller in libs/crypto moves
+byte-key factories, `seal` and `open`; secretbox's additional data; `crypto::equal` and
+`<webcpp/crypto/equal.hpp>` (D10); `curves::ed25519::ph` (now `prehashed_signer`, D9). No public
+`crypto::wipe` ever exists (D10). Every caller in libs/crypto moves
 in the same change: tests, examples, fixtures, the page, the constant-time harnesses and suppressions, the
 benches, the message tests, the MSVC tests, `doc/tables/crypto.json` and its generated files
-(rerun, never edited). The X25519 format functions keep their names here and leave with the
+(rerun, never edited); `crypto::equal`'s callers in other libraries (webcpp::hash) move in the
+same change, through the superproject's pointers. The X25519 format functions keep their names here and leave with the
 formats change, which gives them the typed keys' formats.
 
 ## Rulings
@@ -380,9 +446,11 @@ formats change, which gives them the typed keys' formats.
 - **R13: the free factories' header is `<webcpp/crypto/factories.hpp>`** (was `make.hpp`).
 - R8 and R9 were not assigned; the numbers are kept so that R10 to R13 keep the names other
   documents use.
-- **R14: Ed25519ph's signature is `curves::ed25519::ph_signature`**, a sixth type: D1's table
-  leaves Ed25519ph out, and "a type per curve and scheme" decides; a ph signature given to the pure
-  `verify` stops the build instead of failing at run time.
+- **R14 (superseded by owner decision 12): Ed25519ph's signature is `curves::ed25519::signature`**.
+  The first draft ruled a sixth type, `ph_signature`; Ed25519ph is now the scheme
+  `eddsa_prehashed` (D9), whose signature is Ed25519's 64-byte type, so no `ph_signature` exists,
+  and an Ed25519ph signature given to the pure `verify` fails at run time with
+  `invalid_signature` (D9's last point).
 - **R15: `to_der`, `from_der`, `normalize_low_s` and `is_low_s` take and give the curve's
   `ecdsa_signature`** on P-256 and secp256k1, so that no function takes a signature as bytes; the
   formats change builds on typed values.
@@ -418,4 +486,4 @@ superproject; local verification on every lane; merged by the controller; one CI
 
 ## Open Questions
 
-None: the owner's decisions 1 to 10 settle the change.
+None: the owner's decisions 1 to 12 settle the change.
