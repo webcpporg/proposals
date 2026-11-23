@@ -23,23 +23,23 @@ On 2026-11-22 the owner decided to type all three in one small change merged bef
 
 - **Typed signatures**: `ed25519::signature`, `p256::ecdsa_signature`,
   `secp256k1::ecdsa_signature`, `secp256k1::recoverable_signature`,
-  `secp256k1::schnorr_signature`, each made by `make(bytes)` (its size checked) and giving
+  `secp256k1::schnorr_signature`, each made by `from_bytes(bytes)` (its size checked) and giving
   `bytes()`; every `sign` returns one, and every `verify` and `recover` takes one, synchronous and
   asynchronous, member and free. The bytes overload of crypto/sign-unified (`verify` taking any
   span and checking its size) is replaced: a signature from the wire is made first.
-- **X25519 typed like the others**: `x25519::public_key` (`make`, `bytes()`),
-  `x25519::basic_keypair<B>` (`make`, `generate`, `public_key()`, `secret()`, `agree(peer)`,
+- **X25519 typed like the others**: `x25519::public_key` (`from_bytes`, `bytes()`),
+  `x25519::basic_keypair<B>` (`from_secret`, `generate`, `public_key()`, `secret()`, `agree(peer)`,
   `async_agree`, free `crypto::agree` and `crypto::async_agree`); `kx_keypair` built on it; the
   boxes take typed keys. The free `curves::x25519::public_key(secret)` and `agree(secret, peer)`
   are removed.
 - **Ed25519 to X25519 as a typed conversion**: `ed_key.to_x25519()` gives an
   `x25519::basic_keypair<B>`, `ed_public_key.to_x25519()` an `x25519::public_key`, with the free
   `crypto::to_x25519`; `x25519_secret()` and `curves::ed25519::to_x25519_public` are removed.
-- **Three key pair concepts**: `crypto::keypair` (`make`, `generate`, `public_key()`, `secret()`),
+- **Three key pair concepts**: `crypto::keypair` (`from_secret`, `generate`, `public_key()`, `secret()`),
   `crypto::signing_keypair` (also `sign` for each scheme it declares, at least one) and
   `crypto::agreement_keypair` (also `agree`). Ed25519 signs; P-256 and secp256k1 sign and agree;
   X25519 agrees.
-- **AEAD and box concepts**: `crypto::aead` (sizes, `result_type`, `make(key)`,
+- **AEAD and box concepts**: `crypto::aead` (sizes, `result_type`, `from_key(key)`,
   `seal(iv, ad, data)`, `open(iv, ad, data, tag)`), its refinement `crypto::streaming_aead`
   (AES-GCM's incremental seal and open), and the sibling `crypto::authenticated_box`
   (`seal(iv, data)`, `open(iv, data, tag)`) for secretbox and crypto_box, which lose the additional
@@ -53,6 +53,13 @@ On 2026-11-22 the owner decided to type all three in one small change merged bef
   `curves::x25519` (`<webcpp/crypto/key_exchange/kx.hpp>`); no alias. "Hybrid" now names
   post-quantum hybrids (X25519MLKEM768, X-Wing), which keep `crypto::hybrid` free; a future HPKE
   goes to `public_key_encryption`.
+- **Factories named by their input**, `make` removed with no alias: `K::from_secret(bytes)` and
+  `K::generate()` for key pairs, `T::from_bytes(bytes)` for public keys and signatures (P-256 also
+  `from_coordinates(x, y)`), `C::from_key(key)` for ciphers, AEADs and secretbox, crypto_box's
+  `from_keys(own, peer)`, kx's `from_keypair(x25519_keypair)` and `derive_from_seed(seed)`; free
+  `crypto::from_secret<K>`, `crypto::from_bytes<T>`, `crypto::from_key<C>`, `crypto::generate<K>`,
+  and `async_from_secret`, `async_from_key`, `async_generate`. `make` read as "make a key": a
+  caller who passed fixed bytes believing a key was drawn got a predictable private key.
 - **Four mirrored forms** for every new operation that calls a backend.
 
 ## Capabilities

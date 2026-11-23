@@ -37,7 +37,7 @@ first drafts; the owner deferred it the same day, after webcpp::json_schema gain
 - **Concepts** `crypto::encodes<Format, T>` and `crypto::decodes<Format, T>` gate every pair;
   a refused pair stops the build with a message and the type's list of formats.
 - **The valid pairs**, on Ed25519, X25519, P-256 and secp256k1: public keys take `raw`, `spki`,
-  `pem(spki)`; key pairs take `pkcs8`, `pem(pkcs8)` and `raw`, which is `secret()` and `make` under the format's name; ECDSA signatures take `raw` and
+  `pem(spki)`; key pairs take `pkcs8`, `pem(pkcs8)` and `raw`, which is `secret()` and `from_secret` under the format's name; ECDSA signatures take `raw` and
   `der`; Ed25519, Schnorr and recoverable signatures take `raw` only. The uncompressed point is
   the default of `raw` and `spki` on every EC curve (secp256k1's SPKI default changes), the
   compressed point always available by name, on every backend.

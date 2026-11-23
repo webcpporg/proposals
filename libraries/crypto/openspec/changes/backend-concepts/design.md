@@ -158,7 +158,7 @@ the engine. Today's `p_curve_engine::scalar` and the Ed25519 seed copy become `*
 today's `generate()`, which draws bytes with `random_device` then imports them, becomes: the
 engine's `*_generate` when it has one, else `random_device` and `*_import` (R3). A backend whose
 keys never leave it implements `*_generate`, `*_public` and the uses, and neither `*_import` nor
-`*_export`; then `make(bytes)` and `secret()` are refused at compile time naming the missing
+`*_export`; then `from_secret(bytes)` and `secret()` are refused at compile time naming the missing
 capability, and the formats change's private formats (`pkcs8`, a key pair's `raw`) are refused the
 same way (its D7, now expressed by `*_export`). A non-extractable WebCrypto key is such a key; an
 extractable one adds `*_export` through `exportKey`, which is asynchronous, hence D6.
@@ -190,7 +190,7 @@ It is a test tool, not a shipped backend: outside the table, `supports_v` and th
 | secp256k1 | `secp256k1_import`, `secp256k1_generate`, `secp256k1_public`, `secp256k1_export`, `secp256k1_ecdsa_signing`, `secp256k1_ecdsa_verifying`, `secp256k1_schnorr_signing`, `secp256k1_schnorr_verifying`, `secp256k1_recoverable` (sign and recover), `secp256k1_ecdh`, `secp256k1_tweak`, `secp256k1_ellswift`, `secp256k1_musig`, `secp256k1_silent_payments` | per D3 for the keys; one per protocol for the rest | `secp256k1_engine<Capability, backends::secp256k1>` (D8) |
 | Encoding | `base64<E>` | constant-time `encode` and `decode`, standard with padding and URL-safe without, into fixed spans | `pem_engine` on libsodium (renamed `base64_engine`) |
 | Entropy | `entropy_source<E>` | `fill(span)` returning `result<void>` (`entropy_unavailable`) | the platform sources of `detail/entropy.hpp` |
-| Asynchronous | `async_make<E, A>`, `async_generate<E, K>`, `async_seal<E, A>`, `async_open<E, A>`, `async_sign<E, K, S>`, `async_verify<E, S, P>`, `async_agree<E, K>`, `async_export<E, K>` | the shapes `async.hpp` documents: executor first, token last, completion signatures as the public functions' | `async_engine<backends::browser>` (part B), the stand-in |
+| Asynchronous | `async_import<E, A>` (behind `async_from_secret` and `async_from_key`), `async_generate<E, K>`, `async_seal<E, A>`, `async_open<E, A>`, `async_sign<E, K, S>`, `async_verify<E, S, P>`, `async_agree<E, K>`, `async_export<E, K>` | the shapes `async.hpp` documents: executor first, token last, completion signatures as the public functions' | `async_engine<backends::browser>` (part B), the stand-in |
 
 The formats change's per-curve formats engines dissolve into these: a format codec needs a key's
 `*_public`, `*_import`, `*_export`, `p256_point`, `ecdsa_der` and `base64`, and holds no engine of
@@ -238,7 +238,7 @@ when its engine satisfies the concept. The table stays, as the header-free decla
   cannot do.
 - **Run-time cells** (availability decided by the CPU or the browser at run time: the foundation's
   `"runtime": true`) are present in the concepts and in `supports_v` (the code exists), and the
-  table's `runtime` annotation says that `make` returns `not_supported` where the machine lacks it,
+  table's `runtime` annotation says that `from_key` or `from_secret` returns `not_supported` where the machine lacks it,
   as the foundation requires; the concept cannot express it, and a run-time test does.
 - **Targets without a backend's library**: the cell is absent for that target; the backend header's
   inclusion refusal is the check (a message test), since no engine exists there to test.
@@ -264,7 +264,7 @@ are; the memory option's workspace for MuSig2 and silent payments is part of tho
 
 ### D9. The public API's constraints
 
-Each public type checks, in the member that needs it, the capability it uses: `basic_keypair<B>::make`
+Each public type checks, in the member that needs it, the capability it uses: `basic_keypair<B>::from_secret`
 checks `*_import`, `generate` checks `*_generate` or `*_import` with entropy, `secret()` checks
 `*_export`, `sign` checks `*_signing`, `agree` checks `*_agreement`, `ciphers::gcm<C>::seal` checks
 `gcm`, and so on. The check is a `static_assert` whose message names the missing capability:
@@ -297,6 +297,11 @@ Nothing is redesigned at promotion: if the external backend needs a change, that
 first, in `detail`, as an ordinary change.
 
 ## Rulings
+
+The public factories are named by their input (uniform-types' owner decision 9: `from_secret`,
+`from_bytes`, `from_key`); the capabilities behind them keep their internal names, `*_import` and
+`*_generate`.
+
 
 - **R1 (owner decision 2): the table is checked against the concepts, `supports_v` stays
   header-free** (D7): deriving it from the concepts would require the backend's header to ask, which
@@ -372,7 +377,7 @@ struct opaque_p256_engine {
                                             std::span<std::uint8_t, 64>) noexcept;     // p256_ecdsa_signing
     static void move(state&, state&) noexcept;
     static void reset(state&) noexcept;                                                // releases the handle
-};  // no import, no export: make(bytes) and secret() refuse, naming p256_import and p256_export
+};  // no import, no export: from_secret(bytes) and secret() refuse, naming p256_import and p256_export
 ```
 
 ## Risks / Trade-offs

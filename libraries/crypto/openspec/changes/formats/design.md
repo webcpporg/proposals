@@ -238,7 +238,7 @@ nothing on any error, as today's encoders.
 
 Backends: a `T` that names its backend (`p256::basic_public_key<B>`, `basic_keypair<B>`) decodes
 on it; a `T` that has none (`ed25519::public_key`, `x25519::public_key`, `secp256k1::public_key`)
-decodes on its family's default, as `make` does. PEM's base64 runs on `families::pem`'s backend
+decodes on its family's default, as `from_bytes` does. PEM's base64 runs on `families::pem`'s backend
 (libsodium's constant-time codec), as today, which a program using PEM links.
 
 ### D3. The concepts and the diagnostic
@@ -283,7 +283,7 @@ P-256's compressed SPKI is the same AlgorithmIdentifier around a BIT STRING of 3
 
 Decoding takes the same pairs. Each decoder keeps today's strictness (foundation D30): it accepts
 exactly what its encoder writes. A modifier names the one form encoded; a decode with the default
-form accepts the point forms the type's `make` accepts (secp256k1's `spki` and `raw` take 33 or 65
+form accepts the point forms the type's `from_bytes` accepts (secp256k1's `spki` and `raw` take 33 or 65
 bytes, as today, and so do P-256's now), and `raw(xonly)` decodes 32 bytes as BIP340's lift of x,
 the key of even y (R5).
 
@@ -295,7 +295,7 @@ WebCrypto's `raw` (65 bytes), `spki` writes what OpenSSL's `i2d_PUBKEY`, node an
 byte and x, which needs no backend; decoding a compressed P-256 point on BearSSL, which has no
 point decompression, computes y with a fixed-width square root modulo p
 (p = 3 mod 4, y = (x^3 - 3x + b)^((p + 1) / 4)) on public data in crypto, then checks the point as
-`make` does (R16); OpenSSL decompresses itself. `crypto::xonly` is secp256k1's `raw` only. The
+`from_bytes` does (R16); OpenSSL decompresses itself. `crypto::xonly` is secp256k1's `raw` only. The
 public key's accessors `bytes()`, `uncompressed()`, `compressed()` and `xonly()` stay: they are
 the value's own bytes, which `raw` calls, not a second format API; P-256's `basic_public_key` gains
 `compressed()` on every backend.
@@ -341,10 +341,10 @@ moved to "Deferred: JWK" with decision 14.
 
 - **R1** (owner decision 11): the uncompressed point is the default of `raw` and `spki` on every EC
   curve; `crypto::compressed` names the other form everywhere.
-- **R2: a key pair's `raw` is `secret()` and `make` under the format's name**: `encode(raw, kp)`
+- **R2: a key pair's `raw` is `secret()` and `from_secret` under the format's name**: `encode(raw, kp)`
   calls `kp.secret()` and returns its bytes as `encoded<32, secret_binary>`, `decode<K>(raw, bytes)`
-  calls `K::make(bytes)`; one implementation each, so that generic code over formats round-trips
-  every type. `secret()` and `make` stay the documented primary forms.
+  calls `K::from_secret(bytes)`; one implementation each, so that generic code over formats round-trips
+  every type. `secret()` and `from_secret` stay the documented primary forms.
 - **R4: decoding is typed by its input**: binary formats take a byte span, text formats a
   `std::string_view`; nothing sniffs PEM from DER.
 - **R5: secp256k1's `raw(xonly)` decodes** to the even-y key (BIP340's lift_x), so that a Nostr
@@ -357,7 +357,7 @@ moved to "Deferred: JWK" with decision 14.
   Botan, "every key type" on OpenSSL) is removed from the requirements this change modifies, each
   to join the formats in the change that brings it.
 - **R16: P-256's compressed point is decoded by crypto on BearSSL**, a square root on public data
-  (D5), its result checked by `make`; Wycheproof's and OpenSSL's compressed points are its oracle.
+  (D5), its result checked by `from_bytes`; Wycheproof's and OpenSSL's compressed points are its oracle.
 - **R17: the list leaves room for JWK** (D1), proven by a test with a stand-in text format.
 
 ## Before and after
@@ -428,7 +428,7 @@ on the wire as the compact text `x.y` of the JWK's two coordinates (`jwkToCompac
 (`protocol/identity.hpp`, `parse_user_key`), building the key from the coordinates. That leniency
 is Trystero's protocol, not RFC 7517, so phase 3 of the port does not wait for crypto's JWK: it
 keeps its own reading and builds the typed keys through this change's `raw` forms
-(`p256::keypair::make(d)`, `p256::public_key::make` of `0x04 || x || y`); when crypto's JWK lands,
+(`p256::keypair::from_secret(d)`, `p256::public_key::from_bytes` of `0x04 || x || y`); when crypto's JWK lands,
 webcpp::trystero can use it where it exchanges a full JWK with WebCrypto.
 
 ## Deferred: JWK

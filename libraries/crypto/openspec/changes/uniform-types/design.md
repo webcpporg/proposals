@@ -47,16 +47,16 @@ new algorithms; the browser backend itself (part B of the asynchronous family).
 
 1. **Typed signatures per curve and scheme**, returned by `sign` on every curve and taken by
    `verify` and `recover`, replacing crypto/sign-unified's span rule, each with `bytes()` and
-   `make(bytes)`; whether `verify` keeps a bytes overload is ruled here (R1).
-2. **X25519 typed like the others**: `x25519::public_key` (`make`, `bytes`),
-   `x25519::basic_keypair<B>` (`make`, `generate`, `public_key()`, `secret()`, `agree(peer)` with
+   `from_bytes(bytes)` (named `make` when decided, renamed by decision 9); whether `verify` keeps a bytes overload is ruled here (R1).
+2. **X25519 typed like the others**: `x25519::public_key` (`from_bytes`, `bytes`),
+   `x25519::basic_keypair<B>` (`from_secret`, `generate`, `public_key()`, `secret()`, `agree(peer)` with
    `async_agree` and the free `crypto::agree`), `kx_keypair` built on it; Ed25519's
    `x25519_secret()` and `to_x25519_public` become a typed conversion (`ed_key.to_x25519()` giving
    an `x25519::keypair`, `ed_pub.to_x25519()` an `x25519::public_key`); the old functions removed.
-3. **Key pair concepts split**: `keypair` (`make`, `generate`, `public_key()`, `secret()`),
+3. **Key pair concepts split**: `keypair` (`from_secret`, `generate`, `public_key()`, `secret()`),
    `signing_keypair` (also `sign` for each declared scheme, at least one), `agreement_keypair`
    (also `agree`). Ed25519 signs; P-256 and secp256k1 do both; X25519 agrees.
-4. **`concept aead`** (`key_size`, `iv_size`, `tag_size`, `result_type`, `static make(key)`
+4. **`concept aead`** (`key_size`, `iv_size`, `tag_size`, `result_type`, `static from_key(key)`
    returning `result<C>`, `seal(iv, ad, data)` returning `result<result_type>`,
    `open(iv, ad, data, tag)` returning `result<void>`), with a `static_assert` per cipher; the
    refinement **`streaming_aead`** (AES-GCM's `begin_seal`, `update`, `result`, `begin_open`,
@@ -70,11 +70,11 @@ new algorithms; the browser backend itself (part B of the asynchronous family).
 Second round, the same day, answering the first draft's rulings:
 
 6. **`verify` takes only the typed signature**, with no bytes overload; a signature from the wire
-   goes through `make` first (R1 confirmed).
+   goes through `from_bytes` first (R1 confirmed).
 7. **libsodium's seeded kx derivation keeps a distinct name**, option (b):
    `key_exchange::kx_keypair::derive_from_seed(seed)` (`crypto_kx_seed_keypair`: the secret is
-   BLAKE2b-256 of the seed), beside `make(x25519_keypair)` and `generate()`; `make` keeps its
-   library-wide meaning, "these bytes, or this key, are the secret" (R5 replaced).
+   BLAKE2b-256 of the seed), beside `from_keypair(x25519_keypair)` and `generate()`; the factory
+   named by its input says the bytes or the key are the secret (R5 replaced; names per decision 9).
 
 Third round, the same day:
 
@@ -87,6 +87,23 @@ Third round, the same day:
    primitives only, `ciphers` symmetric ciphers, and the two new namespaces the composed
    constructions, named by the problem they solve; a future HPKE (RFC 9180) lives in
    `public_key_encryption`.
+
+Fourth round, the same day:
+
+9. **The fallible factory `make` is renamed by what it takes**, with no alias: a key pair's
+   `K::from_secret(secret_bytes)` (and `K::generate()`, unchanged); a public key's and a
+   signature's `T::from_bytes(bytes)`; a cipher's, an AEAD's and a secretbox's
+   `C::from_key(key)`; and, by this change's rulings, P-256's public key from raw coordinates
+   `from_coordinates(x, y)`, crypto_box's `from_keys(own_keypair, peer_public_key)`, and kx's
+   `from_keypair(x25519_keypair)` beside `derive_from_seed(seed)` and `generate()`. The concept
+   `keypair` requires `from_secret` and `generate`. The four forms follow: the free
+   `crypto::from_secret<K>(bytes)`, `crypto::from_bytes<T>(bytes)`, `crypto::from_key<C>(key)` and
+   `crypto::generate<K>()`; the asynchronous `async_from_secret`, `async_from_key` and
+   `async_generate`, member and free. The reason: `make`, a fallible constructor in the style of
+   `std::make_*`, reads as "make a key", and a caller who passes fixed bytes believing a key is
+   drawn gets a predictable private key; the name of the input makes the call site say where the
+   secret comes from. The backends' internal capabilities keep their names (`*_import`,
+   `*_generate`).
 
 ## Approaches
 
@@ -116,12 +133,12 @@ construction, not libsodium's.
 
 Each is a regular value type (copyable, comparable with `==`; a signature is public), implemented
 by one class template in `detail` with a distinct tag per type, so that no two convert into each
-other. Each has `static constexpr std::size_t size`; `static make(std::span<std::uint8_t const>)`
+other. Each has `static constexpr std::size_t size`; `static from_bytes(std::span<std::uint8_t const>)`
 returning `result<T>`, `invalid_signature` for another size and nothing else checked (whether r and
 s are below n, or R canonical, is verification's judgment, as crypto/sign-unified's R16 rules for
 Ed25519's public key); `bytes()` returning `std::array<std::uint8_t, size> const&`; and nothing
 that converts implicitly. `recoverable_signature` adds `recovery_id()` (0 to 3). The free
-`crypto::make<T>(bytes)` of crypto/sign-unified serves them unchanged.
+`crypto::from_bytes<T>(bytes)` (D3c) serves them.
 
 `sign` returns `result<T>` on every key pair and scheme, the asynchronous `sign` completes with
 `void(error_code, T)`; `crypto::verify(scheme, signature, input, public_key)`, `pub.verify`,
@@ -132,20 +149,20 @@ false for a signature of another curve or scheme, with a message naming the type
 
 ### D2. X25519's types
 
-- `curves::x25519::public_key`: `static make(std::span<std::uint8_t const>)` returning
+- `curves::x25519::public_key`: `static from_bytes(std::span<std::uint8_t const>)` returning
   `result<public_key>`, `invalid_public_key` for another size than 32 and nothing else checked
   (a small-order key is refused where it matters, by `agree`, as `weak_public_key`); `bytes()`.
 - `curves::x25519::basic_keypair<Backend>` (and `x25519::keypair`, its default): `public_key_type`,
-  `secret_key_size` 32; `static make(secret_bytes)` (RFC 7748's 32-byte scalar, clamped by the
+  `secret_key_size` 32; `static from_secret(secret_bytes)` (RFC 7748's 32-byte scalar, clamped by the
   backend as today) and `static generate()`, returning `result<basic_keypair>`; `public_key()`
   returning `result<public_key>`; `secret()` returning `result<secret<32>>`; `agree(peer)`, `peer`
   a `public_key`, returning `result<secret<32>>` and `weak_public_key` when the shared secret is
   all zero, on every backend, as the foundation requires; moved from, every call returns
   `invalid_state`; its state wiped on destruction and move, as the other key pairs are.
-- The four forms: `make`, `generate`, `agree` as members; `crypto::make<K>`, `crypto::generate<K>`,
+- The four forms: `from_secret`, `generate`, `agree` as members; `crypto::from_secret<K>`, `crypto::generate<K>`,
   `crypto::agree(key, peer)` free (crypto/sign-unified's generic ones, now constrained by D3);
-  `K::async_make`, `K::async_generate`, `key.async_agree(executor, peer, token)` and the free
-  `async_make`, `async_generate`, `async_agree`, defined in `async.hpp`. X25519 is in WebCrypto, so
+  `K::async_from_secret`, `K::async_generate`, `key.async_agree(executor, peer, token)` and the free
+  `async_from_secret`, `async_generate`, `async_agree`, defined in `async.hpp`. X25519 is in WebCrypto, so
   the asynchronous forms exist on every backend, the browser's included once part B lands.
 - Removed: the free `curves::x25519::public_key(secret)` (its name is the type's now) and
   `curves::x25519::agree(secret, peer)`; `curves::x25519::algorithm<B>` moves into `detail`, its
@@ -154,16 +171,16 @@ false for a signature of another curve or scheme, with a message naming the type
 ### D3. crypto_kx, the boxes and Ed25519's conversion on typed keys
 
 - `key_exchange::kx_keypair<Backend>` holds an `x25519::basic_keypair<Backend>`: made from one
-  (`make(x25519_keypair)`), by `generate()`, or by `derive_from_seed(seed)`, libsodium's seeded
+  (`from_keypair(x25519_keypair)`), by `generate()`, or by `derive_from_seed(seed)`, libsodium's seeded
   derivation (`crypto_kx_seed_keypair`: the secret is BLAKE2b-256 of the 32-byte seed), kept under
   its own name because programs store kx seeds (owner decision 7). The two differ on the same 32
-  bytes: `make(x25519::keypair::make(bytes))` takes them as the secret, `derive_from_seed(bytes)`
+  bytes: `from_keypair(*x25519::keypair::from_secret(bytes))` takes them as the secret, `derive_from_seed(bytes)`
   hashes them first; the guide says so, and a test checks that `derive_from_seed` gives
-  `crypto_kx_seed_keypair`'s keys and differs from `make` on the same bytes; `public_key()` returns
+  `crypto_kx_seed_keypair`'s keys and differs from `from_keypair` on the same bytes; `public_key()` returns
   `x25519::public_key`; `client_session_keys(server)` and `server_session_keys(client)` take an
   `x25519::public_key` and return `session_keys` as today. Its seed and secret are the inner key
   pair's (`keypair()` gives it by reference).
-- `public_key_encryption::basic_box<Family, B>::make(own, peer)`, `own` an `x25519::basic_keypair<B>`, `peer` an
+- `public_key_encryption::basic_box<Family, B>::from_keys(own, peer)`, `own` an `x25519::basic_keypair<B>`, `peer` an
   `x25519::public_key`, computing the shared key once (libsodium's `beforenm`) as today.
 - `public_key_encryption::basic_sealed_box<B>::seal(recipient, message, out)`, `recipient` an
   `x25519::public_key`; `open(recipient, sealed, out)`, `recipient` an `x25519::basic_keypair<B>`.
@@ -191,12 +208,31 @@ updated and its generated files rerun. The convenience header includes the new h
 the old. The directory `hybrid/` and the namespace `crypto::hybrid` stay empty and unused in this
 change, free for a later post-quantum hybrid (X25519MLKEM768, X-Wing).
 
+### D3c. Factories named by their input (owner decision 9)
+
+| Type | Before | After |
+|---|---|---|
+| every key pair (`ed25519`, `x25519`, `p256`, `secp256k1`) | `K::make(secret_bytes)`, `generate()` | `K::from_secret(secret_bytes)`, `K::generate()` |
+| every public key | `T::make(bytes)` | `T::from_bytes(bytes)` |
+| P-256's public key from raw coordinates | `make(x, y)` | `from_coordinates(x, y)` (R10) |
+| every signature type | `T::make(bytes)` | `T::from_bytes(bytes)` |
+| `ciphers::gcm`, `ciphers::aead`, `ciphers::basic_secretbox`, the block cipher | `C::make(key)` | `C::from_key(key)` |
+| `public_key_encryption::basic_box` | `make(own, peer)` | `from_keys(own, peer)` (R11) |
+| `key_exchange::kx_keypair` | `make(x25519_keypair)`, `make(seed)` | `from_keypair(x25519_keypair)` (R12), `derive_from_seed(seed)`, `generate()` |
+| free forms | `crypto::make<A>(...)` | `crypto::from_secret<K>`, `crypto::from_bytes<T>`, `crypto::from_key<C>`; `crypto::generate<K>` unchanged |
+| asynchronous | `async_make` (member and free) | `async_from_secret`, `async_from_key`; `async_generate` unchanged |
+
+The header `<webcpp/crypto/make.hpp>` of crypto/sign-unified, which holds the free factories,
+becomes `<webcpp/crypto/factories.hpp>` (R13). No alias of `make` or `async_make` remains. A key
+pair's `from_secret` and its `secret()` are inverses by name, and `from_bytes` and `bytes()` for
+public values.
+
 ### D4. The key pair concepts
 
 `<webcpp/crypto/keypair.hpp>` declares, folding over `detail::all_schemes` as crypto/sign-unified
 does:
 
-- `crypto::keypair<K>`: `K::make(secret_bytes)` and `K::generate()` returning `result<K>`,
+- `crypto::keypair<K>`: `K::from_secret(secret_bytes)` and `K::generate()` returning `result<K>`,
   `public_key()` returning `result<typename K::public_key_type>`, `secret()` returning
   `result<secret<K::secret_key_size>>`;
 - `crypto::signing_keypair<K>`: `keypair<K>` and `sign(scheme, input)` for every scheme `K`
@@ -222,7 +258,7 @@ A new header `<webcpp/crypto/aead.hpp>` (the concepts only; `ciphers/aead.hpp` k
 `ciphers::aead` template) declares:
 
 - `crypto::aead<C>`: `C::key_size`, `C::iv_size`, `C::tag_size` (`std::size_t` constants),
-  `typename C::result_type`; `C::make(std::span<std::uint8_t const>)` returning `result<C>`;
+  `typename C::result_type`; `C::from_key(std::span<std::uint8_t const>)` returning `result<C>`;
   `c.seal(iv, additional_data, data)` returning `result<typename C::result_type>`, `data` sealed in
   place; `c.open(iv, additional_data, data, tag)` returning `result<void>`, `data` opened in place
   and zeroed on failure.
@@ -231,8 +267,8 @@ A new header `<webcpp/crypto/aead.hpp>` (the concepts only; `ciphers/aead.hpp` k
   `verify(tag)` and `end_open()`, with AES-GCM's signatures.
 - `crypto::authenticated_box<C>`: `C::key_size`, `C::iv_size`, `C::tag_size`,
   `typename C::result_type`; `c.seal(iv, data)` returning `result<result_type>`;
-  `c.open(iv, data, tag)` returning `result<void>`, `data` zeroed on failure. `make` is not part
-  of it: a secretbox is made from a key, a crypto_box from two X25519 keys.
+  `c.open(iv, data, tag)` returning `result<void>`, `data` zeroed on failure. The factory is not
+  part of it: a secretbox is made by `from_key`, a crypto_box by `from_keys` from two X25519 keys.
 
 | Type | Concept |
 |---|---|
@@ -242,7 +278,7 @@ A new header `<webcpp/crypto/aead.hpp>` (the concepts only; `ciphers/aead.hpp` k
 | `public_key_encryption::box`, `box_xchacha20poly1305` | `authenticated_box` |
 
 Each header checks its row with a `static_assert`. secretbox leaves the `ciphers::aead` template:
-it becomes `ciphers::basic_secretbox<Family, B>` with `make(key)`, `seal(iv, data)` and
+it becomes `ciphers::basic_secretbox<Family, B>` with `from_key(key)`, `seal(iv, data)` and
 `open(iv, data, tag)`, the guards and the zeroing of the AEAD template, and no additional data;
 `detail::aead_family<secretbox...>` and its `max_additional_data_size` 0 are removed.
 
@@ -261,7 +297,7 @@ On `backends::browser` (a backend whose `detail::asynchronous_backend_v` is true
 offered, through WebCrypto; any other stops the build with "webcpp::crypto: WebCrypto has no
 <algorithm>; async_seal and async_open of <algorithm> run on a native backend". This supersedes the
 foundation's sentence that no `async_` variant of a cheap algorithm WebCrypto lacks may exist, for
-seal and open only, by the owner's decision; `async_make` follows the same rule for the types
+seal and open only, by the owner's decision; `async_from_key` follows the same rule for the types
 these concepts cover.
 
 ### D7. Removed, and callers
@@ -269,9 +305,9 @@ these concepts cover.
 Removed with no alias: the span `verify` and `recover` overloads of crypto/sign-unified; `sign`'s
 array results; `curves::x25519::public_key(secret)`, `curves::x25519::agree(secret, peer)`;
 `ed25519::basic_keypair::x25519_secret()`, `curves::ed25519::to_x25519_public`;
-`kx_keypair::make(seed)` (now `derive_from_seed`); the namespace `crypto::hybrid` and the headers
+`kx_keypair::make(seed)` (now `derive_from_seed`); every `make` and `async_make` (D3c); the namespace `crypto::hybrid` and the headers
 `hybrid/box.hpp`, `hybrid/sealed_box.hpp` and `curves/x25519/kx.hpp` (D3b); the boxes'
-byte-key `make`, `seal` and `open`; secretbox's additional data. Every caller in libs/crypto moves
+byte-key factories, `seal` and `open`; secretbox's additional data. Every caller in libs/crypto moves
 in the same change: tests, examples, fixtures, the page, the constant-time harnesses and suppressions, the
 benches, the message tests, the MSVC tests, `doc/tables/crypto.json` and its generated files
 (rerun, never edited). The X25519 format functions keep their names here and leave with the
@@ -280,24 +316,33 @@ formats change, which gives them the typed keys' formats.
 ## Rulings
 
 - **R1 (owner decision 6): `verify` takes the typed signature only; no bytes overload.** A signature from the wire is
-  made first (`p256::ecdsa_signature::make(bytes)` or `crypto::make<T>(bytes)`), where its size is
+  made first (`p256::ecdsa_signature::from_bytes(bytes)` or `crypto::from_bytes<T>(bytes)`), where its size is
   checked; then the type says its curve and scheme, and a mismatch is a compile-time error rather
   than an `invalid_signature` at run time. One form keeps the four mirrored forms one, and matches
   crypto/sign-unified's R17 for public keys. BIP340's x-only key bytes keep their `verify` overload:
   that is a key, not a signature.
-- **R2: a signature's `make` checks the size only** (D1), so that a high-S or out-of-range
+- **R2: a signature's `from_bytes` checks the size only** (D1), so that a high-S or out-of-range
   signature from a peer can still be made, normalized and refused by `verify` with the policy of
   its curve.
-- **R3: an X25519 public key's `make` checks the size only** (D2), as Ed25519's does; small order
+- **R3: an X25519 public key's `from_bytes` checks the size only** (D2), as Ed25519's does; small order
   is `agree`'s refusal, `weak_public_key`, where RFC 7748 puts it.
-- **R4: conversions and value construction are synchronous only, member and free**: `make` of a
+- **R4: conversions and value construction are synchronous only, member and free**: `from_bytes` of a
   signature or a public key and `to_x25519` call no backend that WebCrypto could replace (WebCrypto
   converts nothing between Ed25519 and X25519), so "four mirrored forms" applies to the operations
-  that call a backend (`make` and `generate` of a key pair, `sign`, `verify`, `agree`, `seal`,
+  that call a backend (`from_secret` and `generate` of a key pair, `from_key` of a cipher, `sign`, `verify`, `agree`, `seal`,
   `open`), as crypto/sign-unified's D9 table lists them.
 - **R5 (owner decision 7): the seeded derivation is `kx_keypair::derive_from_seed(seed)`**, never a
-  `make`, so that `make` means "the secret" everywhere in the library (D3).
+  factory named after another input, so that the call site says a seed is hashed (D3).
 - **R6: sealed boxes stay out of the concepts** (Non-goals) but take typed keys (D3).
+- **R10: P-256's public key from coordinates is `from_coordinates(x, y)`**, not a second
+  `from_bytes` overload, so that the name says the input is two coordinates (a COSE key's), not an
+  encoded point.
+- **R11: crypto_box is made by `from_keys(own_keypair, peer_public_key)`**: two keys, the plural
+  name says so, and neither is "the" secret alone.
+- **R12: kx wraps a key pair by `from_keypair(x25519_keypair)`**: its input is a key pair, not
+  secret bytes, so `from_secret` would misname it; a kx key pair from raw secret bytes is
+  `from_keypair(*x25519::keypair::from_secret(bytes))`.
+- **R13: the free factories' header is `<webcpp/crypto/factories.hpp>`** (was `make.hpp`).
 - **R7: the concepts live in `<webcpp/crypto/aead.hpp>`**, beside `keypair.hpp` and `signing.hpp`,
   which every cipher header includes; it includes no backend.
 
@@ -305,7 +350,8 @@ formats change, which gives them the typed keys' formats.
 
 - Every signing caller changes its result type; the migration is mechanical (`.bytes()` where bytes
   were used) and the build finds every site.
-- Programs that verify wire signatures gain a `make` call (R1).
+- Programs that verify wire signatures gain a `from_bytes` call (R1).
+- Every `make` in libs/crypto and its users is renamed (D3c); the build finds each site.
 - Async seal and open on native backends add instantiations only where called.
 
 ## Migration Plan

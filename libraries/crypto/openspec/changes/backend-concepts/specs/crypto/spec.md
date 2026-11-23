@@ -8,17 +8,17 @@
 - **THEN** every engine it specializes satisfies the concepts its cells promise, and the build fails naming the concept and the operation otherwise
 
 ### Requirement: Backend capabilities: the opaque key
-Key capabilities SHALL be split into import (a state from secret bytes), generate (a state whose secret the backend draws), public (the public key of a state), use (sign, verify, agree) and export (the secret bytes back), and no use capability MUST require the secret in memory. A backend that implements generate, public and the uses without import or export MUST be usable through the public key pair types, whose `make(bytes)`, `secret()` and private formats then stop the build with a message naming the missing capability. A test-only opaque backend whose states are handles MUST implement P-256 and X25519 this way, in a synchronous and an asynchronous form, so that the asynchronous concepts are tested; it MUST stay outside the capability table and its checks. `generate()` MUST use a backend's own generation when it has one, and `random_device` with import only for a backend that can only import.
+Key capabilities SHALL be split into import (a state from secret bytes), generate (a state whose secret the backend draws), public (the public key of a state), use (sign, verify, agree) and export (the secret bytes back), and no use capability MUST require the secret in memory. A backend that implements generate, public and the uses without import or export MUST be usable through the public key pair types, whose `from_secret(bytes)`, `secret()` and private formats then stop the build with a message naming the missing capability. A test-only opaque backend whose states are handles MUST implement P-256 and X25519 this way, in a synchronous and an asynchronous form, so that the asynchronous concepts are tested; it MUST stay outside the capability table and its checks. `generate()` MUST use a backend's own generation when it has one, and `random_device` with import only for a backend that can only import.
 
 #### Scenario: A key that never leaves its backend
 - **WHEN** a P-256 key pair on the test-only opaque backend is generated, signs a message and agrees with a peer
-- **THEN** its signature verifies on BearSSL, its agreement equals the peer's, and a call of `secret()` or `make(bytes)` on it does not compile, naming `p256_export` and `p256_import`
+- **THEN** its signature verifies on BearSSL, its agreement equals the peer's, and a call of `secret()` or `from_secret(bytes)` on it does not compile, naming `p256_export` and `p256_import`
 
 ### Requirement: Backend capabilities: refusals name the missing capability
 Each public member that calls an engine SHALL check, in a `static_assert`, the capability it uses, with a message naming the backend, the algorithm and the missing capability; where the engine is not specialized at all, the generated refusal of the primary engine MUST fire first with its existing message.
 
 #### Scenario: Two diagnostics, in order
-- **WHEN** a program calls `curves::ed25519::basic_keypair<backends::bearssl>::make(seed)`, and then `secret()` on a key pair of the opaque test backend
+- **WHEN** a program calls `curves::ed25519::basic_keypair<backends::bearssl>::from_secret(seed)`, and then `secret()` on a key pair of the opaque test backend
 - **THEN** the first stops with the generated message naming the backends that have Ed25519, and the second with the message naming the missing export capability
 
 ### Requirement: Backend capabilities: secp256k1 behind engines, split into capabilities
@@ -60,8 +60,8 @@ The library SHALL hold its capability table in version 0.1's `doc/tables/crypto.
 - **THEN** `capabilities_test` and BearSSL's header fail to compile, naming `detail::backend::aead` and `open`
 
 ### Requirement: Capability table: the supports trait and run-time availability
-`webcpp::crypto::supports_v<Algorithm, Backend>` SHALL be `true` exactly where the table marks the backend as having the algorithm on the current target, needing no backend's header, and the table's presence cells MUST equal, on every target where the backend builds, whether the backend's engines satisfy the algorithm's capability concepts. A cell whose availability is decided at run time MUST be present in the trait, and its `make` or `async_make` MUST return `boost::system::errc::not_supported` on a machine or browser that lacks it, before reading a key byte.
+`webcpp::crypto::supports_v<Algorithm, Backend>` SHALL be `true` exactly where the table marks the backend as having the algorithm on the current target, needing no backend's header, and the table's presence cells MUST equal, on every target where the backend builds, whether the backend's engines satisfy the algorithm's capability concepts. A cell whose availability is decided at run time MUST be present in the trait, and its `from_key`, `from_secret` or their asynchronous forms MUST return `boost::system::errc::not_supported` on a machine or browser that lacks it, before reading a key byte.
 
 #### Scenario: AES256-GCM on libsodium without AES instructions
-- **WHEN** `ciphers::aes256_gcm_sodium::make(key)` runs where `crypto_aead_aes256gcm_is_available()` returns 0
+- **WHEN** `ciphers::aes256_gcm_sodium::from_key(key)` runs where `crypto_aead_aes256gcm_is_available()` returns 0
 - **THEN** it returns `not_supported`, and `supports_v<aes256_gcm_sodium, backends::sodium>` is `true` natively and `false` on WebAssembly
