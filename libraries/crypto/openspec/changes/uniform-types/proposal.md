@@ -56,6 +56,12 @@ On 2026-11-22 the owner decided to type all three in one small change merged bef
   `public_key_encryption::box`; the algorithm types stay in `crypto::ciphers`; every public name is
   spelled out, algorithm proper names excepted (`nonce`, `associated_data`, `nonce_size`,
   `invalid_nonce_size`); no alias; webcpp::trystero migrates later.
+- **The ChaCha20-Poly1305 template and libsecp256k1's abbreviations** (owner decision 14,
+  2026-11-23): `ciphers::aead<Family, Backend>` becomes `ciphers::basic_chacha20_poly1305`, the
+  aliases keeping their names; secp256k1's `pubkey_*` and `seckey_*` tweaks become `public_key_*`
+  and `secret_key_*`, MuSig2's `nonce_gen` becomes `generate_nonce`, and silent payments'
+  `prevouts_summary` becomes `previous_outputs_summary`; `agree`, `agree_hashed` and `agree_point`
+  stay; no alias.
 - **Constructions grouped by purpose**: the namespace `crypto::hybrid` is removed;
   `crypto::public_key_encryption` holds `basic_box`, `box`, `box_xchacha20poly1305`,
   `basic_sealed_box` and `sealed_box` (`<webcpp/crypto/public_key_encryption/box.hpp>`,

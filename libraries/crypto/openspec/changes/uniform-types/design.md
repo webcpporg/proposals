@@ -179,6 +179,33 @@ glossary):
     The controller's ruling on how it is built (2026-11-23, R23): 3.2 and 3.3 are written with
     decision 13's names; X4 covers the renames they do not touch.
 
+Eighth round, 2026-11-23 (the owner's reason: `ciphers::aead` reads like the namespace
+`secret_key_encryption::aead`, and libsecp256k1's abbreviations are the glossary decision 13
+removed):
+
+14. **The one-shot AEAD template is named for its algorithm, and the names crypto took from
+    libsecp256k1 are spelled out** (D12):
+    - the class template `ciphers::aead<Family, Backend>` is
+      `ciphers::basic_chacha20_poly1305<Family, Backend>`, the pattern of
+      `public_key_encryption::basic_box` and `secret_key_encryption::basic_secretbox`; the aliases
+      `chacha20_poly1305`, `chacha20_poly1305_original` and `xchacha20_poly1305` keep their names;
+    - secp256k1's MuSig2 `musig::nonce_gen` is `musig::generate_nonce`; the key tweaks
+      `pubkey_tweak_add`, `pubkey_tweak_mul`, `pubkey_negate` and `pubkey_combine` are
+      `public_key_tweak_add`, `public_key_tweak_mul`, `public_key_negate` and
+      `public_key_combine`; `seckey_tweak_add`, `seckey_tweak_mul` and `seckey_negate` are
+      `secret_key_tweak_add`, `secret_key_tweak_mul` and `secret_key_negate`;
+    - any other public abbreviation of the same kind in crypto's public headers is spelled out
+      (R24 lists the one found); algorithm proper names stay (`musig`, `ellswift`, `ecdh`,
+      `xonly`, ...), and libsecp256k1's own C names (`secp256k1_ec_pubkey_*`), which crypto calls,
+      are not crypto's public names;
+    - secp256k1's `agree`, `agree_hashed` and `agree_point` stay as they are;
+    - no compatibility alias; every call site moves (crypto's code, pages, examples, tests,
+      fixtures, the constant-time lane, the benches and the superproject's fixtures);
+      webcpp::trystero's port of Trystero 0.27 is out of scope, listed by the HANDBACK.
+    The controller's ruling on how it is built (2026-11-23): Task X5 "remaining spelled-out
+    names" runs after X1b and before 4.1, and its first commit rewords D6's refusal (D6), which
+    3.3's fix round made fire from the synchronous forms too.
+
 ## Approaches
 
 **Signatures.** (a) Keep bytes and add a scheme check at run time: a P-256 signature given to
@@ -290,7 +317,7 @@ change, free for a later post-quantum hybrid (X25519MLKEM768, X-Wing).
 | every public key | `T::make(bytes)` | `T::from_bytes(bytes)` |
 | P-256's public key from raw coordinates | `make(x, y)` | `from_coordinates(x, y)` (R10) |
 | every signature type | `T::make(bytes)` | `T::from_bytes(bytes)` |
-| `ciphers::gcm`, `ciphers::aead`, `secret_key_encryption::basic_secretbox` (decision 13), the block cipher | `C::make(key)` | `C::from_key(key)` |
+| `ciphers::gcm`, `ciphers::basic_chacha20_poly1305` (was `ciphers::aead`, decision 14), `secret_key_encryption::basic_secretbox` (decision 13), the block cipher | `C::make(key)` | `C::from_key(key)` |
 | `public_key_encryption::basic_box` | `make(own, peer)` | `from_keys(own, peer)` (R11) |
 | `key_exchange::kx_keypair` | `make(x25519_keypair)`, `make(seed)` | `from_keypair(x25519_keypair)` (R12), `derive_from_seed(seed)`, `generate()` |
 | free forms | `crypto::make<A>(...)` | `crypto::from_secret<K>`, `crypto::from_bytes<T>`, `crypto::from_key<C>`; `crypto::generate<K>` unchanged |
@@ -330,7 +357,8 @@ key pair does ("X25519 key pairs agree; they do not sign").
 
 The AEAD contract is `secret_key_encryption::aead`'s (owner decision 13, D11). A new header
 `<webcpp/crypto/secret_key_encryption/aead.hpp>` (no backend; `ciphers/aead.hpp` keeps the
-`ciphers::aead` template and includes it) declares, in namespace
+one-shot template, `ciphers::basic_chacha20_poly1305` by decision 14, and includes it) declares,
+in namespace
 `webcpp::crypto::secret_key_encryption::aead`:
 
 - `cipher<C>`: `C::key_size`, `C::nonce_size`, `C::tag_size` (`std::size_t` constants),
@@ -357,7 +385,8 @@ by `from_keys` from two X25519 keys. The concept lives beside the secret box, in
 | `secret_key_encryption::secretbox`, `secretbox_xchacha20poly1305` | `authenticated_box` |
 | `public_key_encryption::box`, `box_xchacha20poly1305` | `authenticated_box` |
 
-Each header checks its row with a `static_assert`. secretbox leaves the `ciphers::aead` template:
+Each header checks its row with a `static_assert`. secretbox leaves the one-shot AEAD template
+(`ciphers::aead` when built, `ciphers::basic_chacha20_poly1305` by decision 14):
 it becomes `secret_key_encryption::basic_secretbox<Family, B>` with `from_key(key)`,
 `seal(nonce, data)` and `open(nonce, data, tag)`, the guards and the zeroing of the AEAD template,
 and no associated data; `detail::aead_family<secretbox...>` and its `max_associated_data_size` 0
@@ -379,11 +408,15 @@ exist for every `secret_key_encryption::aead::cipher` and every
 `secret_key_encryption::authenticated_box`. On a synchronous backend they run
 the synchronous member and complete through `asio::post`, never inline, as the family does today.
 On `backends::browser` (a backend whose `detail::asynchronous_backend_v` is true), only AES-GCM is
-offered, through WebCrypto; any other stops the build with "webcpp::crypto: WebCrypto has no
-<algorithm>; async_seal and async_open of <algorithm> run on a native backend". This supersedes the
-foundation's sentence that no `async_` variant of a cheap algorithm WebCrypto lacks may exist, for
-seal and open only, by the owner's decision; `async_from_key` follows the same rule for the types
-these concepts cover.
+offered, through WebCrypto; any other stops the build, from every form, synchronous or
+asynchronous, member or free (3.3's fix round, the controller's ruling), with one text that says no
+form of them runs there: "webcpp::crypto: WebCrypto has no ChaCha20-Poly1305, XChaCha20-Poly1305,
+secret box or crypto_box: no form of them, synchronous or asynchronous, runs on the browser's
+backend; name a native backend for them. On the browser's backend only AES-GCM seals and opens."
+(X5 rewords it so; 3.3 wrote "their async_seal, async_open and async_from_key run on a native
+backend", which named only the asynchronous forms.) This supersedes the foundation's sentence that
+no `async_` variant of a cheap algorithm WebCrypto lacks may exist, for seal and open only, by the
+owner's decision; `async_from_key` follows the same rule for the types these concepts cover.
 
 ### D8. Ethereum's recoverable ECDSA (owner decision 10)
 
@@ -450,7 +483,8 @@ section "Protecting secrets outside the primitives" groups the four (memory hygi
 | `crypto::async_seal`, `crypto::async_open` | `secret_key_encryption::aead::async_seal`, `async_open` | `<webcpp/crypto/async.hpp>`, which defines every asynchronous form |
 | `crypto::aead`, `crypto::streaming_aead` (planned, never built) | `secret_key_encryption::aead::cipher`, `streaming_cipher` | `<webcpp/crypto/secret_key_encryption/aead.hpp>` |
 | `ciphers::secretbox`, `ciphers::secretbox_xchacha20poly1305` (and the planned `ciphers::basic_secretbox`) | `secret_key_encryption::secretbox`, `secretbox_xchacha20poly1305`, `basic_secretbox` | `<webcpp/crypto/secret_key_encryption/secretbox.hpp>` (was `ciphers/secretbox.hpp`) |
-| `ciphers::gcm`, `aes128_gcm`, `aes256_gcm`, `chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305`, `aes128`, `aes192`, `aes256`, the template `ciphers::aead<Family, B>` | unchanged | unchanged |
+| `ciphers::gcm`, `aes128_gcm`, `aes256_gcm`, `chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305`, `aes128`, `aes192`, `aes256` | unchanged | unchanged |
+| the template `ciphers::aead<Family, B>` | `ciphers::basic_chacha20_poly1305<Family, B>` (decision 14, D12) | `<webcpp/crypto/ciphers/aead.hpp>`, unchanged (R25) |
 
 The namespaces by purpose, with D3b's:
 
@@ -479,6 +513,24 @@ additional authenticated data) keeps them.
 | member constants `iv_size`, `max_iv_size`, `max_additional_data_size` | `nonce_size`, `max_nonce_size`, `max_associated_data_size` (R22) |
 | `error::invalid_iv_size` (value 2) | `error::invalid_nonce_size` (value 2; "the nonce is not of a size the algorithm accepts") (R22) |
 
+### D12. The ChaCha20-Poly1305 template and secp256k1's names spelled out (owner decision 14)
+
+| Before | After | Header |
+|---|---|---|
+| `ciphers::aead<Family, Backend>` | `ciphers::basic_chacha20_poly1305<Family, Backend>`; its refusal of a family that is no AEAD's names it ("webcpp::crypto: ciphers::basic_chacha20_poly1305 takes an AEAD family: ...") | `<webcpp/crypto/ciphers/aead.hpp>` (R25) |
+| `curves::secp256k1::musig::nonce_gen` | `musig::generate_nonce` | `curves/secp256k1/musig.hpp` |
+| `curves::secp256k1::pubkey_tweak_add`, `pubkey_tweak_mul`, `pubkey_negate`, `pubkey_combine` | `public_key_tweak_add`, `public_key_tweak_mul`, `public_key_negate`, `public_key_combine` | `curves/secp256k1/tweak.hpp` |
+| `curves::secp256k1::seckey_tweak_add`, `seckey_tweak_mul`, `seckey_negate` | `secret_key_tweak_add`, `secret_key_tweak_mul`, `secret_key_negate` | `curves/secp256k1/tweak.hpp` |
+| `curves::secp256k1::silent_payments::prevouts_summary`, `make_prevouts_summary` | `previous_outputs_summary`, `make_previous_outputs_summary` (R24) | `curves/secp256k1/silent_payments.hpp` |
+| `chacha20_poly1305`, `chacha20_poly1305_original`, `xchacha20_poly1305`; secp256k1's `agree`, `agree_hashed`, `agree_point`; `combine_workspace_size`, `workspace_size`, `scan_workspace_size`, `send_workspace_size`, `summary_workspace_size` (no abbreviation, R25); `ellswift_*`, `tweak_xonly`, `tweak_xonly_add`, MuSig2's `key_aggregate`, `nonce_aggregate`, `nonce_process`, `partial_sign` and the other spelled-out names | unchanged | unchanged |
+
+The signatures, the behaviour, the guards, the timing coverage and the capability rows
+(`key_tweaks`, `musig`, `silent_payments`) are unchanged: only the names move. The timing seam's
+member labels follow the class (`ciphers::basic_chacha20_poly1305::seal` for
+`ciphers::aead::seal`). A doc comment that quotes libsecp256k1's own names (`secp256k1_ec_pubkey_tweak_add`,
+the keyagg cache, `pubnonce`, `aggnonce`, `partial_sig`, `prevouts_summary` as libsecp256k1's type)
+or a test vector's field names (BIP352's `scan_pubkey`, BIP327's `nonce_gen_vectors`) keeps them.
+
 ### D7. Removed, and callers
 
 Removed with no alias: the span `verify` and `recover` overloads of crypto/sign-unified; `sign`'s
@@ -490,7 +542,10 @@ byte-key factories, `seal` and `open`; secretbox's additional data; `crypto::equ
 `<webcpp/crypto/equal.hpp>` (D10); `curves::ed25519::ph` (now `prehashed_signer`, D9); the
 free `crypto::seal`, `crypto::open`, `crypto::async_seal`, `crypto::async_open`,
 `ciphers::secretbox`, `ciphers::secretbox_xchacha20poly1305`, `<webcpp/crypto/ciphers/secretbox.hpp>`,
-`iv_size`, `max_iv_size`, `max_additional_data_size` and `error::invalid_iv_size` (D11). No public
+`iv_size`, `max_iv_size`, `max_additional_data_size` and `error::invalid_iv_size` (D11);
+`ciphers::aead`, `musig::nonce_gen`, `pubkey_tweak_add`, `pubkey_tweak_mul`, `pubkey_negate`,
+`pubkey_combine`, `seckey_tweak_add`, `seckey_tweak_mul`, `seckey_negate`, `prevouts_summary` and
+`make_prevouts_summary` (D12). No public
 `crypto::wipe` ever exists (D10). Every caller in libs/crypto moves
 in the same change: tests, examples, fixtures, the page, the constant-time harnesses and suppressions, the
 benches, the message tests, the MSVC tests, `doc/tables/crypto.json` and its generated files
@@ -580,6 +635,22 @@ formats change, which gives them the typed keys' formats.
   members, free forms and engines, `nonce_size`, `max_nonce_size`, `max_associated_data_size`,
   `error::invalid_nonce_size`, `aux_random`, any other abbreviation, every call site of those names,
   and the CODING-GUIDELINES rule; so the names 3.2 and 3.3 move already carry the renames.
+- **R24: decision 14's "any other public abbreviation of the same kind" is silent payments'
+  `prevouts`** (the amendment's reading, for the owner to confirm): libsecp256k1 names BIP352's
+  summary of the previous outputs `prevouts_summary`, and crypto took the name for its type and its
+  factory, so they become `previous_outputs_summary` and `make_previous_outputs_summary` (the verb
+  kept: R17 forbids a function named `make` alone, and this one says what it makes). A survey of
+  every public name in `include/webcpp/crypto` (outside `detail` and the backends) found no other:
+  `outpoint` is Bitcoin's own term, `xdh` (`ellswift_xdh`) RFC 7748's and BIP324's, `xonly`
+  BIP340's, and MuSig2's other names were spelled out when built (`key_aggregate`,
+  `nonce_aggregate`, `partial_signature`).
+- **R25: decision 14 renames names, not headers or helpers without an abbreviation**: the template
+  stays in `<webcpp/crypto/ciphers/aead.hpp>`, which `ciphers/chacha20_poly1305.hpp` includes and
+  which also holds the AEAD families (a program includes the aliases' header, so no include
+  moves); the workspace helpers (`combine_workspace_size` for `public_key_combine`, MuSig2's
+  `workspace_size`, silent payments' three) carry no abbreviation and keep their names; the message
+  tests and fixture named `aead_not_a_family*` keep their directory names (as P29), their code and
+  texts following the class.
 
 ## Risks / Trade-offs
 
@@ -597,4 +668,5 @@ superproject; local verification on every lane; merged by the controller; one CI
 
 ## Open Questions
 
-None: the owner's decisions 1 to 13 settle the change (R21 to R23 settle how decision 13 is built).
+None: the owner's decisions 1 to 14 settle the change (R21 to R23 settle how decision 13 is
+built, R24 and R25 read decision 14 where it is silent).

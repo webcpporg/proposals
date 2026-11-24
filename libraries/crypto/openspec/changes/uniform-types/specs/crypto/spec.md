@@ -44,7 +44,7 @@ The library SHALL offer `curves::ed25519::signature` (64 bytes), `curves::p256::
 - **THEN** neither compiles, the second with a message naming the box forms, and `secretbox.seal(nonce, data)` and `secret_key_encryption::seal(secretbox, nonce, data)` seal as libsodium's `crypto_secretbox_detached` does
 
 ### Requirement: AEADs and boxes: asynchronous on every native backend
-`async_seal` and `async_open`, member and free (`secret_key_encryption::aead::async_seal` and `async_open` for a `cipher`; `secret_key_encryption::async_seal` and `async_open` for an `authenticated_box`), SHALL exist for every `secret_key_encryption::aead::cipher` and every `secret_key_encryption::authenticated_box`, completing through `asio::post` on a synchronous backend; on a backend whose `detail::asynchronous_backend_v` is true, only AES-GCM SHALL be offered, and any other type MUST stop the build with a message saying WebCrypto has no such algorithm and that its asynchronous forms run on a native backend.
+`async_seal` and `async_open`, member and free (`secret_key_encryption::aead::async_seal` and `async_open` for a `cipher`; `secret_key_encryption::async_seal` and `async_open` for an `authenticated_box`), SHALL exist for every `secret_key_encryption::aead::cipher` and every `secret_key_encryption::authenticated_box`, completing through `asio::post` on a synchronous backend; on a backend whose `detail::asynchronous_backend_v` is true, only AES-GCM SHALL be offered, and any other type MUST stop the build, from every form of it, synchronous or asynchronous, member or free, with a message saying WebCrypto has no such algorithm, that no form of it runs on the browser's backend, and to name a native backend.
 
 #### Scenario: XChaCha20-Poly1305 asynchronously
 - **WHEN** a coroutine `co_await crypto::secret_key_encryption::aead::async_seal(executor, cipher, nonce, associated_data, data, use_awaitable)` runs with `ciphers::xchacha20_poly1305` on libsodium natively
@@ -111,6 +111,17 @@ The library SHALL offer the AEAD contract in namespace `webcpp::crypto::secret_k
 #### Scenario: A cipher's header brings its free forms
 - **WHEN** a program includes `<webcpp/crypto/ciphers/chacha20_poly1305.hpp>` alone and calls `crypto::secret_key_encryption::aead::seal(cipher, nonce, associated_data, data)`
 - **THEN** it compiles and seals as `cipher.seal(nonce, associated_data, data)` does
+
+### Requirement: Names: the abbreviations taken from libsecp256k1 spelled out
+The library SHALL name its one-shot AEAD template `ciphers::basic_chacha20_poly1305<Family, Backend>` (in `<webcpp/crypto/ciphers/aead.hpp>`), its aliases `ciphers::chacha20_poly1305`, `chacha20_poly1305_original` and `xchacha20_poly1305` keeping their names; and secp256k1's functions with their words spelled out: `musig::generate_nonce`, `public_key_tweak_add`, `public_key_tweak_mul`, `public_key_negate`, `public_key_combine`, `secret_key_tweak_add`, `secret_key_tweak_mul`, `secret_key_negate`, and silent payments' `previous_outputs_summary` and `make_previous_outputs_summary`. `ciphers::aead`, `musig::nonce_gen`, `pubkey_tweak_add`, `pubkey_tweak_mul`, `pubkey_negate`, `pubkey_combine`, `seckey_tweak_add`, `seckey_tweak_mul`, `seckey_negate`, `silent_payments::prevouts_summary` and `make_prevouts_summary` MUST NOT exist, with no alias. Algorithm and format proper names (`musig`, `ellswift`, `ecdh`, `xonly`, `xdh`) and secp256k1's `agree`, `agree_hashed` and `agree_point` SHALL keep their names; libsecp256k1's own C functions, which crypto calls, are not crypto's names.
+
+#### Scenario: The abbreviated names are gone
+- **WHEN** a program names `crypto::ciphers::aead<crypto::families::chacha20_poly1305, B>`, or calls `curves::secp256k1::pubkey_tweak_add`, `seckey_negate` or `musig::nonce_gen`, by a using-declaration or a call
+- **THEN** it does not compile, and the same program with `ciphers::basic_chacha20_poly1305`, `public_key_tweak_add`, `secret_key_negate` and `musig::generate_nonce` builds and gives the same results
+
+#### Scenario: BIP327's nonce through the new name
+- **WHEN** `musig::generate_nonce` runs BIP327's nonce generation vectors
+- **THEN** it gives the vectors' public nonces, as `nonce_gen` did
 
 ## MODIFIED Requirements
 
@@ -206,7 +217,7 @@ The library SHALL offer `public_key_encryption::box` (X25519, XSalsa20-Poly1305)
 - **THEN** `derive_from_seed` gives the keys of libsodium's `crypto_kx_seed_keypair` for that seed, and its public key differs from `from_keypair`'s
 
 ### Requirement: Interface: one AEAD template for the one-shot AEADs
-`ciphers::aead<Family, Backend>` SHALL implement the guards, the in-place `seal` and `open`, the tag apart, the zeroing of `data` after a failed `open` and the move rules of the genesis's `ciphers::chacha20_poly1305` for every one-shot AEAD with associated data, its family tag giving `key_size`, `nonce_size`, `tag_size`, `max_message_size` and `max_associated_data_size`, and every instance MUST satisfy `secret_key_encryption::aead::cipher`. `ciphers::chacha20_poly1305` (12-byte nonce), `ciphers::chacha20_poly1305_original` (8-byte nonce) and `ciphers::xchacha20_poly1305` (24-byte nonce) MUST be its aliases; secretbox is not, being an `authenticated_box` (`secret_key_encryption::basic_secretbox`); `ciphers::gcm<Cipher>` keeps its own class and its incremental seal and open, a `secret_key_encryption::aead::streaming_cipher`.
+`ciphers::basic_chacha20_poly1305<Family, Backend>` (named `ciphers::aead` before owner decision 14) SHALL implement the guards, the in-place `seal` and `open`, the tag apart, the zeroing of `data` after a failed `open` and the move rules of the genesis's `ciphers::chacha20_poly1305` for every one-shot AEAD with associated data, its family tag giving `key_size`, `nonce_size`, `tag_size`, `max_message_size` and `max_associated_data_size`, and every instance MUST satisfy `secret_key_encryption::aead::cipher`. `ciphers::chacha20_poly1305` (12-byte nonce), `ciphers::chacha20_poly1305_original` (8-byte nonce) and `ciphers::xchacha20_poly1305` (24-byte nonce) MUST be its aliases; secretbox is not, being an `authenticated_box` (`secret_key_encryption::basic_secretbox`); `ciphers::gcm<Cipher>` keeps its own class and its incremental seal and open, a `secret_key_encryption::aead::streaming_cipher`.
 
 #### Scenario: XChaCha20-Poly1305's nonce
 - **WHEN** `ciphers::xchacha20_poly1305::seal` is called with a 12-byte nonce
@@ -236,7 +247,7 @@ Increment 3 SHALL add, on BearSSL on all four targets and first of the P-curves 
 - **THEN** `sign` succeeds and `crypto::verify` returns `invalid_signature`
 
 ### Requirement: Asynchronous family: completion tokens, for what the browser offers
-`<webcpp/crypto/async.hpp>` SHALL offer `async_from_secret`, `async_from_key`, `async_generate`, `async_seal`, `async_open`, `async_encrypt`, `async_decrypt`, `async_sign`, `async_verify`, `async_agree`, `async_wrap`, `async_unwrap` and `async_export` for every algorithm WebCrypto offers, each an Asio asynchronous operation in webcpp::asio's model (initiated through `async_initiate`, any completion token: a callback, `use_awaitable`, Cobalt's, `use_future`) taking first the executor its completion is posted to, and completing with `void(boost::system::error_code, T)`, `T` the empty object a move leaves when the code is an error, or with `void(boost::system::error_code)` where the synchronous call returns no value. Each family's asynchronous default backend MUST be its synchronous default on every target, Emscripten included; `backends::browser` is used only where a type names it. On `backends::browser` each MUST call WebCrypto, with or without pthreads, and await its promise through `webcpp::asio::browser::async_await`, completing on the handler's associated executor; on a synchronous backend each MUST run the synchronous call and complete through `asio::post`, never inside the initiating call. An `async_` variant of a cheap algorithm WebCrypto lacks MUST NOT exist, except `async_from_key`, `async_seal` and `async_open` of every `secret_key_encryption::aead::cipher` and `secret_key_encryption::authenticated_box` (the free AEAD forms in `secret_key_encryption::aead`, the box forms in `secret_key_encryption`), which exist on every native backend and stop the build on `backends::browser` for any algorithm but AES-GCM, with a message saying WebCrypto has no such algorithm. The synchronous API MUST NOT call WebCrypto. The convenience header MUST leave out `async.hpp` and `backends/browser.hpp`, naming webcpp::asio as the reason.
+`<webcpp/crypto/async.hpp>` SHALL offer `async_from_secret`, `async_from_key`, `async_generate`, `async_seal`, `async_open`, `async_encrypt`, `async_decrypt`, `async_sign`, `async_verify`, `async_agree`, `async_wrap`, `async_unwrap` and `async_export` for every algorithm WebCrypto offers, each an Asio asynchronous operation in webcpp::asio's model (initiated through `async_initiate`, any completion token: a callback, `use_awaitable`, Cobalt's, `use_future`) taking first the executor its completion is posted to, and completing with `void(boost::system::error_code, T)`, `T` the empty object a move leaves when the code is an error, or with `void(boost::system::error_code)` where the synchronous call returns no value. Each family's asynchronous default backend MUST be its synchronous default on every target, Emscripten included; `backends::browser` is used only where a type names it. On `backends::browser` each MUST call WebCrypto, with or without pthreads, and await its promise through `webcpp::asio::browser::async_await`, completing on the handler's associated executor; on a synchronous backend each MUST run the synchronous call and complete through `asio::post`, never inside the initiating call. An `async_` variant of a cheap algorithm WebCrypto lacks MUST NOT exist, except `async_from_key`, `async_seal` and `async_open` of every `secret_key_encryption::aead::cipher` and `secret_key_encryption::authenticated_box` (the free AEAD forms in `secret_key_encryption::aead`, the box forms in `secret_key_encryption`), which exist on every native backend and stop the build on `backends::browser` for any algorithm but AES-GCM, from their synchronous forms too, with a message saying WebCrypto has no such algorithm and no form of it runs there. The synchronous API MUST NOT call WebCrypto. The convenience header MUST leave out `async.hpp` and `backends/browser.hpp`, naming webcpp::asio as the reason.
 
 #### Scenario: One coroutine, two targets
 - **WHEN** a coroutine `co_await secret_key_encryption::aead::async_seal(executor, cipher, nonce, associated_data, data, use_awaitable)` runs natively on BearSSL and on Emscripten on the browser
@@ -249,3 +260,32 @@ Increment 3 SHALL add, on BearSSL on all four targets and first of the P-curves 
 #### Scenario: No asynchronous variant of a cheap algorithm the browser lacks
 - **WHEN** a program calls `async_seal` on `ciphers::xchacha20_poly1305` on libsodium, and on a backend whose `asynchronous_backend_v` is true
 - **THEN** the first compiles and seals as `ciphers::xchacha20_poly1305::seal` does, and the second does not compile
+
+### Requirement: secp256k1: recovery, raw ECDH, tweaks and key forms
+Increment 2 SHALL add, as thin wrappers over libsecp256k1 v0.8.0: `sign(crypto::ecdsa_sha256_recoverable, input)` and `recover(crypto::ecdsa_sha256_recoverable, signature, input)` (65-byte signatures with the recovery id, the input a message hashed with SHA-256 or a 32-byte `prehashed` digest); `agree` (the shared point's 32-byte x coordinate) and `agree_point` (its 65-byte uncompressed form) as `secret<32>` and `secret<65>`; `secret_key_tweak_add`, `secret_key_tweak_mul`, `secret_key_negate`, `public_key_tweak_add`, `public_key_tweak_mul`, `public_key_negate` and `public_key_combine` (named `seckey_*` and `pubkey_*` before owner decision 14); `public_key::from_bytes` of 33 and 65 bytes and the key's `compressed()` and `uncompressed()`; and `sign(crypto::ecdsa_sha256, input, extra_entropy)` (hedged signing).
+
+#### Scenario: Ethereum's recovery
+- **WHEN** a recoverable signature of a digest is made with `prehashed` and `recover` is given the scheme, the signature and the same marker
+- **THEN** it returns the signer's public key, for random keys and for libsecp256k1's own recovery test cases
+
+#### Scenario: Nostr's shared x coordinate
+- **WHEN** two key pairs compute `agree` with each other's public keys
+- **THEN** both give the same 32 bytes, the x coordinate of the shared point, unhashed
+
+### Requirement: secp256k1: the tweaks share one shape
+`public_key_negate` SHALL return `result<public_key>`, `noexcept`, returning `backend_failure` should libsecp256k1 refuse a parsed key, as `secret_key_tweak_add`, `secret_key_tweak_mul`, `secret_key_negate`, `public_key_tweak_add`, `public_key_tweak_mul` and `public_key_combine` return `result<>`. `basic_keypair::agree_hashed` (was `ecdh`), `agree` (was `ecdh_x`) and `agree_point` (was `ecdh_point`) SHALL return `result<secret<32>>`, `result<secret<32>>` and `result<secret<65>>`, pinned by a compile-time check.
+
+#### Scenario: Negation twice
+- **WHEN** a parsed key P is negated twice with `public_key_negate`
+- **THEN** both results hold values and the second equals P
+
+### Requirement: ChaCha20-Poly1305: on libsodium, BearSSL and OpenSSL in version 0.2
+Increment 1 SHALL add `ciphers::chacha20_poly1305` (RFC 8439, a 32-byte key, a 12-byte nonce, a 16-byte tag) over `ciphers::basic_chacha20_poly1305<Family, Backend>` (named `ciphers::aead` before owner decision 14) on libsodium (every target), BearSSL (every target) and OpenSSL (native, wasip2, wasip3), which is the genesis's increment 4 built on the foundation's AEAD template. Its tests MUST be the genesis's: RFC 8439's vectors, Wycheproof's ChaCha20-Poly1305 file on each backend, the cross-backend agreement of the three, the counting allocation tests, OpenSSL's error queue left as found, ctaes's refusal from a message test of its own, the constant-time cases, and, once the memory option has merged, its part of the memory option's tests.
+
+#### Scenario: Three backends agree
+- **WHEN** `agree_aead<chacha20_poly1305>` runs natively on libsodium, BearSSL and OpenSSL from one seed
+- **THEN** every ciphertext and tag is identical and each backend opens the others'
+
+#### Scenario: ctaes has no ChaCha
+- **WHEN** a program names `ciphers::basic_chacha20_poly1305<families::chacha20_poly1305, backends::ctaes>`
+- **THEN** compilation stops naming the backends that have ChaCha20-Poly1305
