@@ -115,6 +115,7 @@ None.
   AEAD contract) and `secret_key_encryption/secretbox.hpp` (was `ciphers/secretbox.hpp`), `secret_key_encryption/authenticated_box.hpp` (new), `async.hpp`, tests, examples, benches, the constant-time lane, `doc/`, `doc/tables/crypto.json` and
   the generated files), webcpporg/hash (the callers of `crypto::equal` in its examples, headers'
   comments and pages), the superproject's pointers.
-- **Status:** approved by the owner on 2026-11-22 (`decided`); it stays `proposed` in the
-  metadata until `reference/plan.md` carries the plan's code, which `tools/proposals.py` requires
-  of an `accepted` proposal, and then becomes `accepted`.
+- **Status:** approved by the owner on 2026-11-22 (`decided`); `implementing` since 2026-11-24:
+  built on the branches `crypto/uniform-types` of webcpporg/crypto (head `e07d44a`),
+  webcpporg/hash (`659e50d`) and the superproject (`0ab0ace`), verified locally on every lane
+  (`tasks.md`, 4.2); the pull requests, their merges and the CI on GitHub remain.

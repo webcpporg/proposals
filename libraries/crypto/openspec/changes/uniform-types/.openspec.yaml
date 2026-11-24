@@ -5,7 +5,7 @@ webcpp:
   title: "crypto: typed signatures, typed X25519 keys, and concepts for key pairs, AEADs and boxes"
   kind: wrapper
   port_of: null
-  status: accepted
+  status: implementing
   release: null
-  implementation: null
+  implementation: https://github.com/webcpporg/crypto
   decided: 2026-11-22

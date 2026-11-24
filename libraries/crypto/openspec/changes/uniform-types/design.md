@@ -652,6 +652,76 @@ formats change, which gives them the typed keys' formats.
   tests and fixture named `aead_not_a_family*` keep their directory names (as P29), their code and
   texts following the class.
 
+## As built
+
+Built on the branches `crypto/uniform-types` (crypto `e07d44a`, hash `659e50d`, superproject
+`0ab0ace`). The rulings made while building that change or refine the design above:
+
+- **P27, Ed25519ph on libsodium's internals (D9):** `sign(eddsa_prehashed, ...)` and its `verify`
+  call libsodium's `_crypto_sign_ed25519_detached` and `_crypto_sign_ed25519_verify_detached` with
+  `prehashed` 1, since its public API cannot sign a finished digest; they link because libsodium is
+  built from source. A rename upstream or a prebuilt libsodium breaks it, and RFC 8032's Ed25519ph
+  vectors then fail at once. No other shipped backend implements Ed25519 (`backends/openssl.hpp`
+  has none; the family's default is libsodium on every target), so no public path exists yet.
+- **`check_signature` takes three arguments (D1, R1):** `detail::check_signature<Expected,
+  Signature, Verifier>`, `Verifier` the scheme tag or `ed25519ph_verifier_t` (the streaming
+  signer's `verify`), beside `checked_signature_bytes`: a signature of another type stops the
+  build with one message, and Ed25519ph's shared `ed25519::signature` has its explicit branch.
+- **`can_verify` takes the signature (D1, P7, F8):** `can_verify<Scheme, Signature, Input,
+  PublicKey>`, true only for the type of the key's curve and scheme (the spec amended); internal
+  input checks call `detail::input_valid_v`, never `!can_verify`.
+- **Signatures (D1, P6):** the default constructor stays non-explicit (all zeros, `std::regular`),
+  so `verify(scheme, {}, input, key)` compiles and fails; `recovery_id()` gives the stored byte and
+  `recover` refuses an id above 3.
+- **Guards of `from_bytes` (D3c, P19, F12):** the free `crypto::from_bytes<T>` holds no guard
+  (`from_secret` and `from_key` keep theirs); P-256's and secp256k1's public keys' `from_bytes` and
+  `from_coordinates` validate the point through the backend and hold it; the signatures', Ed25519's
+  and X25519's public keys' `from_bytes` enter none. R4's "call no backend" is read accordingly.
+- **`detail::x25519_access::keyed` (D2, D3, P13):** reads, without a guard, whether an X25519 key
+  pair was moved from, so kx, the boxes and the sealed box refuse one with `invalid_state` before
+  reading its zeroed bytes.
+- **`detail::kx_engine_defined` (D3):** derived from the capability table (supported and linked),
+  not written by hand; it relies on `kx.hpp`'s tail include and one kx backend, which its comment
+  says. The boxes and kx are refused by `supports_v<keypair_type, Backend>`, and libsodium's sections
+  for them key on `WEBCPP_CRYPTO_DETAIL_{BOX,SEALED_BOX,KX}_DECLARED`, breaking the include cycle
+  through `curves/x25519.hpp` as the formats headers do.
+- **Key pair concepts (D4):** the free `crypto::sign` lives in `keypair.hpp`; `async_agree` is one
+  template over the key pair (`detail::agrees_with_peer`); Ed25519's unreachable `agree` clause is
+  gone, `agreement_keypair` refusing first.
+- **D6's text covers the synchronous forms:** on an asynchronous backend, ChaCha20-Poly1305,
+  XChaCha20-Poly1305, secretbox and crypto_box refuse their synchronous `seal`, `open` and
+  `from_key(s)` too, with D6's text (no form of the constructions WebCrypto lacks runs on the
+  browser's backend), through `detail::refuse_aead_on_asynchronous_backend`; AES-GCM's synchronous
+  forms keep "call async_seal".
+- **The timing seam matches every qualifier:** the test seam that ties a timing guard to the
+  function a coverage check names compares every component of the label, not only the last, so the
+  member `ciphers::basic_chacha20_poly1305::seal` and the free `secret_key_encryption::aead::seal`
+  are told apart; it also reads GCC's spelling of a trailing requires-clause.
+- **The browser's draw (X1, F3, P15):** `EM_ASM_INT` inside the inline `read_entropy`, never an
+  `EM_JS` in a header; a throwing `getRandomValues` is `entropy_unavailable`, and its JavaScript
+  array is zeroed after the copy and after a throw.
+- **node 18's WebCrypto (X1):** without `globalThis.crypto`, the draw falls back to
+  `require('node:crypto').webcrypto` inside the same `try` (Emscripten's minimum is node 18.3),
+  superseding P15's cost; a bundler that cannot resolve it fails closed as `entropy_unavailable`.
+- **The probe before `sodium_init` (X1b), superseding F4's consequence:** on Emscripten,
+  `sodium_ready` draws a small probe through crypto's entropy before `sodium_init`; a failed probe
+  returns its error and leaves libsodium uninitialised, so the next call retries and no zero
+  `sodium_malloc` canary is kept. The watch around `sodium_init` stays for a good probe followed by
+  a failing canary draw (a zero canary then, documented). The stack copies of each draw are wiped.
+- **The native draw watch is a stateless stub (X1b):** a `thread_local` state allocated on macOS
+  at first access, which `allocation_sodium` counts; the watched state exists on Emscripten only.
+- **`generate.py`'s message rows:** the messages page lists every text a message test pins, each
+  once, in the source's order, and leaves out a directive marked `(knock-on)`, so that each row
+  leads with the refusal, not with an error that follows from it.
+- **Removed-name message tests (3.2, X5):** a using-declaration and a call per group, since
+  clang's typo correction differs by version; `ciphers::aead`'s removal is pinned through an alias
+  (`aead_template_removed_call`).
+- **The C4459 test rename (4.2):** MSVC flagged two tests' globals, `associated_data` and
+  `secret_key`, which a library template's parameter names hide; the tests' names changed
+  (`test_associated_data`, `secret_key_hex`), not the parameter, which decision 13 fixes.
+- **X3's survey** renamed one-word locals and parameters only; static data members (`name`,
+  `size`, `order`, `overhead`) keep their names, which C4459 does not concern.
+
 ## Risks / Trade-offs
 
 - Every signing caller changes its result type; the migration is mechanical (`.bytes()` where bytes
