@@ -1,8 +1,8 @@
 # webcpp::secure: where the implementation stands, and what to start from
 
-Written 2026-11-24, with the genesis. Nothing is built in secure's name: there is no repository
-`webcpporg/secure` yet (the owner creates it). `prior/` holds the code an implementer ports, exact
-copies of files committed elsewhere, none of them renamed yet:
+Written 2026-11-24, with the genesis. Nothing is built in secure's name yet. The owner created the
+repository `webcpporg/secure` on 2026-11-24 and its submodule `libs/secure`. `prior/` holds the code
+an implementer ports, exact copies of files committed elsewhere, none of them renamed yet:
 
 | `prior/` | Copied from | What it is |
 | --- | --- | --- |
@@ -27,4 +27,5 @@ copies of files committed elsewhere, none of them renamed yet:
 
 The withdrawn branch's commits (config `ba72ad4`, hash `43b6732`, crypto `b0c1f4f`, superproject
 `83c9a31`) are a worked example of moving every guard site of hash and crypto by a rename, for
-their follow-up changes.
+their migrations, which the owner folded into this delivery on 2026-11-24 (tasks.md sections 7
+and 8). The plan is `plan.md`, beside this file.

@@ -57,8 +57,8 @@ domain allows, and checked on a constant-time lane; every target webcpp builds f
 **Non-goals:** any cryptographic algorithm (hashes, ciphers, curves stay in hash and crypto); a
 wiping allocator or heap secret types (codecs' `secret_string` and `secret_byte_vector` are codecs'
 own, over secure's erase); memory locking (`mlock`, `VirtualLock`) or guard pages; x86's DOITM (a
-kernel setting); WebAssembly's timing (the engine decides); the migration of crypto and hash,
-each a change of its own library.
+kernel setting); WebAssembly's timing (the engine decides); codecs' use of secure, which is
+codecs' genesis's.
 
 **Anti-goals:** a cryptographic algorithm in secure; a dependency on any webcpp library but config;
 a name outside `webcpp::secure` or a header outside `<webcpp/secure/...>` and `<webcpp/secure.hpp>`;
@@ -85,9 +85,12 @@ webcpp.
    their public part in secure and the rest as test support.
 7. **The constant-time building blocks codecs needs** (select, a table lookup by masking,
    constant-time comparisons on bytes), as primitives.
-8. **Test support:** secure's own seam and DIT helpers live in secure's `test/support/`; where the
-   helpers shared by several libraries live waits for the owner's decision on the superproject's
-   `tools/node-test` and its `webcpp::test` namespace (Open Questions, O1).
+8. **Test support:** secure's own seam and DIT helpers live in secure's `test/support/`; the
+   helpers shared by several libraries' tests stay in each library's own `test/support/` (O1,
+   decided 2026-11-24).
+9. **The migrations are in this delivery** (2026-11-24): hash's guard and wipe, then crypto's every
+   caller, move to secure after secure's own tasks, hash first since crypto depends on hash; the
+   genesis had named them follow-up changes.
 
 ## Decisions
 
@@ -189,6 +192,13 @@ volatile pointer, then `std::atomic_signal_fence(std::memory_order_seq_cst)`.
 A C library's plain state (BearSSL's contexts, which crypto wipes with `detail::wipe_object`) is
 erased as a range of one: `erase_secret(std::span(&context, 1))`. Builder's call B1: no second
 public name for an object, since a span of one says the same and keeps the contract one function.
+
+The wipe has a test seam, hash's `WEBCPP_HASH_DETAIL_TEST_WIPE_RECORD` moved (builder's call B9):
+a program built with `WEBCPP_SECURE_TEST_WIPE_RECORD` defined (by its Jamfile, so that every
+translation unit agrees) defines `void webcpp::secure::test::wipe_record(void const*, std::size_t)
+noexcept`, which `detail::wipe` declares under the macro and calls once its bytes are zero, with
+what it zeroed; without the macro nothing is declared or called. hash's tests that check a wipe
+(of a keyed hmac, a block, a C library's context) read it, as they read hash's own seam today.
 
 ### D5. `constant_time_equal`
 
@@ -294,12 +304,12 @@ secure's tests need a seam recorder (counting guards entered, keeping the first'
 test "a program that set DIT keeps it") and the checkers' marks (D7). They live in secure's own
 `test/support/`: `timing_seam.hpp`, `timing_dit.hpp`, `constant_time_marks.hpp`, in namespace
 `webcpp::secure::test`, ported from the withdrawn branch's `tools/node-test` headers and crypto's
-lane. crypto, hash and codecs need the same three for their own guards and lanes: whether they
-include secure's (making secure's `test/support/` the shared one), keep copies, or include a shared
-location in the superproject depends on the owner's pending decision about `tools/node-test`
-(renamed, or a library of its own). Until then secure writes only its own; the follow-up changes of
-crypto, hash and codecs read the decision (O1). secure's tests keep using `tools/node-test`'s
-`<webcpp/test/exit_status.hpp>` as every library's do.
+lane. crypto, hash and codecs need the same three for their own guards and lanes: each keeps or
+gains its own copies in its own `test/support/` (O1, decided 2026-11-24): hash keeps its seam
+recorder and DIT helper, crypto keeps its seam recorder and its checkers' marks and gains a DIT
+helper, each recorder pointed at secure's seam and counting its own library's guards by
+`file_name()`. secure's tests keep using `tools/node-test`'s `<webcpp/test/exit_status.hpp>` as
+every library's do.
 
 ### D10. Tests
 
@@ -359,15 +369,18 @@ to the owner.
   change's B2.
 - **B8:** the convenience header `<webcpp/secure.hpp>` includes every header; none brings a heavy
   dependency (D1).
+- **B9:** the wipe's test seam `WEBCPP_SECURE_TEST_WIPE_RECORD` and
+  `secure::test::wipe_record`, hash's seam moved, so that hash's tests of its wipes keep their
+  evidence once hash's `detail/wipe.hpp` is gone (D4).
 
 ## Risks / Trade-offs
 
-- [hash and crypto keep their copies until their follow-up changes land] -> both changes are
-  ordered right after secure; until then the copies behave alike, as today, and crypto's
-  `timing_hash_interop_test` keeps them in step.
+- [hash and crypto keep their copies until their migrations land] -> both migrations are tasks of
+  this delivery, right after secure's own; until each lands the copies behave alike, as today, and
+  crypto's `timing_hash_interop_test` keeps them in step until hash's migration deletes it.
 - [hash gains a dependency] -> secure is header-only and depends on config alone, the dependency
   hash already has; hash's "depends on no other webcpp library" becomes "on config and secure", in
-  its follow-up.
+  its migration.
 - [The optimiser turns a mask into a branch] -> `value_barrier` on every mask a block makes, and
   the constant-time lane (memcheck and MemorySanitizer see a branch on a marked value) on every
   compiler that lane runs; dudect natively.
@@ -380,20 +393,21 @@ to the owner.
 
 ## Migration Plan
 
-Nothing to migrate in secure: it is new. The owner creates `webcpporg/secure` and adds the
+Nothing to migrate in secure: it is new. The owner created `webcpporg/secure` and added the
 submodule; the library is built on its own branch and the superproject's (pointer,
-`CODING-GUIDELINES.md` chapter 17's entry, the index page), verified on every local lane, and merged
-with one CI at the end. Then, each a change of its own library: hash (its guard and wipe on
-secure's, its `engaged` calls unchanged in meaning), crypto (every guard, wipe, erase, comparison,
-secret and declassify on secure's; its six headers deleted with no alias; `timing_hash_interop_test`
-replaced by a test that nests a guarded hash call in a guarded crypto call; dudect and benches on
-`secure::cpu_has_dit()`), and codecs, built on secure from the start. The withdrawn branch's
-commits are the worked example of moving every guard site.
+`CODING-GUIDELINES.md` chapter 17's entry, the index page). Then, in the same delivery (owner
+decision 9): hash (its guard and wipe on secure's, its `engaged` calls unchanged in meaning, its
+wipe seam on secure's, B9), then crypto (every guard, wipe, erase, comparison, secret and
+declassify on secure's; its six headers deleted with no alias; `timing_hash_interop_test` replaced
+by a test that nests a guarded hash call in a guarded crypto call; dudect and benches on
+`secure::cpu_has_dit()`). Everything is verified on every local lane and merged with one CI at the
+end; codecs is built on secure from the start. The withdrawn branch's commits are the worked
+example of moving every guard site.
 
 ## Open Questions
 
-- **O1 (owner, pending):** where the test support shared by several libraries' tests lives: the
-  seam recorder, the DIT helper and the constant-time checkers' marks. secure writes its own in
-  `test/support/` (D9); whether crypto, hash and codecs include secure's, keep copies, or include
-  them from the superproject depends on the owner's decision on `tools/node-test` and its
-  `webcpp::test` namespace (renamed, or a library of its own).
+- **O1 (decided by the owner, 2026-11-24):** where the test support shared by several libraries'
+  tests lives: the seam recorder, the DIT helper and the constant-time checkers' marks. They stay
+  in each library's own `test/support/` for now: secure's in secure's (D9), and hash and crypto
+  keep or gain their own copies in theirs. Not in `tools/node-test`, and no `webcpp::core` library
+  is made for them.

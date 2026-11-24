@@ -49,11 +49,15 @@ A macro `WEBCPP_SECURE_TIMING_ENTERED(where)`, defined by a test alone before it
 - **THEN** `<source_location>` is not included by the guard's header and the constructor takes only `engaged`
 
 ### Requirement: Memory: erase_secret
-`<webcpp/secure/erase_secret.hpp>` SHALL declare `secure::erase_secret(range)`, which zeroes `size() * sizeof(element)` bytes from the first element of a contiguous sized range of non-const, trivially copyable elements, with volatile stores followed by a signal fence that the optimiser keeps, and touches no byte around them. A range of const or not trivially copyable elements MUST stop the build with a message naming the ranges it takes; a range that is not contiguous, and a pointer with a size, MUST NOT be accepted.
+`<webcpp/secure/erase_secret.hpp>` SHALL declare `secure::erase_secret(range)`, which zeroes `size() * sizeof(element)` bytes from the first element of a contiguous sized range of non-const, trivially copyable elements, with volatile stores followed by a signal fence that the optimiser keeps, and touches no byte around them. A range of const or not trivially copyable elements MUST stop the build with a message naming the ranges it takes; a range that is not contiguous, and a pointer with a size, MUST NOT be accepted. A program built with `WEBCPP_SECURE_TEST_WIPE_RECORD` defined SHALL have every wipe of the library, `erase_secret`'s and `secret<N>`'s, call `webcpp::secure::test::wipe_record(address, size)`, which that program defines, once the bytes are zero; without the macro nothing is declared or called.
 
 #### Scenario: A buffer erased before its scope ends
 - **WHEN** a test erases a stack buffer as its last use before its scope ends, built at `-O2` with full inlining, and reads that storage afterwards through the test's placement storage
 - **THEN** every byte reads zero, on every lane
+
+#### Scenario: A wipe reported to a test
+- **WHEN** a test built with `WEBCPP_SECURE_TEST_WIPE_RECORD` erases a 32-byte buffer and destroys a `secret<16>`
+- **THEN** its `wipe_record` is called once with the buffer's address and 32, and once with 16 bytes at the secret's storage, each time with those bytes already zero
 
 #### Scenario: A refused range
 - **WHEN** a test asks whether `erase_secret` accepts a `std::list<char>&`, a `std::vector<bool>&` and a `std::span<std::byte const>`
@@ -112,3 +116,14 @@ The library SHALL have its page under `libs/secure/doc/`, built by `b2 doc`: wha
 #### Scenario: The page builds
 - **WHEN** `b2 doc` runs in the superproject
 - **THEN** secure's page is produced with every section above, and its examples' expected outputs match their runs
+
+### Requirement: One copy in webcpp
+webcpp::hash and webcpp::crypto SHALL use secure's guard, wipe, erase, comparison, secret type and declassify marker, and MUST keep no copy and no alias of them: hash's and crypto's `detail/timing.hpp` and `detail/wipe.hpp`, crypto's `detail/declassify.hpp`, `erase_secret.hpp`, `constant_time_equal.hpp` and `secret.hpp` are deleted, and both libraries name `/webcpp/secure//secure` as a dependency. Each keeps its own test support (seam recorder, DIT helper, checkers' marks) in its own `test/support/`, counting its own guards by `file_name()`.
+
+#### Scenario: No copy remains
+- **WHEN** the headers of `libs/hash/include/` and `libs/crypto/include/` are searched for a definition of a class `timing_guard`, of a function `erase_secret`, `constant_time_equal`, `wipe` or `wipe_object`, of a class template `secret`, and of a macro ending in `DECLASSIFY`
+- **THEN** none is found, and hash's and crypto's tests pass with every guard they count entered through secure's seam
+
+#### Scenario: A guarded hash call inside a guarded crypto call
+- **WHEN** crypto's `timing_nested_hash_test` runs a keyed call of hash inside a guarded call of crypto, from a thread whose DIT is clear and from one that set it
+- **THEN** the seam records crypto's guard first and hash's second, DIT is set inside both where the CPU has it, and after both it is as it was before

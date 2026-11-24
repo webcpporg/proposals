@@ -62,17 +62,18 @@ library of their own, webcpp::secure, and that config stays macros only.
   `declassify_compile_test` moved, `secret_test`, the constant-time blocks against a plain
   reference (every 8-bit pair, random wider ones), the allocation test, and the own lane
   `constant-time` (memcheck, MemorySanitizer, dudect, each with a planted leak that must fail). The
-  seam recorder and the DIT helper live in secure's own `test/support/`; where the helpers shared by
-  several libraries' tests live is open, pending the owner's decision on the superproject's
-  `tools/node-test` (design, Open Questions).
+  seam recorder, the DIT helper and the checkers' marks live in secure's own `test/support/`, and
+  hash and crypto keep or gain their own copies in theirs (design O1, decided 2026-11-24).
 - **Documentation**: the library's page, the guard's coverage table, how to erase, the secret type,
   the constant-time blocks with their limits, and the changelog.
 
-Not in this change, and stated as its consumers: webcpp::crypto's change that moves every caller to
-secure and deletes `crypto::erase_secret`, `crypto::constant_time_equal`, `crypto::secret`,
-`detail/timing.hpp`, `detail/wipe.hpp` and `detail/declassify.hpp` with no alias; webcpp::hash's
-change that moves its guard and wipe to secure (hash then depends on secure); webcpp::codecs' genesis
-uses secure from its first line (amended the same day).
+Not in this change: webcpp::codecs' genesis, which uses secure from its first line (amended the
+same day). The migrations of hash and crypto, which this paragraph first named as their own
+follow-up changes, the owner folded into the same delivery on 2026-11-24, after secure's own tasks
+(tasks.md sections 7 and 8): webcpp::hash's guard and wipe move to secure and hash's copies are
+deleted (hash then depends on secure), then webcpp::crypto's every caller moves to secure and
+`crypto::erase_secret`, `crypto::constant_time_equal`, `crypto::secret`, `detail/timing.hpp`,
+`detail/wipe.hpp` and `detail/declassify.hpp` are deleted with no alias.
 
 ## Capabilities
 
@@ -98,17 +99,18 @@ None.
   shared seam of that branch, and crypto's headers and tests that move. To build: the library's
   repository, `build.jam`, `include/webcpp/secure.hpp`, `include/webcpp/secure/*.hpp`, tests, the
   constant-time lane, `doc/`, the superproject's pointer, `CODING-GUIDELINES.md` chapter 17's entry
-  and the index page.
+  and the index page; then hash and crypto moved onto it.
 - **Dependencies:** Boost 1.92's headers (Core's `lightweight_test` in tests) and
   `/webcpp/config//config`. For the constant-time lane: valgrind, MemorySanitizer and dudect as
   webcpp::crypto's lane uses them. secure depends on no other webcpp library; hash, crypto and
   codecs depend on it.
-- **Status:** approved by the owner on 2026-11-24 (`decided`); it stays `proposed` in the
-  metadata until `reference/plan.md` carries the plan's code, which `tools/proposals.py` requires
-  of an `accepted` proposal, and then becomes `accepted`.
+- **Status:** approved by the owner on 2026-11-24 (`decided`), and `accepted` the same day once
+  `reference/plan.md` carried the plan's code, which `tools/proposals.py` requires of an
+  `accepted` proposal.
 - **Other proposals:** replaces `libraries/config`'s change `timing-guard`, withdrawn the same day
   (archived as `2026-11-24-timing-guard`). `libraries/codecs`'s genesis uses secure's guard, erase,
-  secret and constant-time blocks (its owner decision 14). Follow-up changes, none of them part of
-  this genesis, after secure: `libraries/hash` (its guard and wipe on secure's) and
+  secret and constant-time blocks (its owner decision 14). hash's and crypto's migrations, which
+  the genesis first named follow-up changes, are part of this delivery by the owner's decision of
+  2026-11-24 (tasks.md sections 7 and 8): `libraries/hash` (its guard and wipe on secure's) and
   `libraries/crypto` (every caller on secure's names, its copies deleted with no alias, its
   `data-independent-timing` requirements read with secure's guard and seam).
