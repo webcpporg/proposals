@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-24
+webcpp:
+  library: secure
+  title: "secure: the side-channel and secret-in-memory primitives crypto, hash and codecs share (DIT guard, erase, secret, constant-time blocks), no algorithm"
+  kind: own
+  port_of: null
+  status: proposed
+  release: null
+  implementation: null
+  decided: 2026-11-24
