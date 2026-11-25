@@ -16,9 +16,10 @@ public names are spelled out.
 
 ## What Changes
 
-- **`byte_pieces`**, `std::span<std::span<std::uint8_t const> const>`, in `webcpp::hash`: a
-  sequence of byte spans read one after another as if concatenated, written `{a, b, c}` at the
-  call.
+- **`byte_pieces`** in `webcpp::hash`: a sequence of byte spans read one after another as if
+  concatenated, written `{a, b, c}` at the call. As built, a view type of hash's (design B2's
+  fallback) in its own header, `<webcpp/hash/byte_pieces.hpp>`, which `hkdf.hpp` includes
+  (design, "As built").
 - **Three overloads that read pieces**:
   `hkdf_extract<Hmac, Backend>(salt, byte_pieces input_key_material)` returning the pseudorandom
   key; `hkdf_expand<Hmac, Backend>(output_key_material, pseudorandom_key, byte_pieces
@@ -30,8 +31,9 @@ public names are spelled out.
   `botan` over their incremental HMAC, wherever the backend has that HMAC (BearSSL's included,
   whose own HKDF has no separate Extract and Expand); `backends::webcrypto` through the
   asynchronous forms, over WebCrypto's HMAC (`subtle.sign("HMAC", ...)`), not WebCrypto's HKDF:
-  the pieces are gathered into the JavaScript copy every WebCrypto call already makes, with no
-  extra copy, no C++ heap and no 1,024-byte cap, and Expand signs once per output block.
+  the pieces are gathered into one JavaScript copy per input, made in the initiating call (which
+  WebCrypto copies again at each call, by its specification), with no C++ heap of hash's own and
+  no 1,024-byte cap, and Expand signs once per output block.
 - **The asynchronous forms**: `async_hkdf` gains the pieces overload, and `async_hkdf_extract`
   and `async_hkdf_expand` join the family, each with its single-buffer and its pieces overload;
   every synchronous HKDF function then has its asynchronous form.
@@ -58,20 +60,30 @@ None.
 
 ### Modified Capabilities
 
-- `hash`: HKDF over input pieces, with no cap and no heap, on every backend and in the
-  asynchronous family; HKDF's and the KDF parameters' public names spelled out.
+- `hash`: HKDF over input pieces, with no cap on every backend and in the asynchronous family,
+  and no heap and no copy of the inputs on the synchronous backends; HKDF's and the KDF
+  parameters' public names spelled out.
 
 ## Impact
 
 - **Kind:** a wrapper (`"port-of": null`), as the genesis.
-- **Breaking:** in names only, before hash's first release: the constant
+- **Breaking:** before hash's first release, in names and in HKDF's overloads: the constant
   `hkdf_max_info_size` and the fields of `scrypt_parameters` and `argon2_parameters` are renamed
   (a program that writes `{.n = 32768, .r = 8, .p = 1}` writes `{.cost = 32768, .block_size = 8,
-  .parallelism = 1}`); parameter names change no call.
+  .parallelism = 1}`); parameter names change no call. As built, the pieces overloads also make
+  a lone `{}` and a braced list of one element that is not exactly a
+  `std::span<std::uint8_t const>` (`{vec}`, `{array}`) ambiguous where both overloads take braces:
+  `hkdf(out, salt, {}, {})`, `async_hkdf(ex, out, salt, {}, {}, token)` and `{vec}` inputs no
+  longer compile, and the caller passes the vector itself, an empty span or `byte_pieces{...}`
+  (design, "As built", R9 and R11).
 - **Order:** before crypto's `hpke`, which calls these overloads; independent of every other open
   change.
-- **Implementation:** webcpporg/hash (`include/webcpp/hash/hkdf.hpp`, `config.hpp`, `kdf.hpp`,
-  `async.hpp`, `scrypt.hpp`, `argon2.hpp`, the backends' headers, `test/`, `doc/`,
-  `doc/capabilities.json` and its generated files), the superproject's pointer.
-- **Status:** written on 2026-11-23 from the owner's decisions; `proposed` until the owner
-  approves it (`decided`), then `accepted` once `reference/plan.md` carries the plan's code.
+- **Implementation:** webcpporg/hash (`include/webcpp/hash/hkdf.hpp`, `byte_pieces.hpp`,
+  `config.hpp`, `kdf.hpp`, `async.hpp`, `scrypt.hpp`, `argon2.hpp`, the backends' headers,
+  `test/`, `doc/`, `doc/capabilities.json` and its generated files), the superproject's pointer
+  and `tools/node-test/node-pre.js`.
+- **Status:** written on 2026-11-23 from the owner's decisions and approved by the owner on
+  2026-11-23 (`decided`); `implementing` since 2026-11-25: built on the branches
+  `hash/hkdf-pieces` of webcpporg/hash and the superproject, verified locally on hash's lanes
+  (`tasks.md`, 4.3); the other libraries' Emscripten lanes, the pull requests, their merges and
+  the CI on GitHub remain.

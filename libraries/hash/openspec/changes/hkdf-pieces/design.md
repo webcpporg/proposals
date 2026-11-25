@@ -307,6 +307,75 @@ to the owner.
   hash2's single-buffer form; a later throughput table is a release build's, never a debug
   build's.
 
+## As built
+
+Built on the branches `hash/hkdf-pieces` of webcpporg/hash and the superproject. The rulings made
+while building (R1 to R6 in `reference/plan.md`, the later ones in the build's ledger) that change
+or refine the design above:
+
+- **B2's outcome, a view type (D1):** `std::span<std::span<std::uint8_t const> const>` does not
+  take `{a, b, c}` in C++20 (probed with clang 21 and gcc 15), so `byte_pieces` is B2's view type:
+  a pointer and a count, a constructor from a `std::initializer_list` of spans and one from any
+  contiguous sized range of spans, `begin`, `end`, `size`, `empty` and `total_size`. Both
+  constructors carry `[[clang::lifetimebound]]` where the compiler has it, so a named
+  `byte_pieces` initialised from a braced list, which dangles, is a warning there.
+- **Its own header (R10):** `byte_pieces` is declared in `<webcpp/hash/byte_pieces.hpp>`, which
+  `hkdf.hpp` includes, since `backends/hash2.hpp`, included alone, needs the complete type for
+  its engine's parameters.
+- **A lone span is the single-buffer form (R1), read against D1 and B1:** a braced list of one
+  `std::span<std::uint8_t const>`, `{x}`, is that span by the language's rule, so it names the
+  single-buffer overload wherever one is viable; the form over pieces with one piece is written
+  `byte_pieces{x}`. D1's "a caller passes a lone span as `{span}`" and D5's pieces form "`{info}`"
+  read `byte_pieces{span}` and `byte_pieces{info}`, and the spec's scenario of the cap is written
+  so.
+- **`{}` and one-element lists of another type are ambiguous (R9, R11):** where both overloads
+  take braces, `{}` and a braced list of one element that is not exactly
+  `std::span<std::uint8_t const>` (`{vec}`, `{array}`, a `std::span<std::uint8_t>`) match both
+  and do not compile: `hkdf(out, salt, {}, {})`, `hkdf_extract(salt, {})`,
+  `hkdf_expand(out, prk, {})`, `async_hkdf(ex, out, salt, {}, {}, token)` and `{vec}` inputs that
+  compiled before. No `nullptr_t` or `initializer_list` overload was added (the first would admit
+  `nullptr`, the second would turn R1's `{x}` into the pieces form); the caller passes `x` itself,
+  an empty span, `byte_pieces{}` or `byte_pieces{x}`. So the change breaks calls as well as names,
+  as the changelog's breaking line and `proposal.md`'s Impact say; compile-time tests pin which
+  calls compile.
+- **The capability rows (R2):** the three pieces rows keep their functions' names with
+  `"form": "pieces"` and their own tags; the table's version rises.
+- **The asynchronous forms read in the call (R4, D6):** on a synchronous backend the pieces forms
+  run the synchronous function in the initiating call and pass only its `error_code` to
+  `async_initiate`, so no completion token, `asio::deferred` included, can keep the list; on
+  `backends::webcrypto` the pieces are gathered in the initiating call into a move-only,
+  self-zeroing holder.
+- **WebCrypto's single-buffer Extract and Expand (R3, B5):** they run over HMAC and keep hash's
+  32,768-byte cap of the single-buffer forms, not WebCrypto's 1,024, which is `deriveBits`' and
+  `async_hkdf`'s only.
+- **WebCrypto's gather (D5, R17, R18):** each input is gathered into a `Uint8Array` of its own,
+  made in the initiating call; WebCrypto then copies its input again at each call, by its
+  specification. D5's "the same single copy" and "no extra copy" read accordingly: one JavaScript
+  copy per input of hash's, nothing on the C++ heap of hash's own (webcpp::asio's bridge takes its
+  one block per awaited promise, as for every WebCrypto call). A total past 2^53 - 1 bytes, or a
+  buffer the runtime refuses (a caught `RangeError`), is `backend_failure`, the output zeroed.
+  Every such buffer is zeroed as soon as its last reader settles; the imported `CryptoKey`s cannot
+  be, since WebCrypto has no way to. The claims of no heap and no copy of the inputs are the
+  synchronous backends' (`hash2`, `sodium`, `bearssl`, `openssl`, `botan`), OpenSSL's and Botan's
+  own allocations theirs.
+- **The guards (D3):** in every form and on every backend, `invalid_output_size` first, then the
+  salt's HMAC-key limit (`input_too_long`), and for Expand `invalid_key_size`;
+  `async_hkdf_extract` checks the pseudorandom key's output size first. A guard's refusal leaves
+  the output untouched, a backend's failure zeroes it.
+- **Slicing (D3, R13):** every engine feeds the pieces through one
+  `detail::for_each_slice<SliceMax>`, a template parameter constrained to `SliceMax >= 1`, so a
+  slice of no byte cannot compile; each backend asserts that its length type holds its slice, and
+  every engine's test is also built with a 7-byte slice over 1 MiB pieces.
+- **One Extract-then-Expand (D2):** every synchronous engine's `extract_and_expand` is the shared
+  `detail::hkdf_pieces_extract_and_expand`, so the wipe of the pseudorandom key between the steps
+  is written once.
+- **node's exit under Emscripten (R19):** the superproject's `tools/node-test/node-pre.js`, which
+  every test under node links, now sets `process.exitCode` and lets node end on its own, with
+  `process.exit` only as a fallback 10 s later, since `process.exit` can deadlock in node 26.13.0
+  (node issue #64274; hash's `async_heavy` hung 5 times in 300 runs). The fallback and the 120 s
+  bound still call `process.exit`. Once the pinned node is a release with node PR #66171, the
+  pre-js calls `process.exit` on node's next turn again.
+
 ## Risks / Trade-offs
 
 - [The pieces forms on `sodium`, `openssl`, `bearssl` and `botan` do not use the library's own
