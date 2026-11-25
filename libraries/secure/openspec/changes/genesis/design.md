@@ -24,7 +24,7 @@ The primitives this library gathers exist today in three places, two of them cop
     (`test/constant_time/ctgrind_test.cpp`'s `memcheck` and `msan_test.cpp`'s primitives:
     `mark_secret`, `mark_public`, `traced`, `verdict`).
 - webcpp::hash (`libs/hash`): `include/webcpp/hash/detail/timing.hpp`, the same guard with
-  `WEBCPP_HASH_*` names and `timing_guard(bool guard_engaged = true)`, a disengaged guard doing nothing,
+  `WEBCPP_HASH_*` names and `timing_guard(bool engaged = true)`, a disengaged guard doing nothing,
   for functions keyed only by their arguments (28 sites); and its own `detail/wipe.hpp`.
 - config's change `timing-guard`, withdrawn on 2026-11-24 before any push (its branch is local:
   config `ba72ad4`, hash `43b6732`, crypto `b0c1f4f`, superproject `83c9a31`). It built one guard
@@ -76,7 +76,7 @@ webcpp.
    `<webcpp/secure/...>`.
 4. **The guard:** `timing_guard` (DIT on arm64: Apple's systems, Linux and Android, Windows
    `_M_ARM64` through `_ReadStatusReg` and `_WriteStatusReg` with `isb`, FEAT_DIT probed once under
-   structured exception handling; empty elsewhere), `cpu_has_dit()`, `dit_is_set()`, the `guard_engaged`
+   structured exception handling; empty elsewhere), `cpu_has_dit()`, `dit_is_set()`, the `engaged`
    flag, the nesting rules and the test seam, with `WEBCPP_SECURE_*` macros; a public API of
    `webcpp::secure`, not `detail`, since it is the library's purpose.
 5. **Moved from crypto with their names:** `erase_secret`, `constant_time_equal` and `secret<N>`;
