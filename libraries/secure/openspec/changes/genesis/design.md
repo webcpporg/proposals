@@ -24,7 +24,7 @@ The primitives this library gathers exist today in three places, two of them cop
     (`test/constant_time/ctgrind_test.cpp`'s `memcheck` and `msan_test.cpp`'s primitives:
     `mark_secret`, `mark_public`, `traced`, `verdict`).
 - webcpp::hash (`libs/hash`): `include/webcpp/hash/detail/timing.hpp`, the same guard with
-  `WEBCPP_HASH_*` names and `timing_guard(bool engaged = true)`, a disengaged guard doing nothing,
+  `WEBCPP_HASH_*` names and `timing_guard(bool guard_engaged = true)`, a disengaged guard doing nothing,
   for functions keyed only by their arguments (28 sites); and its own `detail/wipe.hpp`.
 - config's change `timing-guard`, withdrawn on 2026-11-24 before any push (its branch is local:
   config `ba72ad4`, hash `43b6732`, crypto `b0c1f4f`, superproject `83c9a31`). It built one guard
@@ -76,7 +76,7 @@ webcpp.
    `<webcpp/secure/...>`.
 4. **The guard:** `timing_guard` (DIT on arm64: Apple's systems, Linux and Android, Windows
    `_M_ARM64` through `_ReadStatusReg` and `_WriteStatusReg` with `isb`, FEAT_DIT probed once under
-   structured exception handling; empty elsewhere), `cpu_has_dit()`, `dit_is_set()`, the `engaged`
+   structured exception handling; empty elsewhere), `cpu_has_dit()`, `dit_is_set()`, the `guard_engaged`
    flag, the nesting rules and the test seam, with `WEBCPP_SECURE_*` macros; a public API of
    `webcpp::secure`, not `detail`, since it is the library's purpose.
 5. **Moved from crypto with their names:** `erase_secret`, `constant_time_equal` and `secret<N>`;
@@ -128,7 +128,7 @@ namespace webcpp::secure {
 [[nodiscard]] bool dit_is_set() noexcept;    // PSTATE.DIT of this thread; false where not covered
 class timing_guard {                         // not copyable, not movable
 public:
-    explicit timing_guard(bool engaged = true) noexcept;  // + std::source_location under the seam
+    explicit timing_guard(bool guard_engaged = true) noexcept;  // + std::source_location under the seam
     ~timing_guard();
 };
 }
@@ -148,7 +148,7 @@ stays crypto's open measurement and applies here when made.
 
 The seam: without `WEBCPP_SECURE_TIMING_ENTERED` the constructor takes no source location, so no
 function name or path reaches a program. With it, the constructor's last parameter is
-`std::source_location where = std::source_location::current()`, evaluated where the guard is
+`std::source_location entry_location = std::source_location::current()`, evaluated where the guard is
 declared, so `function_name()` is the guarded function (crypto's, hash's, codecs' or secure's own
 `constant_time_equal`) and `file_name()` tells the library (`webcpp/crypto/`, `webcpp/hash/`,
 `webcpp/codecs/`, `webcpp/secure/`, either separator).
@@ -227,7 +227,7 @@ copies a move or a `clone` leaves in registers or temporaries.
 namespace webcpp::secure {
 template <class T>
     requires std::is_trivially_copyable_v<T> && (!std::is_const_v<T>)
-void declassify(T& value) noexcept;
+void declassify(T& derived_value) noexcept;
 }
 // WEBCPP_SECURE_CT_VALGRIND or WEBCPP_SECURE_CT_MSAN: defined by a constant-time test build alone.
 ```
@@ -254,21 +254,21 @@ verdicts and secure's are marked alike.
 
 ```cpp
 namespace webcpp::secure::constant_time {
-template <detail::mask_word U> U value_barrier(U value) noexcept;               // opaque to the optimiser
-template <detail::mask_word U> U mask_from_bit(U bit) noexcept;                 // 0 or 1 -> 0 or ~0
-template <detail::mask_word U> U is_zero_mask(U value) noexcept;                // ~0 when value == 0
-template <detail::mask_word U> U is_equal_mask(U first, U second) noexcept;
-template <detail::mask_word U> U is_less_mask(U first, U second) noexcept;      // unsigned
-template <detail::mask_word U> U is_in_range_mask(U value, U low, U high) noexcept; // low <= value <= high
-template <detail::mask_word U> U select(U mask, U when_set, U when_clear) noexcept;
+template <detail::mask_word U> U value_barrier(U word_value) noexcept;               // opaque to the optimiser
+template <detail::mask_word U> U mask_from_bit(U low_bit) noexcept;                 // 0 or 1 -> 0 or ~0
+template <detail::mask_word U> U is_zero_mask(U word_value) noexcept;                // ~0 when word_value == 0
+template <detail::mask_word U> U is_equal_mask(U first_word, U second_word) noexcept;
+template <detail::mask_word U> U is_less_mask(U first_word, U second_word) noexcept;      // unsigned
+template <detail::mask_word U> U is_in_range_mask(U word_value, U low_bound, U high_bound) noexcept; // low_bound <= word_value <= high_bound
+template <detail::mask_word U> U select(U choice_mask, U when_set, U when_clear) noexcept;
 template <detail::mask_word Element, std::size_t N>
-Element lookup(std::span<Element const, N> table, std::size_t index) noexcept;  // reads every entry
-void select_bytes(std::uint8_t mask, std::span<std::uint8_t> destination,
+Element lookup(std::span<Element const, N> table_entries, std::size_t entry_index) noexcept;  // reads every entry
+void select_bytes(std::uint8_t choice_mask, std::span<std::uint8_t> destination_bytes,
                   std::span<std::uint8_t const> when_set,
                   std::span<std::uint8_t const> when_clear) noexcept;            // equal sizes
-std::uint8_t equal_mask(std::span<std::uint8_t const> first, std::span<std::uint8_t const> second) noexcept;
-std::uint8_t is_zero_mask(std::span<std::uint8_t const> bytes) noexcept;
-std::uint8_t less_mask(std::span<std::uint8_t const> first, std::span<std::uint8_t const> second) noexcept; // big-endian
+std::uint8_t equal_mask(std::span<std::uint8_t const> first_bytes, std::span<std::uint8_t const> second_bytes) noexcept;
+std::uint8_t is_zero_mask(std::span<std::uint8_t const> tested_bytes) noexcept;
+std::uint8_t less_mask(std::span<std::uint8_t const> first_bytes, std::span<std::uint8_t const> second_bytes) noexcept; // big-endian
 }
 ```
 
