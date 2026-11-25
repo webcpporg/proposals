@@ -13,46 +13,46 @@ no `webcpp::core` is made.
 
 ## 1. The library's skeleton
 
-- [ ] 1.1 The repository's files (chapter 10's checklist, items 3 to 7): `meta/libraries.json` with `"port-of": null`, `build.jam` with `secure` (D1), `LICENSE_1_0.txt`, `README.md`, `AGENTS.md`, `.gitattributes`, `.gitignore`, `.github/workflows/ci.yml`, `test/Jamfile`, `example/Jamfile`, `doc/Jamfile` and `doc/changelog.adoc`; the index page's entry (plan task 1)
-- [ ] 1.2 `config.hpp` and its test three ways (exceptions, `WEBCPP_NO_EXCEPTIONS`, `WEBCPP_SECURE_NO_EXCEPTIONS`) (D1) (plan task 1)
+- [x] 1.1 The repository's files (chapter 10's checklist, items 3 to 7): `meta/libraries.json` with `"port-of": null`, `build.jam` with `secure` (D1), `LICENSE_1_0.txt`, `README.md`, `AGENTS.md`, `.gitattributes`, `.gitignore`, `.github/workflows/ci.yml`, `test/Jamfile`, `example/Jamfile`, `doc/Jamfile` and `doc/changelog.adoc`; the index page's entry (plan task 1)
+- [x] 1.2 `config.hpp` and its test three ways (exceptions, `WEBCPP_NO_EXCEPTIONS`, `WEBCPP_SECURE_NO_EXCEPTIONS`) (D1) (plan task 1)
 
 ## 2. The guard
 
-- [ ] 2.1 `timing_guard.hpp` on Apple's systems and Linux, ported from `reference/prior/config/include/` with `WEBCPP_SECURE_*` names in `webcpp::secure`; secure's `test/support/timing_seam.hpp` and `timing_dit.hpp`; `timing_guard_test`, `_nesting_`, `_seam_`, `_threads_` and the header-alone test (D2, D9, D10) (plan task 2)
-- [ ] 2.2 Windows on ARM64: the intrinsics, the SEH probe, `timing_guard_windows_test`, run on the Windows ARM64 lane with MSVC 14.3 and 14.5, debug and release (D3, D11) (plan task 3)
+- [x] 2.1 `timing_guard.hpp` on Apple's systems and Linux, ported from `reference/prior/config/include/` with `WEBCPP_SECURE_*` names in `webcpp::secure`; secure's `test/support/timing_seam.hpp` and `timing_dit.hpp`; `timing_guard_test`, `_nesting_`, `_seam_`, `_threads_` and the header-alone test (D2, D9, D10) (plan task 2)
+- [x] 2.2 Windows on ARM64: the intrinsics, the SEH probe, `timing_guard_windows_test`, run on the Windows ARM64 lane with MSVC 14.3 and 14.5, debug and release (D3, D11) (plan task 3)
 
 ## 3. Memory and comparison
 
-- [ ] 3.1 `detail/wipe.hpp` with its test seam (B9) and `erase_secret.hpp`, moved from crypto with `erase_secret_test` (D4) (plan task 4)
-- [ ] 3.2 `secret.hpp`, moved from crypto, with `secret_test` (D6) (plan task 4)
-- [ ] 3.3 `constant_time_equal.hpp` over byte ranges, with `constant_time_equal_test` and its seam check (D5) (plan task 5)
-- [ ] 3.4 `declassify.hpp`, secure's `test/support/constant_time_marks.hpp`, `declassify_compile_test` (D7, D9) (plan task 5)
+- [x] 3.1 `detail/wipe.hpp` with its test seam (B9) and `erase_secret.hpp`, moved from crypto with `erase_secret_test` (D4) (plan task 4)
+- [x] 3.2 `secret.hpp`, moved from crypto, with `secret_test` (D6) (plan task 4)
+- [x] 3.3 `constant_time_equal.hpp` over byte ranges, with `constant_time_equal_test` and its seam check (D5) (plan task 5)
+- [x] 3.4 `declassify.hpp`, secure's `test/support/constant_time_marks.hpp`, `declassify_compile_test` (D7, D9) (plan task 5)
 
 ## 4. The constant-time blocks
 
-- [ ] 4.1 `constant_time.hpp`: `value_barrier`, the masks, `select`, `lookup`, `select_bytes` and the byte comparisons, with the exhaustive and random tests against a plain reference (D8, D10) (plan task 6)
-- [ ] 4.2 The allocation test over every function; the convenience header and its test; a user's Jamfile of secure on every target (D1, D10) (plan task 7)
+- [x] 4.1 `constant_time.hpp`: `value_barrier`, the masks, `select`, `lookup`, `select_bytes` and the byte comparisons, with the exhaustive and random tests against a plain reference (D8, D10) (plan task 6)
+- [x] 4.2 The allocation test over every function; the convenience header and its test; a user's Jamfile of secure on every target (D1, D10) (plan task 7)
 
 ## 5. The constant-time lane
 
-- [ ] 5.1 The lane `constant-time`: memcheck with the operands undefined, MemorySanitizer where crypto runs it, dudect with its A/A control, the planted branching `select` and indexing `lookup` that must fail (D10) (plan task 8)
+- [x] 5.1 The lane `constant-time`: memcheck with the operands undefined, MemorySanitizer where crypto runs it, dudect with its A/A control, the planted branching `select` and indexing `lookup` that must fail (D10) (plan task 8)
 
 ## 6. The documentation
 
-- [ ] 6.1 The page: what secure is, the guard, erase, `secret<N>`, `constant_time_equal`, `declassify`, the blocks and their limits, the changelog; every example built and run; the guard's cost measured on release builds on an idle machine (D11) (plan task 9)
+- [x] 6.1 The page: what secure is, the guard, erase, `secret<N>`, `constant_time_equal`, `declassify`, the blocks and their limits, the changelog; every example built and run; the guard's cost measured on release builds on an idle machine (D11) (plan task 9)
 
 ## 7. hash on secure (owner decision 9)
 
-- [ ] 7.1 Before it: hash's `origin/main` merged into its branch (never rebased), and any guard site a stream merged since (hkdf-pieces) moved with the rest (plan task 10)
-- [ ] 7.2 Every guard site of hash on `secure::timing_guard` (its `engaged` arguments kept), every wipe on `secure::erase_secret` (B1), the wipe seam on secure's (B9); hash's `detail/timing.hpp` and `detail/wipe.hpp` deleted; hash's own `test/support/` seam recorder and DIT helper pointed at secure's seam; hash's build, `AGENTS.md`, page and "depends on" statements name secure; its MAC examples and pages name `secure::constant_time_equal`; crypto's `timing_hash_interop_test` deleted with hash's copy; generated pages regenerated by their generators (plan task 10)
+- [x] 7.1 Before it: hash's `origin/main` merged into its branch (never rebased), and any guard site a stream merged since (hkdf-pieces) moved with the rest (plan task 10)
+- [x] 7.2 Every guard site of hash on `secure::timing_guard` (its `engaged` arguments kept), every wipe on `secure::erase_secret` (B1), the wipe seam on secure's (B9); hash's `detail/timing.hpp` and `detail/wipe.hpp` deleted; hash's own `test/support/` seam recorder and DIT helper pointed at secure's seam; hash's build, `AGENTS.md`, page and "depends on" statements name secure; its MAC examples and pages name `secure::constant_time_equal`; crypto's `timing_hash_interop_test` deleted with hash's copy; generated pages regenerated by their generators (plan task 10)
 
 ## 8. crypto on secure (owner decision 9)
 
-- [ ] 8.1 Every guard site, wipe, erase, comparison, secret and declassify of crypto on secure's names; crypto's `detail/timing.hpp`, `detail/wipe.hpp`, `detail/declassify.hpp`, `erase_secret.hpp`, `constant_time_equal.hpp` and `secret.hpp` deleted with no alias, and their tests moved to secure; crypto's constant-time lane on `WEBCPP_SECURE_CT_VALGRIND` and `WEBCPP_SECURE_CT_MSAN`; dudect and benches on `secure::cpu_has_dit()`; crypto's own `test/support/` seam recorder and a DIT helper of its own; `timing_nested_hash_test` in place of `timing_hash_interop_test`; generated pages regenerated by their generators (plan task 11)
+- [x] 8.1 Every guard site, wipe, erase, comparison, secret and declassify of crypto on secure's names; crypto's `detail/timing.hpp`, `detail/wipe.hpp`, `detail/declassify.hpp`, `erase_secret.hpp`, `constant_time_equal.hpp` and `secret.hpp` deleted with no alias, and their tests moved to secure; crypto's constant-time lane on `WEBCPP_SECURE_CT_VALGRIND` and `WEBCPP_SECURE_CT_MSAN`; dudect and benches on `secure::cpu_has_dit()`; crypto's own `test/support/` seam recorder and a DIT helper of its own; `timing_nested_hash_test` in place of `timing_hash_interop_test`; generated pages regenerated by their generators (plan task 11)
 
 ## 9. The superproject
 
-- [ ] 9.1 `CODING-GUIDELINES.md` chapter 17's entry for secure, and crypto's and hash's chapters' mentions of the moved names; `AGENTS.md`'s libraries and dependencies; `doc/releases/0.1.0.adoc`'s New Libraries and tools lines; the tools that list libraries; the gitlinks (plan task 12)
+- [x] 9.1 `CODING-GUIDELINES.md` chapter 17's entry for secure, and crypto's and hash's chapters' mentions of the moved names; `AGENTS.md`'s libraries and dependencies; `doc/releases/0.1.0.adoc`'s New Libraries and tools lines; the tools that list libraries; the gitlinks (plan task 12)
 
 ## 10. The delivery
 

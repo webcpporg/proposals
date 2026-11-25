@@ -1,5 +1,13 @@
 # webcpp::secure: where the implementation stands, and what to start from
 
+2026-11-25: built, awaiting tasks.md 10.1 (the full verification on every lane, the idle
+re-measure of the guard, the pull requests and the merge). Tasks 1.1 to 9.1 are done, each on the
+branch `secure/genesis` of its repository: webcpporg/secure at `43ce517` (the library, 1.1 to
+6.1), webcpporg/hash at `5b5efcd` (its migration, 7.1 and 7.2), webcpporg/crypto at `04d56e7`
+(8.1) and webcpporg/webcpp at `55e4895` (the guidelines, AGENTS.md, the release notes, the tools
+and the gitlinks, 9.1), with the final review's fixes. What follows, written with the genesis,
+is where the implementation started.
+
 Written 2026-11-24, with the genesis. Nothing is built in secure's name yet. The owner created the
 repository `webcpporg/secure` on 2026-11-24 and its submodule `libs/secure`. `prior/` holds the code
 an implementer ports, exact copies of files committed elsewhere, none of them renamed yet:

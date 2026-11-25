@@ -254,14 +254,14 @@ verdicts and secure's are marked alike.
 
 ```cpp
 namespace webcpp::secure::constant_time {
-template <std::unsigned_integral U> U value_barrier(U value) noexcept;          // opaque to the optimiser
-template <std::unsigned_integral U> U mask_from_bit(U bit) noexcept;            // 0 or 1 -> 0 or ~0
-template <std::unsigned_integral U> U is_zero_mask(U value) noexcept;           // ~0 when value == 0
-template <std::unsigned_integral U> U is_equal_mask(U first, U second) noexcept;
-template <std::unsigned_integral U> U is_less_mask(U first, U second) noexcept; // unsigned
-template <std::unsigned_integral U> U is_in_range_mask(U value, U low, U high) noexcept; // low <= value <= high
-template <std::unsigned_integral U> U select(U mask, U when_set, U when_clear) noexcept;
-template <std::unsigned_integral Element, std::size_t N>
+template <detail::mask_word U> U value_barrier(U value) noexcept;               // opaque to the optimiser
+template <detail::mask_word U> U mask_from_bit(U bit) noexcept;                 // 0 or 1 -> 0 or ~0
+template <detail::mask_word U> U is_zero_mask(U value) noexcept;                // ~0 when value == 0
+template <detail::mask_word U> U is_equal_mask(U first, U second) noexcept;
+template <detail::mask_word U> U is_less_mask(U first, U second) noexcept;      // unsigned
+template <detail::mask_word U> U is_in_range_mask(U value, U low, U high) noexcept; // low <= value <= high
+template <detail::mask_word U> U select(U mask, U when_set, U when_clear) noexcept;
+template <detail::mask_word Element, std::size_t N>
 Element lookup(std::span<Element const, N> table, std::size_t index) noexcept;  // reads every entry
 void select_bytes(std::uint8_t mask, std::span<std::uint8_t> destination,
                   std::span<std::uint8_t const> when_set,
@@ -272,8 +272,9 @@ std::uint8_t less_mask(std::span<std::uint8_t const> first, std::span<std::uint8
 }
 ```
 
-- `std::unsigned_integral` excludes `bool`; a mask is all zeros or all ones of its type, never a
-  `bool`, so that callers combine masks without converting to a branchable value. Only
+- `std::unsigned_integral` admits `bool`; the blocks are constrained by `detail::mask_word`
+  (unsigned integral and not `bool`), so a mask is all zeros or all ones of its type, never a
+  `bool`, and callers combine masks without converting to a branchable value. Only
   `constant_time_equal` returns a `bool`, after its reduction (D5), and a caller that must branch
   on a mask calls `declassify` first.
 - `value_barrier` is an empty `asm volatile` with the value in a register on GCC and clang

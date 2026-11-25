@@ -5,7 +5,7 @@ webcpp:
   title: "secure: the side-channel and secret-in-memory primitives crypto, hash and codecs share (DIT guard, erase, secret, constant-time blocks), no algorithm"
   kind: own
   port_of: null
-  status: accepted
+  status: implementing
   release: null
-  implementation: null
+  implementation: https://github.com/webcpporg/secure
   decided: 2026-11-24
