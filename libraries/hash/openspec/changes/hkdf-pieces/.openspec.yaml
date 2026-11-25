@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-23
+webcpp:
+  library: hash
+  title: "hash: HKDF over input pieces, no cap on every backend and no heap on the synchronous ones, spelled-out names"
+  kind: wrapper
+  port_of: null
+  status: implementing
+  release: null
+  implementation: https://github.com/webcpporg/hash
+  decided: 2026-11-23
