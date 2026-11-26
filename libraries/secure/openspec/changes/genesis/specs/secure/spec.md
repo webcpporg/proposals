@@ -12,7 +12,7 @@ The library SHALL be header-only C++20 in namespace `webcpp::secure` (with `webc
 - **THEN** it compiles, and `WEBCPP_VERSION` is defined after it
 
 ### Requirement: Timing guard: DIT for a scope, nesting across libraries
-`<webcpp/secure/timing_guard.hpp>` SHALL declare `secure::timing_guard`, `secure::cpu_has_dit()` and `secure::dit_is_set()`, public names of the library and the only DIT guard of webcpp. An engaged guard (`timing_guard{}` or `timing_guard{true}`) MUST set PSTATE.DIT for its scope when the CPU has FEAT_DIT and DIT is clear, and clear it on destruction only when it set it; a guard that finds DIT set MUST leave it set; a disengaged guard (`timing_guard{false}`) MUST do nothing. Each write of DIT MUST be followed by an `isb`. The guard MUST NOT be copyable or movable, MUST NOT change another thread's DIT, and MUST NOT execute a DIT instruction on a CPU without FEAT_DIT but the one probe Windows needs. `cpu_has_dit()` MUST be read once per process.
+`<webcpp/secure/timing_guard.hpp>` SHALL declare `secure::timing_guard`, `secure::cpu_has_dit()` and `secure::dit_is_set()`, public names of the library and the only DIT guard of webcpp. An engaged guard (`timing_guard{}` or `timing_guard{true}`) MUST set PSTATE.DIT for its scope when the CPU has FEAT_DIT and DIT is clear, and MUST leave DIT at its end as it found it: clear it when it set it, and, when it found DIT set, set it again if DIT was cleared within its scope (as Windows on ARM64 does when it resumes a thread after a catch); a guard that finds DIT set MUST leave it set; a disengaged guard (`timing_guard{false}`) MUST do nothing. Each write of DIT MUST be followed by an `isb`. The guard MUST NOT be copyable or movable, MUST NOT change another thread's DIT, and MUST NOT execute a DIT instruction on a CPU without FEAT_DIT but the one probe Windows needs. `cpu_has_dit()` MUST be read once per process.
 
 #### Scenario: Guards nest
 - **WHEN** a test constructs three engaged guards nested, as codecs inside crypto inside hash would, with a disengaged one between them, on a CPU with DIT and DIT clear
@@ -22,6 +22,14 @@ The library SHALL be header-only C++20 in namespace `webcpp::secure` (with `webc
 - **WHEN** a thread sets DIT itself and then constructs and destroys an engaged guard
 - **THEN** DIT is set after the guard ends
 
+#### Scenario: DIT cleared inside a guard's scope is as found after the guard
+- **WHEN** DIT is cleared within an engaged guard's scope, by a catch inside it on Windows on ARM64 or by the test itself on any CPU with DIT, the guard having found DIT set, or having set it
+- **THEN** DIT is set after the guard that found it set ends, and clear after the guard that set it ends, at every level of nested guards
+
+#### Scenario: A catch outside every guard on Windows on ARM64
+- **WHEN** an exception thrown inside an engaged guard is caught outside every guard on Windows on ARM64
+- **THEN** each destructor run during the unwinding and the catch block see DIT as the code before them left it, the guard having left it as found, and after the catch DIT is clear, from set as from clear, which a program that wants DIT there sets again
+
 #### Scenario: Another thread is untouched
 - **WHEN** one thread holds an engaged guard while another thread, with DIT clear, reads `dit_is_set()`
 - **THEN** the other thread reads false, natively where the build has threads
@@ -30,8 +38,8 @@ The library SHALL be header-only C++20 in namespace `webcpp::secure` (with `webc
 The guard SHALL act, and `WEBCPP_SECURE_TIMING_COVERED` SHALL be defined, on arm64 under Apple's systems (FEAT_DIT from `sysctlbyname("hw.optional.arm.FEAT_DIT")`), under Linux and Android (`HWCAP_DIT` of `AT_HWCAP`), and under Windows with `_MSC_VER`, `_M_ARM64` and not `_M_ARM64EC` (the register through `_ReadStatusReg` and `_WriteStatusReg` and `__isb`, FEAT_DIT from one read of the register under structured exception handling, `STATUS_ILLEGAL_INSTRUCTION` meaning absent, other exceptions passed on). On every other target the guard MUST be an empty class that executes no instruction, and `cpu_has_dit()` and `dit_is_set()` MUST return false.
 
 #### Scenario: Windows on ARM64
-- **WHEN** `timing_guard_windows_test` runs on the Windows 11 ARM64 lane with MSVC 14.3 and 14.5, debug and release, with exceptions on and off
-- **THEN** `cpu_has_dit()` is true on that CPU, DIT is set inside a guard, still set after the thread sleeps inside it, and clear after it
+- **WHEN** `timing_guard_windows_test` and `timing_guard_exceptions_test` run on the Windows 11 ARM64 lane with MSVC 14.3 and 14.5, debug and release, with exceptions on and off
+- **THEN** `cpu_has_dit()` is true on that CPU, DIT is set inside a guard, still set after the thread sleeps inside it, and clear after it, and every guard leaves DIT as it found it after an exception caught inside its scope
 
 #### Scenario: WebAssembly and x86
 - **WHEN** the guard's tests run on wasip2, wasip3, Emscripten and x86-64
@@ -100,7 +108,7 @@ A macro `WEBCPP_SECURE_TIMING_ENTERED(where)`, defined by a test alone before it
 - **THEN** no conditional jump and no address depends on them, while the planted branching `select` and indexing `lookup` are reported
 
 #### Scenario: dudect judges
-- **WHEN** dudect measures `constant_time_equal`, `lookup`, `select_bytes` and `less_mask` with two classes of input natively
+- **WHEN** dudect measures `constant_time_equal`, `lookup`, `select_bytes` and `less_mask` with two classes of input natively, each block inside a `timing_guard` as a guarded caller runs it (`constant_time_equal` holds its own)
 - **THEN** each case's |t| stays below the threshold, its A/A control too, and the planted leak exceeds it
 
 ### Requirement: Tests and lanes
@@ -111,7 +119,7 @@ Every test of the library SHALL run on native (clang and gcc 15), wasip2, wasip3
 - **THEN** the counter is zero after every call, on every target
 
 ### Requirement: Documentation
-The library SHALL have its page under `libs/secure/doc/`, built by `b2 doc`: what secure is and is not (no algorithm), the guard (its coverage table, nesting, `engaged`, the seam), `erase_secret`, `secret<N>`, `constant_time_equal`, `declassify`, the constant-time blocks with their limits, the guard's measured cost from release builds, and the changelog, every example built and run in the lanes.
+The library SHALL have its page under `libs/secure/doc/`, built by `b2 doc`: what secure is and is not (no algorithm), the guard (its coverage table, nesting, `guard_engaged`, exceptions, the seam), `erase_secret`, `secret<N>`, `constant_time_equal`, `declassify`, the constant-time blocks with their limits, the guard's measured cost from release builds, and the changelog, every example built and run in the lanes.
 
 #### Scenario: The page builds
 - **WHEN** `b2 doc` runs in the superproject

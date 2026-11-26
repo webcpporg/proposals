@@ -137,10 +137,12 @@ public:
 ```
 
 Behaviour, the two copies' and the withdrawn change's: an engaged guard runs the seam (in a test's
-build), then sets DIT if the CPU has it and it is clear, and remembers to clear it; its destructor
-clears DIT only if it set it. A disengaged guard does nothing, the seam included. So guards nest
-in any order of libraries (crypto inside hash, hash inside crypto, codecs inside either): an inner
-guard finds DIT set and leaves it, and a program that set DIT itself (Apple's
+build), then sets DIT if the CPU has it and it is clear, and remembers what it found; its
+destructor leaves DIT as found: it clears DIT if it set it, and, if it found DIT set, reads it
+again (a second `mrs`) and sets it if something inside its scope cleared it, as Windows on ARM64
+does on resuming a thread after a catch (D3). A disengaged guard does nothing, the seam included.
+So guards nest in any order of libraries (crypto inside hash, hash inside crypto, codecs inside
+either): an inner guard finds DIT set and leaves it set, and a program that set DIT itself (Apple's
 `timingsafe_enable_if_supported`) keeps it. DIT is a thread's state; a guard never changes another
 thread's. Each write keeps its `memory` clobber (or the intrinsics' ordering on MSVC) and an `isb`
 after it; which barrier each write needs (Apple asks for `sb` or `dsb nsh; isb sy` after setting)
@@ -179,6 +181,17 @@ static. It needs `<excpt.h>` and `<intrin.h>`, not `<windows.h>`, and works with
 or off. That read is the only DIT instruction executed where FEAT_DIT may be absent. Rejected: the
 registry's per-processor `CP 4020` value (undocumented, needs advapi32); leaving Windows on ARM64
 uncovered.
+
+Windows on ARM64 and exceptions, measured on the owner's VM with MSVC 14.3 and 14.5, debug and
+release (Microsoft documents none of it): the system keeps DIT through the search for a handler,
+the unwinding and the catch block, then resumes the thread after the catch, or in an `__except`
+block, with DIT clear, from set as from clear (`RtlRestoreContext` clears it whatever bit 24 of
+the context's `Cpsr` says). A guard whose scope holds the catch leaves DIT as it found it at its
+end (D2); code that computes on a secret after such a catch holds a guard of its own; code that
+catches inside a guarded scope and returns into a C library (crypto's OpenSSL memory adapter)
+holds, around its `try`, a guard engaged only when DIT is set; after a catch outside every guard,
+a guard-free catch, DIT is clear, which no destructor can change, and a program that wants DIT
+there sets it again. On Apple's systems and Linux DIT after a catch is as the unwinding left it.
 
 ### D4. `erase_secret` and the wipe
 
@@ -250,7 +263,12 @@ verdicts and secure's are marked alike.
 ### D8. The constant-time building blocks
 
 `<webcpp/secure/constant_time.hpp>`, namespace `webcpp::secure::constant_time`, every function
-`constexpr` where the language allows, `noexcept`, branch-free and index-free on its data:
+`constexpr` where the language allows, `noexcept`, branch-free and index-free on its data. On 64-bit
+ARM that is not enough for a time independent of the data: Arm promises it only for the
+instructions it lists and only with DIT set, and MSVC 14.5's branch-free, index-free `lookup` was
+measured with a dudect |t| of 11 to 17.5 with DIT clear on Windows on ARM64 and under 3 with DIT
+set; a caller that runs the blocks on a secret holds a guard (D2), as every guarded function of
+webcpp does:
 
 ```cpp
 namespace webcpp::secure::constant_time {
@@ -319,6 +337,9 @@ every library's do.
   `timing_guard_nesting_test` (three levels, every order of engaged and disengaged),
   `timing_guard_seam_test` (the seam's `function_name()` and `file_name()`, `timing_guard{true}`,
   nothing fired by a disengaged guard, nothing named in a build without the seam),
+  `timing_guard_exceptions_test` (an exception through nested guards and caught inside and outside
+  them, and DIT cleared inside a scope: each guard leaves DIT as found, on every target, with
+  exceptions on and off, and on the Windows ARM64 lane),
   `timing_guard_threads_test` (another thread's DIT unchanged, natively where the build has
   threads), `timing_guard_windows_test` (D3, on the Windows ARM64 lane), each header compiled first
   and alone; on a target not covered, `std::is_empty_v<secure::timing_guard>` and both functions
@@ -339,7 +360,8 @@ every library's do.
 - **Constant time:** the own lane `constant-time` (`test/constant_time/`): memcheck with the
   operands marked undefined (ctgrind) over every block, `constant_time_equal` and `secret<N>`'s
   moves, MemorySanitizer where crypto runs it, dudect natively with its A/A control over
-  `constant_time_equal`, `lookup`, `select_bytes` and `less_mask`, and a planted leak (a `select`
+  `constant_time_equal`, `lookup`, `select_bytes` and `less_mask`, each block inside a guard as a
+  guarded caller runs it (D8), and a planted leak (a `select`
   written with a branch, a `lookup` that indexes) that must fail on each checker.
 
 ### D11. Lanes, documentation, measurements
@@ -348,7 +370,8 @@ Every test runs on native (clang and gcc 15), wasip2, wasip3 and Emscripten, eac
 `_no_exceptions` twin; MSVC 14.3 and 14.5 (x64 and arm64) and Apple clang as the other libraries;
 the Windows ARM64 lane on the owner's VM for the guard (D3), in a release build too, which the
 withdrawn change did not run; the own lane `constant-time`; the lint. The page (`doc/`): what
-secure is and is not, the guard (coverage table, nesting, engaged, the seam), erasing, `secret<N>`,
+secure is and is not, the guard (coverage table, nesting, engaged, exceptions, the seam), erasing,
+`secret<N>`,
 `constant_time_equal`, `declassify`, the blocks with their limits (what DIT and masks cover and what
 the compiler may still do), and the changelog. One measurement: the guard's cost on release builds
 (engaged with DIT clear, engaged with DIT set, disengaged) on an idle machine, since the withdrawn
@@ -389,6 +412,12 @@ to the owner.
   an empty guard's effect); the Windows lane's test fails if a CPU known to have DIT reads absent.
 - [The probe's absent path is untested] -> no machine without FEAT_DIT runs Windows on ARM64 here;
   the filter is small and reviewed, and the page says so.
+- [Windows on ARM64 clears DIT after a catch] -> each guard leaves DIT as found at its end (D2),
+  crypto's OpenSSL memory adapter keeps DIT set across its catches, and the guard's page tells a
+  program to hold a guard after a catch inside a guarded scope and to set DIT again after a catch
+  of its own; third-party code that catches internally inside a guarded call (a C library's own
+  catches, a program's memory resource) runs with DIT clear after its catch until the guard ends,
+  which webcpp cannot reach.
 - [`lookup` costs the table's size] -> codecs' tables are at most 64 entries; a caller with a
   larger public table indexes it directly.
 
