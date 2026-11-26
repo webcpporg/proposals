@@ -23,8 +23,8 @@ increment 6 (Botan) merges (design D8).
 
 ## Open
 
-- [ ] The final quiet measurement pass measures the guard's cost again and regenerates the
-  throughput tables (design.md, "As built").
+- [ ] The final quiet measurement pass regenerates the throughput tables (design.md, "As built");
+  the guard's cost was measured again on an idle machine on 2026-11-26 (clear 37.0 ns, set 1.2 ns).
 - [ ] crypto's `detail/timing.hpp` names hash's copy at crypto's next change of it.
 - [ ] The MSVC lane's known-failures list gains the seven no-exceptions builds of the Boost.JSON
   class.
