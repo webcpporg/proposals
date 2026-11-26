@@ -1,0 +1,11 @@
+schema: spec-driven
+created: 2026-11-20
+webcpp:
+  library: trystero
+  title: "trystero: port to Trystero 0.27.0"
+  kind: port
+  port_of: "Trystero 0.27.0"
+  status: draft
+  release: null
+  implementation: null
+  decided: null
