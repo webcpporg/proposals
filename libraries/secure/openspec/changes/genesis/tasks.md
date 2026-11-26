@@ -56,4 +56,4 @@ no `webcpp::core` is made.
 
 ## 10. The delivery
 
-- [ ] 10.1 hash's `origin/main` merged again, and any new guard site migrated; full local verification on every lane (native clang and gcc 15, MSVC 14.3 and 14.5, the Windows ARM64 lane, wasip2, wasip3, Emscripten, the constant-time lanes of secure and crypto, the Linux lint), exceptions on and off; the review; pull requests, merged in order secure, hash, crypto, the superproject, the proposals; one CI at the end (plan task 13)
+- [x] 10.1 hash's `origin/main` merged again, and any new guard site migrated; full local verification on every lane (native clang and gcc 15, MSVC 14.3 and 14.5, the Windows ARM64 lane, wasip2, wasip3, Emscripten, the constant-time lanes of secure and crypto, the Linux lint), exceptions on and off; the review; pull requests, merged in order secure, hash, crypto, the superproject, the proposals; one CI at the end (plan task 13); done 2026-11-26 but for that CI, which is the owner's to run, so the status stays implementing (CONTRIBUTING step 5)
