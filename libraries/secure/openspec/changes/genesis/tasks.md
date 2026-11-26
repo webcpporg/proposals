@@ -39,7 +39,7 @@ no `webcpp::core` is made.
 
 ## 6. The documentation
 
-- [x] 6.1 The page: what secure is, the guard, erase, `secret<N>`, `constant_time_equal`, `declassify`, the blocks and their limits, the changelog; every example built and run; the guard's cost measured on release builds on an idle machine (D11) (plan task 9)
+- [x] 6.1 The page: what secure is, the guard, erase, `secret<N>`, `constant_time_equal`, `declassify`, the blocks and their limits, the changelog; every example built and run; the guard's cost measured on release builds on an idle machine (D11) (plan task 9; 2026-11-26, load 1.9: clear 37.0 ns, set 1.2 ns, disengaged 0.0 ns)
 
 ## 7. hash on secure (owner decision 9)
 
